@@ -392,4 +392,229 @@ When working on DevGPT libraries with a consumer project:
 - **Client Manager**: Consumer API that integrates both DevGPT and DevGPTTools
 
 See `C:\projects\client-manager\README.md` for detailed documentation on the multi-repository development workflow.
+# DevGPTTools
+
+A collection of .NET libraries for building AI-powered content generation tools.
+
+## Overview
+
+DevGPTTools is a comprehensive suite of libraries designed to support AI-driven content generation, text extraction, and various service integrations. All projects are published as NuGet packages for easy integration into other applications.
+
+## Projects
+
+### Common Libraries
+- **DevGPT.GenerationTools.Common.Models** - Shared data models and DTOs
+- **DevGPT.GenerationTools.Common.Utilities** - Common utilities and extensions
+- **DevGPT.GenerationTools.Common.Infrastructure.AspNetCore** - ASP.NET Core infrastructure components
+
+### Core Libraries
+- **DevGPT.GenerationTools.Core** - Core functionality
+- **DevGPT.GenerationTools.Models** - Domain models
+- **DevGPT.GenerationTools.Data** - Data access layer
+- **DevGPT.GenerationTools.AI.Agents** - AI agent implementations
+
+### Services
+- **DevGPT.GenerationTools.Services** - Main service orchestration
+- **DevGPT.GenerationTools.Services.BigQuery** - Google BigQuery integration
+- **DevGPT.GenerationTools.Services.Chat** - Chat services
+- **DevGPT.GenerationTools.Services.ContentRetrieval** - Content retrieval services
+- **DevGPT.GenerationTools.Services.Embeddings** - Vector embeddings services
+- **DevGPT.GenerationTools.Services.FileOps** - File operations
+- **DevGPT.GenerationTools.Services.Intake** - Content intake services
+- **DevGPT.GenerationTools.Services.Prompts** - Prompt management
+- **DevGPT.GenerationTools.Services.Social** - Social media integrations
+- **DevGPT.GenerationTools.Services.Store** - Storage services
+- **DevGPT.GenerationTools.Services.Web** - Web scraping and interaction
+- **DevGPT.GenerationTools.Services.WordPress** - WordPress integration
+
+### Text Extraction
+- **DevGPT.GenerationTools.TextExtraction** - Text extraction from various file formats (PDF, Word, Excel, images)
+
+## Building the Solution
+
+```bash
+# Restore dependencies
+dotnet restore DevGPTTools.sln
+
+# Build all projects
+dotnet build DevGPTTools.sln
+
+# Build in Release mode
+dotnet build DevGPTTools.sln -c Release
+```
+
+## Publishing NuGet Packages
+
+All projects are configured to build NuGet packages. The publish script automatically publishes to NuGet.org if you have set the API key.
+
+### Setup (One-time)
+
+Set your NuGet API key as an environment variable:
+
+**Windows (PowerShell):**
+```powershell
+setx NUGET_API_KEY "your-api-key-here"
+```
+
+**Linux/macOS:**
+```bash
+export NUGET_API_KEY="your-api-key-here"
+# Add to ~/.bashrc or ~/.zshrc for persistence
+echo 'export NUGET_API_KEY="your-api-key-here"' >> ~/.bashrc
+```
+
+Get your API key from: https://www.nuget.org/account/apikeys
+
+### Usage
+
+**Windows (PowerShell):**
+```powershell
+./publish-nuget.ps1
+```
+
+**Linux/macOS (Bash):**
+```bash
+./publish-nuget.sh
+```
+
+The script will:
+1. Build all projects in Release mode
+2. Create NuGet packages in `./nupkgs` directory
+3. **Automatically publish to NuGet.org** (if NUGET_API_KEY is set)
+
+If the API key is not set, packages are built but not published.
+
+## For AI Assistants / LLMs
+
+If you're an AI assistant working on this codebase, please read [LLM-INSTRUCTIONS.md](LLM-INSTRUCTIONS.md) for important guidelines about:
+- NuGet package publishing requirements
+- Project structure conventions
+- Version management
+- Testing procedures
+
+## Requirements
+
+- .NET 8.0 SDK or later
+- Windows (projects target net8.0-windows)
+
+## License
+
+[Specify your license here]
+
+---
+
+## Consumer Projects and Multi-Repository Setup
+
+This DevGPTTools repository is part of a multi-repository development environment. Consumer projects reference these libraries either as NuGet packages (production) or as local project references (development).
+
+### Known Consumer Projects
+
+#### Client Manager (DevGPTStoreAPI)
+- **Location**: `C:\projects\client-manager`
+- **Purpose**: .NET 8 API application for AI-powered content generation and management
+- **Integration**: Uses all DevGPTTools services (Store, Chat, BigQuery, WordPress, etc.) along with DevGPT LLM libraries
+
+The client-manager project demonstrates two integration patterns:
+
+1. **Production Pattern** (`ClientManager.sln`):
+   - Uses published NuGet packages (version 1.0.16)
+   - Suitable for CI/CD and production deployments
+   - Cannot step through library source code when debugging
+
+2. **Development Pattern** (`ClientManager.local.sln`):
+   - Uses local project references to this repository
+   - Full debugging support with symbols
+   - Ideal for library development and troubleshooting
+
+### Local Development Workflow
+
+When working on DevGPTTools libraries with a consumer project:
+
+1. **Directory Structure**:
+   ```
+   C:\projects\
+   ├── devgpt\              (companion LLM framework)
+   ├── devgpttools\         (this repository)
+   └── client-manager\      (consumer API project)
+   ```
+
+2. **Making Changes**:
+   - Make changes to DevGPTTools libraries in `C:\projects\devgpttools`
+   - Open consumer project using its `.local.sln` file
+   - Rebuild the consumer solution - changes are immediately reflected
+   - Debug with full symbol support
+
+3. **Publishing Updates**:
+   ```bash
+   cd C:\projects\devgpttools
+   # Update version numbers in .csproj files
+   ./publish-nuget.ps1  # Windows
+   # or
+   ./publish-nuget.sh   # Linux/macOS
+   ```
+   
+   Then update consumer project's `.csproj` to use new package versions.
+
+### Project Reference Structure
+
+When using local development mode, the consumer project references all DevGPTTools projects:
+
+**Common Libraries**:
+- DevGPT.GenerationTools.Common.Infrastructure.AspNetCore
+- DevGPT.GenerationTools.Common.Models
+
+**Core Libraries**:
+- DevGPT.GenerationTools.Core
+- DevGPT.GenerationTools.Models
+- DevGPT.GenerationTools.Data
+- DevGPT.GenerationTools.AI.Agents
+
+**Service Libraries**:
+- DevGPT.GenerationTools.Services (main orchestration)
+- DevGPT.GenerationTools.Services.BigQuery
+- DevGPT.GenerationTools.Services.Chat
+- DevGPT.GenerationTools.Services.ContentRetrieval
+- DevGPT.GenerationTools.Services.FileOps
+- DevGPT.GenerationTools.Services.Intake
+- DevGPT.GenerationTools.Services.Prompts
+- DevGPT.GenerationTools.Services.Social
+- DevGPT.GenerationTools.Services.Store
+- DevGPT.GenerationTools.Services.Web
+- DevGPT.GenerationTools.Services.WordPress
+
+All these projects are referenced with `.local.csproj` variants in the consumer's local solution.
+
+### Debugging Symbol Loading Issue
+
+**Important**: Consumer projects must use the `.local.sln` solution file to debug into DevGPTTools library code.
+
+**Problem**: When debugging DevGPTStoreAPI using `ClientManager.sln`, symbols for `DevGPT.GenerationTools.Services.Store` and other libraries don't load.
+
+**Solution**: 
+1. Close the standard solution in Visual Studio
+2. Open `C:\projects\client-manager\ClientManager.local.sln`
+3. Rebuild the entire solution to ensure all local projects build with symbols
+4. Start debugging - symbols will now load properly
+
+**Why**: 
+- Standard `.sln` files reference compiled NuGet package DLLs without source code or full debugging symbols
+- `.local.sln` files reference actual source code projects with full PDB symbols
+- The `.local` solution pattern was specifically created for local development with debugging support
+
+### Related Repositories
+
+- **DevGPT**: Core agentic framework, LLM clients, stores, and generator (`C:\projects\devgpt`)
+- **DevGPTTools** (this repo): Content generation services and integrations
+- **Client Manager**: Consumer API that integrates both DevGPT and DevGPTTools (`C:\projects\client-manager`)
+
+See `C:\projects\client-manager\README.md` for detailed documentation on the multi-repository development workflow.
+
+### For AI Assistants Working on This Codebase
+
+When working with consumer projects:
+- **Always check all three repository locations** (`C:\projects\devgpt`, `C:\projects\devgpttools`, `C:\projects\client-manager`)
+- **Use the `.local.sln` files** for development and debugging
+- **Understand the dual solution pattern**: standard for production, local for development
+- **Reference the LLM-INSTRUCTIONS.md** in this repository for NuGet publishing guidelines
+- **Test changes locally** before publishing new package versions
 
