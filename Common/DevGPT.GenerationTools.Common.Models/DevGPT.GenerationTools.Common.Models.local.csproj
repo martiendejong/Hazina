@@ -8,6 +8,6 @@
     <Version>1.0.17</Version>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\DevGPT\Libraries\DevGPT.AgentFactory\DevGPT.AgentFactory.csproj" />
+    <ProjectReference Include="..\..\Libraries\DevGPT.AgentFactory\DevGPT.AgentFactory.csproj" />
   </ItemGroup>
 </Project>

@@ -15,6 +15,6 @@
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="8.0.10" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\DevGPT\Libraries\DevGPT.AgentFactory\DevGPT.AgentFactory.csproj" />
+    <ProjectReference Include="..\..\Libraries\DevGPT.AgentFactory\DevGPT.AgentFactory.csproj" />
   </ItemGroup>
 </Project>

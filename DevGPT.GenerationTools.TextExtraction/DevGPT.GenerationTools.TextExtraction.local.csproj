@@ -24,6 +24,6 @@
     <PackageReference Include="System.Memory.Data" Version="9.0.10" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\DevGPT\Libraries\LLMs\Client\DevGPT.LLMs.Client.csproj" />
+    <ProjectReference Include="..\Libraries\LLMs\Client\DevGPT.LLMs.Client.csproj" />
   </ItemGroup>
 </Project>
