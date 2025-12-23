@@ -102,6 +102,7 @@ nupkgs/
 /DevGPT.GenerationTools.Models/obj/project.assets.json
 /Tests/DevGPT.GenerationTools.Services.Chat.Tests/appsettings.json
 /Tests/DevGPT.GenerationTools.Services.Chat.Tests/appsettings.integration.json
+/Tests/**/appsettings*.json
 obj/
 bin/
 /DevGPT.GenerationTools.Services.Store/obj/DevGPT.GenerationTools.Services.Store.csproj.nuget.g.targets
