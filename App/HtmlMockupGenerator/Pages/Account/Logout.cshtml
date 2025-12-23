@@ -1,0 +1,29 @@
+@page
+@model HtmlMockupGenerator.Pages.Account.LogoutModel
+@{
+    ViewData["Title"] = "Uitloggen";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center">Uitloggen</h3>
+                </div>
+                <div class="card-body text-center">
+                    <p class="mb-4">Weet je zeker dat je wilt uitloggen?</p>
+                    
+                    <form method="post">
+                        <button type="submit" class="btn btn-danger btn-lg">
+                            Ja, uitloggen
+                        </button>
+                        <a href="/" class="btn btn-secondary btn-lg ms-2">
+                            Annuleren
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

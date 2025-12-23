@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DevGPT.App.PostgresDemo</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\\..\\Libraries\\Store\\DocumentStore\\DevGPT.Store.DocumentStore.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\Store\\EmbeddingStore\\DevGPT.Store.EmbeddingStore.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\LLMs\\Client\\DevGPT.LLMs.Client.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\LLMs\\Helpers\\DevGPT.LLMs.Helpers.csproj" />
+  </ItemGroup>
+</Project>

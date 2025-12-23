@@ -1,0 +1,134 @@
+<Window x:Class="DevGPT.App.Windows.AgentsCardsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="AgentsCardsWindow" Height="600" Width="900" ResizeMode="CanResize">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </Window.Resources>
+    <!-- Add your main layout here, e.g. a DockPanel or Grid -->
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6">
+            <Button Content="+ Nieuwe agent" Click="AddNewAgentButton_Click" Margin="0,0,8,0" />
+            <Button Content="Opslaan" Click="OpslaanButton_Click" Margin="0,0,8,0" />
+            <Button Content="Annuleren" Click="AnnuleerButton_Click" />
+        </StackPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Cards}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Expander Header="{Binding Name}" Margin="6" IsExpanded="{Binding IsExpanded, Mode=TwoWay}">
+                            <Border BorderThickness="1" BorderBrush="#DDDDDD" Padding="10" CornerRadius="5">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Name:" Width="90"/> <TextBox Width="350" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Description:" Width="90"/>
+                                        <TextBox Width="350" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Prompt:" Width="90"/>
+                                        <TextBox Width="350" Text="{Binding Prompt, UpdateSourceTrigger=PropertyChanged}"/>
+                                    </StackPanel>
+                                    <CheckBox Content="ExplicitModify" IsChecked="{Binding ExplicitModify}" Margin="0,6,0,3"/>
+
+                                    <!-- Stores -->
+                                    <GroupBox Header="Stores" Margin="0,8,0,0">
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                <ComboBox Width="200" 
+                                                          ItemsSource="{Binding DataContext.AllStores, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                          SelectedItem="{Binding NewStoreToAdd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <CheckBox Content="Write" IsChecked="{Binding NewStoreWritable, Mode=TwoWay}" Margin="8,0,0,0" />
+                                                <Button Content="Toevoegen" Margin="8,0,0,0" Click="AddStoreButton_Click" CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                            <ItemsControl ItemsSource="{Binding Stores}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding Name}"/>
+                                                            <TextBlock Text=" (W)" Visibility="{Binding Write, Converter={StaticResource BoolToVisibilityConverter}}" Margin="2,0,0,0" />
+                                                            <Button Content="Verwijderen" Click="RemoveStoreButton_Click" CommandParameter="{Binding}" Margin="12,0,0,0"/>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </GroupBox>
+
+                                    <!-- Functions -->
+                                    <GroupBox Header="Functions" Margin="0,8,0,0">
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                <ComboBox Width="200" 
+                                                          ItemsSource="{Binding DataContext.AllFunctions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                          SelectedItem="{Binding NewFunctionToAdd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <Button Content="Toevoegen" Margin="8,0,0,0" Click="AddFunctionButton_Click" CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                            <ItemsControl ItemsSource="{Binding Functions}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding}"/>
+                                                            <Button Content="Verwijderen" Click="RemoveFunctionButton_Click" CommandParameter="{Binding}" Margin="12,0,0,0"/>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </GroupBox>
+
+                                    <!-- CallsAgents -->
+                                    <GroupBox Header="Calls Agents" Margin="0,8,0,0">
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                <ComboBox Width="200"
+                                                          ItemsSource="{Binding DataContext.AllAgents, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                          SelectedItem="{Binding NewAgentToAdd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <Button Content="Toevoegen" Margin="8,0,0,0" Click="AddAgentButton_Click" CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                            <ItemsControl ItemsSource="{Binding CallsAgents}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding}"/>
+                                                            <Button Content="Verwijderen" Click="RemoveAgentButton_Click" CommandParameter="{Binding}" Margin="12,0,0,0"/>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </GroupBox>
+
+                                    <!-- CallsFlows -->
+                                    <GroupBox Header="Calls Flows" Margin="0,8,0,0">
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                <ComboBox Width="200" 
+                                                          ItemsSource="{Binding DataContext.AllFlows, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                          SelectedItem="{Binding NewFlowToAdd, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <Button Content="Toevoegen" Margin="8,0,0,0" Click="AddFlowButton_Click" CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                            <ItemsControl ItemsSource="{Binding CallsFlows}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding}"/>
+                                                            <Button Content="Verwijderen" Click="RemoveFlowButton_Click" CommandParameter="{Binding}" Margin="12,0,0,0"/>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </GroupBox>
+                                    <Button Content="Verwijderen" Click="RemoveAgentCardButton_Click" CommandParameter="{Binding}" Margin="0,10,0,0" HorizontalAlignment="Right" Width="90"/>
+                                </StackPanel>
+                            </Border>
+                        </Expander>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </DockPanel>
+</Window>
+

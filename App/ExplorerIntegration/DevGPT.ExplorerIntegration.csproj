@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>DevGPT.App.ExplorerIntegration</RootNamespace>
+    <AssemblyName>DevGPT.ExplorerIntegration</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\\..\\Libraries\\DevGPT.AgentFactory\\DevGPT.AgentFactory.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\LLMs\\OpenAI\\DevGPT.LLMs.OpenAI.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\DevGPT.Generator\\DevGPT.Generator.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\Store\\DocumentStore\\DevGPT.Store.DocumentStore.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\Store\\EmbeddingStore\\DevGPT.Store.EmbeddingStore.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\LLMs\\Client\\DevGPT.LLMs.Client.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\LLMs\\Classes\\DevGPT.LLMs.Classes.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\LLMs\\Helpers\\DevGPT.LLMs.Helpers.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\ChatShared\\DevGPT.ChatShared.csproj" />
+  </ItemGroup>
+</Project>
+

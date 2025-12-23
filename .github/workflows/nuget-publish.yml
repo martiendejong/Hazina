@@ -1,0 +1,32 @@
+name: Publish DevGPT.AgentFactory NuGet Package
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore DevGPT.AgentFactory/DevGPT.AgentFactory.csproj
+
+    - name: Build
+      run: dotnet build DevGPT.AgentFactory/DevGPT.AgentFactory.csproj --configuration Release --no-restore
+
+    - name: Pack
+      run: dotnet pack DevGPT.AgentFactory/DevGPT.AgentFactory.csproj --configuration Release --no-build --output nupkgs
+
+    - name: Publish to NuGet
+      run: dotnet nuget push nupkgs/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

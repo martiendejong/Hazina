@@ -1,0 +1,356 @@
+using DevGPT.GenerationTools.AI.Agents;
+using DevGPT.GenerationTools.Data;
+using DevGPT.GenerationTools.Models;
+using Mscc.GenerativeAI;
+using System;
+using System.IO;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace DevGPT.GenerationTools.Services.Chat
+{
+    public class ChatImageService : ChatServiceBase, IChatImageService
+    {
+        private readonly string _openAiApiKey;
+        private readonly string _geminiApiKey;
+        private readonly IGeneratedImageRepository _generatedImageRepository;
+        private readonly IChatMessageService _messageService;
+        private readonly IChatMetadataService _metadataService;
+        private static readonly HttpClient HttpClient = new();
+
+        public ChatImageService(
+            ProjectsRepository projects,
+            ProjectFileLocator fileLocator,
+            GeneratorAgentBase agent,
+            IntakeRepository intake,
+            IGeneratedImageRepository generatedImageRepository,
+            IChatMetadataService metadataService,
+            IChatMessageService messageService)
+            : this(
+                  projects,
+                  fileLocator,
+                  intake,
+                  agent?.Config?.ApiSettings?.OpenApiKey,
+                  agent?.Config?.ApiSettings?.GeminiApiKey,
+                  generatedImageRepository,
+                  metadataService,
+                  messageService)
+        {
+        }
+
+        public ChatImageService(
+            ProjectsRepository projects,
+            ProjectFileLocator fileLocator,
+            IntakeRepository intake,
+            string? openAiApiKey,
+            string? geminiApiKey,
+            IGeneratedImageRepository generatedImageRepository,
+            IChatMetadataService metadataService,
+            IChatMessageService messageService)
+            : base(projects, fileLocator)
+        {
+            _openAiApiKey = openAiApiKey ?? string.Empty;
+            _geminiApiKey = geminiApiKey ?? string.Empty;
+            _generatedImageRepository = generatedImageRepository ?? throw new ArgumentNullException(nameof(generatedImageRepository));
+            _metadataService = metadataService ?? throw new ArgumentNullException(nameof(metadataService));
+            _messageService = messageService ?? throw new ArgumentNullException(nameof(messageService));
+        }
+
+        public Task<ChatConversation> GenerateImage(string projectId, string chatId, Project project, GeneratorMessage chatMessage, CancellationToken cancel, bool isImageSet)
+            => GenerateImageInternal(projectId, chatId, project, chatMessage, cancel, null, isImageSet);
+
+        public Task<ChatConversation> GenerateImage(string projectId, string chatId, string userId, Project project, GeneratorMessage chatMessage, CancellationToken cancel, bool isImageSet)
+            => GenerateImageInternal(projectId, chatId, project, chatMessage, cancel, userId, isImageSet);
+
+        // Backward compatible overloads (default to non-image-set)
+        public Task<ChatConversation> GenerateImage(string projectId, string chatId, Project project, GeneratorMessage chatMessage, CancellationToken cancel)
+            => GenerateImageInternal(projectId, chatId, project, chatMessage, cancel, null, false);
+
+        public Task<ChatConversation> GenerateImage(string projectId, string chatId, string userId, Project project, GeneratorMessage chatMessage, CancellationToken cancel)
+            => GenerateImageInternal(projectId, chatId, project, chatMessage, cancel, userId, false);
+
+        private async Task<ChatConversation> GenerateImageInternal(string projectId, string chatId, Project project, GeneratorMessage chatMessage, CancellationToken cancel, string? userId, bool isImageSet)
+        {
+            var prompt = chatMessage?.Message ?? string.Empty;
+            // If generating an image set, diversify prompts to encourage variation
+            var prompts = isImageSet
+                ? new[]
+                {
+                    $"{prompt} --variation A --style cinematic --composition wide",
+                    $"{prompt} --variation B --style minimal --composition centered",
+                    $"{prompt} --variation C --style vibrant --composition close-up",
+                    $"{prompt} --variation D --style monochrome --composition dynamic"
+                }
+                : new[] { prompt };
+            var imageModel = project?.ImageModel ?? ImageModel.DallE3;
+            string imageSource;
+            string modelInfo;
+
+            try
+            {
+                // For image sets, generate the first prompt now; additional prompts handled below
+                switch (imageModel)
+                {
+                    case ImageModel.DallE3:
+                    case ImageModel.DallE2:
+                        imageSource = await GenerateOpenAIImage(prompts[0], imageModel, cancel);
+                        modelInfo = imageModel == ImageModel.DallE3 ? "DALL-E 3" : "DALL-E 2";
+                        break;
+
+                    case ImageModel.NanoBanana:
+                        imageSource = await GenerateNanoBananaImage(prompts[0], cancel);
+                        modelInfo = "Nano Banana (Gemini 2.5 Flash Image)";
+                        break;
+
+                    default:
+                        throw new NotSupportedException($"Image model {imageModel} is not supported");
+                }
+
+                var resolved = await ResolveImageDataAsync(imageSource, cancel);
+                var extension = DetermineExtension(resolved.ContentType, resolved.SourceUrl);
+                var fileName = $"{Guid.NewGuid():N}{extension}";
+                var storedUserId = string.IsNullOrWhiteSpace(userId) ? null : userId;
+
+                Console.WriteLine($"ChatImageService: projectId={projectId}, userId={userId}, storedUserId={storedUserId}, fileName={fileName}");
+
+                await _generatedImageRepository.SaveImageAsync(projectId, storedUserId, fileName, resolved.Data);
+
+                var metadata = new GeneratedImageInfo
+                {
+                    ProjectId = projectId,
+                    ChatId = chatId,
+                    FileName = fileName,
+                    Prompt = prompts[0],
+                    Model = modelInfo,
+                    SourceUrl = resolved.SourceUrl ?? string.Empty,
+                    UserId = storedUserId ?? string.Empty,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _generatedImageRepository.Add(metadata, projectId, storedUserId);
+
+                var imageUrl = BuildImageUrl(projectId, fileName, storedUserId);
+
+                Console.WriteLine($"ChatImageService: Generated imageUrl={imageUrl}");
+
+                // Create the assistant message without echoing the prompt into chat
+                var assistantMessage = new ConversationMessage
+                {
+                    Role = ChatMessageRole.Assistant,
+                    Text = $"![Generated Image]({imageUrl})\n\n*Generated with {modelInfo}*",
+                    Payload = !isImageSet ? null : new
+                    {
+                        type = "image-set",
+                        url = imageUrl,
+                        fileName,
+                        model = modelInfo,
+                        prompt = prompts[0]
+                    }
+                };
+
+                // Get existing messages and append new one (no prompt/user echo)
+                var chatMessages = _messageService.GetChatMessages(projectId, chatId, userId);
+                chatMessages.Add(assistantMessage);
+
+                // Persist messages to chat file
+                _messageService.StoreChatMessages(projectId, chatId, chatMessages, userId);
+
+                // Get or create metadata
+                var chatMetadata = string.IsNullOrWhiteSpace(userId)
+                    ? _metadataService.GetChatMetaData(projectId, chatId)
+                    : _metadataService.GetChatMetaDataUser(projectId, chatId, userId);
+
+                if (chatMetadata == null)
+                {
+                    chatMetadata = new ChatMetadata
+                    {
+                        Id = chatId,
+                        Name = "Image",
+                        Created = DateTime.UtcNow,
+                        Modified = DateTime.UtcNow,
+                        LastUpdated = DateTime.UtcNow,
+                        IsPinned = false,
+                        ProjectId = projectId
+                    };
+                }
+
+                var convo = new ChatConversation
+                {
+                    MetaData = chatMetadata,
+                    ChatMessages = chatMessages
+                };
+
+                return convo;
+            }
+            catch (Exception ex)
+            {
+                // Create error message without echoing prompt
+                var errorMessage = new ConversationMessage { Role = ChatMessageRole.Assistant, Text = $"Error generating image: {ex.Message}" };
+
+                // Get existing messages and append new ones
+                var chatMessages = _messageService.GetChatMessages(projectId, chatId, userId);
+                chatMessages.Add(errorMessage);
+
+                // Persist error messages to chat file
+                _messageService.StoreChatMessages(projectId, chatId, chatMessages, userId);
+
+                // Get or create metadata
+                var chatMetadata = string.IsNullOrWhiteSpace(userId)
+                    ? _metadataService.GetChatMetaData(projectId, chatId)
+                    : _metadataService.GetChatMetaDataUser(projectId, chatId, userId);
+
+                if (chatMetadata == null)
+                {
+                    chatMetadata = new ChatMetadata
+                    {
+                        Id = chatId,
+                        Name = "Image",
+                        Created = DateTime.UtcNow,
+                        Modified = DateTime.UtcNow,
+                        LastUpdated = DateTime.UtcNow,
+                        IsPinned = false,
+                        ProjectId = projectId
+                    };
+                }
+
+                var convo = new ChatConversation
+                {
+                    MetaData = chatMetadata,
+                    ChatMessages = chatMessages
+                };
+                return convo;
+            }
+        }
+
+        protected virtual async Task<string> GenerateOpenAIImage(string prompt, ImageModel model, CancellationToken cancel)
+        {
+            if (string.IsNullOrWhiteSpace(_openAiApiKey))
+            {
+                throw new InvalidOperationException("OpenAI API key not configured.");
+            }
+
+            var config = new OpenAIConfig(_openAiApiKey);
+            config.ImageModel = model == ImageModel.DallE3 ? "dall-e-3" : "dall-e-2";
+
+            var client = new OpenAIClientWrapper(config);
+            var result = await client.GetImage(prompt, null, null, null, cancel);
+
+            if (result?.Result != null)
+            {
+                return result.Result.Url?.ToString() ?? throw new Exception("No image URL returned from DALL-E");
+            }
+
+            throw new Exception("Failed to generate image with DALL-E");
+        }
+
+        protected virtual async Task<string> GenerateNanoBananaImage(string prompt, CancellationToken cancel)
+        {
+            if (string.IsNullOrWhiteSpace(_geminiApiKey))
+            {
+                throw new InvalidOperationException("Gemini API key not configured. Please add GeminiApiKey to your config.");
+            }
+
+            var googleAI = new GoogleAI(_geminiApiKey);
+            var model = googleAI.GenerativeModel(model: Model.Gemini25FlashImage);
+
+            var response = await model.GenerateContent(prompt);
+
+            if (response?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault() is Part imagePart &&
+                imagePart.InlineData != null)
+            {
+                var imageBytes = Convert.FromBase64String(imagePart.InlineData.Data);
+                var mimeType = imagePart.InlineData.MimeType;
+
+                var base64Image = Convert.ToBase64String(imageBytes);
+                return $"data:{mimeType};base64,{base64Image}";
+            }
+
+            throw new Exception("Failed to generate image with Nano Banana (Gemini 2.5 Flash Image)");
+        }
+
+        private static string BuildImageUrl(string projectId, string fileName, string? userId)
+        {
+            var builder = $"/api/Chat/{Uri.EscapeDataString(projectId)}/generatedimages/{Uri.EscapeDataString(fileName)}";
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                builder += $"/{Uri.EscapeDataString(userId)}";
+            }
+            return builder;
+        }
+
+        private static string DetermineExtension(string? contentType, string? sourceUrl)
+        {
+            if (!string.IsNullOrWhiteSpace(sourceUrl))
+            {
+                try
+                {
+                    var uri = new Uri(sourceUrl);
+                    var extension = Path.GetExtension(uri.AbsolutePath);
+                    if (!string.IsNullOrWhiteSpace(extension))
+                    {
+                        return extension;
+                    }
+                }
+                catch
+                {
+                    // Ignore invalid URI
+                }
+            }
+
+            return contentType?.ToLowerInvariant() switch
+            {
+                "image/png" => ".png",
+                "image/jpeg" => ".jpg",
+                "image/jpg" => ".jpg",
+                "image/webp" => ".webp",
+                "image/gif" => ".gif",
+                "image/svg+xml" => ".svg",
+                _ => ".png",
+            };
+        }
+
+        private static async Task<ResolvedImage> ResolveImageDataAsync(string source, CancellationToken cancel)
+        {
+            if (string.IsNullOrWhiteSpace(source))
+            {
+                throw new InvalidOperationException("Image source is empty.");
+            }
+
+            if (source.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+            {
+                var commaIndex = source.IndexOf(',');
+                if (commaIndex < 0)
+                {
+                    throw new FormatException("Invalid data URI for generated image");
+                }
+
+                var meta = source[5..commaIndex];
+                var isBase64 = meta.EndsWith(";base64", StringComparison.OrdinalIgnoreCase);
+                var mediaType = isBase64 ? meta[..^7] : meta;
+                var payload = source[(commaIndex + 1)..];
+                var bytes = Convert.FromBase64String(payload);
+                return new ResolvedImage(bytes, string.IsNullOrWhiteSpace(mediaType) ? "image/png" : mediaType, null);
+            }
+
+            using var response = await HttpClient.GetAsync(source, cancel);
+            response.EnsureSuccessStatusCode();
+            var data = await response.Content.ReadAsByteArrayAsync(cancel);
+            var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+            return new ResolvedImage(data, contentType, source);
+        }
+
+        private readonly struct ResolvedImage
+        {
+            public byte[] Data { get; }
+            public string ContentType { get; }
+            public string? SourceUrl { get; }
+
+            public ResolvedImage(byte[] data, string contentType, string? sourceUrl)
+            {
+                Data = data;
+                ContentType = contentType;
+                SourceUrl = sourceUrl;
+            }
+        }
+    }
+}

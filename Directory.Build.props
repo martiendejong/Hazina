@@ -1,0 +1,26 @@
+<Project>
+  <PropertyGroup>
+    <!-- Common NuGet Package Properties -->
+    <Authors>DevGPT</Authors>
+    <Company>DevGPT</Company>
+    <Product>DevGPT Generation Tools</Product>
+    <Copyright>Copyright © DevGPT $([System.DateTime]::Now.Year)</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/yourusername/DevGPTTools</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/yourusername/DevGPTTools</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>ai;content-generation;gpt;text-extraction;devgpt</PackageTags>
+
+    <!-- Version -->
+    <Version>1.0.0</Version>
+
+    <!-- Enable package generation on build -->
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Condition="Exists('$(MSBuildThisFileDirectory)README.md')" />
+  </ItemGroup>
+</Project>

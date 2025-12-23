@@ -1,0 +1,6 @@
+Name: devgpt_sourcecode
+Description: Alle projectcode, inclusief tests, CI/CD scripts, infra en devopsconfiguraties.
+Path: C:\Projects\DevGPT
+FileFilters: *.cs,*.ts,*.js,*.py,*.sh,*.yml,*.yaml,*.json,*.csproj,*.sln,Dockerfile
+SubDirectory: 
+ExcludePattern: bin,obj,node_modules,dist

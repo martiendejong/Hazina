@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DevGPT.App.ClaudeCode</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Libraries\LLMs\OpenAI\DevGPT.LLMs.OpenAI.csproj" />
+    <ProjectReference Include="..\..\Libraries\LLMs\Classes\DevGPT.LLMs.Classes.csproj" />
+    <ProjectReference Include="..\..\Libraries\LLMs\Helpers\DevGPT.LLMs.Helpers.csproj" />
+    <ProjectReference Include="..\..\Libraries\LLMs\Client\DevGPT.LLMs.Client.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+</Project>
+

@@ -1,0 +1,63 @@
+# Top-most EditorConfig file
+root = true
+
+# C# files
+[*.cs]
+# Charset
+charset = utf-8
+
+# Newline
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Indentation
+indent_style = space
+indent_size = 4
+
+# Microsoft recommended C# code style:
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = true
+
+# Naming conventions
+dotnet_naming_rule.private_fields_should_be_camel_case.severity = suggestion
+dotnet_naming_rule.private_fields_should_be_camel_case.symbols = private_fields
+dotnet_naming_rule.private_fields_should_be_camel_case.style = camel_case_style
+
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+
+dotnet_naming_style.camel_case_style.capitalization = camel_case
+
+dotnet_naming_rule.private_constants_should_be_camel_case.severity = suggestion
+dotnet_naming_rule.private_constants_should_be_camel_case.symbols = private_constants
+dotnet_naming_rule.private_constants_should_be_camel_case.style = camel_case_style
+
+dotnet_naming_symbols.private_constants.applicable_kinds = field
+# constant fields
+
+dotnet_naming_symbols.private_constants.required_modifiers = const
+
+dotnet_naming_symbols.private_constants.applicable_accessibilities = private
+
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+# var preferences
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+# Expression-bodied members
+csharp_style_expression_bodied_methods = false:warning
+csharp_style_expression_bodied_properties = false:warning
+
+# Braces and new lines
+csharp_new_line_before_open_brace = all
+csharp_else_on_new_line = true
+
+# StyleCopAnalyzers compatibility
+# (Most settings are set by StyleCop, use for fine-tuning)
+

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LanguageVersion>latest</LanguageVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DevGPT.Store</RootNamespace>
+    <Version>1.1.3</Version>
+    <PackageVersion>1.1.3</PackageVersion>
+    <Authors>Prospergenics</Authors>
+    <Description>Tool calling extensions for DevGPT LLM clients. Provides reusable tools that LLMs can invoke including Claude CLI execution, web page scraping, and tool context base classes. Enables function calling and external system integration for AI agents.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>llm;tools;function-calling;web-scraping;claude-cli;ai-agents</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="HtmlAgilityPack" Version="1.12.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\\Classes\\DevGPT.LLMs.Classes.csproj" />
+    <ProjectReference Include="..\\Client\\DevGPT.LLMs.Client.csproj" />
+  </ItemGroup>
+</Project>

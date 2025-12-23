@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LanguageVersion>latest</LanguageVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DevGPT.LLMs</RootNamespace>
+    <Version>1.1.3</Version>
+    <PackageVersion>1.1.3</PackageVersion>
+    <Authors>Prospergenics</Authors>
+    <Description>Semantic Kernel implementation of ILLMClient for DevGPT. Provides multi-provider LLM support (OpenAI, Azure OpenAI, Anthropic, Ollama) through Microsoft Semantic Kernel integration. Supports advanced orchestration, plugins, and planners while maintaining DevGPT's RAG and safe file modification features.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>semantic-kernel;llm;ai;chat;multi-provider;openai;azure;anthropic;ollama;plugins</PackageTags>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);SKEXP0001;SKEXP0010</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.31.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Client\DevGPT.LLMs.Client.csproj" />
+    <ProjectReference Include="..\Classes\DevGPT.LLMs.Classes.csproj" />
+    <ProjectReference Include="..\Helpers\DevGPT.LLMs.Helpers.csproj" />
+    <ProjectReference Include="..\..\Store\DocumentStore\DevGPT.Store.DocumentStore.csproj" />
+  </ItemGroup>
+</Project>

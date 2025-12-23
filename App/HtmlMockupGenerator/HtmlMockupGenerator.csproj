@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>DevGPT.App.HtmlMockupGenerator</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Libraries\DevGPT.Generator\DevGPT.Generator.csproj" />
+    <ProjectReference Include="..\..\Libraries\LLMs\ClientTools\DevGPT.LLMClientTools.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\DevGPT.AgentFactory\\DevGPT.AgentFactory.csproj" />
+    <ProjectReference Include="..\\..\\Libraries\\LLMs\\OpenAI\\DevGPT.LLMs.OpenAI.csproj" />
+  </ItemGroup>
+</Project>

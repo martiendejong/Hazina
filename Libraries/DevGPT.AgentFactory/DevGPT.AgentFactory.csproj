@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LanguageVersion>latest</LanguageVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DevGPT.Store</RootNamespace>
+    <Version>1.1.4</Version>
+    <PackageVersion>1.1.4</PackageVersion>
+    <Authors>Prospergenics</Authors>
+    <Description>High-level agent factory for building autonomous AI agents in DevGPT. Provides configuration parsing, built-in tool collections (file ops, git, dotnet, npm, BigQuery, email, WordPress), and multi-agent flow orchestration. Simplifies creating production-ready AI agents.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>ai-agents;agent-factory;orchestration;tools;bigquery;email;wordpress;git;automation</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Cloud.BigQuery.V2" Version="3.11.0" />
+    <PackageReference Include="MailKit" Version="4.13.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LLMs\Classes\DevGPT.LLMs.Classes.csproj" />
+    <ProjectReference Include="..\Store\DocumentStore\DevGPT.Store.DocumentStore.csproj" />
+    <ProjectReference Include="..\Store\EmbeddingStore\DevGPT.Store.EmbeddingStore.csproj" />
+    <ProjectReference Include="..\DevGPT.Generator\DevGPT.Generator.csproj" />
+    <ProjectReference Include="..\LLMs\Helpers\DevGPT.LLMs.Helpers.csproj" />
+    <ProjectReference Include="..\LLMs\Client\DevGPT.LLMs.Client.csproj" />
+    <ProjectReference Include="..\LLMs\OpenAI\DevGPT.LLMs.OpenAI.csproj" />
+    <ProjectReference Include="..\LLMs\SemanticKernel\DevGPT.LLMs.SemanticKernel.csproj" />
+  </ItemGroup>
+</Project>

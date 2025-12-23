@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DevGPT.GenerationTools.Services</RootNamespace>
+    <Description>Main service orchestration for DevGPT generation tools</Description>
+    <Version>1.0.17</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DevGPT.GenerationTools.Models\DevGPT.GenerationTools.Models.csproj" />
+    <ProjectReference Include="..\DevGPT.GenerationTools.Core\DevGPT.GenerationTools.Core.csproj" />
+    <ProjectReference Include="..\DevGPT.GenerationTools.Data\DevGPT.GenerationTools.Data.csproj" />
+    <ProjectReference Include="..\DevGPT.GenerationTools.TextExtraction\DevGPT.GenerationTools.TextExtraction.csproj" />
+    <ProjectReference Include="..\DevGPT.GenerationTools.Services.WordPress\DevGPT.GenerationTools.Services.WordPress.csproj" />
+    <ProjectReference Include="..\DevGPT.GenerationTools.Services.Web\DevGPT.GenerationTools.Services.Web.csproj" />
+    <ProjectReference Include="..\DevGPT.GenerationTools.Services.ContentRetrieval\DevGPT.GenerationTools.Services.ContentRetrieval.csproj" />
+    <ProjectReference Include="..\DevGPT.GenerationTools.Services.FileOps\DevGPT.GenerationTools.Services.FileOps.csproj" />
+    <ProjectReference Include="..\DevGPT.GenerationTools.Services.Store\DevGPT.GenerationTools.Services.Store.csproj" />
+    <ProjectReference Include="..\DevGPT.GenerationTools.AI.Agents\DevGPT.GenerationTools.AI.Agents.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Cloud.BigQuery.V2" Version="3.11.0" />
+    <PackageReference Include="DevGPT.Store.DocumentStore" Version="1.1.3" />
+    <PackageReference Include="OpenAI" Version="2.6.0" />
+    <PackageReference Include="DevGPT.Generator" Version="1.1.3" />
+    <PackageReference Include="DevGPT.LLMClientTools" Version="1.1.3" />
+    <PackageReference Include="DevGPT.AgentFactory" Version="1.1.3" />
+  </ItemGroup>
+</Project>

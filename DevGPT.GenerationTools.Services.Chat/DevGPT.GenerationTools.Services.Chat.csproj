@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DevGPT.GenerationTools.Services.Chat</RootNamespace>
+    <Version>1.0.17</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DevGPT.GenerationTools.Models\DevGPT.GenerationTools.Models.csproj" />
+    <ProjectReference Include="..\DevGPT.GenerationTools.Core\DevGPT.GenerationTools.Core.csproj" />
+    <ProjectReference Include="..\DevGPT.GenerationTools.Data\DevGPT.GenerationTools.Data.csproj" />
+    <ProjectReference Include="..\DevGPT.GenerationTools.AI.Agents\DevGPT.GenerationTools.AI.Agents.csproj" />
+    <ProjectReference Include="..\DevGPT.GenerationTools.Services.DataGathering\DevGPT.GenerationTools.Services.DataGathering.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Mscc.GenerativeAI" Version="2.8.25" />
+  </ItemGroup>
+</Project>
