@@ -7,6 +7,7 @@ using DevGPT.GenerationTools.Services.Web;
 using DevGPT.GenerationTools.Services.BigQuery;
 using DevGPT.GenerationTools.Services.FileOps;
 using HtmlAgilityPack;
+using System.Linq;
 
 namespace DevGPT.GenerationTools.Services.Store
 {
