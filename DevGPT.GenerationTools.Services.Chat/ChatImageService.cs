@@ -152,6 +152,15 @@ namespace DevGPT.GenerationTools.Services.Chat
                 Console.WriteLine($"ChatImageService: Generated imageUrl={imageUrl}");
 
                 // Create the assistant message without echoing the prompt into chat
+                // Get existing messages and append user + assistant entries so the prompt stays visible in chat
+                var chatMessages = _messageService.GetChatMessages(projectId, chatId, userId);
+                var userMessage = new ConversationMessage
+                {
+                    Role = ChatMessageRole.User,
+                    Text = prompt
+                };
+                chatMessages.Add(userMessage);
+
                 var assistantMessage = new ConversationMessage
                 {
                     Role = ChatMessageRole.Assistant,
@@ -165,9 +174,6 @@ namespace DevGPT.GenerationTools.Services.Chat
                         prompt = prompts[0]
                     }
                 };
-
-                // Get existing messages and append new one (no prompt/user echo)
-                var chatMessages = _messageService.GetChatMessages(projectId, chatId, userId);
                 chatMessages.Add(assistantMessage);
 
                 // Persist messages to chat file
@@ -190,6 +196,11 @@ namespace DevGPT.GenerationTools.Services.Chat
                         IsPinned = false,
                         ProjectId = projectId
                     };
+                }
+                else
+                {
+                    chatMetadata.Modified = DateTime.UtcNow;
+                    chatMetadata.LastUpdated = DateTime.UtcNow;
                 }
 
                 var convo = new ChatConversation
@@ -229,6 +240,11 @@ namespace DevGPT.GenerationTools.Services.Chat
                         IsPinned = false,
                         ProjectId = projectId
                     };
+                }
+                else
+                {
+                    chatMetadata.Modified = DateTime.UtcNow;
+                    chatMetadata.LastUpdated = DateTime.UtcNow;
                 }
 
                 var convo = new ChatConversation
@@ -288,12 +304,8 @@ namespace DevGPT.GenerationTools.Services.Chat
 
         private static string BuildImageUrl(string projectId, string fileName, string? userId)
         {
-            var builder = $"/api/Chat/{Uri.EscapeDataString(projectId)}/generatedimages/{Uri.EscapeDataString(fileName)}";
-            if (!string.IsNullOrWhiteSpace(userId))
-            {
-                builder += $"/{Uri.EscapeDataString(userId)}";
-            }
-            return builder;
+            // Expose generated images via the uploaded documents endpoint so they behave like regular uploads
+            return $"/api/uploadeddocuments/file/{Uri.EscapeDataString(projectId)}/{Uri.EscapeDataString(fileName)}";
         }
 
         private static string DetermineExtension(string? contentType, string? sourceUrl)
