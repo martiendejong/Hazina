@@ -16,10 +16,10 @@
 
 Created the foundation for Semantic Kernel integration:
 
-- **DevGPT.LLMs.SemanticKernel** project
+- **Hazina.LLMs.SemanticKernel** project
 - **SemanticKernelConfig** - Multi-provider configuration (OpenAI, Azure, Anthropic, Ollama)
 - **SemanticKernelClientWrapper** - Full `ILLMClient` implementation
-- **DevGPTSemanticKernelExtensions** - Message/role conversion utilities
+- **HazinaSemanticKernelExtensions** - Message/role conversion utilities
 - **SemanticKernelStreamHandler** - Streaming response handler
 
 **Key Achievement**: Abstracted SK behind existing `ILLMClient` interface - zero breaking changes
@@ -29,11 +29,11 @@ Created the foundation for Semantic Kernel integration:
 ### Phase 2: Tool & Plugin System ✅
 **Commit**: `5284c8a`
 
-Converted DevGPT's tool system to SK plugins:
+Converted Hazina's tool system to SK plugins:
 
 - **DocumentStorePlugin** - All store operations (list, read, write, search, delete, move)
 - **DeveloperToolsPlugin** - Git, dotnet, npm, build commands
-- **ToolsContextPluginAdapter** - Dynamic `DevGPTChatTool` → `KernelFunction` conversion
+- **ToolsContextPluginAdapter** - Dynamic `HazinaChatTool` → `KernelFunction` conversion
 - **Auto-registration** - Tools automatically register as SK plugins
 
 **Key Achievement**: Preserved 100% backward compatibility with existing tool system
@@ -125,10 +125,10 @@ Automatically optimizes per provider:
 - Safe callback execution (errors don't break stream)
 
 ### 5. Tool System Bridge
-Existing DevGPT tools automatically become SK plugins:
+Existing Hazina tools automatically become SK plugins:
 ```csharp
-// DevGPT tool
-var tool = new DevGPTChatTool("list_files", "List files", params, execute);
+// Hazina tool
+var tool = new HazinaChatTool("list_files", "List files", params, execute);
 
 // Automatically becomes SK plugin via ToolsContextPluginAdapter
 // No code changes needed!
@@ -139,14 +139,14 @@ var tool = new DevGPTChatTool("list_files", "List files", params, execute);
 ## Files Created
 
 ### New Projects
-1. `LLMs/SemanticKernel/DevGPT.LLMs.SemanticKernel.csproj`
+1. `LLMs/SemanticKernel/Hazina.LLMs.SemanticKernel.csproj`
 
 ### Core Implementation
 2. `LLMs/SemanticKernel/Core/SemanticKernelConfig.cs`
 3. `LLMs/SemanticKernel/Core/SemanticKernelClientWrapper.cs`
 
 ### Extensions & Utilities
-4. `LLMs/SemanticKernel/Extensions/DevGPTSemanticKernelExtensions.cs`
+4. `LLMs/SemanticKernel/Extensions/HazinaSemanticKernelExtensions.cs`
 5. `LLMs/SemanticKernel/Handlers/SemanticKernelStreamHandler.cs`
 
 ### Plugins
@@ -155,7 +155,7 @@ var tool = new DevGPTChatTool("list_files", "List files", params, execute);
 8. `LLMs/SemanticKernel/Plugins/ToolsContextPluginAdapter.cs`
 
 ### Agent Integration
-9. `DevGPT.AgentFactory/Core/AgentFactoryExtensions.cs`
+9. `Hazina.AgentFactory/Core/AgentFactoryExtensions.cs`
 
 ### Documentation
 10. `SEMANTIC_KERNEL_INTEGRATION_PLAN.md`
@@ -242,9 +242,9 @@ var skConfig = SemanticKernelConfig.Load();
 var llmClient = new SemanticKernelClientWrapper(skConfig);
 
 var manager = new AgentManager(
-    storesJsonPath: "stores.devgpt",
-    agentsJsonPath: "agents.devgpt",
-    flowsJsonPath: "flows.devgpt",
+    storesJsonPath: "stores.hazina",
+    agentsJsonPath: "agents.hazina",
+    flowsJsonPath: "flows.hazina",
     llmClient: llmClient,  // Custom SK client!
     openAIApiKey: skConfig.ApiKey,
     logFilePath: "logs.txt"
@@ -403,12 +403,12 @@ The Semantic Kernel integration is **production-ready** and provides:
 5. ✅ **Plugin compatibility** - Tools automatically become SK plugins
 6. ✅ **Enterprise features** - Azure OpenAI, compliance, control
 
-**Your original DevGPT system was already excellent** - the SK integration just adds:
+**Your original Hazina system was already excellent** - the SK integration just adds:
 - Provider flexibility
 - Enterprise compliance (Azure)
 - Native structured output (better accuracy)
 - Future SK ecosystem access
 
-The core value proposition of DevGPT (safe code generation, RAG, document stores, permissions) remains **unchanged and superior** to vanilla Semantic Kernel.
+The core value proposition of Hazina (safe code generation, RAG, document stores, permissions) remains **unchanged and superior** to vanilla Semantic Kernel.
 
 You built something genuinely better for code generation. SK just wraps it with multi-provider support.

@@ -1,14 +1,14 @@
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
-using DevGPT.GenerationTools.AI.Agents;
+using Hazina.Tools.Models.WordPress.Blogs;
+using Hazina.Tools.AI.Agents;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
 
-namespace DevGPT.GenerationTools.AI.Agents
+namespace Hazina.Tools.AI.Agents
 {
     public class ContentGeneratorAgent : GeneratorAgentBase
     {

@@ -1,6 +1,6 @@
 using System;
 
-namespace DevGPT.GenerationTools.Models
+namespace Hazina.Tools.Models
 {
     /// <summary>
     /// Represents token usage for a project on a specific date

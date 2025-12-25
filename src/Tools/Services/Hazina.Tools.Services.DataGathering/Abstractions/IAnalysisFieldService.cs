@@ -1,8 +1,8 @@
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Services.DataGathering.Services;
-using DevGPT.GenerationTools.Services.Store;
+using Hazina.Tools.Models;
+using Hazina.Tools.Services.DataGathering.Services;
+using Hazina.Tools.Services.Store;
 
-namespace DevGPT.GenerationTools.Services.DataGathering.Abstractions;
+namespace Hazina.Tools.Services.DataGathering.Abstractions;
 
 /// <summary>
 /// Service for automatically generating analysis fields from chat conversations.
@@ -27,7 +27,7 @@ public interface IAnalysisFieldService
         string projectId,
         string chatId,
         string userMessage,
-        IEnumerable<DevGPTChatMessage> conversationHistory,
+        IEnumerable<HazinaChatMessage> conversationHistory,
         string? userId = null,
         CancellationToken cancellationToken = default);
 

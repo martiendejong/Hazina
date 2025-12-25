@@ -1,10 +1,10 @@
 using System.Text.Json;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Services.DataGathering.Abstractions;
-using DevGPT.GenerationTools.Services.DataGathering.Models;
-using DevGPT.GenerationTools.Services.Store;
+using Hazina.Tools.Models;
+using Hazina.Tools.Services.DataGathering.Abstractions;
+using Hazina.Tools.Services.DataGathering.Models;
+using Hazina.Tools.Services.Store;
 
-namespace DevGPT.GenerationTools.Services.DataGathering.ToolsContexts;
+namespace Hazina.Tools.Services.DataGathering.ToolsContexts;
 
 /// <summary>
 /// Tools context for the background data gathering process.
@@ -124,8 +124,8 @@ public sealed class DataGatheringToolsContext : ToolsContextBase
     }
 
     private async Task<string> StoreGatheredDataAsync(
-        List<DevGPTChatMessage> messages,
-        DevGPTChatToolCall toolCall,
+        List<HazinaChatMessage> messages,
+        HazinaChatToolCall toolCall,
         CancellationToken cancellationToken)
     {
         var key = GetStringParameter(toolCall, "key");
@@ -159,8 +159,8 @@ public sealed class DataGatheringToolsContext : ToolsContextBase
     }
 
     private async Task<string> StoreSimpleDataAsync(
-        List<DevGPTChatMessage> messages,
-        DevGPTChatToolCall toolCall,
+        List<HazinaChatMessage> messages,
+        HazinaChatToolCall toolCall,
         CancellationToken cancellationToken)
     {
         var key = GetStringParameter(toolCall, "key");
@@ -186,8 +186,8 @@ public sealed class DataGatheringToolsContext : ToolsContextBase
     }
 
     private async Task<string> StoreListDataAsync(
-        List<DevGPTChatMessage> messages,
-        DevGPTChatToolCall toolCall,
+        List<HazinaChatMessage> messages,
+        HazinaChatToolCall toolCall,
         CancellationToken cancellationToken)
     {
         var key = GetStringParameter(toolCall, "key");
@@ -223,8 +223,8 @@ public sealed class DataGatheringToolsContext : ToolsContextBase
     }
 
     private async Task<string> StoreLargeTextAsync(
-        List<DevGPTChatMessage> messages,
-        DevGPTChatToolCall toolCall,
+        List<HazinaChatMessage> messages,
+        HazinaChatToolCall toolCall,
         CancellationToken cancellationToken)
     {
         var key = GetStringParameter(toolCall, "key");
@@ -250,8 +250,8 @@ public sealed class DataGatheringToolsContext : ToolsContextBase
     }
 
     private async Task<string> CheckDataExistsAsync(
-        List<DevGPTChatMessage> messages,
-        DevGPTChatToolCall toolCall,
+        List<HazinaChatMessage> messages,
+        HazinaChatToolCall toolCall,
         CancellationToken cancellationToken)
     {
         var key = GetStringParameter(toolCall, "key");
@@ -263,8 +263,8 @@ public sealed class DataGatheringToolsContext : ToolsContextBase
     }
 
     private async Task<string> GetExistingDataAsync(
-        List<DevGPTChatMessage> messages,
-        DevGPTChatToolCall toolCall,
+        List<HazinaChatMessage> messages,
+        HazinaChatToolCall toolCall,
         CancellationToken cancellationToken)
     {
         var key = GetStringParameter(toolCall, "key");
@@ -375,7 +375,7 @@ public sealed class DataGatheringToolsContext : ToolsContextBase
     private static ChatToolParameter CreateParameter(string name, string description, string type, bool required)
         => new() { Name = name, Description = description, Type = type, Required = required };
 
-    private static string? GetStringParameter(DevGPTChatToolCall toolCall, string name)
+    private static string? GetStringParameter(HazinaChatToolCall toolCall, string name)
     {
         using var doc = JsonDocument.Parse(toolCall.FunctionArguments);
         return doc.RootElement.TryGetProperty(name, out var el) ? el.GetString() : null;
@@ -387,8 +387,8 @@ public sealed class DataGatheringToolsContext : ToolsContextBase
     #endregion
 
     private async Task<string> UpdateAnalysisFieldAsync(
-        List<DevGPTChatMessage> messages,
-        DevGPTChatToolCall toolCall,
+        List<HazinaChatMessage> messages,
+        HazinaChatToolCall toolCall,
         CancellationToken cancellationToken)
     {
         if (_analysisProvider == null)

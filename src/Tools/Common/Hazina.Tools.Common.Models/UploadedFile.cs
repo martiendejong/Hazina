@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 // Keep legacy namespace to minimize breaking changes across the codebase
-namespace DevGPTStore.Models
+namespace HazinaStore.Models
 {
     public class UploadedFile : IEmbedding
     {

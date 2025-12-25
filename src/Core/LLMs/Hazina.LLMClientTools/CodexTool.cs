@@ -3,7 +3,7 @@ using System.Text;
 
 public static class CodexTool
 {
-    public static DevGPTChatTool Create()
+    public static HazinaChatTool Create()
     {
         var promptParam = new ChatToolParameter { Name = "prompt", Description = "The coding task to send to Codex.", Type = "string", Required = true };
         var workingDirParam = new ChatToolParameter { Name = "working_dir", Description = "Optional working directory path for the code task.", Type = "string", Required = false };
@@ -11,11 +11,11 @@ public static class CodexTool
         var extraArgsParam = new ChatToolParameter { Name = "extra_args", Description = "Optional extra CLI args passed verbatim before the prompt.", Type = "string", Required = false };
         var timeoutParam = new ChatToolParameter { Name = "timeout", Description = "Optional timeout in seconds (default 300).", Type = "number", Required = false };
 
-        return new DevGPTChatTool(
+        return new HazinaChatTool(
             name: "codex",
             description: "Calls the Codex CLI (requires 'codex' in PATH and configured) for AI-assisted coding tasks. Returns combined stdout/stderr. Use this to have Codex write, modify, or analyze code in a specific directory.",
             parameters: new List<ChatToolParameter> { promptParam, workingDirParam, modelParam, extraArgsParam, timeoutParam },
-            execute: async (messages, toolCall, cancel) => await DevGPTChatTool.CallTool(async () =>
+            execute: async (messages, toolCall, cancel) => await HazinaChatTool.CallTool(async () =>
             {
                 if (!promptParam.TryGetValue(toolCall, out string prompt))
                     return "No prompt provided";

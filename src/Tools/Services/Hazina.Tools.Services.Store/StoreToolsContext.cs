@@ -1,15 +1,15 @@
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
 using Google.Cloud.BigQuery.V2;
 using OpenAI.Chat;
 using System.Text.Json;
-using DevGPT.GenerationTools.Services.Web;
-using DevGPT.GenerationTools.Services.BigQuery;
-using DevGPT.GenerationTools.Services.FileOps;
+using Hazina.Tools.Services.Web;
+using Hazina.Tools.Services.BigQuery;
+using Hazina.Tools.Services.FileOps;
 using HtmlAgilityPack;
 using System.Linq;
 
-namespace DevGPT.GenerationTools.Services.Store
+namespace Hazina.Tools.Services.Store
 {
     public class StoreToolsContext : ToolsContextBase
     {
@@ -68,7 +68,7 @@ namespace DevGPT.GenerationTools.Services.Store
             var FileParameter = new ChatToolParameter { Name = "file", Description = "The fields and epxressions that will be added in the GROUP BY", Type = "string", Required = false };
             var PromptParameter = new ChatToolParameter { Name = "prompt", Description = "The fields and epxressions that will be added in the HAVING", Type = "string", Required = false };
 
-            var tool = new DevGPTChatTool($"PerformWebSearch", $"Performs a web search using the provided query.",
+            var tool = new HazinaChatTool($"PerformWebSearch", $"Performs a web search using the provided query.",
                 [QueryParameter],
                 async (messages, toolCall, cancel) =>
                 {
@@ -82,7 +82,7 @@ namespace DevGPT.GenerationTools.Services.Store
                 });
             Tools.Add(tool);
 
-            tool = new DevGPTChatTool($"PerformReasoning", $"Performs reasoning based on the problem statement",
+            tool = new HazinaChatTool($"PerformReasoning", $"Performs reasoning based on the problem statement",
                 [ProblemStatementParameter],
                 async (messages, toolCall, cancel) =>
                 {
@@ -96,7 +96,7 @@ namespace DevGPT.GenerationTools.Services.Store
                 });
             Tools.Add(tool);
 
-            tool = new DevGPTChatTool($"PerformReadSitemap", $"Reads the sitemap from a sitemap url",
+            tool = new HazinaChatTool($"PerformReadSitemap", $"Reads the sitemap from a sitemap url",
                 [UrlParameter],
                 async (messages, toolCall, cancel) =>
                 {
@@ -110,7 +110,7 @@ namespace DevGPT.GenerationTools.Services.Store
                 });
             Tools.Add(tool);
 
-            tool = new DevGPTChatTool($"PerformReadHtmlPage", $"Reads an HTML page and returns the content, either raw HTML or the extracted text",
+            tool = new HazinaChatTool($"PerformReadHtmlPage", $"Reads an HTML page and returns the content, either raw HTML or the extracted text",
                 [UrlParameter, RawParameter],
                 async (messages, toolCall, cancel) =>
                 {
@@ -126,7 +126,7 @@ namespace DevGPT.GenerationTools.Services.Store
                 });
             Tools.Add(tool);
 
-            tool = new DevGPTChatTool($"PerformReadProjectFile", $"Reads and returns a file from the project",
+            tool = new HazinaChatTool($"PerformReadProjectFile", $"Reads and returns a file from the project",
                 [FileParameter],
                 async (messages, toolCall, cancel) =>
                 {
@@ -140,7 +140,7 @@ namespace DevGPT.GenerationTools.Services.Store
                 });
             Tools.Add(tool);
 
-            tool = new DevGPTChatTool($"AnalyseChatPdfFile", $"Analyse a PDF file that is included in the chat",
+            tool = new HazinaChatTool($"AnalyseChatPdfFile", $"Analyse a PDF file that is included in the chat",
                 [FileParameter],
                 async (messages, toolCall, cancel) =>
                 {
@@ -154,7 +154,7 @@ namespace DevGPT.GenerationTools.Services.Store
                 });
             Tools.Add(tool);
 
-            tool = new DevGPTChatTool($"PerformGetProjectFilesList", $"Gets the list of files that are available in the project",
+            tool = new HazinaChatTool($"PerformGetProjectFilesList", $"Gets the list of files that are available in the project",
                 [],
                 async (messages, toolCall, cancel) =>
                 {
@@ -162,7 +162,7 @@ namespace DevGPT.GenerationTools.Services.Store
                 });
             Tools.Add(tool);
 
-            tool = new DevGPTChatTool($"PerformGetBigQueryResults", $"Query the Google BigQuery MCP server with a prompt",
+            tool = new HazinaChatTool($"PerformGetBigQueryResults", $"Query the Google BigQuery MCP server with a prompt",
                 [PromptParameter],
                 async (messages, toolCall, cancel) =>
                 {
@@ -177,7 +177,7 @@ namespace DevGPT.GenerationTools.Services.Store
         {
             var KeyParameter = new ChatToolParameter { Name = "key", Description = "Gathered data field key (e.g. 'Brand Name', 'Company Website')", Type = "string", Required = true };
             var ContentParameter = new ChatToolParameter { Name = "data", Description = "The gathered information", Type = "string", Required = true };
-            var tool = new DevGPTChatTool($"StoreGatheredData", $"Store relevant information from the chat. Call this function to store information that the user provides through the chat.",
+            var tool = new HazinaChatTool($"StoreGatheredData", $"Store relevant information from the chat. Call this function to store information that the user provides through the chat.",
                 [KeyParameter, ContentParameter],
                 async (messages, toolCall, cancel) =>
                 {
@@ -203,7 +203,7 @@ namespace DevGPT.GenerationTools.Services.Store
             var ContentParameter = new ChatToolParameter { Name = "content", Description = "The generated content for this analysis field", Type = "string", Required = true };
             var FeedbackParameter = new ChatToolParameter { Name = "feedback", Description = "Optional feedback used to refine generation before storing", Type = "string", Required = false };
 
-            //var getAnalysisFields = new DevGPTChatTool($"PerformGetAnalysisFields", $"Returns the list of analysis fields that can be generated for this project and their keys.",
+            //var getAnalysisFields = new HazinaChatTool($"PerformGetAnalysisFields", $"Returns the list of analysis fields that can be generated for this project and their keys.",
             //    [],
             //    async (messages, toolCall, cancel) =>
             //    {
@@ -213,7 +213,7 @@ namespace DevGPT.GenerationTools.Services.Store
             //    });
             //Tools.Add(getAnalysisFields);
 
-            var getAnalysisFieldValue = new DevGPTChatTool($"PerformGetAnalysisFieldValue", $"Returns the value of the analysis field.",
+            var getAnalysisFieldValue = new HazinaChatTool($"PerformGetAnalysisFieldValue", $"Returns the value of the analysis field.",
                 [KeyParameter],
                 async (messages, toolCall, cancel) =>
                 {
@@ -227,7 +227,7 @@ namespace DevGPT.GenerationTools.Services.Store
                 });
             Tools.Add(getAnalysisFieldValue);
 
-            var generateAnalysis = new DevGPTChatTool($"PerformUpdateAnalysisField", $"Updates content for the given analysis field.",
+            var generateAnalysis = new HazinaChatTool($"PerformUpdateAnalysisField", $"Updates content for the given analysis field.",
             [KeyParameter, ContentParameter],
             async (messages, toolCall, cancel) =>
             {
@@ -252,7 +252,7 @@ namespace DevGPT.GenerationTools.Services.Store
             });
             Tools.Add(generateAnalysis);
 
-            var generateAnalysisWithFeedback = new DevGPTChatTool($"PerformGenerateAnalysisFieldWithFeedback", $"Stores generated content for the given analysis field, with an optional feedback parameter used during generation.",
+            var generateAnalysisWithFeedback = new HazinaChatTool($"PerformGenerateAnalysisFieldWithFeedback", $"Stores generated content for the given analysis field, with an optional feedback parameter used during generation.",
             [KeyParameter, ContentParameter, FeedbackParameter],
             async (messages, toolCall, cancel) =>
             {

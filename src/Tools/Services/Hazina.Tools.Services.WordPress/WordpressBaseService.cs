@@ -1,12 +1,12 @@
 using System.Net.Http.Headers;
 using System.Text;
-using DevGPT.GenerationTools.Data;
+using Hazina.Tools.Data;
 using Microsoft.Extensions.Configuration;
-using DevGPT.GenerationTools.Services.FileOps.Helpers;
+using Hazina.Tools.Services.FileOps.Helpers;
 using Polly;
 using Polly.Extensions.Http;
 
-namespace DevGPTStore.Services
+namespace HazinaStore.Services
 {
     public class WordpressBaseService
     {

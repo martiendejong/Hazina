@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace DevGPT.App.EmbeddingsViewer
+namespace Hazina.App.EmbeddingsViewer
 {
     public partial class App : Application
     {

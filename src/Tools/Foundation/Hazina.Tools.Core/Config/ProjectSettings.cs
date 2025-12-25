@@ -1,4 +1,4 @@
-namespace DevGPTStore.Models
+namespace HazinaStore.Models
 {
     public class ProjectSettings
     {

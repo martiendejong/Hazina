@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 
-namespace DevGPT.ChatShared
+namespace Hazina.ChatShared
 {
     public partial class ChatWindow : Window, INotifyPropertyChanged
     {

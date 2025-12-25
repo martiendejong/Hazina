@@ -1,4 +1,4 @@
-namespace DevGPTStore.Services
+namespace HazinaStore.Services
 {
     public class WordPressCategory
     {

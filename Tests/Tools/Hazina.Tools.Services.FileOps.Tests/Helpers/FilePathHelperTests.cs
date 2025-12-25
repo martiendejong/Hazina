@@ -1,7 +1,7 @@
-using DevGPT.GenerationTools.Services.FileOps.Helpers;
+using Hazina.GenerationTools.Services.FileOps.Helpers;
 using FluentAssertions;
 
-namespace DevGPT.GenerationTools.Services.FileOps.Tests.Helpers;
+namespace Hazina.GenerationTools.Services.FileOps.Tests.Helpers;
 
 public class FilePathHelperTests
 {

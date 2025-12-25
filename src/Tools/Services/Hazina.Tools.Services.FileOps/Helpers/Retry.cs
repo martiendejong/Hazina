@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DevGPT.GenerationTools.Services.FileOps.Helpers
+namespace Hazina.Tools.Services.FileOps.Helpers
 {
     public class Retry
     {

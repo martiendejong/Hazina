@@ -1,6 +1,6 @@
 using System;
 
-namespace DevGPTStore.Services
+namespace HazinaStore.Services
 {
     public class WordPressConfigurationException : Exception
     {

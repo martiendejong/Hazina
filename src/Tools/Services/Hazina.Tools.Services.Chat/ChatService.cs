@@ -1,18 +1,18 @@
-using DevGPT.GenerationTools.AI.Agents;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Services.DataGathering.Abstractions;
+using Hazina.Tools.AI.Agents;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
+using Hazina.Tools.Services.DataGathering.Abstractions;
 using System.Linq;
 using System.Threading;
 using System.Collections.Generic;
 using System.Text.Json;
-using DevGPT.GenerationTools.Services.Web;
+using Hazina.Tools.Services.Web;
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using DevGPT.GenerationTools.Services.Chat;
+using Hazina.Tools.Services.Chat;
 
-namespace DevGPT.GenerationTools.Services.Chat
+namespace Hazina.Tools.Services.Chat
 {
     public partial class ChatService : ChatServiceBase, IChatService
     {
@@ -145,7 +145,7 @@ namespace DevGPT.GenerationTools.Services.Chat
 
         public ConversationMessage AddFileMessage(string projectId, string chatId, string filePath, bool includeInProject)
         {
-            var fileMessage = new DevGPTStoreChatFile { File = filePath, IncludeInProject = includeInProject };
+            var fileMessage = new HazinaStoreChatFile { File = filePath, IncludeInProject = includeInProject };
             var chatItem = new ConversationMessage { Role = ChatMessageRole.Assistant, Text = JsonSerializer.Serialize(fileMessage) };
             var messages = GetChatMessages(projectId, chatId);
             // Prevent duplicate file messages
@@ -164,7 +164,7 @@ namespace DevGPT.GenerationTools.Services.Chat
 
         public ConversationMessage AddFileMessage(string projectId, string chatId, string userId, string filePath, bool includeInProject)
         {
-            var fileMessage = new DevGPTStoreChatFile { File = filePath, IncludeInProject = includeInProject };
+            var fileMessage = new HazinaStoreChatFile { File = filePath, IncludeInProject = includeInProject };
             var chatItem = new ConversationMessage { Role = ChatMessageRole.Assistant, Text = JsonSerializer.Serialize(fileMessage) };
             var messages = GetChatMessages(projectId, chatId, userId);
             // Prevent duplicate file messages

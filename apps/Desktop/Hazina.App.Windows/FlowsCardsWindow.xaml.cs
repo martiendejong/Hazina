@@ -11,7 +11,7 @@ using System.Collections.Specialized;
 using System.Windows.Media;
 using System.Windows.Documents;
 
-namespace DevGPT.App.Windows;
+namespace Hazina.App.Windows;
 using WpfButton = System.Windows.Controls.Button;
 using WpfListView = System.Windows.Controls.ListView;
 using WpfListViewItem = System.Windows.Controls.ListViewItem;

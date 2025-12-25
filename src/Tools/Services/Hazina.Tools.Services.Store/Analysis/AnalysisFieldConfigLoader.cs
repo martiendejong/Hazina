@@ -1,10 +1,10 @@
-using DevGPT.GenerationTools.Data;
+using Hazina.Tools.Data;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 
-namespace DevGPT.GenerationTools.Services.Store
+namespace Hazina.Tools.Services.Store
 {
     /// <summary>
     /// Centralized loader for analysis field configuration and prompt metadata.

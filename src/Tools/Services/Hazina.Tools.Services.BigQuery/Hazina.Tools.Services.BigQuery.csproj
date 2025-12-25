@@ -3,12 +3,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>DevGPT.GenerationTools.Services.BigQuery</RootNamespace>
+    <RootNamespace>Hazina.Tools.Services.BigQuery</RootNamespace>
     <Version>1.0.17</Version>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DevGPT.GenerationTools.Models\DevGPT.GenerationTools.Models.csproj" />
-    <ProjectReference Include="..\DevGPT.GenerationTools.Data\DevGPT.GenerationTools.Data.csproj" />
+    <ProjectReference Include="..\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
+    <ProjectReference Include="..\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Google.Cloud.BigQuery.V2" Version="3.11.0" />

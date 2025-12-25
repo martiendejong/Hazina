@@ -1,8 +1,8 @@
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
+using Hazina.Tools.Models;
+using Hazina.Tools.Models.WordPress.Blogs;
 using System;
 
-namespace DevGPT.GenerationTools.Models
+namespace Hazina.Tools.Models
 {
     public class ContentItem : Serializer<ContentItem>
     {

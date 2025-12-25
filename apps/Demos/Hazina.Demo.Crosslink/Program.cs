@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -7,7 +7,7 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        // Load OpenAI settings using DevGPT libraries
+        // Load OpenAI settings using Hazina libraries
         var openAIConfig = OpenAIConfig.Load();
         string apikey = openAIConfig.ApiKey;
         var llmClient = new OpenAIClientWrapper(openAIConfig);
@@ -26,7 +26,7 @@ class Program
         var bedrijven = new DocumentStore(bedrijvenEmbeddingStore, bedrijvenTextStore, bedrijvenChunkStore, bedrijvenMetadataStore, llmClient);
 
         // Example CV data (this would be loaded dynamically in a production scenario)
-        var candidateCV = @"**Curriculum Vitae**\n        \n**Persoonlijke gegevens**\nNaam: Mark van den Berg\nAdres: Keizersgracht 112, 1015 CV Amsterdam\nTelefoonnummer: 06-12345678\nE-mail: markvandenberg@email.com\nGeboortedatum: 12 mei 1990\nNationaliteit: Nederlands\nRijbewijs: B\n\n---\n**Profiel**\nAnalytische en gedreven IT-professional met een passie voor softwareontwikkeling en procesoptimalisatie. Ik ben een probleemoplosser die graag complexe vraagstukken analyseert en vertaalt naar effici├½nte technologische oplossingen. Mijn sterke communicatieve vaardigheden maken mij een bruggenbouwer tussen techniek en eindgebruikers. ... (etc, rest of CV as per sample)";
+        var candidateCV = @"**Curriculum Vitae**\n        \n**Persoonlijke gegevens**\nNaam: Mark van den Berg\nAdres: Keizersgracht 112, 1015 CV Amsterdam\nTelefoonnummer: 06-12345678\nE-mail: markvandenberg@email.com\nGeboortedatum: 12 mei 1990\nNationaliteit: Nederlands\nRijbewijs: B\n\n---\n**Profiel**\nAnalytische en gedreven IT-professional met een passie voor softwareontwikkeling en procesoptimalisatie. Ik ben een probleemoplosser die graag complexe vraagstukken analyseert en vertaalt naar effici+�nte technologische oplossingen. Mijn sterke communicatieve vaardigheden maken mij een bruggenbouwer tussen techniek en eindgebruikers. ... (etc, rest of CV as per sample)";
 
         Console.WriteLine("Vacatures vinden op basis van het volgende CV:");
         Console.WriteLine(candidateCV);
@@ -44,32 +44,32 @@ class Program
             Console.WriteLine(vacature);
             Console.WriteLine();
 
-            // Use DevGPT.OpenAI and DevGPT chat classes for interview/chat simulation
+            // Use DevGPT.OpenAI and Hazina chat classes for interview/chat simulation
             var chatClient = llmClient;
-            var messages = new List<DevGPTChatMessage>
+            var messages = new List<HazinaChatMessage>
             {
-                new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "De CV van de kandidaat: " + candidateCV },
-                new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "De vacature: " + vacature },
-                new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "Genereer een sollicitatiegesprek tussen de kandidaat en de interviewer..." }
+                new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = "De CV van de kandidaat: " + candidateCV },
+                new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = "De vacature: " + vacature },
+                new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = "Genereer een sollicitatiegesprek tussen de kandidaat en de interviewer..." }
             };
             var simulatedInterviewResponse = await chatClient.GetResponse(
                 messages,
-                DevGPTChatResponseFormat.Text,
+                HazinaChatResponseFormat.Text,
                 null,
                 new List<ImageData>(), default);
             string simulatedInterview = simulatedInterviewResponse.Result;
 
             // Analyse the match
-            var analysisMessages = new List<DevGPTChatMessage>
+            var analysisMessages = new List<HazinaChatMessage>
             {
-                new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "De CV van de kandidaat: " + candidateCV },
-                new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "De vacature: " + vacature },
-                new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "Het gesimuleerde gesprek: " + simulatedInterview },
-                new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = "Geef een voorlopige analyse conclusie beoordeling van de match en het gesimuleerde gesprek. Geef de match een score tussen 0 en 100..." }
+                new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = "De CV van de kandidaat: " + candidateCV },
+                new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = "De vacature: " + vacature },
+                new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = "Het gesimuleerde gesprek: " + simulatedInterview },
+                new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = "Geef een voorlopige analyse conclusie beoordeling van de match en het gesimuleerde gesprek. Geef de match een score tussen 0 en 100..." }
             };
             var analysisResponse = await chatClient.GetResponse(
                 analysisMessages,
-                DevGPTChatResponseFormat.Text,
+                HazinaChatResponseFormat.Text,
                 null,
                 new List<ImageData>(), default);
             string analysis = analysisResponse.Result;

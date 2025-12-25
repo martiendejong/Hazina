@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace DevGPT.GenerationTools.Models.WordPress.Blogs
+namespace Hazina.Tools.Models.WordPress.Blogs
 {
     public class Serializer<T> : ISerializer
     {

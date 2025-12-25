@@ -3,17 +3,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Data;
-using DevGPTStore.Models;
-using CoreProject = DevGPTStore.Core.Project;
-using LegacyProject = DevGPT.GenerationTools.Models.Project;
-using DevGPT.GenerationTools.Services.Helpers;
-using DevGPT.GenerationTools.Services.FileOps.Helpers;
-using DevGPT.GenerationTools.AI.Agents;
+using Hazina.Tools.Models;
+using Hazina.Tools.Data;
+using HazinaStore.Models;
+using CoreProject = HazinaStore.Core.Project;
+using LegacyProject = Hazina.Tools.Models.Project;
+using Hazina.Tools.Services.Helpers;
+using Hazina.Tools.Services.FileOps.Helpers;
+using Hazina.Tools.AI.Agents;
 using Microsoft.Extensions.Configuration;
 
-namespace DevGPT.GenerationTools.Services.Helpers
+namespace Hazina.Tools.Services.Helpers
 {
     /// <summary>
     /// Service for synchronizing data between Core API and legacy file-based system
@@ -22,13 +22,13 @@ namespace DevGPT.GenerationTools.Services.Helpers
     public class LegacySyncService
     {
         private readonly ProjectsRepository _legacyProjects;
-        private readonly DevGPTStoreConfig _config;
+        private readonly HazinaStoreConfig _config;
         private readonly IConfiguration _configuration;
         private readonly ProjectGlobalSettingsRepository _globalSettings;
 
         public LegacySyncService(
             ProjectsRepository legacyProjects,
-            DevGPTStoreConfig config,
+            HazinaStoreConfig config,
             IConfiguration configuration = null)
         {
             _legacyProjects = legacyProjects ?? throw new ArgumentNullException(nameof(legacyProjects));

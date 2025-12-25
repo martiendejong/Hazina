@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
-using DevGPTStore.Models;
+using HazinaStore.Models;
 
-namespace DevGPTStore.ContentRetrieval
+namespace HazinaStore.ContentRetrieval
 {
     internal static class CRHelpers
     {

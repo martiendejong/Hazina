@@ -12,7 +12,7 @@ public class QuickAgentCreator
     /// <summary>
     /// Centralized agent creation method.
     /// </summary>
-    public async Task<DevGPTAgent> Create(
+    public async Task<HazinaAgent> Create(
         string name,
         string systemPrompt,
         IEnumerable<(IDocumentStore Store, bool Write)> stores,
@@ -27,7 +27,7 @@ public class QuickAgentCreator
         return await AgentFactory.CreateAgent(name, systemPrompt, stores, functions, agents, flows, isCoder);
     }
 
-    public DevGPTFlow CreateFlow(string name, List<string> agents)
+    public HazinaFlow CreateFlow(string name, List<string> agents)
     {
         return AgentFactory.CreateFlow(name, agents);
     }

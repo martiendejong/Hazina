@@ -1,4 +1,4 @@
-# Semantic Kernel Integration Plan for DevGPT
+# Semantic Kernel Integration Plan for Hazina
 
 ## ✅ IMPLEMENTATION COMPLETE - All Core Phases Done
 
@@ -7,7 +7,7 @@
 **Commits**: 5 commits (8ec06a1, 5284c8a, fff917d, 41ea13d, 0bc5657)
 
 ## Overview
-Integrate Microsoft Semantic Kernel into DevGPT to leverage enterprise-grade orchestration, plugin architecture, and advanced agent capabilities while preserving existing DocumentStore RAG functionality.
+Integrate Microsoft Semantic Kernel into Hazina to leverage enterprise-grade orchestration, plugin architecture, and advanced agent capabilities while preserving existing DocumentStore RAG functionality.
 
 **✅ Completed**: Core integration (Phases 1-5)
 **📋 Optional**: Advanced features (Phase 6)
@@ -17,29 +17,29 @@ Integrate Microsoft Semantic Kernel into DevGPT to leverage enterprise-grade orc
 
 ## ✅ Phase 1: Core Infrastructure - COMPLETE (Commit: 8ec06a1)
 
-### 1.1 Create New Library: `DevGPT.LLMs.SemanticKernel`
+### 1.1 Create New Library: `Hazina.LLMs.SemanticKernel`
 - **Package**: `Microsoft.SemanticKernel` (latest stable)
-- **Dependencies**: `DevGPT.LLMs.Client`, `DevGPT.LLMs.Classes`
+- **Dependencies**: `Hazina.LLMs.Client`, `Hazina.LLMs.Classes`
 - **Structure**:
   ```
-  DevGPT.LLMs.SemanticKernel/
+  Hazina.LLMs.SemanticKernel/
     ├── Core/
     │   ├── SemanticKernelClientWrapper.cs (implements ILLMClient)
     │   ├── SemanticKernelConfig.cs
-    │   └── DevGPTKernelBuilder.cs
+    │   └── HazinaKernelBuilder.cs
     ├── Extensions/
-    │   ├── DevGPTSemanticKernelExtensions.cs (ChatHistory <-> DevGPTChatMessage)
+    │   ├── HazinaSemanticKernelExtensions.cs (ChatHistory <-> HazinaChatMessage)
     │   └── ToolsContextPlugin.cs (IToolsContext -> SK Plugin adapter)
     ├── Handlers/
     │   └── SemanticKernelStreamHandler.cs
     └── Plugins/
-        └── BaseDevGPTPlugin.cs
+        └── BaseHazinaPlugin.cs
   ```
 
 ### 1.2 Implement `SemanticKernelClientWrapper : ILLMClient`
 Key responsibilities:
 - Wrap SK `IChatCompletionService`
-- Convert `DevGPTChatMessage` ↔ SK `ChatHistory`
+- Convert `HazinaChatMessage` ↔ SK `ChatHistory`
 - Map `IToolsContext` tools to SK plugins dynamically
 - Implement streaming via `IAsyncEnumerable<StreamingChatMessageContent>`
 - Extract token usage from SK metadata
@@ -81,7 +81,7 @@ Convert existing store tools to SK plugins:
 ### 2.3 Dynamic Tool Registration Adapter
 Create `ToolsContextPluginAdapter`:
 - Scan `IToolsContext.Tools` collection
-- Generate SK `KernelFunction` for each `DevGPTChatTool`
+- Generate SK `KernelFunction` for each `HazinaChatTool`
 - Register dynamically with kernel
 - Preserve existing tool execution signatures
 
@@ -89,9 +89,9 @@ Create `ToolsContextPluginAdapter`:
 
 ## ✅ Phase 3: Agent Layer Integration - COMPLETE (Commit: fff917d)
 
-### 3.1 Create `SemanticKernelAgent : DevGPTAgent`
+### 3.1 Create `SemanticKernelAgent : HazinaAgent`
 Options:
-- **Option A (Lightweight)**: Extend `DevGPTAgent`, swap `DocumentGenerator` with SK-backed version
+- **Option A (Lightweight)**: Extend `HazinaAgent`, swap `DocumentGenerator` with SK-backed version
 - **Option B (Full SK)**: Use SK's native `ChatCompletionAgent` with custom plugins
 
 Recommended: **Option A** for backward compatibility
@@ -104,7 +104,7 @@ Recommended: **Option A** for backward compatibility
 
 ### 3.3 Multi-Agent Orchestration with SK Agents
 - Create `SemanticKernelFlowOrchestrator`
-- Map `DevGPTFlow` to SK agent group chat patterns
+- Map `HazinaFlow` to SK agent group chat patterns
 - Support handoff between agents
 - Maintain existing flow execution contract
 
@@ -115,9 +115,9 @@ Recommended: **Option A** for backward compatibility
 ### 4.1 Implement Streaming Bridge
 ```csharp
 public async Task<LLMResponse<string>> GetResponseStream(
-    List<DevGPTChatMessage> messages,
+    List<HazinaChatMessage> messages,
     Action<string> onChunkReceived,
-    DevGPTChatResponseFormat responseFormat,
+    HazinaChatResponseFormat responseFormat,
     IToolsContext? toolsContext,
     List<ImageData>? images,
     CancellationToken cancel)
@@ -240,10 +240,10 @@ Recommended: **Hybrid** - use SK for new code, maintain compatibility
 
 ### New Files to Create:
 
-1. **`DevGPT.LLMs.SemanticKernel.csproj`** - new library project
+1. **`Hazina.LLMs.SemanticKernel.csproj`** - new library project
 2. **`SemanticKernelClientWrapper.cs`** - core `ILLMClient` implementation
 3. **`SemanticKernelConfig.cs`** - configuration model
-4. **`DevGPTSemanticKernelExtensions.cs`** - conversion extensions
+4. **`HazinaSemanticKernelExtensions.cs`** - conversion extensions
 5. **`ToolsContextPluginAdapter.cs`** - dynamic tool-to-plugin conversion
 6. **`DocumentStorePlugin.cs`** - store operations plugin
 7. **`RAGPlugin.cs`** - RAG-specific operations
@@ -255,13 +255,13 @@ Recommended: **Hybrid** - use SK for new code, maintain compatibility
 
 1. **`AgentFactory.cs`** - add SK agent creation methods
 2. **`DocumentGenerator.cs`** - add SK client support
-3. **`DevGPT.sln`** - add new project
+3. **`Hazina.sln`** - add new project
 4. **`appsettings.json`** - add SK configuration section
 5. **`README.md`** - document SK integration
 
 ### Tests to Create:
 
-1. **`DevGPT.LLMs.SemanticKernel.Tests/`**
+1. **`Hazina.LLMs.SemanticKernel.Tests/`**
    - `SemanticKernelClientWrapperTests.cs`
    - `PluginAdapterTests.cs`
    - `DocumentStorePluginTests.cs`

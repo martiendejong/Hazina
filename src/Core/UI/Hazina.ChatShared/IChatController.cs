@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DevGPT.ChatShared
+namespace Hazina.ChatShared
 {
     public interface IChatController
     {

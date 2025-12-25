@@ -1,8 +1,8 @@
-using DevGPT.DynamicAPI.Core;
-using DevGPT.DynamicAPI.Tools;
-using DevGPT.DynamicAPI.Models;
+using Hazina.DynamicAPI.Core;
+using Hazina.DynamicAPI.Tools;
+using Hazina.DynamicAPI.Models;
 
-namespace DevGPT.DynamicAPI.Examples;
+namespace Hazina.DynamicAPI.Examples;
 
 /// <summary>
 /// Example usage of the Dynamic API Integration system
@@ -20,7 +20,7 @@ public class DynamicAPIExample
         // Example 2: Use DynamicAPIClient directly
         await DirectAPICallExample(credStore);
 
-        // Example 3: Use with DevGPT agent tools
+        // Example 3: Use with Hazina agent tools
         await AgentToolExample(credStore);
 
         // Example 4: Web search for API documentation
@@ -78,7 +78,7 @@ public class DynamicAPIExample
         Console.WriteLine("=== Example 3: Agent Tool Usage ===\n");
 
         var apiClient = new DynamicAPIClient(credStore);
-        var apiTool = new DynamicAPIDevGPTTool(apiClient);
+        var apiTool = new DynamicAPIHazinaTool(apiClient);
 
         Console.WriteLine($"Tool Name: {apiTool.FunctionName}");
         Console.WriteLine($"Description: {apiTool.Description}");
@@ -164,7 +164,7 @@ public class DynamicAPIExample
 }
 
 /// <summary>
-/// Example of how to use Dynamic API tools with a DevGPT agent
+/// Example of how to use Dynamic API tools with a Hazina agent
 /// </summary>
 public class AgentIntegrationExample
 {
@@ -176,9 +176,9 @@ public class AgentIntegrationExample
         var tools = new ToolsContext();
 
         // Add dynamic API tools
-        tools.Add(new WebSearchDevGPTTool(searchTool));
-        tools.Add(new FetchUrlDevGPTTool(searchTool));
-        tools.Add(new DynamicAPIDevGPTTool(apiClient));
+        tools.Add(new WebSearchHazinaTool(searchTool));
+        tools.Add(new FetchUrlHazinaTool(searchTool));
+        tools.Add(new DynamicAPIHazinaTool(apiClient));
 
         return tools;
     }
@@ -194,9 +194,9 @@ public class AgentIntegrationExample
             Console.WriteLine($"  - {tool.FunctionName}: {tool.Description}");
         }
 
-        // Now you can use this ToolsContext with any DevGPTAgent
+        // Now you can use this ToolsContext with any HazinaAgent
         // Example:
-        // var agent = new DevGPTAgent("api_researcher", generator, tools);
+        // var agent = new HazinaAgent("api_researcher", generator, tools);
         // var response = await agent.Generator.GetResponse("Find and call the Stripe API to list customers", cancel);
     }
 }

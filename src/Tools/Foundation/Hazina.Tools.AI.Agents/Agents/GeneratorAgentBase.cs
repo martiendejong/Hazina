@@ -1,7 +1,7 @@
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
-using DevGPTStore.Models;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Models.WordPress.Blogs;
+using HazinaStore.Models;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
 using System.IO;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
@@ -9,57 +9,57 @@ using System.Linq;
 using OpenAI.Chat;
 using System.Collections.Generic;
 using _File = System.IO.File;
-using DevGPTStore;
-using DevGPT.GenerationTools.Services.Store;
-using DevGPT.GenerationTools.Services.Web;
-using DevGPT.GenerationTools.Services.FileOps.Helpers;
+using HazinaStore;
+using Hazina.Tools.Services.Store;
+using Hazina.Tools.Services.Web;
+using Hazina.Tools.Services.FileOps.Helpers;
 using System.Text.Json;
 using System;
 using System.Reflection;
 
-namespace DevGPT.GenerationTools.AI.Agents
+namespace Hazina.Tools.AI.Agents
 {
     public class GeneratorAgentBase
     {
         public IConfiguration AppConfig;
-        public DevGPTStoreConfig Config;
+        public HazinaStoreConfig Config;
         public ProjectsRepository Projects;
         public IntakeRepository Intake;
-        public DevGPTStoreAgent DevGPTStoreAgent;
+        public HazinaStoreAgent HazinaStoreAgent;
 
         public string LogFilePath;
         public string BasisPrompt;
-        private readonly DevGPT.GenerationTools.Services.Embeddings.EmbeddingsService _embeddings;
+        private readonly Hazina.Tools.Services.Embeddings.EmbeddingsService _embeddings;
         private readonly ProjectFileLocator _fileLocator;
         private readonly ProjectEmbeddingService _embeddingService;
 
-        public DevGPTStoreLogger GetLogger(string project)
+        public HazinaStoreLogger GetLogger(string project)
         {
-            return new DevGPTStoreLogger(LogFilePath, project);
+            return new HazinaStoreLogger(LogFilePath, project);
         }
 
         public GeneratorAgentBase(IConfiguration configuration, string basisPrompt)
         {
             BasisPrompt = basisPrompt;
             AppConfig = configuration;
-            Config = DevGPTStoreConfigLoader.LoadDevGPTStoreConfig();
+            Config = HazinaStoreConfigLoader.LoadHazinaStoreConfig();
             Projects = new ProjectsRepository(Config, configuration);
             Intake = new IntakeRepository(Config, configuration);
-            DevGPTStoreAgent = new DevGPTStoreAgent(Projects);
+            HazinaStoreAgent = new HazinaStoreAgent(Projects);
             LogFilePath = Path.Combine(Projects.ProjectsFolder, "logs.txt");
-            _embeddings = new DevGPT.GenerationTools.Services.Embeddings.EmbeddingsService(configuration);
+            _embeddings = new Hazina.Tools.Services.Embeddings.EmbeddingsService(configuration);
             _fileLocator = new ProjectFileLocator(Projects.ProjectsFolder);
             var chatRepository = new ProjectChatRepository(_fileLocator);
             _embeddingService = new ProjectEmbeddingService(_fileLocator, chatRepository);
         }
 
         // TODO: Type conflict between DevGPT.Classes and DevGPT.LLMs.Classes - requires package alignment
-        /* protected List<global::DevGPT.Classes.DevGPTChatMessage> GetAssistantPrompts(string specificPrompt)
+        /* protected List<global::DevGPT.Classes.HazinaChatMessage> GetAssistantPrompts(string specificPrompt)
         {
-            var assistantPrompts = new List<global::DevGPT.Classes.DevGPTChatMessage>()
+            var assistantPrompts = new List<global::DevGPT.Classes.HazinaChatMessage>()
             {
-                new global::DevGPT.Classes.DevGPTChatMessage(global::DevGPT.Classes.DevGPTMessageRole.System, BasisPrompt),
-                new global::DevGPT.Classes.DevGPTChatMessage(global::DevGPT.Classes.DevGPTMessageRole.System, specificPrompt),
+                new global::DevGPT.Classes.HazinaChatMessage(global::DevGPT.Classes.HazinaMessageRole.System, BasisPrompt),
+                new global::DevGPT.Classes.HazinaChatMessage(global::DevGPT.Classes.HazinaMessageRole.System, specificPrompt),
             };
             return assistantPrompts;
         } */
@@ -186,18 +186,18 @@ namespace DevGPT.GenerationTools.AI.Agents
             var store = await InitStore(project);
             var folder = _fileLocator.GetProjectFolder(project.Id);
             var setup = StoreProvider.GetStoreSetup(folder, Config.ApiSettings.OpenApiKey);
-            var g = new DocumentGenerator(setup.Store, new List<DevGPTChatMessage>(), setup.LLMClient, new List<IDocumentStore>());
+            var g = new DocumentGenerator(setup.Store, new List<HazinaChatMessage>(), setup.LLMClient, new List<IDocumentStore>());
             return g;
         }
 
         public async Task<DocumentGenerator> GetGenerator(Project project, string prompt)
         {
-            var assistantPrompts = new List<DevGPTChatMessage>()
+            var assistantPrompts = new List<HazinaChatMessage>()
             {
-                new DevGPTChatMessage(DevGPTMessageRole.System, prompt),
+                new HazinaChatMessage(HazinaMessageRole.System, prompt),
             };
             if(!string.IsNullOrWhiteSpace(project.KlantSpecifiekePrompt))
-                assistantPrompts.Add(new DevGPTChatMessage(DevGPTMessageRole.System, project.KlantSpecifiekePrompt));
+                assistantPrompts.Add(new HazinaChatMessage(HazinaMessageRole.System, project.KlantSpecifiekePrompt));
 
             var store = await InitStore(project);
             var folder = _fileLocator.GetProjectFolder(project.Id);
@@ -212,7 +212,7 @@ namespace DevGPT.GenerationTools.AI.Agents
             var project = Projects.Load(id);
             var store = await InitStore(project);
             DocumentGenerator g = await GetGenerator(project, systemPrompts[0]);
-            g.BaseMessages.AddRange(systemPrompts.Skip(1).Select(p => new DevGPTChatMessage(DevGPTMessageRole.System, p)));
+            g.BaseMessages.AddRange(systemPrompts.Skip(1).Select(p => new HazinaChatMessage(HazinaMessageRole.System, p)));
             var context = new StoreToolsContext(new OpenAIConfig().Model, Config.ApiSettings.OpenApiKey, store, Projects, Intake, id, "", this);
             var tokenSource = new CancellationTokenSource();
             
@@ -245,7 +245,7 @@ namespace DevGPT.GenerationTools.AI.Agents
             var project = Projects.Load(id);
             var store = await InitStore(project);
             DocumentGenerator g = await GetGenerator(project, systemPrompts[0]);
-            g.BaseMessages.AddRange(systemPrompts.Skip(1).Select(p => new DevGPTChatMessage(DevGPTMessageRole.System, p)));
+            g.BaseMessages.AddRange(systemPrompts.Skip(1).Select(p => new HazinaChatMessage(HazinaMessageRole.System, p)));
             var context = new StoreToolsContext(new OpenAIConfig().Model, Config.ApiSettings.OpenApiKey, store, Projects, Intake, id, "", this);
             var tokenSource = new CancellationTokenSource();
             var response = await g.GetResponse<T>(instruction, tokenSource.Token, [], true, true, context);

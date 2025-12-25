@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using System.Net;
 using System.Net.Http.Headers;
 
-namespace DevGPTStore.Services
+namespace HazinaStore.Services
 {
     public class WordpressBlogService : WordpressBaseService
     {

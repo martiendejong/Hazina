@@ -1,9 +1,9 @@
-using DevGPT.GenerationTools.Data;
+using Hazina.Tools.Data;
 using System.Threading;
 using System.Threading.Tasks;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Models;
 
-namespace DevGPT.GenerationTools.Services.Chat
+namespace Hazina.Tools.Services.Chat
 {
     public class ConversationStarterService : ChatServiceBase, IConversationStarterService
     {

@@ -1,20 +1,20 @@
-using DevGPT.GenerationTools.AI.Agents;
-using DevGPT.GenerationTools.Data;
+using Hazina.Tools.AI.Agents;
+using Hazina.Tools.Data;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Services.Store;
-using DevGPT.GenerationTools.Services.Web;
-using DevGPT.GenerationTools.Services.DataGathering.Abstractions;
+using Hazina.Tools.Models;
+using Hazina.Tools.Services.Store;
+using Hazina.Tools.Services.Web;
+using Hazina.Tools.Services.DataGathering.Abstractions;
 using OpenAI.Chat;
 using System.Reflection;
 using System.Linq;
-using DevGPTStore;
+using HazinaStore;
 using Mscc.GenerativeAI;
 using System.IO;
 
-namespace DevGPT.GenerationTools.Services.Chat
+namespace Hazina.Tools.Services.Chat
 {
     public class ChatStreamService : ChatServiceBase, IChatStreamService
     {
@@ -93,7 +93,7 @@ namespace DevGPT.GenerationTools.Services.Chat
             { 
                 chatMessage?.Message ?? string.Empty,
                 tokenSource.Token,
-                new List<DevGPTChatMessage>(),
+                new List<HazinaChatMessage>(),
                 true,
                 true,
                 _toolsContextFactory(context, projectId, chatId, string.Empty),
@@ -163,7 +163,7 @@ namespace DevGPT.GenerationTools.Services.Chat
                 }
             }
 
-            var baseMessages = new System.Collections.Generic.List<DevGPTChatMessage>();
+            var baseMessages = new System.Collections.Generic.List<HazinaChatMessage>();
             if (contextMessages != null)
             {
                 foreach (var m in contextMessages)

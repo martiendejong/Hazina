@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
+using Hazina.Tools.Models;
+using Hazina.Tools.Models.WordPress.Blogs;
 
 public class ChatMetadata : Serializer<ChatMetadata>
 {

@@ -1,4 +1,4 @@
-namespace DevGPT.GenerationTools.Data
+namespace Hazina.Tools.Data
 {
     public class StoreSetup
     {

@@ -1,4 +1,4 @@
-namespace DevGPT.AgentFactory.Tests;
+namespace Hazina.AgentFactory.Tests;
 
 public class AgentFactoryBasicTests
 {

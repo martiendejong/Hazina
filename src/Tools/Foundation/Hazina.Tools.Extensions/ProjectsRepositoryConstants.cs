@@ -1,4 +1,4 @@
-using DevGPT.GenerationTools.Data;
+using Hazina.Tools.Data;
 
 namespace backend.Extensions
 {

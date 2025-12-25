@@ -1,8 +1,8 @@
 using System.Threading.Channels;
 
-public class DevGPTChatTool
+public class HazinaChatTool
 {
-    public DevGPTChatTool(string name, string description, List<ChatToolParameter> parameters, Func<List<DevGPTChatMessage>, DevGPTChatToolCall, CancellationToken, Task<string>> execute)
+    public HazinaChatTool(string name, string description, List<ChatToolParameter> parameters, Func<List<HazinaChatMessage>, HazinaChatToolCall, CancellationToken, Task<string>> execute)
     {
         FunctionName = name;
         Description = description;
@@ -12,7 +12,7 @@ public class DevGPTChatTool
     public string FunctionName {  get; set; }
     public string Description { get; set; }
     public List<ChatToolParameter> Parameters { get; set; }
-    public Func<List<DevGPTChatMessage>, DevGPTChatToolCall, CancellationToken, Task<string>> Execute { get; set; }
+    public Func<List<HazinaChatMessage>, HazinaChatToolCall, CancellationToken, Task<string>> Execute { get; set; }
 
     public static async Task<string> CallTool(Func<Task<string>> action, CancellationToken cancel)
     {

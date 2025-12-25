@@ -1,4 +1,4 @@
-﻿namespace DevGPT.GenerationTools.Models.Social
+﻿namespace Hazina.Tools.Models.Social
 {
     public enum SocialMediaAddressStatus
     {

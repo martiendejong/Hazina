@@ -1,14 +1,14 @@
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Services.DataGathering.Abstractions;
-using DevGPT.GenerationTools.Services.DataGathering.Models;
-using DevGPT.GenerationTools.Services.DataGathering.ToolsContexts;
+using Hazina.Tools.Models;
+using Hazina.Tools.Services.DataGathering.Abstractions;
+using Hazina.Tools.Services.DataGathering.Models;
+using Hazina.Tools.Services.DataGathering.ToolsContexts;
 using Microsoft.Extensions.Logging;
-using DevGPT.GenerationTools.Data;
+using Hazina.Tools.Data;
 using System.IO;
-using DevGPT.GenerationTools.Services.Store;
+using Hazina.Tools.Services.Store;
 using OpenAI.Chat;
 
-namespace DevGPT.GenerationTools.Services.DataGathering.Services;
+namespace Hazina.Tools.Services.DataGathering.Services;
 
 /// <summary>
 /// Implementation of <see cref="IDataGatheringService"/> that uses LLM calls to extract
@@ -79,7 +79,7 @@ Only store NEW or changed profile facts; ignore repeats.";
         string projectId,
         string chatId,
         string userMessage,
-        IEnumerable<DevGPTChatMessage> conversationHistory,
+        IEnumerable<HazinaChatMessage> conversationHistory,
         string? userId = null,
         CancellationToken cancellationToken = default)
     {
@@ -99,7 +99,7 @@ Only store NEW or changed profile facts; ignore repeats.";
             // Make the LLM call with tools
             var response = await client.GetResponse(
                 messages,
-                DevGPTChatResponseFormat.Text,
+                HazinaChatResponseFormat.Text,
                 toolsContext,
                 images: null,
                 cancellationToken);
@@ -181,13 +181,13 @@ Only store NEW or changed profile facts; ignore repeats.";
         return success;
     }
 
-    private List<DevGPTChatMessage> BuildExtractionMessages(
+    private List<HazinaChatMessage> BuildExtractionMessages(
         string userMessage,
-        IEnumerable<DevGPTChatMessage> conversationHistory)
+        IEnumerable<HazinaChatMessage> conversationHistory)
     {
-        var messages = new List<DevGPTChatMessage>
+        var messages = new List<HazinaChatMessage>
         {
-            new(DevGPTMessageRole.System, _systemPrompt)
+            new(HazinaMessageRole.System, _systemPrompt)
         };
 
         // Include recent conversation context (limited to avoid token overflow)
@@ -197,13 +197,13 @@ Only store NEW or changed profile facts; ignore repeats.";
 
         if (recentHistory.Count > 0)
         {
-            messages.Add(new DevGPTChatMessage(DevGPTMessageRole.System, "Here is the recent conversation context:"));
+            messages.Add(new HazinaChatMessage(HazinaMessageRole.System, "Here is the recent conversation context:"));
             messages.AddRange(recentHistory);
         }
 
         // Add the current message to analyze
-        messages.Add(new DevGPTChatMessage(
-            DevGPTMessageRole.User,
+        messages.Add(new HazinaChatMessage(
+            HazinaMessageRole.User,
             $"Analyze this message for any information to extract and store:\n\n{userMessage}"));
 
         return messages;

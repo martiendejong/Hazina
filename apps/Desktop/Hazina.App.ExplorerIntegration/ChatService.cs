@@ -2,13 +2,13 @@ using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace DevGPT.App.ExplorerIntegration
+namespace Hazina.App.ExplorerIntegration
 {
     public static class ChatService
     {
-        public static async Task<DevGPT.ChatShared.ChatWindow> CreateChatWindowAsync(string folder)
+        public static async Task<Hazina.ChatShared.ChatWindow> CreateChatWindowAsync(string folder)
         {
-            var apiKey = Microsoft.Win32.Registry.GetValue("HKEY_CURRENT_USER\\Software\\DevGPT\\OpenAI", "ApiKey", null) as string;
+            var apiKey = Microsoft.Win32.Registry.GetValue("HKEY_CURRENT_USER\\Software\\Hazina\\OpenAI", "ApiKey", null) as string;
             if (string.IsNullOrWhiteSpace(apiKey))
             {
                 var dlg = new EmbedDialog(folder);
@@ -19,7 +19,7 @@ namespace DevGPT.App.ExplorerIntegration
                 {
                     apiKey = dlg.OpenAIKey;
                     if (dlg.SaveKeyToRegistry)
-                        Microsoft.Win32.Registry.SetValue("HKEY_CURRENT_USER\\Software\\DevGPT\\OpenAI", "ApiKey", apiKey);
+                        Microsoft.Win32.Registry.SetValue("HKEY_CURRENT_USER\\Software\\Hazina\\OpenAI", "ApiKey", apiKey);
                 }
             }
 
@@ -39,7 +39,7 @@ namespace DevGPT.App.ExplorerIntegration
             );
 
             var controller = new ChatControllerExplorer(agent);
-            return new DevGPT.ChatShared.ChatWindow(controller);
+            return new Hazina.ChatShared.ChatWindow(controller);
         }
     }
 }

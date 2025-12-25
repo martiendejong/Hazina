@@ -1,4 +1,4 @@
-using DevGPT.LLMs;
+using Hazina.LLMs;
 
 /// <summary>
 /// Extension methods for AgentFactory to support Semantic Kernel
@@ -8,7 +8,7 @@ public static class AgentFactoryExtensions
     /// <summary>
     /// Create an agent using Semantic Kernel client
     /// </summary>
-    public static async Task<DevGPTAgent> CreateAgentWithSemanticKernel(
+    public static async Task<HazinaAgent> CreateAgentWithSemanticKernel(
         this AgentFactory factory,
         string name,
         string systemPrompt,
@@ -34,7 +34,7 @@ public static class AgentFactoryExtensions
     /// <summary>
     /// Create an unregistered agent using Semantic Kernel client
     /// </summary>
-    public static async Task<DevGPTAgent> CreateUnregisteredAgentWithSemanticKernel(
+    public static async Task<HazinaAgent> CreateUnregisteredAgentWithSemanticKernel(
         this AgentFactory factory,
         string name,
         string systemPrompt,
@@ -60,7 +60,7 @@ public static class AgentFactoryExtensions
     /// <summary>
     /// Create an agent with a custom ILLMClient implementation
     /// </summary>
-    public static async Task<DevGPTAgent> CreateAgentWithCustomClient(
+    public static async Task<HazinaAgent> CreateAgentWithCustomClient(
         this AgentFactory factory,
         string name,
         string systemPrompt,
@@ -88,7 +88,7 @@ public static class AgentFactoryExtensions
     /// <summary>
     /// Create an unregistered agent with a custom ILLMClient implementation
     /// </summary>
-    public static async Task<DevGPTAgent> CreateUnregisteredAgentWithCustomClient(
+    public static async Task<HazinaAgent> CreateUnregisteredAgentWithCustomClient(
         this AgentFactory factory,
         string name,
         string systemPrompt,
@@ -118,18 +118,18 @@ public static class AgentFactoryExtensions
         var tempStores = stores.Skip(1).Select(s => s.Store as IDocumentStore).ToList();
         var generator = new DocumentGenerator(
             stores.First().Store,
-            new List<DevGPTChatMessage>()
+            new List<HazinaChatMessage>()
             {
-                new DevGPTChatMessage
+                new HazinaChatMessage
                 {
-                    Role = DevGPTMessageRole.System,
+                    Role = HazinaMessageRole.System,
                     Text = systemPrompt
                 }
             },
             llmClient,
             tempStores);
 
-        var agent = new DevGPTAgent(name, generator, tools, isCoder);
+        var agent = new HazinaAgent(name, generator, tools, isCoder);
         return agent;
     }
 }

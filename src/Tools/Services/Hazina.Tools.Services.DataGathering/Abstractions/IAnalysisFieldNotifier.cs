@@ -1,4 +1,4 @@
-namespace DevGPT.GenerationTools.Services.DataGathering.Abstractions;
+namespace Hazina.Tools.Services.DataGathering.Abstractions;
 
 /// <summary>
 /// Notifier for real-time analysis field updates.

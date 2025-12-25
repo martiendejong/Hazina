@@ -1,6 +1,6 @@
-namespace DevGPTStore.Models
+namespace HazinaStore.Models
 {
-    public class DevGPTStoreConfig
+    public class HazinaStoreConfig
     {
         public ApiSettings ApiSettings;
         public ProjectSettings ProjectSettings;

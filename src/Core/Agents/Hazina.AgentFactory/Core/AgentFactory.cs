@@ -60,7 +60,7 @@ public class AgentFactory {
     public List<FlowConfig> flowsConfig;
 
     public bool WriteMode = false;
-    public List<DevGPTChatMessage> Messages; // Set on init by AgentManager.
+    public List<HazinaChatMessage> Messages; // Set on init by AgentManager.
     public string OpenAiApiKey;
     public string GoogleProjectId;
     public string LogFilePath;
@@ -91,8 +91,8 @@ public class AgentFactory {
     public ChatToolParameter emailAmountParameter = new ChatToolParameter { Name = "amount", Description = "The number of emails to read.", Type = "number", Required = true };
     public ChatToolParameter emailOldestFirstParameter = new ChatToolParameter { Name = "oldestFirst", Description = "If we should return the oldest emails first.", Type = "boolean", Required = true };
 
-    public Dictionary<string, DevGPTAgent> Agents = new Dictionary<string, DevGPTAgent>();
-    public Dictionary<string, DevGPTFlow> Flows = new Dictionary<string, DevGPTFlow>();
+    public Dictionary<string, HazinaAgent> Agents = new Dictionary<string, HazinaAgent>();
+    public Dictionary<string, HazinaFlow> Flows = new Dictionary<string, HazinaFlow>();
 
     public string googleAccountJson { get; set; }
     public string googleAccountProjectId { get; set; }
@@ -104,10 +104,10 @@ public class AgentFactory {
         var id = Guid.NewGuid().ToString();
         agent.Tools.SendMessage(id, name, query);
         Guid messageId = Guid.NewGuid();
-        var message = new DevGPTChatMessage
+        var message = new HazinaChatMessage
         {
             MessageId = messageId,
-            Role = DevGPTMessageRole.Assistant,
+            Role = HazinaMessageRole.Assistant,
             Text = $"{caller}: {query}",
             AgentName = name,
             FunctionName = string.Empty,
@@ -121,10 +121,10 @@ public class AgentFactory {
         var storedMsg = Messages.FirstOrDefault(m => m.MessageId == messageId);
         if(storedMsg != null) storedMsg.Response = response;
         // Log reply as new message entry for history
-        var replyMsg = new DevGPTChatMessage
+        var replyMsg = new HazinaChatMessage
         {
             MessageId = Guid.NewGuid(),
-            Role = DevGPTMessageRole.Assistant,
+            Role = HazinaMessageRole.Assistant,
             Text = $"{name}: {response}",
             AgentName = name,
             FunctionName = string.Empty,
@@ -165,10 +165,10 @@ public class AgentFactory {
         var id = Guid.NewGuid().ToString();
         agent.Tools.SendMessage(id, name, query);
         Guid messageId = Guid.NewGuid();
-        var message = new DevGPTChatMessage
+        var message = new HazinaChatMessage
         {
             MessageId = messageId,
-            Role = DevGPTMessageRole.Assistant,
+            Role = HazinaMessageRole.Assistant,
             Text = $"{caller}: {query}",
             AgentName = name,
             FunctionName = "CodeModify",
@@ -180,10 +180,10 @@ public class AgentFactory {
         string response = responseObj.Result;
         var storedMsg = Messages.FirstOrDefault(m => m.MessageId == messageId);
         if(storedMsg != null) storedMsg.Response = response;
-        var replyMsg = new DevGPTChatMessage
+        var replyMsg = new HazinaChatMessage
         {
             MessageId = Guid.NewGuid(),
-            Role = DevGPTMessageRole.Assistant,
+            Role = HazinaMessageRole.Assistant,
             Text = $"{name}: {response}",
             AgentName = name,
             FunctionName = "CodeModify",
@@ -240,10 +240,10 @@ public class AgentFactory {
         var id = Guid.NewGuid().ToString();
         agent.Tools.SendMessage(id, name, query);
         Guid messageId = Guid.NewGuid();
-        var message = new DevGPTChatMessage
+        var message = new HazinaChatMessage
         {
             MessageId = messageId,
-            Role = DevGPTMessageRole.Assistant,
+            Role = HazinaMessageRole.Assistant,
             Text = $"{caller}: {query}",
             AgentName = name,
             FunctionName = functionName ?? string.Empty,
@@ -255,10 +255,10 @@ public class AgentFactory {
         string response = responseObj.Result;
         var storedMsg = Messages.FirstOrDefault(m => m.MessageId == messageId);
         if(storedMsg != null) storedMsg.Response = response;
-        var replyMsg = new DevGPTChatMessage
+        var replyMsg = new HazinaChatMessage
         {
             MessageId = Guid.NewGuid(),
-            Role = DevGPTMessageRole.Assistant,
+            Role = HazinaMessageRole.Assistant,
             Text = $"{name}: {response}",
             AgentName = name,
             FunctionName = functionName ?? string.Empty,
@@ -270,7 +270,7 @@ public class AgentFactory {
         return response;
     }
 
-    public async Task<DevGPTAgent> CreateUnregisteredAgent(string name, string systemPrompt, IEnumerable<(IDocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents, IEnumerable<string> flows, bool isCoder = false, string model = "")
+    public async Task<HazinaAgent> CreateUnregisteredAgent(string name, string systemPrompt, IEnumerable<(IDocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents, IEnumerable<string> flows, bool isCoder = false, string model = "")
     {
         var config = new OpenAIConfig(OpenAiApiKey);
         if(!string.IsNullOrWhiteSpace(model))
@@ -283,21 +283,21 @@ public class AgentFactory {
         };
         AddStoreTools(stores, tools, function, agents, flows, name);
         var tempStores = stores.Skip(1).Select(s => s.Store as IDocumentStore).ToList();
-        var generator = new DocumentGenerator(stores.First().Store, new List<DevGPTChatMessage>() { new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = systemPrompt } }, llmClient, OpenAiApiKey, LogFilePath, tempStores);
-        var agent = new DevGPTAgent(name, generator, tools, isCoder);
+        var generator = new DocumentGenerator(stores.First().Store, new List<HazinaChatMessage>() { new HazinaChatMessage { Role = HazinaMessageRole.System, Text = systemPrompt } }, llmClient, OpenAiApiKey, LogFilePath, tempStores);
+        var agent = new HazinaAgent(name, generator, tools, isCoder);
         return agent;
     }
 
-    public async Task<DevGPTAgent> CreateAgent(string name, string systemPrompt, IEnumerable<(IDocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents, IEnumerable<string> flows, bool isCoder = false)
+    public async Task<HazinaAgent> CreateAgent(string name, string systemPrompt, IEnumerable<(IDocumentStore Store, bool Write)> stores, IEnumerable<string> function, IEnumerable<string> agents, IEnumerable<string> flows, bool isCoder = false)
     {       
         var agent = await CreateUnregisteredAgent(name, systemPrompt, stores, function, agents, flows, isCoder);
         Agents[name] = agent;
         return agent;
     }
 
-    public DevGPTFlow CreateFlow(string name, List<string> callsAgents)
+    public HazinaFlow CreateFlow(string name, List<string> callsAgents)
     {
-        var flow = new DevGPTFlow(name, callsAgents);
+        var flow = new HazinaFlow(name, callsAgents);
         Flows[name] = flow;
         return flow;
     }
@@ -338,7 +338,7 @@ public class AgentFactory {
     private void AddWriteTools(IToolsContext tools, IDocumentStore store)
     {
         var config = storesConfig.FirstOrDefault(x => x.Name == store.Name) ?? new StoreConfig { Name = store.Name, Description = "" };
-        var writeFile = new DevGPTChatTool($"{store.Name}_write", $"Store a file in store {store.Name}. {config.Description}", [keyParameter, contentParameter], async (messages, toolCall, cancel) =>
+        var writeFile = new HazinaChatTool($"{store.Name}_write", $"Store a file in store {store.Name}. {config.Description}", [keyParameter, contentParameter], async (messages, toolCall, cancel) =>
         {
             if (WriteMode) return "Cannot give write instructions when in write mode";
             if (keyParameter.TryGetValue(toolCall, out string key))
@@ -349,7 +349,7 @@ public class AgentFactory {
             return "No key given";
         });
         tools.Add(writeFile);
-        var deleteFile = new DevGPTChatTool($"{store.Name}_delete", $"Removes a file from store {store.Name}. {config.Description}", [keyParameter], async (messages, toolCall, cancel) =>
+        var deleteFile = new HazinaChatTool($"{store.Name}_delete", $"Removes a file from store {store.Name}. {config.Description}", [keyParameter], async (messages, toolCall, cancel) =>
         {
             if (keyParameter.TryGetValue(toolCall, out string key))
                 return await store.Remove(key) ? "success" : "the file was already deleted"; ;
@@ -362,7 +362,7 @@ public class AgentFactory {
     {
         if (functions.Contains("git"))
         {
-            var git = new DevGPTChatTool($"git", $"Calls git and returns the output.", [argumentsParameter, timeOutSecondsParameter], async (messages, toolCall, cancel) =>
+            var git = new HazinaChatTool($"git", $"Calls git and returns the output.", [argumentsParameter, timeOutSecondsParameter], async (messages, toolCall, cancel) =>
             {
                 cancel.ThrowIfCancellationRequested();
 
@@ -377,27 +377,27 @@ public class AgentFactory {
         }
         if (functions.Contains("build"))
         {
-            var build = new DevGPTChatTool($"build", $"Builds the solution and returns the output.", [], async (messages, toolCall, cancel) => BuildOutput.GetBuildOutput(store.TextStore.RootFolder, "build.bat", "build_errors.log"));
+            var build = new HazinaChatTool($"build", $"Builds the solution and returns the output.", [], async (messages, toolCall, cancel) => BuildOutput.GetBuildOutput(store.TextStore.RootFolder, "build.bat", "build_errors.log"));
             tools.Add(build);
         }
         if (functions.Contains("build_dotnet"))
         {
-            var build = new DevGPTChatTool($"build_dotnet", $"Builds the .NET backend solution and returns the output.", [], async (messages, toolCall, cancel) => BuildOutput.GetBuildOutput(store.TextStore.RootFolder, "build_dotnet.bat", "build_errors.log"));
+            var build = new HazinaChatTool($"build_dotnet", $"Builds the .NET backend solution and returns the output.", [], async (messages, toolCall, cancel) => BuildOutput.GetBuildOutput(store.TextStore.RootFolder, "build_dotnet.bat", "build_errors.log"));
             tools.Add(build);
         }
         if (functions.Contains("build_quasar"))
         {
-            var build = new DevGPTChatTool($"build_quasar", $"Builds the Quasar frontend project and returns the output.", [], async (messages, toolCall, cancel) => BuildOutput.GetBuildOutput(store.TextStore.RootFolder, "build_quasar.bat", "build_errors.log"));
+            var build = new HazinaChatTool($"build_quasar", $"Builds the Quasar frontend project and returns the output.", [], async (messages, toolCall, cancel) => BuildOutput.GetBuildOutput(store.TextStore.RootFolder, "build_quasar.bat", "build_errors.log"));
             tools.Add(build);
         }
         if (functions.Contains("test_quasar"))
         {
-            var build = new DevGPTChatTool($"test_quasar", $"Tests the Quasar frontend project and returns the output.", [], async (messages, toolCall, cancel) => BuildOutput.GetBuildOutput(store.TextStore.RootFolder, "test_quasar.bat", "build_errors.log"));
+            var build = new HazinaChatTool($"test_quasar", $"Tests the Quasar frontend project and returns the output.", [], async (messages, toolCall, cancel) => BuildOutput.GetBuildOutput(store.TextStore.RootFolder, "test_quasar.bat", "build_errors.log"));
             tools.Add(build);
         }
         if (functions.Contains("npm"))
         {
-            var npm = new DevGPTChatTool($"npm", $"Runs the npm command.", [argumentsParameter, timeOutSecondsParameter], async (messages, toolCall, cancellationToken) =>
+            var npm = new HazinaChatTool($"npm", $"Runs the npm command.", [argumentsParameter, timeOutSecondsParameter], async (messages, toolCall, cancellationToken) =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (argumentsParameter.TryGetValue(toolCall, out string args) && timeOutSecondsParameter.TryGetValue(toolCall, out string timeout))
@@ -411,7 +411,7 @@ public class AgentFactory {
         }
         if (functions.Contains("dotnet"))
         {
-            var git = new DevGPTChatTool($"dotnet", $"Runs the dotnet command.", [argumentsParameter, timeOutSecondsParameter], async (messages, toolCall, cancellationToken) =>
+            var git = new HazinaChatTool($"dotnet", $"Runs the dotnet command.", [argumentsParameter, timeOutSecondsParameter], async (messages, toolCall, cancellationToken) =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (argumentsParameter.TryGetValue(toolCall, out string args) && timeOutSecondsParameter.TryGetValue(toolCall, out string timeout))
@@ -438,11 +438,11 @@ public class AgentFactory {
             //string newSchema = "social-media-hulp.{collection}";
 
 
-            var bigQueryCollectionsTool = new DevGPTChatTool(
+            var bigQueryCollectionsTool = new HazinaChatTool(
                 "bigquery_datasets",
                 "Retrieves the available datasets in Google BigQuery.",
                 [],
-                async (messages, toolCall, cancel) => await DevGPTChatTool.CallTool(async () =>
+                async (messages, toolCall, cancel) => await HazinaChatTool.CallTool(async () =>
                 {
                     BigQueryClient client = BigQuery_GetClient();
 
@@ -458,11 +458,11 @@ public class AgentFactory {
                 }, cancel)                
             );            
             tools.Add(bigQueryCollectionsTool);
-            var bigQueryTablesTool = new DevGPTChatTool(
+            var bigQueryTablesTool = new HazinaChatTool(
                 "query_tables",
                 "Returns the tables in a Google BigQuery dataset.",
                 [bigQueryDataSetParameter],
-                async (messages, toolCall, cancel) => await DevGPTChatTool.CallTool(async () =>
+                async (messages, toolCall, cancel) => await HazinaChatTool.CallTool(async () =>
                 {
                     if (!bigQueryDataSetParameter.TryGetValue(toolCall, out string collection))
                         return "No dataset provided.";
@@ -476,11 +476,11 @@ public class AgentFactory {
                 }, cancel)                
             );
             tools.Add(bigQueryTablesTool);
-            var bigQueryTableFieldsTool = new DevGPTChatTool(
+            var bigQueryTableFieldsTool = new HazinaChatTool(
                 "query_tablefields",
                 "Returns the fields of the tables in a Google BigQuery dataset.",
                 [bigQueryDataSetParameter, bigQueryTableNameParameter],
-                async (messages, toolCall, cancel) => await DevGPTChatTool.CallTool(async () =>
+                async (messages, toolCall, cancel) => await HazinaChatTool.CallTool(async () =>
                 {
                     cancel.ThrowIfCancellationRequested();
                     if (!bigQueryDataSetParameter.TryGetValue(toolCall, out string collection))
@@ -517,7 +517,7 @@ public class AgentFactory {
             //ORDER BY table_name;";
 
 
-            var bigQueryTool = new DevGPTChatTool(
+            var bigQueryTool = new HazinaChatTool(
                 "query_bigquery",
                 "Runs a read-only SQL query on Google BigQuery and returns the results as a list of rows.",
                 [bigQueryParameter],
@@ -580,7 +580,7 @@ public class AgentFactory {
     private void AddReadTools(IToolsContext tools, IDocumentStore store)
     {
         var config = storesConfig.FirstOrDefault(x => x.Name == store.Name) ?? new StoreConfig { Name = store.Name, Description = "" };
-        var getFiles = new DevGPTChatTool($"{store.Name}_list", $"Retrieve a list of the files in store {store.Name}. {config.Description}", [folderParameter], async (messages, toolCall, cancel) =>
+        var getFiles = new HazinaChatTool($"{store.Name}_list", $"Retrieve a list of the files in store {store.Name}. {config.Description}", [folderParameter], async (messages, toolCall, cancel) =>
         {
             cancel.ThrowIfCancellationRequested();
             filesRecursiveParameter.TryGetValue(toolCall, out bool recursive);
@@ -596,7 +596,7 @@ public class AgentFactory {
             }
         });
         tools.Add(getFiles);
-        var getRelevancy = new DevGPTChatTool($"{store.Name}_relevancy", $"Retrieve a list of relevant files in store {store.Name}. {config.Description}", [relevancyParameter], async (messages, toolCall, cancel) =>
+        var getRelevancy = new HazinaChatTool($"{store.Name}_relevancy", $"Retrieve a list of relevant files in store {store.Name}. {config.Description}", [relevancyParameter], async (messages, toolCall, cancel) =>
         {
             cancel.ThrowIfCancellationRequested();
             if (relevancyParameter.TryGetValue(toolCall, out string key))
@@ -604,7 +604,7 @@ public class AgentFactory {
             return "No key given";
         });
         tools.Add(getRelevancy);
-        DevGPTChatTool getFile = new DevGPTChatTool($"{store.Name}_read", $"Retrieve a file from store {store.Name}. {config.Description}", [keyParameter], async (messages, toolCall, cancel) =>
+        HazinaChatTool getFile = new HazinaChatTool($"{store.Name}_read", $"Retrieve a file from store {store.Name}. {config.Description}", [keyParameter], async (messages, toolCall, cancel) =>
         {
             cancel.ThrowIfCancellationRequested();
             if (keyParameter.TryGetValue(toolCall, out string key))
@@ -616,7 +616,7 @@ public class AgentFactory {
 
     private void AddWordpressTools(IToolsContext tools, IEnumerable<string> agents, string caller)
     {
-        var wordpressAgent = new DevGPTChatTool($"wordpress_cli", $"Call the wordpress cli", [wpcommandParameter, wpargumentsParameter], async (messages, toolCall, cancel) =>
+        var wordpressAgent = new HazinaChatTool($"wordpress_cli", $"Call the wordpress cli", [wpcommandParameter, wpargumentsParameter], async (messages, toolCall, cancel) =>
         {
             cancel.ThrowIfCancellationRequested();
             if (!wpcommandParameter.TryGetValue(toolCall, out string command))
@@ -667,7 +667,7 @@ public class AgentFactory {
 
     private void AddEmailFunctions(IToolsContext tools)
     {
-        var sendEmailTool = new DevGPTChatTool("email_send", "Sends an email", [recipientParameter, subjectParameter, bodyParameter], async (messages, toolCall, cancel) =>
+        var sendEmailTool = new HazinaChatTool("email_send", "Sends an email", [recipientParameter, subjectParameter, bodyParameter], async (messages, toolCall, cancel) =>
         {
             cancel.ThrowIfCancellationRequested();
 
@@ -686,7 +686,7 @@ public class AgentFactory {
         });
         tools.Add(sendEmailTool);
 
-        var listInboxTool = new DevGPTChatTool("email_list_inbox", "Lists latest emails in the inbox", [emailAmountParameter, emailOldestFirstParameter], async (messages, toolCall, cancel) =>
+        var listInboxTool = new HazinaChatTool("email_list_inbox", "Lists latest emails in the inbox", [emailAmountParameter, emailOldestFirstParameter], async (messages, toolCall, cancel) =>
         {
             cancel.ThrowIfCancellationRequested();
 
@@ -704,7 +704,7 @@ public class AgentFactory {
         });
         tools.Add(listInboxTool);
 
-        var readEmailTool = new DevGPTChatTool("email_read", "Reads an email by ID or index", [emailIdParameter], async (messages, toolCall, cancel) =>
+        var readEmailTool = new HazinaChatTool("email_read", "Reads an email by ID or index", [emailIdParameter], async (messages, toolCall, cancel) =>
         {
             cancel.ThrowIfCancellationRequested();
 
@@ -720,7 +720,7 @@ public class AgentFactory {
         });
         tools.Add(readEmailTool);
 
-        var createFolderTool = new DevGPTChatTool("email_create_folder", "Creates a folder in the mailbox", [folderNameParameter], async (messages, toolCall, cancel) =>
+        var createFolderTool = new HazinaChatTool("email_create_folder", "Creates a folder in the mailbox", [folderNameParameter], async (messages, toolCall, cancel) =>
         {
             cancel.ThrowIfCancellationRequested();
 
@@ -736,7 +736,7 @@ public class AgentFactory {
         });
         tools.Add(createFolderTool);
 
-        var moveEmailTool = new DevGPTChatTool("email_move", "Moves an email to a folder", [emailIdParameter, destinationFolderParameter], async (messages, toolCall, cancel) =>
+        var moveEmailTool = new HazinaChatTool("email_move", "Moves an email to a folder", [emailIdParameter, destinationFolderParameter], async (messages, toolCall, cancel) =>
         {
             cancel.ThrowIfCancellationRequested();
 
@@ -754,7 +754,7 @@ public class AgentFactory {
         });
         tools.Add(moveEmailTool);
 
-        var listFoldersTool = new DevGPTChatTool("email_list_folders", "Lists all folders in the mailbox", [], async (messages, toolCall, cancel) =>
+        var listFoldersTool = new HazinaChatTool("email_list_folders", "Lists all folders in the mailbox", [], async (messages, toolCall, cancel) =>
         {
             cancel.ThrowIfCancellationRequested();
 
@@ -771,14 +771,14 @@ public class AgentFactory {
 
     private void AddAdvancedAgentTools(IToolsContext tools, IEnumerable<string> agents, string caller)
     {
-        var callAgent = new DevGPTChatTool($"custom_agent_getstores", $"Gets a list of stores that a custom agent can use", [], async (messages, toolCall, cancel) =>
+        var callAgent = new HazinaChatTool($"custom_agent_getstores", $"Gets a list of stores that a custom agent can use", [], async (messages, toolCall, cancel) =>
         {
             cancel.ThrowIfCancellationRequested();
             return string.Join(",", storesConfig.Select(s => s.Name).ToList());
         });
         tools.Add(callAgent);
 
-        var callAgent2 = new DevGPTChatTool($"custom_agent_run", $"Runs a custom agent", [instructionParameter, systemPromptParameter, storeParameter], async (messages, toolCall, cancel) =>
+        var callAgent2 = new HazinaChatTool($"custom_agent_run", $"Runs a custom agent", [instructionParameter, systemPromptParameter, storeParameter], async (messages, toolCall, cancel) =>
         {
             cancel.ThrowIfCancellationRequested();
             if (!instructionParameter.TryGetValue(toolCall, out string instruction))
@@ -791,7 +791,7 @@ public class AgentFactory {
         });
         tools.Add(callAgent2);
 
-        var callAgent3 = new DevGPTChatTool($"custom_agent_write", $"Runs a custom agent that writes documents", [instructionParameter, systemPromptParameter, storeParameter], async (messages, toolCall, cancel) =>
+        var callAgent3 = new HazinaChatTool($"custom_agent_write", $"Runs a custom agent that writes documents", [instructionParameter, systemPromptParameter, storeParameter], async (messages, toolCall, cancel) =>
         {
             cancel.ThrowIfCancellationRequested();
             if (!instructionParameter.TryGetValue(toolCall, out string instruction))
@@ -816,7 +816,7 @@ public class AgentFactory {
                 throw new Exception($"Agent {agent} is not defined. Request by {caller}.");
             if (config.ExplicitModify)
             {
-                var callCoderAgent = new DevGPTChatTool($"{agent}", $"Calls {agent} to modify the codebase. {config.Description} Be aware of the token limit of 8000 so only let the agents make small modifications at a time.", [instructionParameter], async (messages, toolCall, cancel) =>
+                var callCoderAgent = new HazinaChatTool($"{agent}", $"Calls {agent} to modify the codebase. {config.Description} Be aware of the token limit of 8000 so only let the agents make small modifications at a time.", [instructionParameter], async (messages, toolCall, cancel) =>
                 {
                     cancel.ThrowIfCancellationRequested();
                     if (WriteMode) return "Cannot give write instructions when in write mode";
@@ -833,7 +833,7 @@ public class AgentFactory {
             }
             else
             {
-                var callAgent = new DevGPTChatTool($"{agent}", $"Calls {agent} to execute a tasks and return a message. {config.Description}", [instructionParameter], async (messages, toolCall, cancel) =>
+                var callAgent = new HazinaChatTool($"{agent}", $"Calls {agent} to execute a tasks and return a message. {config.Description}", [instructionParameter], async (messages, toolCall, cancel) =>
                 {
                     cancel.ThrowIfCancellationRequested();
                     if (instructionParameter.TryGetValue(toolCall, out string key))
@@ -852,7 +852,7 @@ public class AgentFactory {
             var config = flowsConfig.FirstOrDefault(x => x.Name == flow);
             if (config == null)
                 throw new Exception($"Flow {flow} not found");
-            var callFlow = new DevGPTChatTool($"{flow}", $"Calls {flow} agent workflow to execute a tasks and return a message. {config.Description}", [instructionParameter], async (messages, toolCall, cancel) =>
+            var callFlow = new HazinaChatTool($"{flow}", $"Calls {flow} agent workflow to execute a tasks and return a message. {config.Description}", [instructionParameter], async (messages, toolCall, cancel) =>
             {
                 cancel.ThrowIfCancellationRequested();
                 if (instructionParameter.TryGetValue(toolCall, out string key))

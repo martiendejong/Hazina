@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 
 // Keep legacy namespace to minimize breaking changes across the codebase
-namespace DevGPTStore.Models
+namespace HazinaStore.Models
 {
     public interface IEmbedding
     {

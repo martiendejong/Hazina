@@ -2,10 +2,10 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.Text;
 
-namespace DevGPT.LLMs;
+namespace Hazina.LLMs;
 
 /// <summary>
-/// Handles streaming responses from Semantic Kernel and converts them to DevGPT format
+/// Handles streaming responses from Semantic Kernel and converts them to Hazina format
 /// </summary>
 public class SemanticKernelStreamHandler
 {

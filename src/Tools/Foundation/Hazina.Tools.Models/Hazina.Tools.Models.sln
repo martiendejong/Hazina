@@ -2,9 +2,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.GenerationTools.Models", "DevGPT.GenerationTools.Models.csproj", "{4EEB1209-A3A2-14DC-DE61-C031AF9ADB26}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Models", "Hazina.Tools.Models.csproj", "{4EEB1209-A3A2-14DC-DE61-C031AF9ADB26}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevGPT.GenerationTools.Models.local", "DevGPT.GenerationTools.Models.local.csproj", "{EF72FCD8-A5D6-80D8-7AA0-2F5DA30FF659}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Models.local", "Hazina.Tools.Models.local.csproj", "{EF72FCD8-A5D6-80D8-7AA0-2F5DA30FF659}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,19 +1,19 @@
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 
-namespace DevGPT.LLMs;
+namespace Hazina.LLMs;
 
 /// <summary>
-/// Extension methods for converting between DevGPT types and Semantic Kernel types
+/// Extension methods for converting between Hazina types and Semantic Kernel types
 /// </summary>
-public static class DevGPTSemanticKernelExtensions
+public static class HazinaSemanticKernelExtensions
 {
-    #region DevGPTChatMessage <-> ChatHistory Conversion
+    #region HazinaChatMessage <-> ChatHistory Conversion
 
     /// <summary>
-    /// Convert DevGPTChatMessage to Semantic Kernel ChatMessageContent
+    /// Convert HazinaChatMessage to Semantic Kernel ChatMessageContent
     /// </summary>
-    public static ChatMessageContent ToSemanticKernel(this DevGPTChatMessage message)
+    public static ChatMessageContent ToSemanticKernel(this HazinaChatMessage message)
     {
         var role = message.Role.ToSemanticKernel();
 
@@ -33,13 +33,13 @@ public static class DevGPTSemanticKernelExtensions
     }
 
     /// <summary>
-    /// Convert Semantic Kernel ChatMessageContent to DevGPTChatMessage
+    /// Convert Semantic Kernel ChatMessageContent to HazinaChatMessage
     /// </summary>
-    public static DevGPTChatMessage ToDevGPT(this ChatMessageContent message)
+    public static HazinaChatMessage ToHazina(this ChatMessageContent message)
     {
-        var devGptMessage = new DevGPTChatMessage
+        var hazinaMessage = new HazinaChatMessage
         {
-            Role = message.Role.ToDevGPT(),
+            Role = message.Role.ToHazina(),
             Text = message.Content ?? string.Empty
         };
 
@@ -47,24 +47,24 @@ public static class DevGPTSemanticKernelExtensions
         if (message.Metadata != null)
         {
             if (message.Metadata.TryGetValue("MessageId", out var messageId) && messageId is Guid guid)
-                devGptMessage.MessageId = guid;
+                hazinaMessage.MessageId = guid;
             if (message.Metadata.TryGetValue("AgentName", out var agentName) && agentName is string agent)
-                devGptMessage.AgentName = agent;
+                hazinaMessage.AgentName = agent;
             if (message.Metadata.TryGetValue("FunctionName", out var functionName) && functionName is string func)
-                devGptMessage.FunctionName = func;
+                hazinaMessage.FunctionName = func;
             if (message.Metadata.TryGetValue("FlowName", out var flowName) && flowName is string flow)
-                devGptMessage.FlowName = flow;
+                hazinaMessage.FlowName = flow;
             if (message.Metadata.TryGetValue("Response", out var response) && response is string resp)
-                devGptMessage.Response = resp;
+                hazinaMessage.Response = resp;
         }
 
-        return devGptMessage;
+        return hazinaMessage;
     }
 
     /// <summary>
-    /// Convert list of DevGPTChatMessage to Semantic Kernel ChatHistory
+    /// Convert list of HazinaChatMessage to Semantic Kernel ChatHistory
     /// </summary>
-    public static ChatHistory ToSemanticKernelChatHistory(this List<DevGPTChatMessage> messages)
+    public static ChatHistory ToSemanticKernelChatHistory(this List<HazinaChatMessage> messages)
     {
         var chatHistory = new ChatHistory();
 
@@ -77,11 +77,11 @@ public static class DevGPTSemanticKernelExtensions
     }
 
     /// <summary>
-    /// Convert Semantic Kernel ChatHistory to list of DevGPTChatMessage
+    /// Convert Semantic Kernel ChatHistory to list of HazinaChatMessage
     /// </summary>
-    public static List<DevGPTChatMessage> ToDevGPT(this ChatHistory chatHistory)
+    public static List<HazinaChatMessage> ToHazina(this ChatHistory chatHistory)
     {
-        return chatHistory.Select(m => m.ToDevGPT()).ToList();
+        return chatHistory.Select(m => m.ToHazina()).ToList();
     }
 
     #endregion
@@ -89,15 +89,15 @@ public static class DevGPTSemanticKernelExtensions
     #region Role Conversion
 
     /// <summary>
-    /// Convert DevGPTMessageRole to Semantic Kernel AuthorRole
+    /// Convert HazinaMessageRole to Semantic Kernel AuthorRole
     /// </summary>
-    public static AuthorRole ToSemanticKernel(this DevGPTMessageRole role)
+    public static AuthorRole ToSemanticKernel(this HazinaMessageRole role)
     {
-        if (role.Role == DevGPTMessageRole.User.Role)
+        if (role.Role == HazinaMessageRole.User.Role)
             return AuthorRole.User;
-        if (role.Role == DevGPTMessageRole.Assistant.Role)
+        if (role.Role == HazinaMessageRole.Assistant.Role)
             return AuthorRole.Assistant;
-        if (role.Role == DevGPTMessageRole.System.Role)
+        if (role.Role == HazinaMessageRole.System.Role)
             return AuthorRole.System;
 
         // Default to User for unknown roles
@@ -105,16 +105,16 @@ public static class DevGPTSemanticKernelExtensions
     }
 
     /// <summary>
-    /// Convert Semantic Kernel AuthorRole to DevGPTMessageRole
+    /// Convert Semantic Kernel AuthorRole to HazinaMessageRole
     /// </summary>
-    public static DevGPTMessageRole ToDevGPT(this AuthorRole role)
+    public static HazinaMessageRole ToHazina(this AuthorRole role)
     {
         return role.Label switch
         {
-            "REGULAR" => DevGPTMessageRole.User,
-            "assistant" => DevGPTMessageRole.Assistant,
-            "system" => DevGPTMessageRole.System,
-            _ => DevGPTMessageRole.User
+            "REGULAR" => HazinaMessageRole.User,
+            "assistant" => HazinaMessageRole.Assistant,
+            "system" => HazinaMessageRole.System,
+            _ => HazinaMessageRole.User
         };
     }
 
@@ -228,12 +228,12 @@ public static class DevGPTSemanticKernelExtensions
     #region Response Format Conversion
 
     /// <summary>
-    /// Convert DevGPTChatResponseFormat to appropriate prompt execution settings
+    /// Convert HazinaChatResponseFormat to appropriate prompt execution settings
     /// </summary>
-    public static void ApplyResponseFormat(this PromptExecutionSettings settings, DevGPTChatResponseFormat format)
+    public static void ApplyResponseFormat(this PromptExecutionSettings settings, HazinaChatResponseFormat format)
     {
-        // Set response format based on DevGPT enum
-        if (format == DevGPTChatResponseFormat.Json)
+        // Set response format based on Hazina enum
+        if (format == HazinaChatResponseFormat.Json)
         {
             // For JSON responses, set the appropriate format
             if (settings is Microsoft.SemanticKernel.Connectors.OpenAI.OpenAIPromptExecutionSettings openAISettings)

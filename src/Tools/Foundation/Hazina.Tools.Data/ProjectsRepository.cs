@@ -1,12 +1,12 @@
-using DevGPT.GenerationTools.Models;
-using DevGPTStore.Models;
+using Hazina.Tools.Models;
+using HazinaStore.Models;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace DevGPT.GenerationTools.Data
+namespace Hazina.Tools.Data
 {
     /// <summary>
     /// Repository responsible for project lifecycle operations only.
@@ -25,16 +25,16 @@ namespace DevGPT.GenerationTools.Data
 
         public IConfiguration AppConfig { get; }
 
-        public DevGPTStoreConfig DevGPTStoreConfig { get; }
+        public HazinaStoreConfig HazinaStoreConfig { get; }
 
         private readonly ProjectFileLocator _fileLocator;
 
 
-        public ProjectsRepository(DevGPTStoreConfig configuration, IConfiguration appConfig)
+        public ProjectsRepository(HazinaStoreConfig configuration, IConfiguration appConfig)
         {
             ProjectsFolder = configuration.ProjectSettings.ProjectsFolder;
             AppConfig = appConfig;
-            DevGPTStoreConfig = configuration;
+            HazinaStoreConfig = configuration;
             _fileLocator = new ProjectFileLocator(ProjectsFolder);
         }
 

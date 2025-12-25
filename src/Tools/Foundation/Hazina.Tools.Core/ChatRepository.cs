@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using DevGPTStore.Core.Models;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
+using HazinaStore.Core.Models;
+using Hazina.Tools.Models;
+using Hazina.Tools.Models.WordPress.Blogs;
 
-namespace DevGPTStore.Core
+namespace HazinaStore.Core
 {
     /// <summary>
     /// Manages all chats within a project

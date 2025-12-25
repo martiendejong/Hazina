@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace DevGPT.App.ExplorerIntegration
+namespace Hazina.App.ExplorerIntegration
 {
     public partial class MainWindow : Window
     {

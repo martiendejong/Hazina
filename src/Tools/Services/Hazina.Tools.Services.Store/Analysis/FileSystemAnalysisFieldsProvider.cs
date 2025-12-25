@@ -1,5 +1,5 @@
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
 using OpenAI.Chat;
 using System.Collections.Generic;
 using System.IO;
@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace DevGPT.GenerationTools.Services.Store
+namespace Hazina.Tools.Services.Store
 {
     public class FileSystemAnalysisFieldsProvider : IAnalysisFieldsProvider
     {

@@ -1,4 +1,4 @@
-namespace DevGPT.GenerationTools.Services.BigQuery
+namespace Hazina.Tools.Services.BigQuery
 {
     public class BigQueryTableDef
     {

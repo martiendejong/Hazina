@@ -1,9 +1,9 @@
-namespace DevGPT.GenerationTools.Models
+namespace Hazina.Tools.Models
 {
     /// <summary>
     /// Represents the role of a message sender in a chat conversation
     /// </summary>
-    public enum DevGPTMessageRole
+    public enum HazinaMessageRole
     {
         System,
         User,
@@ -13,16 +13,16 @@ namespace DevGPT.GenerationTools.Models
     /// <summary>
     /// Represents a chat message with role and content
     /// </summary>
-    public class DevGPTChatMessage
+    public class HazinaChatMessage
     {
-        public DevGPTMessageRole Role { get; set; }
+        public HazinaMessageRole Role { get; set; }
         public string Content { get; set; }
 
-        public DevGPTChatMessage()
+        public HazinaChatMessage()
         {
         }
 
-        public DevGPTChatMessage(DevGPTMessageRole role, string content)
+        public HazinaChatMessage(HazinaMessageRole role, string content)
         {
             Role = role;
             Content = content;

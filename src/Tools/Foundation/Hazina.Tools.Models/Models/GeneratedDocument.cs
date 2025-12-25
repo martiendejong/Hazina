@@ -1,10 +1,10 @@
-using DevGPTStore.Models;
+using HazinaStore.Models;
 using System.Data.SqlTypes;
 using System.Runtime.Serialization;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
+using Hazina.Tools.Models;
+using Hazina.Tools.Models.WordPress.Blogs;
 
-namespace DevGPTStore.Models
+namespace HazinaStore.Models
 {
     public class GeneratedDocument : Serializer<GeneratedDocument>, IEmbedding
     {

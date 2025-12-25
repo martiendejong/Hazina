@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace DevGPT.Store.EmbeddingStore;
+namespace Hazina.Store.EmbeddingStore;
 
 /// <summary>
 /// File-based embedding store using JSON serialization.

@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using DevGPTStore.Core.Interfaces;
-using DevGPTStore.Core.Models;
-using DevGPTStore.Models;
-using DevGPT.GenerationTools.Models;
+using HazinaStore.Core.Interfaces;
+using HazinaStore.Core.Models;
+using HazinaStore.Models;
+using Hazina.Tools.Models;
 
-namespace DevGPTStore.Core
+namespace HazinaStore.Core
 {
     /// <summary>
     /// Manages all documents within a project

@@ -1,4 +1,4 @@
-using DevGPT.Store.EmbeddingStore;
+using Hazina.Store.EmbeddingStore;
 
 public static class EmbeddingStoreFactory
 {

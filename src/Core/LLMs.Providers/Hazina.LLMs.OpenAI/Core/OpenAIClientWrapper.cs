@@ -17,24 +17,24 @@ public partial class OpenAIClientWrapper : ILLMClient
         return $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {ChatResponse<ResponseType>.Signature} EXAMPLE: {JsonSerializer.Serialize(ChatResponse<ResponseType>.Example)}";
     }
 
-    public List<DevGPTChatMessage> AddFormattingInstruction<ResponseType>(List<DevGPTChatMessage> messages) where ResponseType : ChatResponse<ResponseType>, new()
+    public List<HazinaChatMessage> AddFormattingInstruction<ResponseType>(List<HazinaChatMessage> messages) where ResponseType : ChatResponse<ResponseType>, new()
     {
         var formatInstruction = GetFormatInstruction<ResponseType>();
-        messages.Insert(messages.Count - 1, new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = formatInstruction });
+        messages.Insert(messages.Count - 1, new HazinaChatMessage { Role = HazinaMessageRole.System, Text = formatInstruction });
         return messages;
     }
 
     public PartialJsonParser Parser { get; set; } = new PartialJsonParser();
 
-    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(List<DevGPTChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel = default) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(List<HazinaChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel = default) where ResponseType : ChatResponse<ResponseType>, new()
     {
-        var response = await GetResponse(AddFormattingInstruction<ResponseType>(messages), DevGPTChatResponseFormat.Json, toolsContext, images, cancel);
+        var response = await GetResponse(AddFormattingInstruction<ResponseType>(messages), HazinaChatResponseFormat.Json, toolsContext, images, cancel);
         return new LLMResponse<ResponseType?>(Parser.Parse<ResponseType>(response.Result), response.TokenUsage);
     }
 
-    public async Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(List<HazinaChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
     {
-        var response = await GetResponseStream(AddFormattingInstruction<ResponseType>(messages), onChunkReceived, DevGPTChatResponseFormat.Json, toolsContext, images, cancel);
+        var response = await GetResponseStream(AddFormattingInstruction<ResponseType>(messages), onChunkReceived, HazinaChatResponseFormat.Json, toolsContext, images, cancel);
         return new LLMResponse<ResponseType?>(Parser.Parse<ResponseType>(response.Result), response.TokenUsage);
     }
 }
@@ -68,8 +68,8 @@ public partial class OpenAIClientWrapper : ILLMClient
     }
 
     public async Task<LLMResponse<string>> GetResponseStream(
-        List<DevGPTChatMessage> messages,
-        Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+        List<HazinaChatMessage> messages,
+        Action<string> onChunkReceived, HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         Log(messages.Last()?.Text);
         var id = Guid.NewGuid().ToString();
@@ -86,7 +86,7 @@ public partial class OpenAIClientWrapper : ILLMClient
     }
 
     public async Task<LLMResponse<string>> GetResponse(
-        List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+        List<HazinaChatMessage> messages, HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         Log(messages.Last()?.Text);
         var id = Guid.NewGuid().ToString();
@@ -98,13 +98,13 @@ public partial class OpenAIClientWrapper : ILLMClient
         return new LLMResponse<string>(text, tokenUsage);
     }
 
-    public async Task<LLMResponse<DevGPTGeneratedImage>> GetImage(
-        string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    public async Task<LLMResponse<HazinaGeneratedImage>> GetImage(
+        string prompt, HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         Log(prompt);
-        var image = (await GetImageResult(prompt, responseFormat.OpenAI(), toolsContext, images, cancel)).DevGPT();
+        var image = (await GetImageResult(prompt, responseFormat.OpenAI(), toolsContext, images, cancel)).Hazina();
         var tokenUsage = new TokenUsageInfo(0, 0, 0, 0.04m, Config.ImageModel);
-        return new LLMResponse<DevGPTGeneratedImage>(image, tokenUsage);
+        return new LLMResponse<HazinaGeneratedImage>(image, tokenUsage);
     }
 
     public async Task SpeakStream(string text, string voice, Action<byte[]> onAudioChunk, string mimeType, CancellationToken cancel)

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Windows;
 using Microsoft.Win32;
 
-namespace DevGPT.App.EmbeddingsViewer
+namespace Hazina.App.EmbeddingsViewer
 {
     public partial class MainWindow : Window
     {

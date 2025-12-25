@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace DevGPT.GenerationTools.Data
+namespace Hazina.Tools.Data
 {
     /// <summary>
     /// Static utility for tracking token usage across the application

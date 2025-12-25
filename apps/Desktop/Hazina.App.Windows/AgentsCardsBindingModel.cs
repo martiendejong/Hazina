@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Collections.Specialized;
 
-namespace DevGPT.App.Windows
+namespace Hazina.App.Windows
 {
     public class AgentsCardsBindingModel : INotifyPropertyChanged
     {

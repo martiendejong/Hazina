@@ -1,11 +1,11 @@
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Services.Web;
-using DevGPT.GenerationTools.Services.BigQuery;
-using DevGPT.GenerationTools.Services.FileOps;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
+using Hazina.Tools.Services.Web;
+using Hazina.Tools.Services.BigQuery;
+using Hazina.Tools.Services.FileOps;
 using System.Text.Json;
 
-namespace DevGPT.GenerationTools.Services.Store;
+namespace Hazina.Tools.Services.Store;
 
 /// <summary>
 /// Tools context providing read-only document and web access for chat conversations.
@@ -255,13 +255,13 @@ public sealed class ReadOnlyDocumentToolsContext : ToolsContextBase
     private static ChatToolParameter CreateParameter(string name, string description, string type, bool required)
         => new() { Name = name, Description = description, Type = type, Required = required };
 
-    private static string? GetStringParameter(DevGPTChatToolCall toolCall, string name)
+    private static string? GetStringParameter(HazinaChatToolCall toolCall, string name)
     {
         using var doc = JsonDocument.Parse(toolCall.FunctionArguments);
         return doc.RootElement.TryGetProperty(name, out var el) ? el.GetString() : null;
     }
 
-    private static bool? GetBoolParameter(DevGPTChatToolCall toolCall, string name)
+    private static bool? GetBoolParameter(HazinaChatToolCall toolCall, string name)
     {
         using var doc = JsonDocument.Parse(toolCall.FunctionArguments);
         return doc.RootElement.TryGetProperty(name, out var el) ? el.GetBoolean() : null;

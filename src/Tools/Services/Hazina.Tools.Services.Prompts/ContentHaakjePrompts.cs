@@ -1,10 +1,10 @@
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
+using Hazina.Tools.Models.WordPress.Blogs;
 using System;
 using System.IO;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 
-namespace DevGPTStore.Agents.Prompts
+namespace HazinaStore.Agents.Prompts
 {
     public class GeneratorPrompts : Serializer<GeneratorPrompts>
     {

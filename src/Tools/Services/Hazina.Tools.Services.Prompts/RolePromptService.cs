@@ -1,12 +1,12 @@
-using DevGPT.GenerationTools.Data;
+using Hazina.Tools.Data;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Text.Json;
-using DevGPTStore;
+using HazinaStore;
 
-namespace DevGPT.GenerationTools.Services.Prompts
+namespace Hazina.Tools.Services.Prompts
 {
     public class RolePromptService
     {

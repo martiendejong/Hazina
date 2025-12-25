@@ -1,4 +1,4 @@
-namespace DevGPT.GenerationTools.Models.WordPress.Blogs
+namespace Hazina.Tools.Models.WordPress.Blogs
 {
     public interface ISerializer
     {

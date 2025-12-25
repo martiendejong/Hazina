@@ -1,22 +1,22 @@
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using DevGPTStore.Models;
-using DevGPTStore.Core;
-using DevGPTStore.Core.Models;
+using HazinaStore.Models;
+using HazinaStore.Core;
+using HazinaStore.Core.Models;
 using System.Linq;
-using DevGPT.GenerationTools.Services.FileOps.Helpers;
-using DevGPT.GenerationTools.Services.Helpers;
-using CoreProject = DevGPTStore.Core.Project;
-using LegacyProject = DevGPT.GenerationTools.Models.Project;
+using Hazina.Tools.Services.FileOps.Helpers;
+using Hazina.Tools.Services.Helpers;
+using CoreProject = HazinaStore.Core.Project;
+using LegacyProject = Hazina.Tools.Models.Project;
 using Microsoft.Extensions.Configuration;
 
-namespace DevGPT.GenerationTools.Services
+namespace Hazina.Tools.Services
 {
     /// <summary>
     /// Service for handling document uploads with text extraction and processing
@@ -35,7 +35,7 @@ namespace DevGPT.GenerationTools.Services
             TextFileExtractor extractor,
             Workspace workspace,
             ProjectsRepository legacyProjects,
-            DevGPTStoreConfig config,
+            HazinaStoreConfig config,
             IConfiguration configuration = null)
         {
             _sendUpdate = sendUpdate ?? throw new ArgumentNullException(nameof(sendUpdate));

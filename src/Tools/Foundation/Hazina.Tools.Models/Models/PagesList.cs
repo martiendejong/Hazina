@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace DevGPT.GenerationTools.Services.Store
+namespace Hazina.Tools.Services.Store
 {
     public class PagesList : ChatResponse<PagesList>
     {

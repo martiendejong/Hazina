@@ -1,18 +1,18 @@
 using System.Text.Json;
-using DevGPT.DynamicAPI.Core;
-using DevGPT.DynamicAPI.Models;
+using Hazina.DynamicAPI.Core;
+using Hazina.DynamicAPI.Models;
 
-namespace DevGPT.DynamicAPI.Tools;
+namespace Hazina.DynamicAPI.Tools;
 
 /// <summary>
-/// DevGPTChatTool wrapper for making dynamic API calls.
+/// HazinaChatTool wrapper for making dynamic API calls.
 /// Allows agents to call any API endpoint without pre-configuration.
 /// </summary>
-public class DynamicAPIDevGPTTool : DevGPTChatTool
+public class DynamicAPIHazinaTool : HazinaChatTool
 {
     private readonly DynamicAPIClient _apiClient;
 
-    public DynamicAPIDevGPTTool(DynamicAPIClient apiClient) : base(
+    public DynamicAPIHazinaTool(DynamicAPIClient apiClient) : base(
         "api_call",
         "Make HTTP requests to any API endpoint. Automatically handles authentication if service credentials are available. " +
         "Supports GET, POST, PUT, DELETE, PATCH methods. Returns JSON responses.",

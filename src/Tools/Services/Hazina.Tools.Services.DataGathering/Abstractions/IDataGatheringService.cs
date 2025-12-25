@@ -1,7 +1,7 @@
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Services.DataGathering.Models;
+using Hazina.Tools.Models;
+using Hazina.Tools.Services.DataGathering.Models;
 
-namespace DevGPT.GenerationTools.Services.DataGathering.Abstractions;
+namespace Hazina.Tools.Services.DataGathering.Abstractions;
 
 /// <summary>
 /// Service responsible for extracting and storing structured data from chat conversations.
@@ -24,7 +24,7 @@ public interface IDataGatheringService
         string projectId,
         string chatId,
         string userMessage,
-        IEnumerable<DevGPTChatMessage> conversationHistory,
+        IEnumerable<HazinaChatMessage> conversationHistory,
         string? userId = null,
         CancellationToken cancellationToken = default);
 

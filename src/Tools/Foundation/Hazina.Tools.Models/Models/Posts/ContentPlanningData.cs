@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DevGPTStore.Models
+namespace HazinaStore.Models
 {
     public class ContentPlanningData
     {

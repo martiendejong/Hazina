@@ -1,11 +1,11 @@
 using backend.Extensions;
-using DevGPT.GenerationTools.AI.Agents;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Services.DataGathering.Abstractions;
-using DevGPT.GenerationTools.Services.DataGathering.ToolsContexts;
-using DevGPT.GenerationTools.Services.Store;
-using ProjectModel = DevGPT.GenerationTools.Models.Project;
+using Hazina.Tools.AI.Agents;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
+using Hazina.Tools.Services.DataGathering.Abstractions;
+using Hazina.Tools.Services.DataGathering.ToolsContexts;
+using Hazina.Tools.Services.Store;
+using ProjectModel = Hazina.Tools.Models.Project;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
@@ -13,7 +13,7 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 
-namespace DevGPT.GenerationTools.Services.DataGathering.Services;
+namespace Hazina.Tools.Services.DataGathering.Services;
 
 /// <summary>
 /// Service for automatically generating analysis fields from chat conversations.
@@ -112,7 +112,7 @@ After analyzing, respond with a brief summary of what you generated (or 'No anal
         string projectId,
         string chatId,
         string userMessage,
-        IEnumerable<DevGPTChatMessage> conversationHistory,
+        IEnumerable<HazinaChatMessage> conversationHistory,
         string? userId = null,
         CancellationToken cancellationToken = default)
     {
@@ -187,7 +187,7 @@ After analyzing, respond with a brief summary of what you generated (or 'No anal
                 var client = _clientFactory();
                 await client.GetResponse(
                     messages,
-                    DevGPTChatResponseFormat.Text,
+                    HazinaChatResponseFormat.Text,
                     toolsContext,
                     images: null,
                     cancellationToken);
@@ -445,9 +445,9 @@ After analyzing, respond with a brief summary of what you generated (or 'No anal
         return $"Please provide your output in {language}.";
     }
 
-    private List<DevGPTChatMessage> BuildAnalysisMessages(
+    private List<HazinaChatMessage> BuildAnalysisMessages(
         string userMessage,
-        IEnumerable<DevGPTChatMessage> conversationHistory,
+        IEnumerable<HazinaChatMessage> conversationHistory,
         string fieldsContext,
         IReadOnlyList<AnalysisFieldInfo> availableFields)
     {
@@ -467,9 +467,9 @@ IMPORTANT: Some fields may already be generated (marked [ALREADY GENERATED]).
 
         var enhancedPrompt = $"{formattedSystemPrompt}\n\n{existingFieldsNote}\nAnalysis fields status:\n{fieldsContext}";
 
-        var messages = new List<DevGPTChatMessage>
+        var messages = new List<HazinaChatMessage>
         {
-            new(DevGPTMessageRole.System, enhancedPrompt)
+            new(HazinaMessageRole.System, enhancedPrompt)
         };
 
         // Include recent conversation context
@@ -477,13 +477,13 @@ IMPORTANT: Some fields may already be generated (marked [ALREADY GENERATED]).
 
         if (recentHistory.Count > 0)
         {
-            messages.Add(new DevGPTChatMessage(DevGPTMessageRole.System, "Here is the recent conversation context:"));
+            messages.Add(new HazinaChatMessage(HazinaMessageRole.System, "Here is the recent conversation context:"));
             messages.AddRange(recentHistory);
         }
 
         // Add the current message to analyze
-        messages.Add(new DevGPTChatMessage(
-            DevGPTMessageRole.User,
+        messages.Add(new HazinaChatMessage(
+            HazinaMessageRole.User,
             $"Analyze this conversation and generate any analysis fields that have sufficient context. Remember: only regenerate existing fields if there's a compelling reason.\n\n{userMessage}"));
 
         return messages;

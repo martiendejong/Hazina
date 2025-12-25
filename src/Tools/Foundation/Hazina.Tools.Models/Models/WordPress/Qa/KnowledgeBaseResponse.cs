@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DevGPTStore.Models.WordPress
+namespace HazinaStore.Models.WordPress
 {
     public class KnowledgeBaseResponse
     {

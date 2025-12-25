@@ -1,6 +1,6 @@
-using DevGPT.GenerationTools.Services.DataGathering.Models;
+using Hazina.Tools.Services.DataGathering.Models;
 
-namespace DevGPT.GenerationTools.Services.DataGathering.Abstractions;
+namespace Hazina.Tools.Services.DataGathering.Abstractions;
 
 /// <summary>
 /// Provides real-time notification capabilities for gathered data events.

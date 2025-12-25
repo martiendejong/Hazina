@@ -1,7 +1,7 @@
-using DevGPTStore.Core.Models;
+using HazinaStore.Core.Models;
 using FluentAssertions;
 
-namespace DevGPT.GenerationTools.Core.Tests.Models;
+namespace Hazina.GenerationTools.Core.Tests.Models;
 
 public class ChatMessageTests
 {

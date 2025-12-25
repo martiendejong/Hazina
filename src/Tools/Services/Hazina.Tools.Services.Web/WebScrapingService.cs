@@ -1,4 +1,4 @@
-using DevGPTStore.Models;
+using HazinaStore.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,12 +6,12 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Services.FileOps.Helpers;
-using DevGPT.GenerationTools.Services.WordPress;
-using DevGPTStore;
+using Hazina.Tools.Data;
+using Hazina.Tools.Services.FileOps.Helpers;
+using Hazina.Tools.Services.WordPress;
+using HazinaStore;
 
-namespace DevGPT.GenerationTools.Services.Web
+namespace Hazina.Tools.Services.Web
 {
     /// <summary>
     /// Service responsible for web scraping operations including sitemap reading,
@@ -75,8 +75,8 @@ namespace DevGPT.GenerationTools.Services.Web
             // Try dedicated WordPress import first
             try
             {
-                var projectsRepo = new ProjectsRepository(DevGPTStoreConfigLoader.LoadDevGPTStoreConfig(), null);
-                var contentRetrieval = new DevGPTStore.ContentRetrieval.ContentRetrievalService(_fileLocator, projectsRepo.AppConfig, _apiKey);
+                var projectsRepo = new ProjectsRepository(HazinaStoreConfigLoader.LoadHazinaStoreConfig(), null);
+                var contentRetrieval = new HazinaStore.ContentRetrieval.ContentRetrievalService(_fileLocator, projectsRepo.AppConfig, _apiKey);
                 await contentRetrieval.ImportWordpressSite(_projectId, baseUrl);
                 return true;
             }
@@ -97,7 +97,7 @@ namespace DevGPT.GenerationTools.Services.Web
                 var listFilePath = Path.Combine(projectFolder, "uploadedFiles.json");
                 WebHelpers.EnsureDirectoryExists(uploadsFolder);
 
-                var tokenCounter = new DevGPT.GenerationTools.Services.FileOps.Helpers.TokenCounter();
+                var tokenCounter = new Hazina.Tools.Services.FileOps.Helpers.TokenCounter();
 
                 foreach (var page in filtered)
                 {

@@ -8,9 +8,9 @@
 //    private static string Normalize(string s)
 //        => (s ?? "").Replace("\r\n", "\n").Replace("\r", "\n").TrimEnd();
 
-//    private const string ValidJson = "[\n  {\n    \"Name\": \"Codebase\",\n    \"Description\": \"Main codebase store\",\n    \"Path\": \"C:/Projects/devgpt\",\n    \"FileFilters\": [\"*.cs\", \"*.js\"],\n    \"SubDirectory\": \"src\",\n    \"ExcludePattern\": [\"bin\", \"obj\"]\n  }\n]";
+//    private const string ValidJson = "[\n  {\n    \"Name\": \"Codebase\",\n    \"Description\": \"Main codebase store\",\n    \"Path\": \"C:/Projects/Hazina\",\n    \"FileFilters\": [\"*.cs\", \"*.js\"],\n    \"SubDirectory\": \"src\",\n    \"ExcludePattern\": [\"bin\", \"obj\"]\n  }\n]";
 
-//    private const string ValidDevGPT = "Name: Codebase\nDescription: Main codebase store\nPath: C:/Projects/devgpt\nFileFilters: *.cs,*.js\nSubDirectory: src\nExcludePattern: bin,obj";
+//    private const string ValidDevGPT = "Name: Codebase\nDescription: Main codebase store\nPath: C:/Projects/Hazina\nFileFilters: *.cs,*.js\nSubDirectory: src\nExcludePattern: bin,obj";
 
 //    private const string InvalidJson = "{";
 //    private const string InvalidDevGPT = "Name Codebase\nDescription Main codebase store";
@@ -45,7 +45,7 @@
 //        var cfg = configs[0];
 //        Assert.Equal("Codebase", cfg.Name);
 //        Assert.Equal("Main codebase store", cfg.Description);
-//        Assert.Equal("C:/Projects/devgpt", cfg.Path);
+//        Assert.Equal("C:/Projects/Hazina", cfg.Path);
 //        Assert.Equal(new[] { "*.cs", "*.js" }, cfg.FileFilters);
 //        Assert.Equal("src", cfg.SubDirectory);
 //        Assert.Equal(new[] { "bin", "obj" }, cfg.ExcludePattern);
@@ -59,7 +59,7 @@
 //        var cfg = configs[0];
 //        Assert.Equal("Codebase", cfg.Name);
 //        Assert.Equal("Main codebase store", cfg.Description);
-//        Assert.Equal("C:/Projects/devgpt", cfg.Path);
+//        Assert.Equal("C:/Projects/Hazina", cfg.Path);
 //        Assert.Equal(new[] { "*.cs", "*.js" }, cfg.FileFilters);
 //        Assert.Equal("src", cfg.SubDirectory);
 //        Assert.Equal(new[] { "bin", "obj" }, cfg.ExcludePattern);
@@ -81,7 +81,7 @@
 //        Assert.Single(fromJson);
 //        Assert.Equal("Codebase", fromJson[0].Name);
 
-//        // serialize to devgpt and back
+//        // serialize to Hazina and back
 //        var toDevgpt = DevGPTStoreConfigParser.Serialize(fromJson);
 //        // Compare with normalized baseline (ignore trailing newlines and newline types)
 //        Assert.Equal(Normalize(ValidDevGPT), Normalize(toDevgpt));

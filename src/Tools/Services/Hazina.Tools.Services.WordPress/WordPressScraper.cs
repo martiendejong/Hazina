@@ -2,7 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json.Nodes;
 
-namespace DevGPT.GenerationTools.Services.WordPress
+namespace Hazina.Tools.Services.WordPress
 {
     public class WordPressScraper
     {

@@ -1,8 +1,8 @@
 public class StoresAndAgentsAndFlowLoader
 {
     public List<IDocumentStore> _stores = new List<IDocumentStore>();
-    public List<DevGPTAgent> _agents = new List<DevGPTAgent>();
-    public List<DevGPTFlow> _flows = new List<DevGPTFlow>();
+    public List<HazinaAgent> _agents = new List<HazinaAgent>();
+    public List<HazinaFlow> _flows = new List<HazinaFlow>();
 
     public readonly QuickAgentCreator _quickAgentCreator;
 
@@ -31,7 +31,7 @@ public class StoresAndAgentsAndFlowLoader
 
     public async Task LoadFromText(string storesJson, string agentsjson, string flowsjson)
     {
-        // ---- FORMAT AUTO-DETECTION (support both JSON/.devgpt) ----
+        // ---- FORMAT AUTO-DETECTION (support both JSON/.Hazina) ----
         var storesConfig = StoreConfigFormatHelper.AutoDetectAndParse(storesJson) ?? new List<StoreConfig>();
         var agentsConfig = AgentConfigFormatHelper.AutoDetectAndParse(agentsjson) ?? new List<AgentConfig>();
         var flowsConfig = FlowConfigFormatHelper.AutoDetectAndParse(flowsjson) ?? new List<FlowConfig>();
@@ -42,8 +42,8 @@ public class StoresAndAgentsAndFlowLoader
 
         // FIX: Always clear the current store/agent lists to avoid duplications
         _stores = new List<IDocumentStore>();
-        _agents = new List<DevGPTAgent>();
-        _flows = new List<DevGPTFlow>();
+        _agents = new List<HazinaAgent>();
+        _flows = new List<HazinaFlow>();
 
         // Create all document stores
         foreach (var sc in storesConfig)

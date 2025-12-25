@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace DevGPT.GenerationTools.Services.Chat
+namespace Hazina.Tools.Services.Chat
 {
     public class ConversationStarterActions
     {

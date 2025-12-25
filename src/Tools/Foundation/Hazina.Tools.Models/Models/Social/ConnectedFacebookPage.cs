@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DevGPT.GenerationTools.Models.Social
+namespace Hazina.Tools.Models.Social
 {
     public class ConnectedFacebookPage
     {

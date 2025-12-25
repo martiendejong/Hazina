@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace DevGPT.GenerationTools.Services.Embeddings
+namespace Hazina.Tools.Services.Embeddings
 {
     public interface IEmbeddingsService
     {

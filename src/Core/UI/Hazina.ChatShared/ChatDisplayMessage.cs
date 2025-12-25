@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace DevGPT.ChatShared
+namespace Hazina.ChatShared
 {
     public class ChatDisplayMessage : INotifyPropertyChanged
     {

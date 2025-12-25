@@ -1,4 +1,4 @@
-namespace DevGPT.GenerationTools.Services.FileOps.Helpers
+namespace Hazina.Tools.Services.FileOps.Helpers
 {
     public class TokenCounter
     {

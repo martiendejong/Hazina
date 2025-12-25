@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace DevGPT.GenerationTools.Services.Chat
+namespace Hazina.Tools.Services.Chat
 {
     /// <summary>
     /// Provides random opening questions for business idea interview chats.

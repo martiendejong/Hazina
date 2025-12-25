@@ -1,11 +1,11 @@
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Models.WordPress.Blogs;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
 using System;
 using System.IO;
 using System.Linq;
 
-namespace DevGPT.GenerationTools.Services.Chat
+namespace Hazina.Tools.Services.Chat
 {
     /// <summary>
     /// Base class for chat-related services providing common functionality

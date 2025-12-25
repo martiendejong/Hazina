@@ -1,7 +1,7 @@
 using Microsoft.SemanticKernel;
 using System.ComponentModel;
 
-namespace DevGPT.LLMs.Plugins;
+namespace Hazina.LLMs.Plugins;
 
 /// <summary>
 /// Semantic Kernel plugin for DocumentStore operations

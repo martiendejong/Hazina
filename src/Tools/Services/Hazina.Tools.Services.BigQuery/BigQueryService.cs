@@ -1,4 +1,4 @@
-using DevGPT.GenerationTools.Models.BigQuery;
+using Hazina.Tools.Models.BigQuery;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,10 +6,10 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Google.Cloud.BigQuery.V2;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Services.Store;
+using Hazina.Tools.Data;
+using Hazina.Tools.Services.Store;
 
-namespace DevGPT.GenerationTools.Services.BigQuery
+namespace Hazina.Tools.Services.BigQuery
 {
     /// <summary>
     /// BigQuery operations: list/import accounts and persist results under project folder.
@@ -51,9 +51,9 @@ namespace DevGPT.GenerationTools.Services.BigQuery
             if (string.IsNullOrWhiteSpace(prompt))
                 return "No instruction provided for big query.";
 
-            var messages = new List<DevGPTChatMessage>();
-            messages.Add(new DevGPTChatMessage(DevGPTMessageRole.System, "Your role is to execute google big query queries until you have enough data to return the provided results. Run multiple queries, one for each relevant table. never put the account id in the where clause. this is done automatically. When retrieving posts, advertisements or other content that has textual information, always make sure that you include these texts in your response. so when you talk about a facebook post, you will always include the content of the post itself. when talking about advertisements show the content of the advertisement. when its a picture write that this post is a picture. when the user asks about posts or content, never assume on type of contain but look into all of the available data. when the user talks about a table you look into that table instead of showing the table name or the columns with their data types, that is your own private information. your response will always be a representation of the data that is in the tables. only use the actual information, never show example data or hallucinations."));
-            messages.Add(new DevGPTChatMessage(DevGPTMessageRole.System, BigQueries.BigQueryPrompt));
+            var messages = new List<HazinaChatMessage>();
+            messages.Add(new HazinaChatMessage(HazinaMessageRole.System, "Your role is to execute google big query queries until you have enough data to return the provided results. Run multiple queries, one for each relevant table. never put the account id in the where clause. this is done automatically. When retrieving posts, advertisements or other content that has textual information, always make sure that you include these texts in your response. so when you talk about a facebook post, you will always include the content of the post itself. when talking about advertisements show the content of the advertisement. when its a picture write that this post is a picture. when the user asks about posts or content, never assume on type of contain but look into all of the available data. when the user talks about a table you look into that table instead of showing the table name or the columns with their data types, that is your own private information. your response will always be a representation of the data that is in the tables. only use the actual information, never show example data or hallucinations."));
+            messages.Add(new HazinaChatMessage(HazinaMessageRole.System, BigQueries.BigQueryPrompt));
 
             var folder = _fileLocator.GetProjectFolder(projectId);
             var bigQueryStoreSetup = StoreProvider.GetStoreSetup(folder, _apiKey);

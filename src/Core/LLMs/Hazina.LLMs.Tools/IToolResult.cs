@@ -1,4 +1,4 @@
-namespace DevGPT.LLMs.Tools
+namespace Hazina.LLMs.Tools
 {
     /// <summary>
     /// Represents the result of a tool execution

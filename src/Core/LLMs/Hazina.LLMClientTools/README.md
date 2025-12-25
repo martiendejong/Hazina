@@ -1,6 +1,6 @@
-# DevGPT LLM Client Tools
+# Hazina LLM Client Tools
 
-Tool calling extensions for DevGPT LLM clients. This package provides reusable tools that LLMs can invoke for various tasks including AI coding assistants, CLI execution, and web scraping.
+Tool calling extensions for Hazina LLM clients. This package provides reusable tools that LLMs can invoke for various tasks including AI coding assistants, CLI execution, and web scraping.
 
 ## Available Tools
 
@@ -102,7 +102,7 @@ The package includes a powerful `MultiAgentCodingOrchestrator` that enables coor
 ### Example: Orchestrated Task Breakdown
 
 ```csharp
-using DevGPT.LLMClientTools.Examples;
+using Hazina.LLMs.Tools.Examples;
 
 // Setup orchestrator with GPT-4
 var openAIClient = new OpenAIClientWrapper(config);
@@ -188,7 +188,7 @@ The tools follow a consistent pattern:
 ```
 Tool Class (e.g., ClaudeCodeTool)
     ↓
-Creates DevGPTChatTool with:
+Creates HazinaChatTool with:
     - Name
     - Description
     - Parameters
@@ -208,9 +208,9 @@ You can create your own tools following the same pattern:
 ```csharp
 public static class MyCustomTool
 {
-    public static DevGPTChatTool Create()
+    public static HazinaChatTool Create()
     {
-        return new DevGPTChatTool(
+        return new HazinaChatTool(
             name: "my_tool",
             description: "What this tool does",
             parameters: new List<ChatToolParameter> { /* ... */ },

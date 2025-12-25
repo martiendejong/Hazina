@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace DevGPT.GenerationTools.Services.DataGathering.Models;
+namespace Hazina.Tools.Services.DataGathering.Models;
 
 /// <summary>
 /// Represents a single piece of gathered data with a key, human-readable title, and flexible value.

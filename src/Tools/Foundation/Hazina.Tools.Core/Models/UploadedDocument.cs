@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using DevGPTStore.Core.Interfaces;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
+using HazinaStore.Core.Interfaces;
+using Hazina.Tools.Models;
+using Hazina.Tools.Models.WordPress.Blogs;
 
-namespace DevGPTStore.Core.Models
+namespace HazinaStore.Core.Models
 {
     /// <summary>
     /// Represents a document uploaded by the user

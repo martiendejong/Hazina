@@ -1,4 +1,4 @@
-namespace DevGPT.Store.EmbeddingStore;
+namespace Hazina.Store.EmbeddingStore;
 
 /// <summary>
 /// Implementation of IEmbeddingGenerator that uses an ILLMClient to generate embeddings.

@@ -1,4 +1,4 @@
-namespace DevGPT.Store.EmbeddingStore;
+namespace Hazina.Store.EmbeddingStore;
 
 /// <summary>
 /// Core interface for storing and retrieving embeddings.

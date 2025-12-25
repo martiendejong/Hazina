@@ -6,12 +6,12 @@ using System.Text;
 using System.Text.Json;
 
 /// <summary>
-/// Parser and serializer for AgentConfig in .devgpt plain text format.
+/// Parser and serializer for AgentConfig in .hazina plain text format.
 /// </summary>
-public static class DevGPTAgentConfigParser
+public static class HazinaAgentConfigParser
 {
     /// <summary>
-    /// Serialize a list of AgentConfig into .devgpt format.
+    /// Serialize a list of AgentConfig into .hazina format.
     /// </summary>
     public static string Serialize(IEnumerable<AgentConfig> agents)
     {
@@ -32,7 +32,7 @@ public static class DevGPTAgentConfigParser
     }
 
     /// <summary>
-    /// Parse a .devgpt agent config string into a list of AgentConfig objects.
+    /// Parse a .Hazina agent config string into a list of AgentConfig objects.
     /// </summary>
     public static List<AgentConfig> Parse(string input)
     {
@@ -118,7 +118,7 @@ public static class DevGPTAgentConfigParser
             throw new Exception($"Failed to parse agent config file '{path}': {ex.Message}", ex);
         }
     }
-    // Save list to .devgpt format file
+    // Save list to .Hazina format file
     public static void SaveToFile(IEnumerable<AgentConfig> agents, string path)
     {
         string text = Serialize(agents);
@@ -128,10 +128,10 @@ public static class DevGPTAgentConfigParser
         }
         catch (Exception ex)
         {
-            throw new Exception($"Failed to write .devgpt agent config to file '{path}': {ex.Message}", ex);
+            throw new Exception($"Failed to write .Hazina agent config to file '{path}': {ex.Message}", ex);
         }
     }
-    // Interop: JSON string to .devgpt file (for migrations/conversion)
+    // Interop: JSON string to .Hazina file (for migrations/conversion)
     public static void ConvertJsonToDevGptFile(string json, string path)
     {
         try
@@ -141,19 +141,19 @@ public static class DevGPTAgentConfigParser
         }
         catch (Exception ex)
         {
-            throw new Exception($"Failed conversion from JSON to .devgpt: {ex.Message}", ex);
+            throw new Exception($"Failed conversion from JSON to .Hazina: {ex.Message}", ex);
         }
     }
 }
 
 
 /// <summary>
-/// Parser and serializer for AgentConfig in .devgpt plain text format.
+/// Parser and serializer for AgentConfig in .Hazina plain text format.
 /// </summary>
-public static class DevGPTFlowConfigParser
+public static class HazinaFlowConfigParser
 {
     /// <summary>
-    /// Serialize a list of AgentConfig into .devgpt format.
+    /// Serialize a list of AgentConfig into .Hazina format.
     /// </summary>
     public static string Serialize(IEnumerable<FlowConfig> agents)
     {
@@ -169,7 +169,7 @@ public static class DevGPTFlowConfigParser
     }
 
     /// <summary>
-    /// Parse a .devgpt agent config string into a list of AgentConfig objects.
+    /// Parse a .Hazina agent config string into a list of AgentConfig objects.
     /// </summary>
     public static List<FlowConfig> Parse(string input)
     {
@@ -238,7 +238,7 @@ public static class DevGPTFlowConfigParser
             throw new Exception($"Failed to parse agent config file '{path}': {ex.Message}", ex);
         }
     }
-    // Save list to .devgpt format file
+    // Save list to .Hazina format file
     public static void SaveToFile(IEnumerable<FlowConfig> flows, string path)
     {
         string text = Serialize(flows);
@@ -248,10 +248,10 @@ public static class DevGPTFlowConfigParser
         }
         catch (Exception ex)
         {
-            throw new Exception($"Failed to write .devgpt agent config to file '{path}': {ex.Message}", ex);
+            throw new Exception($"Failed to write .Hazina agent config to file '{path}': {ex.Message}", ex);
         }
     }
-    // Interop: JSON string to .devgpt file (for migrations/conversion)
+    // Interop: JSON string to .Hazina file (for migrations/conversion)
     public static void ConvertJsonToDevGptFile(string json, string path)
     {
         try
@@ -261,7 +261,7 @@ public static class DevGPTFlowConfigParser
         }
         catch (Exception ex)
         {
-            throw new Exception($"Failed conversion from JSON to .devgpt: {ex.Message}", ex);
+            throw new Exception($"Failed conversion from JSON to .Hazina: {ex.Message}", ex);
         }
     }
 }

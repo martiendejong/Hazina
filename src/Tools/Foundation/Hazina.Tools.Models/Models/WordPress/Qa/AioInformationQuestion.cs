@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace DevGPTStore.Models.WordPress
+namespace HazinaStore.Models.WordPress
 {
     public class AioInformationQuestion
     {

@@ -1,4 +1,4 @@
-namespace DevGPT.App.Windows
+namespace Hazina.App.Windows
 {
     public class UserAppConfig
     {

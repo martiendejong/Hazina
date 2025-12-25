@@ -1,11 +1,11 @@
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
 using System;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace DevGPT.GenerationTools.Services.Chat
+namespace Hazina.Tools.Services.Chat
 {
     /// <summary>
     /// Service responsible for managing chat messages (CRUD operations)
@@ -128,7 +128,7 @@ namespace DevGPT.GenerationTools.Services.Chat
 
         public ConversationMessage AddFileMessage(string projectId, string chatId, string filePath, bool includeInProject, string userId = null)
         {
-            var fileMessage = new DevGPTStoreChatFile { File = filePath, IncludeInProject = includeInProject };
+            var fileMessage = new HazinaStoreChatFile { File = filePath, IncludeInProject = includeInProject };
             var chatItem = new ConversationMessage
             {
                 Role = ChatMessageRole.Assistant,

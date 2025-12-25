@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
-using DevGPTStore.Models;
+using HazinaStore.Models;
 
-namespace DevGPT.GenerationTools.Services.Web
+namespace Hazina.Tools.Services.Web
 {
     internal static class WebHelpers
     {

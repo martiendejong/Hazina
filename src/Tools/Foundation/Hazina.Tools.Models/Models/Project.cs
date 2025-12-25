@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Runtime.CompilerServices;
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
-using DevGPT.GenerationTools.Models.Social;
+using Hazina.Tools.Models.WordPress.Blogs;
+using Hazina.Tools.Models.Social;
 
-namespace DevGPT.GenerationTools.Models
+namespace Hazina.Tools.Models
 {
     public class Project : Serializer<Project>
     {
@@ -24,7 +24,7 @@ namespace DevGPT.GenerationTools.Models
         public string? ContactEmail { get; set; }
         public string? ContactPhone { get; set; }
         public List<SocialMediaAddress> SocialMediaAddresses { get; set; } = new List<SocialMediaAddress>();
-        //public List<DevGPTStoreDocument> Documents { get; set; } = new List<DevGPTStoreDocument>();
+        //public List<HazinaStoreDocument> Documents { get; set; } = new List<HazinaStoreDocument>();
 
         public string? KlantSpecifiekePrompt { get; set; }
         public string? Doelgroep { get; set; }

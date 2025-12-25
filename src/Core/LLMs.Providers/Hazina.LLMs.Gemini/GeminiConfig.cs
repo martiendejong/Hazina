@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Configuration;
 
-namespace DevGPT.LLMs.Gemini;
+namespace Hazina.LLMs.Gemini;
 
 public class GeminiConfig
 {
-    public GeminiConfig(string apiKey = "", string model = "gemini-1.5-pro", string endpoint = "https://generativelanguage.googleapis.com/v1beta", string logPath = "c:\\projects\\devgptlogs.txt", string imageModel = "imagegeneration", string? ttsApiKey = null, string ttsLanguageCode = "en-US", string ttsVoiceName = "en-US-Neural2-C", string ttsAudioEncoding = "MP3")
+    public GeminiConfig(string apiKey = "", string model = "gemini-1.5-pro", string endpoint = "https://generativelanguage.googleapis.com/v1beta", string logPath = "c:\\projects\\hazinalogs.txt", string imageModel = "imagegeneration", string? ttsApiKey = null, string ttsLanguageCode = "en-US", string ttsVoiceName = "en-US-Neural2-C", string ttsAudioEncoding = "MP3")
     {
         ApiKey = apiKey;
         Model = model;

@@ -1,4 +1,4 @@
-namespace DevGPT.Store.EmbeddingStore;
+namespace Hazina.Store.EmbeddingStore;
 
 /// <summary>
 /// Represents a document search result with similarity score.

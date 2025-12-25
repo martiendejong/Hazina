@@ -1,6 +1,6 @@
 # Semantic Kernel Integration Example
 
-This document demonstrates how to use Semantic Kernel with DevGPT agents.
+This document demonstrates how to use Semantic Kernel with Hazina agents.
 
 ## Configuration
 
@@ -56,7 +56,7 @@ Add the following to your `appsettings.json`:
 ### 1. Create Agent with Semantic Kernel (Code)
 
 ```csharp
-using DevGPT.LLMs;
+using Hazina.LLMs;
 
 // Load config from appsettings.json
 var config = SemanticKernelConfig.Load();
@@ -100,7 +100,7 @@ Console.WriteLine(response.Result);
 ### 2. Using AgentManager with Semantic Kernel
 
 ```csharp
-using DevGPT.LLMs;
+using Hazina.LLMs;
 
 // Load Semantic Kernel config
 var skConfig = SemanticKernelConfig.Load();
@@ -108,9 +108,9 @@ var llmClient = new SemanticKernelClientWrapper(skConfig);
 
 // Create AgentManager with custom LLM client
 var manager = new AgentManager(
-    storesJsonPath: "stores.devgpt",
-    agentsJsonPath: "agents.devgpt",
-    flowsJsonPath: "flows.devgpt",
+    storesJsonPath: "stores.hazina",
+    agentsJsonPath: "agents.hazina",
+    flowsJsonPath: "flows.hazina",
     llmClient: llmClient,
     openAIApiKey: skConfig.ApiKey,
     logFilePath: "logs.txt"
@@ -155,7 +155,7 @@ var azureClient = new SemanticKernelClientWrapper(azureConfig);
 ### 4. Custom Plugins (Advanced)
 
 ```csharp
-using DevGPT.LLMs.Plugins;
+using Hazina.LLMs.Plugins;
 using Microsoft.SemanticKernel;
 
 // Create a custom plugin
@@ -184,7 +184,7 @@ var client = new SemanticKernelClientWrapper(config);
 
 ### Automatic Tool Registration
 
-DevGPT tools are automatically converted to Semantic Kernel plugins:
+Hazina tools are automatically converted to Semantic Kernel plugins:
 
 - `{store}_list` → DocumentStorePlugin.list
 - `{store}_read` → DocumentStorePlugin.read
@@ -272,7 +272,7 @@ var llmClient = new SemanticKernelClientWrapper(skConfig);
 2. **Enterprise Ready**: Azure OpenAI support for compliance requirements
 3. **Plugin Ecosystem**: Access to Semantic Kernel's plugin marketplace
 4. **Advanced Features**: Planners, memory, orchestration coming in future phases
-5. **Backward Compatible**: Existing DevGPT code works unchanged
+5. **Backward Compatible**: Existing Hazina code works unchanged
 6. **Local LLMs**: Support for Ollama and local models (coming soon)
 
 ## Troubleshooting

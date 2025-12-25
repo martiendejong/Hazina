@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using DevGPT.LLMs.Anthropic;
+using Hazina.LLMs.Anthropic;
 
 public class ClaudeClientWrapper : ILLMClient
 {
@@ -40,11 +40,11 @@ public class ClaudeClientWrapper : ILLMClient
         return $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {ChatResponse<ResponseType>.Signature} EXAMPLE: {JsonSerializer.Serialize(ChatResponse<ResponseType>.Example)}";
     }
 
-    private static (string? system, List<AnthropicMessage> msgs) MapMessages(List<DevGPTChatMessage> messages)
+    private static (string? system, List<AnthropicMessage> msgs) MapMessages(List<HazinaChatMessage> messages)
     {
         // Gather system as a single string (join if multiple)
         var systemParts = messages
-            .Where(m => m.Role == DevGPTMessageRole.System || m.Role.Role == DevGPTMessageRole.System.Role)
+            .Where(m => m.Role == HazinaMessageRole.System || m.Role.Role == HazinaMessageRole.System.Role)
             .Select(m => m.Text)
             .ToList();
         string? system = systemParts.Count > 0 ? string.Join("\n\n", systemParts) : null;
@@ -52,10 +52,10 @@ public class ClaudeClientWrapper : ILLMClient
         var mapped = new List<AnthropicMessage>();
         foreach (var m in messages)
         {
-            if (m.Role == DevGPTMessageRole.System || m.Role.Role == DevGPTMessageRole.System.Role)
+            if (m.Role == HazinaMessageRole.System || m.Role.Role == HazinaMessageRole.System.Role)
                 continue; // handled via system field
 
-            var role = (m.Role == DevGPTMessageRole.Assistant || m.Role.Role == DevGPTMessageRole.Assistant.Role) ? "assistant" : "REGULAR";
+            var role = (m.Role == HazinaMessageRole.Assistant || m.Role.Role == HazinaMessageRole.Assistant.Role) ? "assistant" : "REGULAR";
             mapped.Add(new AnthropicMessage(
                 role,
                 [ new AnthropicContentBlock("text", m.Text) ]
@@ -64,7 +64,7 @@ public class ClaudeClientWrapper : ILLMClient
         return (system, mapped);
     }
 
-    private async Task<(string text, TokenUsageInfo tokenUsage)> CallClaude(List<DevGPTChatMessage> messages, CancellationToken cancel, IToolsContext? toolsContext = null)
+    private async Task<(string text, TokenUsageInfo tokenUsage)> CallClaude(List<HazinaChatMessage> messages, CancellationToken cancel, IToolsContext? toolsContext = null)
     {
         var (system, mapped) = MapMessages(messages);
         var id = Guid.NewGuid().ToString();
@@ -128,21 +128,21 @@ public class ClaudeClientWrapper : ILLMClient
         return (tokens / 1_000_000m) * pricePerMillion;
     }
 
-    public async Task<LLMResponse<string>> GetResponse(List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    public async Task<LLMResponse<string>> GetResponse(List<HazinaChatMessage> messages, HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         // images/tooling ignored in this basic implementation
         var (text, tokenUsage) = await CallClaude(messages, cancel, toolsContext);
         return new LLMResponse<string>(text, tokenUsage);
     }
 
-    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(List<DevGPTChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(List<HazinaChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
     {
         // Inject formatting instruction as a System message before the final user prompt for better adherence
-        var withFormat = new List<DevGPTChatMessage>(messages);
+        var withFormat = new List<HazinaChatMessage>(messages);
         var instruction = BuildJsonFormatInstruction<ResponseType>();
         // Insert near the end but before last message if possible
         var insertIndex = Math.Max(0, withFormat.Count - 1);
-        withFormat.Insert(insertIndex, new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = instruction });
+        withFormat.Insert(insertIndex, new HazinaChatMessage { Role = HazinaMessageRole.System, Text = instruction });
 
         var (text, tokenUsage) = await CallClaude(withFormat, cancel, toolsContext);
         try
@@ -169,7 +169,7 @@ public class ClaudeClientWrapper : ILLMClient
         }
     }
 
-    public async Task<LLMResponse<string>> GetResponseStream(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    public async Task<LLMResponse<string>> GetResponseStream(List<HazinaChatMessage> messages, Action<string> onChunkReceived, HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         // Simple chunking as a placeholder; Anthropic SSE can be added later
         var response = await GetResponse(messages, responseFormat, toolsContext, images, cancel);
@@ -178,14 +178,14 @@ public class ClaudeClientWrapper : ILLMClient
         return response;
     }
 
-    public async Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(List<HazinaChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
     {
-        var response = await GetResponseStream(messages, onChunkReceived, DevGPTChatResponseFormat.Json, toolsContext, images, cancel);
+        var response = await GetResponseStream(messages, onChunkReceived, HazinaChatResponseFormat.Json, toolsContext, images, cancel);
         var result = JsonSerializer.Deserialize<ResponseType>(response.Result);
         return new LLMResponse<ResponseType?>(result, response.TokenUsage);
     }
 
-    public Task<LLMResponse<DevGPTGeneratedImage>> GetImage(string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    public Task<LLMResponse<HazinaGeneratedImage>> GetImage(string prompt, HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
         => throw new NotSupportedException("Claude does not generate images in this client.");
 
     public Task SpeakStream(string text, string voice, Action<byte[]> onAudioChunk, string mimeType, CancellationToken cancel)

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace DevGPT.GenerationTools.Models
+namespace Hazina.Tools.Models
 {
     public class ImageVariant
     {

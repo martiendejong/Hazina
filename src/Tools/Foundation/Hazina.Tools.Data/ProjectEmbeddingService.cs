@@ -1,14 +1,14 @@
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using DevGPTStore.Models;
+using HazinaStore.Models;
 
-namespace DevGPT.GenerationTools.Data
+namespace Hazina.Tools.Data
 {
     /// <summary>
     /// Service responsible for embedding-related file operations.
@@ -194,7 +194,7 @@ namespace DevGPT.GenerationTools.Data
                     var chatFile = _fileLocator.GetChatFile(project.Id, chat.Id);
                     var messages = _chatRepository.LoadListFileOrDefault<ConversationMessage>(chatFile);
                     var chatUploadsFolder = Path.Combine("chats", chat.Id + "_uploads");
-                    var m2 = messages.Where(message => message.Payload is DevGPTStoreChatFile).Select(message => Path.Combine(chatUploadsFolder, (message.Payload as DevGPTStoreChatFile).File)).ToList();
+                    var m2 = messages.Where(message => message.Payload is HazinaStoreChatFile).Select(message => Path.Combine(chatUploadsFolder, (message.Payload as HazinaStoreChatFile).File)).ToList();
                     return m2;
                 }).ToList();
 

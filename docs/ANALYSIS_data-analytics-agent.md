@@ -107,10 +107,10 @@
 - Generates appropriate API requests dynamically
 - Handles authentication from stored credentials
 
-**Implementation for DevGPT**:
+**Implementation for Hazina**:
 ```csharp
 // New Tool: WebSearchTool
-public class WebSearchTool : DevGPTChatTool
+public class WebSearchTool : HazinaChatTool
 {
     public WebSearchTool() : base(
         "web_search",
@@ -126,7 +126,7 @@ public class WebSearchTool : DevGPTChatTool
 }
 
 // New Tool: DynamicAPITool
-public class DynamicAPITool : DevGPTChatTool
+public class DynamicAPITool : HazinaChatTool
 {
     public DynamicAPITool() : base(
         "call_api",
@@ -149,14 +149,14 @@ public class DynamicAPITool : DevGPTChatTool
 ### 2. ✅ **Multimodal Visual Analysis**
 **Concept**: Generate charts → Save → Load → Analyze visually
 
-**Current DevGPT State**:
+**Current Hazina State**:
 - We support image input via `List<ImageData>` parameter
 - LLMClient already handles multimodal requests
 
 **Enhancement Needed**:
 ```csharp
 // New Tool: SaveVisualization
-public class SaveVisualizationTool : DevGPTChatTool
+public class SaveVisualizationTool : HazinaChatTool
 {
     public SaveVisualizationTool(string outputPath) : base(
         "save_chart",
@@ -173,7 +173,7 @@ public class SaveVisualizationTool : DevGPTChatTool
 }
 
 // New Tool: LoadImageForAnalysis
-public class LoadImageTool : DevGPTChatTool
+public class LoadImageTool : HazinaChatTool
 {
     public LoadImageTool() : base(
         "load_image",
@@ -193,7 +193,7 @@ public class LoadImageTool : DevGPTChatTool
 ### 3. ✅ **Templated Agent Instructions**
 **Concept**: Single codebase with dynamic business context
 
-**Current DevGPT State**:
+**Current Hazina State**:
 - Agents use BaseMessages for instructions
 - Already supports per-agent configuration
 
@@ -272,7 +272,7 @@ public class CredentialStore
 }
 
 // Tool integration
-public class ApiCallTool : DevGPTChatTool
+public class ApiCallTool : HazinaChatTool
 {
     private readonly CredentialStore _credStore;
 
@@ -322,7 +322,7 @@ public class ApiCallTool : DevGPTChatTool
 
 **Implementation Path**:
 ```csharp
-public class PythonExecutionTool : DevGPTChatTool
+public class PythonExecutionTool : HazinaChatTool
 {
     private readonly string _workingDir;
 
@@ -357,9 +357,9 @@ public class PythonExecutionTool : DevGPTChatTool
 ```csharp
 public class DataAnalystToolBundle
 {
-    public static List<DevGPTChatTool> GetTools(CredentialStore credStore, string outputPath)
+    public static List<HazinaChatTool> GetTools(CredentialStore credStore, string outputPath)
     {
-        return new List<DevGPTChatTool>
+        return new List<HazinaChatTool>
         {
             new PythonExecutionTool(outputPath),
             new WebSearchTool(),
@@ -371,7 +371,7 @@ public class DataAnalystToolBundle
 }
 
 // Usage in AgentConfig
-var agent = new DevGPTAgent(
+var agent = new HazinaAgent(
     "data_analyst",
     generator,
     new ToolsContext {
@@ -382,9 +382,9 @@ var agent = new DevGPTAgent(
 
 ---
 
-## Comparison: DevGPT vs data-analytics-agent
+## Comparison: Hazina vs data-analytics-agent
 
-| Feature | data-analytics-agent | DevGPT | Action |
+| Feature | data-analytics-agent | Hazina | Action |
 |---------|---------------------|--------|--------|
 | Multi-agent support | ❌ Single agent | ✅ Multiple agents + flows | Keep our advantage |
 | Dynamic API calls | ✅ Via web search + generic HTTP | ❌ Pre-configured tools | **IMPLEMENT** |
@@ -437,7 +437,7 @@ var tools = new ToolsContext();
 tools.Add(new WebSearchTool());
 tools.Add(new DynamicAPITool(credStore));
 
-var agent = new DevGPTAgent("api_researcher", generator, tools);
+var agent = new HazinaAgent("api_researcher", generator, tools);
 
 // Agent can now discover and call ANY API
 var response = await agent.Generator.GetResponse(

@@ -1,4 +1,4 @@
-namespace DevGPT.GenerationTools.Models
+namespace Hazina.Tools.Models
 {
     public enum ContentItemState
     {

@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using DevGPTStore.Models;
+using HazinaStore.Models;
 
-namespace DevGPTStore.Models
+namespace HazinaStore.Models
 {
     public class CommentInfo : AEmbedding, IEmbedding
     {

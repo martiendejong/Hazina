@@ -1,8 +1,8 @@
-# DevGPT.DynamicAPI - Usage Guide
+# Hazina.DynamicAPI - Usage Guide
 
 ## Wat is dit?
 
-DevGPT.DynamicAPI is een systeem waarmee AI agents **elke API kunnen aanroepen zonder dat je van tevoren de API hoeft te configureren**. De agent kan zelf:
+Hazina.DynamicAPI is een systeem waarmee AI agents **elke API kunnen aanroepen zonder dat je van tevoren de API hoeft te configureren**. De agent kan zelf:
 
 1. API documentatie zoeken op internet
 2. De documentatie lezen en begrijpen
@@ -104,13 +104,13 @@ if (response.IsSuccess)
 }
 ```
 
-## Gebruik met DevGPT Agents
+## Gebruik met Hazina Agents
 
 ### Setup: Maak Tools aan
 
 ```csharp
-using DevGPT.DynamicAPI.Core;
-using DevGPT.DynamicAPI.Tools;
+using Hazina.DynamicAPI.Core;
+using Hazina.DynamicAPI.Tools;
 
 // Initialize
 var credStore = new CredentialStore("./credentials");
@@ -119,12 +119,12 @@ var searchTool = new WebSearchTool(credStore);
 
 // Maak tools context
 var tools = new ToolsContext();
-tools.Add(new WebSearchDevGPTTool(searchTool));      // web_search
-tools.Add(new FetchUrlDevGPTTool(searchTool));       // fetch_url
-tools.Add(new DynamicAPIDevGPTTool(apiClient));      // api_call
+tools.Add(new WebSearchHazinaTool(searchTool));      // web_search
+tools.Add(new FetchUrlHazinaTool(searchTool));       // fetch_url
+tools.Add(new DynamicAPIHazinaTool(apiClient));      // api_call
 
 // Maak agent met deze tools
-var agent = new DevGPTAgent(
+var agent = new HazinaAgent(
     name: "api_researcher",
     generator: generator,
     tools: tools
@@ -172,11 +172,11 @@ var apiClient = new DynamicAPIClient(credStore);
 var searchTool = new WebSearchTool(credStore);
 
 var tools = new ToolsContext();
-tools.Add(new WebSearchDevGPTTool(searchTool));
-tools.Add(new DynamicAPIDevGPTTool(apiClient));
+tools.Add(new WebSearchHazinaTool(searchTool));
+tools.Add(new DynamicAPIHazinaTool(apiClient));
 
 // 3. Maak agent
-var agent = new DevGPTAgent("payment_agent", generator, tools);
+var agent = new HazinaAgent("payment_agent", generator, tools);
 
 // 4. Stel vraag
 var response = await agent.Generator.GetResponse(

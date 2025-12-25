@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using DevGPT.Store.EmbeddingStore;
+using Hazina.Store.EmbeddingStore;
 
 public class DocumentStore : IDocumentStore
 {

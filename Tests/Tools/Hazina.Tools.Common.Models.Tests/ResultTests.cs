@@ -1,7 +1,7 @@
 using Common.Models.DTO;
 using FluentAssertions;
 
-namespace DevGPT.GenerationTools.Common.Models.Tests;
+namespace Hazina.GenerationTools.Common.Models.Tests;
 
 public class ResultTests
 {

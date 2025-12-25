@@ -14,19 +14,19 @@ public class DocumentGenerator : IDocumentGenerator
     protected List<IDocumentStore> ReadonlyStores { get; set; }
     //protected TypedOpenAIClient TypedApi { get; set; }
     //public SimpleOpenAIClient SimpleApi { get; set; }
-    public List<DevGPTChatMessage> BaseMessages { get; set; }
+    public List<HazinaChatMessage> BaseMessages { get; set; }
     protected ILLMClient LLMClient { get; set; }
     public int MaxTokens { get; set; } = 6000;
 
     public EmbeddingMatcher EmbeddingMatcher = new EmbeddingMatcher();
 
-    public async Task<LLMResponse<DevGPTGeneratedImage>> GetImage(string message, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<HazinaGeneratedImage>> GetImage(string message, CancellationToken cancel, IEnumerable<HazinaChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
-        var response = await LLMClient.GetImage(message, DevGPTChatResponseFormat.Text, toolsContext, images, cancel);
+        var response = await LLMClient.GetImage(message, HazinaChatResponseFormat.Text, toolsContext, images, cancel);
         return response;
     }
 
-    public DocumentGenerator(IDocumentStore store, List<DevGPTChatMessage> baseMessages, ILLMClient client, List<IDocumentStore> readonlyStores)
+    public DocumentGenerator(IDocumentStore store, List<HazinaChatMessage> baseMessages, ILLMClient client, List<IDocumentStore> readonlyStores)
     {
         Store = store;
         BaseMessages = baseMessages;
@@ -37,7 +37,7 @@ public class DocumentGenerator : IDocumentGenerator
         ReadonlyStores = readonlyStores;
     }
 
-    public DocumentGenerator(IDocumentStore store, List<DevGPTChatMessage> baseMessages, ILLMClient client, string openAiApiKey, string logFilePath, List<IDocumentStore> readonlyStores)
+    public DocumentGenerator(IDocumentStore store, List<HazinaChatMessage> baseMessages, ILLMClient client, string openAiApiKey, string logFilePath, List<IDocumentStore> readonlyStores)
     {
         Store = store;
         ReadonlyStores = readonlyStores;
@@ -49,59 +49,59 @@ public class DocumentGenerator : IDocumentGenerator
         //SimpleApi = TypedApi;
     }
 
-    public async Task<LLMResponse<string>> GetResponse(string message, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<string>> GetResponse(string message, CancellationToken cancel, IEnumerable<HazinaChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
-        return await LLMClient.GetResponse(sendMessages.ToList(), DevGPTChatResponseFormat.Text, toolsContext, images, cancel);
+        return await LLMClient.GetResponse(sendMessages.ToList(), HazinaChatResponseFormat.Text, toolsContext, images, cancel);
     }
 
-    public async Task<LLMResponse<string>> GetResponse(IEnumerable<DevGPTChatMessage> messages, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<string>> GetResponse(IEnumerable<HazinaChatMessage> messages, CancellationToken cancel, IEnumerable<HazinaChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var sendMessages = await PrepareMessages(messages.ToList(), history?.ToList(), addRelevantDocuments, addFilesList);
-        return await LLMClient.GetResponse(sendMessages, DevGPTChatResponseFormat.Text, toolsContext, images, cancel);
+        return await LLMClient.GetResponse(sendMessages, HazinaChatResponseFormat.Text, toolsContext, images, cancel);
     }
 
-    public async Task<LLMResponse<string>> StreamResponse(string message, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<string>> StreamResponse(string message, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<HazinaChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
-        return await LLMClient.GetResponseStream(sendMessages, onChunkReceived, DevGPTChatResponseFormat.Text, toolsContext, images, cancel);
+        return await LLMClient.GetResponseStream(sendMessages, onChunkReceived, HazinaChatResponseFormat.Text, toolsContext, images, cancel);
     }
 
-    public async Task<LLMResponse<string>> StreamResponse(IEnumerable<DevGPTChatMessage> messages, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<string>> StreamResponse(IEnumerable<HazinaChatMessage> messages, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<HazinaChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
-        return await LLMClient.GetResponseStream(sendMessages, onChunkReceived, DevGPTChatResponseFormat.Text, toolsContext, images, cancel);
+        return await LLMClient.GetResponseStream(sendMessages, onChunkReceived, HazinaChatResponseFormat.Text, toolsContext, images, cancel);
     }
 
-    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(string message, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(string message, CancellationToken cancel, IEnumerable<HazinaChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
     {
         var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
         return await LLMClient.GetResponse<ResponseType>(sendMessages, toolsContext, images, cancel);
     }
 
-    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(IEnumerable<DevGPTChatMessage> messages, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(IEnumerable<HazinaChatMessage> messages, CancellationToken cancel, IEnumerable<HazinaChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
     {
         var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
         return await LLMClient.GetResponse<ResponseType>(sendMessages, toolsContext, images, cancel);
     }
 
-    public async Task<LLMResponse<ResponseType?>> StreamResponse<ResponseType>(string message, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> StreamResponse<ResponseType>(string message, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<HazinaChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
     {
         var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
         return await LLMClient.GetResponseStream<ResponseType>(sendMessages, onChunkReceived, toolsContext, images, cancel);
     }
 
-    public async Task<LLMResponse<ResponseType?>> StreamResponse<ResponseType>(IEnumerable<DevGPTChatMessage> messages, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> StreamResponse<ResponseType>(IEnumerable<HazinaChatMessage> messages, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<HazinaChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null) where ResponseType : ChatResponse<ResponseType>, new()
     {
         var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
         return await LLMClient.GetResponseStream<ResponseType>(sendMessages, onChunkReceived, toolsContext, images, cancel);
     }
 
-    public async Task<LLMResponse<string>> UpdateStore(string message, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<string>> UpdateStore(string message, CancellationToken cancel, IEnumerable<HazinaChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
 
-        //var info = new DevGPTChatTool("writefile", "Writes content to a file and returns success or an error. Use this to modify files.", new List<ChatToolParameter>() {
+        //var info = new HazinaChatTool("writefile", "Writes content to a file and returns success or an error. Use this to modify files.", new List<ChatToolParameter>() {
         //        new ChatToolParameter { Name = "file", Description = "The relative path to the file being written", Type = "string" },
         //        new ChatToolParameter { Name = "content", Description = "The literal content that will be written to the file", Type = "string" }
         //    },
@@ -131,7 +131,7 @@ public class DocumentGenerator : IDocumentGenerator
         return new LLMResponse<string>(response.Result?.ResponseMessage ?? "", response.TokenUsage);
     }
 
-    public async Task<LLMResponse<string>> UpdateStore(IEnumerable<DevGPTChatMessage> messages, CancellationToken cancel, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<string>> UpdateStore(IEnumerable<HazinaChatMessage> messages, CancellationToken cancel, IEnumerable<HazinaChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var sendMessages = await PrepareMessages(messages, history, addRelevantDocuments, addFilesList);
         var response = await LLMClient.GetResponse<UpdateStoreResponse>(sendMessages, toolsContext, images, cancel);
@@ -139,7 +139,7 @@ public class DocumentGenerator : IDocumentGenerator
         return new LLMResponse<string>(response.Result?.ResponseMessage ?? "", response.TokenUsage);
     }
 
-    public async Task<LLMResponse<string>> StreamUpdateStore(string message, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<DevGPTChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    public async Task<LLMResponse<string>> StreamUpdateStore(string message, CancellationToken cancel, Action<string> onChunkReceived, IEnumerable<HazinaChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
     {
         var sendMessages = await PrepareMessages(message, history, addRelevantDocuments, addFilesList);
         var response = await LLMClient.GetResponseStream<UpdateStoreResponse>(sendMessages, onChunkReceived, toolsContext, images, cancel);
@@ -167,12 +167,12 @@ public class DocumentGenerator : IDocumentGenerator
     }
 
 
-    private async Task<List<DevGPTChatMessage>> PrepareMessages(string message, IEnumerable<DevGPTChatMessage>? messages, bool addRelevantDocuments, bool addFilesList)
+    private async Task<List<HazinaChatMessage>> PrepareMessages(string message, IEnumerable<HazinaChatMessage>? messages, bool addRelevantDocuments, bool addFilesList)
     {
-        return await PrepareMessages([new DevGPTChatMessage { Role = DevGPTMessageRole.User, Text = message }], messages, addRelevantDocuments, addFilesList);
+        return await PrepareMessages([new HazinaChatMessage { Role = HazinaMessageRole.User, Text = message }], messages, addRelevantDocuments, addFilesList);
     }
 
-    private async Task<List<DevGPTChatMessage>> PrepareMessages(IEnumerable<DevGPTChatMessage> chatMessages, IEnumerable<DevGPTChatMessage>? history, bool addRelevantDocuments, bool addFilesList)
+    private async Task<List<HazinaChatMessage>> PrepareMessages(IEnumerable<HazinaChatMessage> chatMessages, IEnumerable<HazinaChatMessage>? history, bool addRelevantDocuments, bool addFilesList)
     {
         var numMessages = 20;
         if(history !=  null)
@@ -180,7 +180,7 @@ public class DocumentGenerator : IDocumentGenerator
                 history = history.Reverse().Take(20).Reverse();
             else
                 numMessages = history.Count();
-        var sendMessages = history == null ? new List<DevGPTChatMessage>() : history.Take(numMessages - 3).ToList();
+        var sendMessages = history == null ? new List<HazinaChatMessage>() : history.Take(numMessages - 3).ToList();
         if (addRelevantDocuments)
         {
             var relevancyQuery = string.Join("\n\n", sendMessages.Concat(BaseMessages).Concat(chatMessages).Select(m => m.Role + ": " + m.Text));
@@ -193,7 +193,7 @@ public class DocumentGenerator : IDocumentGenerator
             var e = new EmbeddingMatcher();
             var docs = await e.TakeTop(embeddings, MaxTokens);
 
-            var msgs = docs.Select(d => new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = d });
+            var msgs = docs.Select(d => new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = d });
 
             sendMessages.AddRange(msgs);
         }
@@ -201,7 +201,7 @@ public class DocumentGenerator : IDocumentGenerator
         {
             var filesList = await Store.List("", true);
             var filesListString = string.Join("\n", filesList);
-            sendMessages.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = $"A list of all files in the document store:\n{filesListString}" });
+            sendMessages.Add(new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = $"A list of all files in the document store:\n{filesListString}" });
         }
         sendMessages.AddRange(BaseMessages);
         if(history != null) 

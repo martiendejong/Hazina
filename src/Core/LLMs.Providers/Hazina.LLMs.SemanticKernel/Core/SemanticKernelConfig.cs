@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 
-namespace DevGPT.LLMs;
+namespace Hazina.LLMs;
 
 public enum LLMProvider
 {
@@ -20,7 +20,7 @@ public class SemanticKernelConfig
         string embeddingModel = "text-embedding-ada-002",
         string imageModel = "dall-e-3",
         string ttsModel = "tts-1",
-        string logPath = "c:\\projects\\devgptlogs.txt",
+        string logPath = "c:\\projects\\hazinalogs.txt",
         string endpoint = "",
         string deploymentName = "")
     {
@@ -99,7 +99,7 @@ public class SemanticKernelConfig
                 skSettings.EmbeddingModel = openAISection["EmbeddingModel"] ?? "text-embedding-ada-002";
                 skSettings.ImageModel = openAISection["ImageModel"] ?? "dall-e-3";
                 skSettings.TtsModel = openAISection["TtsModel"] ?? "tts-1";
-                skSettings.LogPath = openAISection["LogPath"] ?? "c:\\projects\\devgptlogs.txt";
+                skSettings.LogPath = openAISection["LogPath"] ?? "c:\\projects\\hazinalogs.txt";
             }
         }
 

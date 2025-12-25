@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace DevGPT.GenerationTools.Services.DataGathering.Models;
+namespace Hazina.Tools.Services.DataGathering.Models;
 
 /// <summary>
 /// Payload structure for chat messages that contain gathered data.

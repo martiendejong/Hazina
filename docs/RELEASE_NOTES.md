@@ -1,4 +1,4 @@
-# DevGPT Release Notes
+# Hazina Release Notes
 
 ## [Unreleased] - Branch: return_tokens_used_after_request
 
@@ -40,7 +40,7 @@ Console.WriteLine($"Model: {response.TokenUsage.ModelName}");
 
 ---
 
-#### 2. DevGPT.DynamicAPI - Call Any API Without Pre-Configuration (✅ Nieuw!)
+#### 2. Hazina.DynamicAPI - Call Any API Without Pre-Configuration (✅ Nieuw!)
 **Geïnspireerd door data-analytics-agent - agents kunnen nu ELKE API aanroepen zonder pre-configuratie**
 
 ```csharp
@@ -53,11 +53,11 @@ var apiClient = new DynamicAPIClient(credStore);
 var searchTool = new WebSearchTool(credStore);
 
 var tools = new ToolsContext();
-tools.Add(new WebSearchDevGPTTool(searchTool));   // Zoek API docs
-tools.Add(new DynamicAPIDevGPTTool(apiClient));   // Roep APIs aan
+tools.Add(new WebSearchHazinaTool(searchTool));   // Zoek API docs
+tools.Add(new DynamicAPIHazinaTool(apiClient));   // Roep APIs aan
 
 // Agent kan nu ELKE API bellen!
-var agent = new DevGPTAgent("api_researcher", generator, tools);
+var agent = new HazinaAgent("api_researcher", generator, tools);
 var response = await agent.Generator.GetResponse(
     "Find Stripe docs and create a payment intent for $20",
     cancel
@@ -81,7 +81,7 @@ var response = await agent.Generator.GetResponse(
    - Automatische authenticatie injectie
    - Support voor alle HTTP methods
 
-4. **DevGPT Tools** - Ready-to-use agent tools
+4. **Hazina Tools** - Ready-to-use agent tools
    - `web_search` - Zoek informatie
    - `fetch_url` - Lees documentatie
    - `api_call` - Roep API aan
@@ -99,20 +99,20 @@ Agent:
 ```
 
 **Commits:**
-- 53bc58d: DevGPT.DynamicAPI project
+- 53bc58d: Hazina.DynamicAPI project
 - 32794a2: Security fix System.Text.Json
 - a12a8a9: Nederlandse usage guide
 
 **Bestanden:**
-- `DevGPT.DynamicAPI/Core/CredentialStore.cs`
-- `DevGPT.DynamicAPI/Core/DynamicAPIClient.cs`
-- `DevGPT.DynamicAPI/Tools/WebSearchTool.cs`
-- `DevGPT.DynamicAPI/Tools/DynamicAPIDevGPTTool.cs`
-- `DevGPT.DynamicAPI/Tools/WebSearchDevGPTTool.cs`
-- `DevGPT.DynamicAPI/Models/ApiRequest.cs`
-- `DevGPT.DynamicAPI/Examples/DynamicAPIExample.cs`
-- `DevGPT.DynamicAPI/README.md`
-- `DevGPT.DynamicAPI/USAGE_GUIDE.md`
+- `Hazina.DynamicAPI/Core/CredentialStore.cs`
+- `Hazina.DynamicAPI/Core/DynamicAPIClient.cs`
+- `Hazina.DynamicAPI/Tools/WebSearchTool.cs`
+- `Hazina.DynamicAPI/Tools/DynamicAPIHazinaTool.cs`
+- `Hazina.DynamicAPI/Tools/WebSearchHazinaTool.cs`
+- `Hazina.DynamicAPI/Models/ApiRequest.cs`
+- `Hazina.DynamicAPI/Examples/DynamicAPIExample.cs`
+- `Hazina.DynamicAPI/README.md`
+- `Hazina.DynamicAPI/USAGE_GUIDE.md`
 
 ---
 
@@ -178,7 +178,7 @@ Console.WriteLine($"Cost: ${response.TokenUsage.TotalCost:F4}");
 **Setup:**
 ```bash
 # 1. Add project reference
-dotnet add reference ../DevGPT.DynamicAPI/DevGPT.DynamicAPI.csproj
+dotnet add reference ../Hazina.DynamicAPI/Hazina.DynamicAPI.csproj
 
 # 2. Install Bing API key (voor web search)
 # Get key from: https://www.microsoft.com/en-us/bing/apis/bing-web-search-api
@@ -191,19 +191,19 @@ echo '{"api_key":"sk_test_..."}' > credentials/stripe.json
 
 **Code:**
 ```csharp
-using DevGPT.DynamicAPI.Core;
-using DevGPT.DynamicAPI.Tools;
+using Hazina.DynamicAPI.Core;
+using Hazina.DynamicAPI.Tools;
 
 var credStore = new CredentialStore("./credentials");
 var apiClient = new DynamicAPIClient(credStore);
 var searchTool = new WebSearchTool(credStore);
 
 var tools = new ToolsContext();
-tools.Add(new WebSearchDevGPTTool(searchTool));
-tools.Add(new FetchUrlDevGPTTool(searchTool));
-tools.Add(new DynamicAPIDevGPTTool(apiClient));
+tools.Add(new WebSearchHazinaTool(searchTool));
+tools.Add(new FetchUrlHazinaTool(searchTool));
+tools.Add(new DynamicAPIHazinaTool(apiClient));
 
-var agent = new DevGPTAgent("api_researcher", generator, tools);
+var agent = new HazinaAgent("api_researcher", generator, tools);
 ```
 
 ---
@@ -213,7 +213,7 @@ var agent = new DevGPTAgent("api_researcher", generator, tools);
 ### Token Usage Tests
 ```bash
 # Build LLMs solution
-dotnet build DevGPT.LLMs.sln
+dotnet build Hazina.LLMs.sln
 
 # Run integration tests
 cd App/OpenAI.IntegrationTests
@@ -223,10 +223,10 @@ dotnet run
 ### DynamicAPI Tests
 ```bash
 # Build project
-dotnet build DevGPT.DynamicAPI/DevGPT.DynamicAPI.csproj
+dotnet build Hazina.DynamicAPI/Hazina.DynamicAPI.csproj
 
 # Run examples (requires credentials)
-# See: DevGPT.DynamicAPI/Examples/DynamicAPIExample.cs
+# See: Hazina.DynamicAPI/Examples/DynamicAPIExample.cs
 ```
 
 ---
@@ -306,8 +306,8 @@ Deze release bevat bijdragen aan:
 ## Links
 
 - [Token Usage Examples](TOKENUSAGE_EXAMPLE.md)
-- [DynamicAPI README](DevGPT.DynamicAPI/README.md)
-- [DynamicAPI Usage Guide](DevGPT.DynamicAPI/USAGE_GUIDE.md)
+- [DynamicAPI README](Hazina.DynamicAPI/README.md)
+- [DynamicAPI Usage Guide](Hazina.DynamicAPI/USAGE_GUIDE.md)
 - [Data Analytics Agent Analysis](ANALYSIS_data-analytics-agent.md)
 
 ---
@@ -315,9 +315,9 @@ Deze release bevat bijdragen aan:
 ## Git Log Summary
 
 ```
-a12a8a9 add: Nederlandse usage guide voor DevGPT.DynamicAPI
+a12a8a9 add: Nederlandse usage guide voor Hazina.DynamicAPI
 32794a2 fix: upgrade System.Text.Json naar 8.0.5 voor security
-53bc58d add: DevGPT.DynamicAPI project met credential store, web search en dynamic API client
+53bc58d add: Hazina.DynamicAPI project met credential store, web search en dynamic API client
 d4f7761 fix: verwijder duplicate PostgresChunkStore
 1a82d21 add: analyse van data-analytics-agent repository
 f5aa360 add: documentatie voor token usage tracking

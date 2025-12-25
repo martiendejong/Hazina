@@ -3,9 +3,9 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DevGPT.ChatShared;
+using Hazina.ChatShared;
 
-namespace DevGPT.App.Windows
+namespace Hazina.App.Windows
 {
     public class ChatControllerAgentManager : IChatController
     {
@@ -16,8 +16,8 @@ namespace DevGPT.App.Windows
         public ChatControllerAgentManager(AgentManager agentManager)
         {
             _agentManager = agentManager ?? throw new ArgumentNullException(nameof(agentManager));
-            var agentNames = (_agentManager.Agents ?? Array.Empty<DevGPTAgent>()).Select(a => a.Name).Where(n => !string.IsNullOrWhiteSpace(n));
-            var flowNames = (_agentManager.Flows ?? Array.Empty<DevGPTFlow>()).Select(f => f.Name).Where(n => !string.IsNullOrWhiteSpace(n));
+            var agentNames = (_agentManager.Agents ?? Array.Empty<HazinaAgent>()).Select(a => a.Name).Where(n => !string.IsNullOrWhiteSpace(n));
+            var flowNames = (_agentManager.Flows ?? Array.Empty<HazinaFlow>()).Select(f => f.Name).Where(n => !string.IsNullOrWhiteSpace(n));
             _agentsAndFlows = new ObservableCollection<string>(agentNames.Concat(flowNames).Distinct().ToList());
         }
 

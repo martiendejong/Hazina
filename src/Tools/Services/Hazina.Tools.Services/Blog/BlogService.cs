@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using DevGPTStore.Models;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Data;
+using HazinaStore.Models;
+using Hazina.Tools.Models;
+using Hazina.Tools.Data;
 using Newtonsoft.Json;
-using DevGPTStore.Services;
+using HazinaStore.Services;
 using System.Threading.Tasks;
 
-namespace DevGPTStore
+namespace HazinaStore
 {
     public class BlogService
     {

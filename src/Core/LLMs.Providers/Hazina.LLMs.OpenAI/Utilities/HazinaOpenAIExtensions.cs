@@ -2,60 +2,60 @@ using System.Text.Json;
 using OpenAI.Chat;
 using OpenAI.Images;
 
-public static class DevGPTOpenAIExtensions
+public static class HazinaOpenAIExtensions
 {
-    public static DevGPTGeneratedImage DevGPT(this GeneratedImage image)
+    public static HazinaGeneratedImage Hazina(this GeneratedImage image)
     {
         return new(image.ImageUri, image.ImageBytes);
     }
 
-    public static DevGPTChatToolCall DevGPT(this ChatToolCall chatTool)
+    public static HazinaChatToolCall Hazina(this ChatToolCall chatTool)
     {
-        return new DevGPTChatToolCall(chatTool.Id, chatTool.FunctionName, chatTool.FunctionArguments);
+        return new HazinaChatToolCall(chatTool.Id, chatTool.FunctionName, chatTool.FunctionArguments);
     }
 
-    public static ChatResponseFormat OpenAI(this DevGPTChatResponseFormat format) {
+    public static ChatResponseFormat OpenAI(this HazinaChatResponseFormat format) {
         // Be permissive: default null or unknown formats to text to avoid hard crashes
         if (format == null) return ChatResponseFormat.CreateTextFormat();
-        if (format == DevGPTChatResponseFormat.Text) return ChatResponseFormat.CreateTextFormat();
-        if (format == DevGPTChatResponseFormat.Json) return ChatResponseFormat.CreateJsonObjectFormat();
+        if (format == HazinaChatResponseFormat.Text) return ChatResponseFormat.CreateTextFormat();
+        if (format == HazinaChatResponseFormat.Json) return ChatResponseFormat.CreateJsonObjectFormat();
         // Accept custom format values like "images" by treating them as text prompts for OpenAI
         try { if (string.Equals(format.Format, "images", StringComparison.OrdinalIgnoreCase)) return ChatResponseFormat.CreateTextFormat(); } catch { }
-        throw new Exception("DevGPTChatResponseFormat not recognized");
+        throw new Exception("HazinaChatResponseFormat not recognized");
     }
-    public static ChatMessage OpenAI(this DevGPTChatMessage message) 
+    public static ChatMessage OpenAI(this HazinaChatMessage message)
     {
-        if (message.Role == DevGPTMessageRole.User || message.Role.Role == DevGPTMessageRole.User.Role) return new UserChatMessage(message.Text);
-        if (message.Role == DevGPTMessageRole.Assistant || message.Role.Role == DevGPTMessageRole.Assistant.Role) return new AssistantChatMessage(message.Text);
-        if (message.Role == DevGPTMessageRole.System || message.Role.Role == DevGPTMessageRole.System.Role) return new SystemChatMessage(message.Text);
-        throw new Exception("DevGPTMessageRole not recognized");
+        if (message.Role == HazinaMessageRole.User || message.Role.Role == HazinaMessageRole.User.Role) return new UserChatMessage(message.Text);
+        if (message.Role == HazinaMessageRole.Assistant || message.Role.Role == HazinaMessageRole.Assistant.Role) return new AssistantChatMessage(message.Text);
+        if (message.Role == HazinaMessageRole.System || message.Role.Role == HazinaMessageRole.System.Role) return new SystemChatMessage(message.Text);
+        throw new Exception("HazinaMessageRole not recognized");
     }
-    public static DevGPTChatMessage? DevGPT(this ChatMessage message)
+    public static HazinaChatMessage? Hazina(this ChatMessage message)
     {
-        if (message is UserChatMessage) return new DevGPTChatMessage() { Role = DevGPTMessageRole.User, Text = message.Content.First().Text };
+        if (message is UserChatMessage) return new HazinaChatMessage() { Role = HazinaMessageRole.User, Text = message.Content.First().Text };
         if (message is AssistantChatMessage)
         {
             if(message.Content.Any())
-                return new DevGPTChatMessage() { Role = DevGPTMessageRole.Assistant, Text = message.Content.First().Text };
+                return new HazinaChatMessage() { Role = HazinaMessageRole.Assistant, Text = message.Content.First().Text };
             return null; // tool calls, todo check if this is right
         }
-        if (message is SystemChatMessage) return new DevGPTChatMessage() { Role = DevGPTMessageRole.System, Text = message.Content.First().Text };
+        if (message is SystemChatMessage) return new HazinaChatMessage() { Role = HazinaMessageRole.System, Text = message.Content.First().Text };
         if (message is ToolChatMessage)
             return null;
-        throw new Exception("DevGPTMessageRole not recognized");
+        throw new Exception("HazinaMessageRole not recognized");
     }
 
-    public static List<ChatMessage> OpenAI(this List<DevGPTChatMessage> messages)
+    public static List<ChatMessage> OpenAI(this List<HazinaChatMessage> messages)
     {
         return messages.Select(m => m.OpenAI()).ToList();
     }
 
-    public static List<DevGPTChatMessage> DevGPT(this List<ChatMessage> messages)
+    public static List<HazinaChatMessage> Hazina(this List<ChatMessage> messages)
     {
-        return messages.Select(m => m.DevGPT()).Where(m => m != null).Select(m => m ?? new DevGPTChatMessage()).ToList();
+        return messages.Select(m => m.Hazina()).Where(m => m != null).Select(m => m ?? new HazinaChatMessage()).ToList();
     }
 
-    public static ChatTool OpenAI(this DevGPTChatTool chatTool)
+    public static ChatTool OpenAI(this HazinaChatTool chatTool)
     {
         return CreateDefinitionOpenAI(chatTool.FunctionName, chatTool.Description, chatTool.Parameters);
     }

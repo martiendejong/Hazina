@@ -1,4 +1,4 @@
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Models;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
@@ -7,14 +7,14 @@ using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Services.WordPress;
-using DevGPT.GenerationTools.Services.FileOps.Helpers;
+using Hazina.Tools.Data;
+using Hazina.Tools.Services.WordPress;
+using Hazina.Tools.Services.FileOps.Helpers;
 using System.Data.SqlTypes;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DevGPTStore.ContentRetrieval
+namespace HazinaStore.ContentRetrieval
 {
     public class ContentRetrievalService
     {

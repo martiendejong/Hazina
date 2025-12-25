@@ -1,6 +1,6 @@
 using FluentAssertions;
 
-namespace DevGPT.GenerationTools.Services.BigQuery.Tests;
+namespace Hazina.GenerationTools.Services.BigQuery.Tests;
 
 /// <summary>
 /// Placeholder tests for BigQuery service

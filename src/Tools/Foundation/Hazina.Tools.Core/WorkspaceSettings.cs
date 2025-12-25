@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
-namespace DevGPTStore.Core
+namespace HazinaStore.Core
 {
     /// <summary>
     /// Manages workspace-wide settings and configuration

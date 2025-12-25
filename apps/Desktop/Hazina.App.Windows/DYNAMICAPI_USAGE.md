@@ -159,6 +159,6 @@ De tools worden automatisch toegevoegd bij het openen van een chat. Als ze niet 
 ## Meer Informatie
 
 Zie ook:
-- `DevGPT.DynamicAPI/README.md` - Volledige technische documentatie
-- `DevGPT.DynamicAPI/USAGE_GUIDE.md` - Nederlandse usage guide
-- `DevGPT.DynamicAPI/Examples/` - Code voorbeelden
+- `Hazina.DynamicAPI/README.md` - Volledige technische documentatie
+- `Hazina.DynamicAPI/USAGE_GUIDE.md` - Nederlandse usage guide
+- `Hazina.DynamicAPI/Examples/` - Code voorbeelden

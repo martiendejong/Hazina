@@ -1,4 +1,4 @@
-namespace DevGPT.LLMs.Tools
+namespace Hazina.LLMs.Tools
 {
     /// <summary>
     /// Represents a tool/function call requested by the LLM

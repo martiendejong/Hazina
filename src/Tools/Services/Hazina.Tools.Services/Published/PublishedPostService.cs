@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using DevGPTStore.Models;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Data;
+using HazinaStore.Models;
+using Hazina.Tools.Models;
+using Hazina.Tools.Data;
 
-namespace DevGPTStore.Services
+namespace HazinaStore.Services
 {
     public class PublishedPostService
     {

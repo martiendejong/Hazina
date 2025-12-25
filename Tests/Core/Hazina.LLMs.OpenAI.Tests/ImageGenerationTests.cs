@@ -9,13 +9,13 @@ public class ImageGenerationTests
     public void OpenAI_FormatMapping_Null_DefaultsToText_And_KnownFormatsWork()
     {
         // null should map to text
-        var mappedNull = DevGPTOpenAIExtensions.OpenAI((DevGPTChatResponseFormat)null);
+        var mappedNull = HazinaOpenAIExtensions.OpenAI((HazinaChatResponseFormat)null);
         Assert.NotNull(mappedNull);
 
         // Known formats should map without exceptions
-        var mappedText = DevGPTOpenAIExtensions.OpenAI(DevGPTChatResponseFormat.Text);
+        var mappedText = HazinaOpenAIExtensions.OpenAI(HazinaChatResponseFormat.Text);
         Assert.NotNull(mappedText);
-        var mappedJson = DevGPTOpenAIExtensions.OpenAI(DevGPTChatResponseFormat.Json);
+        var mappedJson = HazinaOpenAIExtensions.OpenAI(HazinaChatResponseFormat.Json);
         Assert.NotNull(mappedJson);
     }
 
@@ -45,7 +45,7 @@ public class ImageGenerationTests
         // Act
         var resp = await client.GetImage(
             prompt: "a small cozy house with a red door, watercolor style",
-            responseFormat: DevGPTChatResponseFormat.Text,
+            responseFormat: HazinaChatResponseFormat.Text,
             toolsContext: null,
             images: null,
             cancel: CancellationToken.None

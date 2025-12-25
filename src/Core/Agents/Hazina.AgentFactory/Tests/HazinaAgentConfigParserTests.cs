@@ -3,7 +3,7 @@
 //using System.IO;
 //using Xunit;
 
-//public class DevGPTAgentConfigParserTests
+//public class HazinaAgentConfigParserTests
 //{
 //    [Fact]
 //    public void Serialize_And_Parse_RoundTrip_Works()
@@ -21,8 +21,8 @@
 //                ExplicitModify = true
 //            }
 //        };
-//        string text = DevGPTAgentConfigParser.Serialize(agents);
-//        var parsed = DevGPTAgentConfigParser.Parse(text);
+//        string text = HazinaAgentConfigParser.Serialize(agents);
+//        var parsed = HazinaAgentConfigParser.Parse(text);
 //        Assert.Single(parsed);
 //        Assert.Equal("TestAgent", parsed[0].Name);
 //        Assert.Equal("A test agent", parsed[0].Description);
@@ -50,7 +50,7 @@
 //        CallsAgents: x
 //        ExplicitModify: NotABool
 //        ";
-//        var agents = DevGPTAgentConfigParser.Parse(data);
+//        var agents = HazinaAgentConfigParser.Parse(data);
 //        Assert.Single(agents);
 //        Assert.False(agents[0].ExplicitModify); // Should default to false
 //    }
@@ -67,7 +67,7 @@
 //        CallsAgents:
 //        ExplicitModify:
 //        ";
-//        var agents = DevGPTAgentConfigParser.Parse(input);
+//        var agents = HazinaAgentConfigParser.Parse(input);
 //        Assert.Single(agents);
 //        Assert.Equal("AGENT_X", agents[0].Name);
 //        Assert.Empty(agents[0].Functions);
@@ -94,8 +94,8 @@
 //                    ExplicitModify = false
 //                }
 //            };
-//            DevGPTAgentConfigParser.SaveToFile(agents, file);
-//            var loaded = DevGPTAgentConfigParser.LoadFromFile(file);
+//            HazinaAgentConfigParser.SaveToFile(agents, file);
+//            var loaded = HazinaAgentConfigParser.LoadFromFile(file);
 //            Assert.Single(loaded);
 //            Assert.Equal("T", loaded[0].Name);
 //            Assert.Equal("P\nL", loaded[0].Prompt);
@@ -124,10 +124,10 @@
 //        var file = Path.GetTempFileName();
 //        try
 //        {
-//            DevGPTAgentConfigParser.ConvertJsonToDevGptFile(json, file);
+//            HazinaAgentConfigParser.ConvertJsonToDevGptFile(json, file);
 //            var text = File.ReadAllText(file);
 //            Assert.Contains("Name: ConvertedAgent", text);
-//            var loaded = DevGPTAgentConfigParser.LoadFromFile(file);
+//            var loaded = HazinaAgentConfigParser.LoadFromFile(file);
 //            Assert.Single(loaded);
 //            Assert.Equal("ConvertedAgent", loaded[0].Name);
 //        }

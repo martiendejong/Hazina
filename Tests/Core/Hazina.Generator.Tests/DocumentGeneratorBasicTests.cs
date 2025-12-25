@@ -1,4 +1,4 @@
-namespace DevGPT.Generator.Tests;
+namespace Hazina.Generator.Tests;
 
 public class DocumentGeneratorBasicTests
 {

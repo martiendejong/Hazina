@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace DevGPT.GenerationTools.Models
+namespace Hazina.Tools.Models
 {
     // Minimal response type used by generators to capture plain text
     public class GeneratedTextResponse : ChatResponse<GeneratedTextResponse>

@@ -1,4 +1,4 @@
-namespace DevGPT.LLMs.HuggingFace;
+namespace Hazina.LLMs.HuggingFace;
 
 public class HuggingFaceConfig
 {

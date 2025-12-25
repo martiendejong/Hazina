@@ -87,7 +87,7 @@ De applicatie is nu beschikbaar op `https://localhost:5001`
 - **Framework**: ASP.NET Core 8.0
 - **Database**: SQLite met Entity Framework Core
 - **Authentication**: Google OAuth 2.0
-- **AI**: OpenAI GPT (via DevGPT.OpenAI package)
+- **AI**: OpenAI GPT (via Hazina.LLMs.OpenAI package)
 - **UI**: Bootstrap 5
 
 ## Beveiliging

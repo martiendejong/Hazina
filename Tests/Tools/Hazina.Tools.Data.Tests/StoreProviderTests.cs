@@ -1,7 +1,7 @@
-using DevGPT.GenerationTools.Data;
+using Hazina.GenerationTools.Data;
 using FluentAssertions;
 
-namespace DevGPT.GenerationTools.Data.Tests;
+namespace Hazina.GenerationTools.Data.Tests;
 
 public class StoreProviderTests
 {

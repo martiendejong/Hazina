@@ -77,10 +77,10 @@ public class TextFileExtractor
         var name = Path.GetFileName(filePath);
         var data = new ImageData { BinaryData = binaryData, MimeType = mimeType, Name = name };
 
-        var messages = new List<DevGPTChatMessage>() { new DevGPTChatMessage(DevGPTMessageRole.User, "Geef een omschrijving van de afbeelding. Als er tekst in de afbeelding voorkomt geef dan de tekst letterlijk weer in de omschrijving. Je reactie bestaat enkel uit de door jouw gegeven omschrijving gevolgd door de letterlijke tekst.") };
+        var messages = new List<HazinaChatMessage>() { new HazinaChatMessage(HazinaMessageRole.User, "Geef een omschrijving van de afbeelding. Als er tekst in de afbeelding voorkomt geef dan de tekst letterlijk weer in de omschrijving. Je reactie bestaat enkel uit de door jouw gegeven omschrijving gevolgd door de letterlijke tekst.") };
         
         var tokenSource = new CancellationTokenSource();
-        var reaction = await Api.GetResponse(messages, DevGPTChatResponseFormat.CreateTextFormat(), null, [data], tokenSource.Token);
+        var reaction = await Api.GetResponse(messages, HazinaChatResponseFormat.CreateTextFormat(), null, [data], tokenSource.Token);
 
         await File.WriteAllTextAsync(textFilePath, reaction.Result);
     }
@@ -112,9 +112,9 @@ public class TextFileExtractor
         var response = "";
         for(var i = 0; i < pages; i = i + 1)
         {
-            var messages = new List<DevGPTChatMessage>() { new DevGPTChatMessage(DevGPTMessageRole.User, "Geef een omschrijving van de afbeelding. Als er tekst in de afbeelding voorkomt geef dan de tekst letterlijk weer in de omschrijving. Je reactie bestaat enkel uit de door jouw gegeven omschrijving gevolgd door de letterlijke tekst.") };
+            var messages = new List<HazinaChatMessage>() { new HazinaChatMessage(HazinaMessageRole.User, "Geef een omschrijving van de afbeelding. Als er tekst in de afbeelding voorkomt geef dan de tekst letterlijk weer in de omschrijving. Je reactie bestaat enkel uit de door jouw gegeven omschrijving gevolgd door de letterlijke tekst.") };
             var tokenSource = new CancellationTokenSource();
-            var reaction = await Api.GetResponse(messages, DevGPTChatResponseFormat.CreateTextFormat(), null, images.Skip(i).Take(1).ToList(), tokenSource.Token);
+            var reaction = await Api.GetResponse(messages, HazinaChatResponseFormat.CreateTextFormat(), null, images.Skip(i).Take(1).ToList(), tokenSource.Token);
             response += "Analyse pagina " + i + ":\n" + reaction + "\n\n";
         }
 

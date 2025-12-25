@@ -1,8 +1,8 @@
 using System;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
+using Hazina.Tools.Models;
+using Hazina.Tools.Models.WordPress.Blogs;
 
-namespace DevGPTStore.Core.Models
+namespace HazinaStore.Core.Models
 {
     /// <summary>
     /// Represents a single message in a chat conversation

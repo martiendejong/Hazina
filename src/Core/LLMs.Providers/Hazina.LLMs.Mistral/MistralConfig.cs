@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Configuration;
 
-namespace DevGPT.LLMs.Mistral;
+namespace Hazina.LLMs.Mistral;
 
 public class MistralConfig
 {
-    public MistralConfig(string apiKey = "", string model = "mistral-large-latest", string endpoint = "https://api.mistral.ai/v1", string logPath = "c:\\projects\\devgptlogs.txt")
+    public MistralConfig(string apiKey = "", string model = "mistral-large-latest", string endpoint = "https://api.mistral.ai/v1", string logPath = "c:\\projects\\hazinalogs.txt")
     {
         ApiKey = apiKey;
         Model = model;

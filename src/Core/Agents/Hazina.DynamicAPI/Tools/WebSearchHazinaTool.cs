@@ -1,17 +1,17 @@
 using System.Text;
 using System.Text.Json;
 
-namespace DevGPT.DynamicAPI.Tools;
+namespace Hazina.DynamicAPI.Tools;
 
 /// <summary>
-/// DevGPTChatTool wrapper for web search functionality.
+/// HazinaChatTool wrapper for web search functionality.
 /// Allows agents to search for API documentation and technical information.
 /// </summary>
-public class WebSearchDevGPTTool : DevGPTChatTool
+public class WebSearchHazinaTool : HazinaChatTool
 {
     private readonly WebSearchTool _searchTool;
 
-    public WebSearchDevGPTTool(WebSearchTool searchTool) : base(
+    public WebSearchHazinaTool(WebSearchTool searchTool) : base(
         "web_search",
         "Search the web for information, API documentation, code examples, or technical details. " +
         "Use this to find documentation for APIs you want to call, or to learn about services and their endpoints.",
@@ -90,13 +90,13 @@ public class WebSearchDevGPTTool : DevGPTChatTool
 }
 
 /// <summary>
-/// DevGPTChatTool for fetching content from URLs found in search results
+/// HazinaChatTool for fetching content from URLs found in search results
 /// </summary>
-public class FetchUrlDevGPTTool : DevGPTChatTool
+public class FetchUrlHazinaTool : HazinaChatTool
 {
     private readonly WebSearchTool _searchTool;
 
-    public FetchUrlDevGPTTool(WebSearchTool searchTool) : base(
+    public FetchUrlHazinaTool(WebSearchTool searchTool) : base(
         "fetch_url",
         "Fetch and read the full content of a web page. Use this after web_search to get detailed documentation from specific URLs.",
         new List<ChatToolParameter>

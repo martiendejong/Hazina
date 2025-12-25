@@ -1,4 +1,4 @@
-namespace DevGPT.GenerationTools.Services.DataGathering.Models;
+namespace Hazina.Tools.Services.DataGathering.Models;
 
 /// <summary>
 /// Specifies the type of data stored in a <see cref="GatheredDataValue"/>.

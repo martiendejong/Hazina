@@ -1,4 +1,4 @@
-namespace DevGPT.LLMs.Anthropic;
+namespace Hazina.LLMs.Anthropic;
 
 public class AnthropicConfig
 {

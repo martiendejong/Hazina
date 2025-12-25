@@ -1,7 +1,7 @@
-using DevGPT.GenerationTools.Services.FileOps.Helpers;
+using Hazina.Tools.Services.FileOps.Helpers;
 using FluentAssertions;
 
-namespace DevGPT.GenerationTools.Services.FileOps.Tests.Helpers;
+namespace Hazina.Tools.Services.FileOps.Tests.Helpers;
 
 public class TokenCounterTests
 {
@@ -9,7 +9,7 @@ public class TokenCounterTests
     public void CountTokens_WithEmptyString_ShouldReturnZero()
     {
         // Arrange
-        var counter = new DevGPT.GenerationTools.Services.FileOps.Helpers.TokenCounter();
+        var counter = new TokenCounter();
 
         // Act
         var count = counter.CountTokens("");
@@ -22,7 +22,7 @@ public class TokenCounterTests
     public void CountTokens_WithNullString_ShouldReturnZero()
     {
         // Arrange
-        var counter = new DevGPT.GenerationTools.Services.FileOps.Helpers.TokenCounter();
+        var counter = new TokenCounter();
 
         // Act
         var count = counter.CountTokens(null!);
@@ -35,7 +35,7 @@ public class TokenCounterTests
     public void CountTokens_WithSingleWord_ShouldReturnOne()
     {
         // Arrange
-        var counter = new DevGPT.GenerationTools.Services.FileOps.Helpers.TokenCounter();
+        var counter = new TokenCounter();
 
         // Act
         var count = counter.CountTokens("hello");
@@ -48,7 +48,7 @@ public class TokenCounterTests
     public void CountTokens_WithMultipleWords_ShouldReturnWordCount()
     {
         // Arrange
-        var counter = new DevGPT.GenerationTools.Services.FileOps.Helpers.TokenCounter();
+        var counter = new TokenCounter();
 
         // Act
         var count = counter.CountTokens("hello world test string");
@@ -61,7 +61,7 @@ public class TokenCounterTests
     public void CountTokens_WithExtraSpaces_ShouldCountByWhitespace()
     {
         // Arrange
-        var counter = new DevGPT.GenerationTools.Services.FileOps.Helpers.TokenCounter();
+        var counter = new TokenCounter();
         // Note: TokenCounter splits by any whitespace and removes empty entries
         // Multiple spaces create multiple whitespace chars but RemoveEmptyEntries handles it
 

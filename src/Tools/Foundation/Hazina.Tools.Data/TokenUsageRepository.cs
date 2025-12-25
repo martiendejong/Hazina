@@ -1,11 +1,11 @@
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 
-namespace DevGPT.GenerationTools.Data
+namespace Hazina.Tools.Data
 {
     /// <summary>
     /// Repository for tracking and retrieving token usage per project

@@ -7,7 +7,7 @@ public class ChatToolParameter
     public string Type { get; set; } = "";
     public bool Required { get; set; }
     
-    public bool TryGetValue(DevGPTChatToolCall call, out string value)
+    public bool TryGetValue(HazinaChatToolCall call, out string value)
     {
         using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
         if(argumentsJson.RootElement.TryGetProperty(Name, out JsonElement element))
@@ -19,7 +19,7 @@ public class ChatToolParameter
         return false;
     }
 
-    public bool TryGetValue(DevGPTChatToolCall call, out bool value)
+    public bool TryGetValue(HazinaChatToolCall call, out bool value)
     {
         using JsonDocument argumentsJson = JsonDocument.Parse(call.FunctionArguments);
         if (argumentsJson.RootElement.TryGetProperty(Name, out JsonElement element))

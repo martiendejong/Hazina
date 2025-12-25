@@ -2,10 +2,10 @@ using Microsoft.SemanticKernel;
 using System.ComponentModel;
 using System.Text.Json;
 
-namespace DevGPT.LLMs.Plugins;
+namespace Hazina.LLMs.Plugins;
 
 /// <summary>
-/// Adapter that converts DevGPT IToolsContext tools to Semantic Kernel plugins dynamically
+/// Adapter that converts Hazina IToolsContext tools to Semantic Kernel plugins dynamically
 /// </summary>
 public class ToolsContextPluginAdapter
 {
@@ -19,14 +19,14 @@ public class ToolsContextPluginAdapter
     /// <summary>
     /// Register all tools from IToolsContext as Semantic Kernel functions in the kernel
     /// </summary>
-    public void RegisterToolsAsPlugins(Kernel kernel, List<DevGPTChatMessage> messages, CancellationToken cancellationToken)
+    public void RegisterToolsAsPlugins(Kernel kernel, List<HazinaChatMessage> messages, CancellationToken cancellationToken)
     {
         if (_toolsContext?.Tools == null || !_toolsContext.Tools.Any())
             return;
 
         foreach (var tool in _toolsContext.Tools)
         {
-            // Create a KernelFunction from the DevGPTChatTool
+            // Create a KernelFunction from the HazinaChatTool
             var kernelFunction = CreateKernelFunction(tool, messages, cancellationToken);
 
             // Import the function into the kernel
@@ -35,11 +35,11 @@ public class ToolsContextPluginAdapter
     }
 
     /// <summary>
-    /// Create a Semantic Kernel function from a DevGPTChatTool
+    /// Create a Semantic Kernel function from a HazinaChatTool
     /// </summary>
     private KernelFunction CreateKernelFunction(
-        DevGPTChatTool tool,
-        List<DevGPTChatMessage> messages,
+        HazinaChatTool tool,
+        List<HazinaChatMessage> messages,
         CancellationToken cancellationToken)
     {
         // Build parameter metadata for SK
@@ -53,7 +53,7 @@ public class ToolsContextPluginAdapter
         // Create the execution delegate that wraps the original tool
         var method = async (KernelFunction function, Kernel kernel, KernelArguments arguments, CancellationToken cancel) =>
         {
-            // Convert KernelArguments to DevGPTChatToolCall format
+            // Convert KernelArguments to HazinaChatToolCall format
             var toolCall = CreateToolCall(tool, arguments);
 
             // Execute the original tool
@@ -74,9 +74,9 @@ public class ToolsContextPluginAdapter
     }
 
     /// <summary>
-    /// Create a DevGPTChatToolCall from Semantic Kernel arguments
+    /// Create a HazinaChatToolCall from Semantic Kernel arguments
     /// </summary>
-    private DevGPTChatToolCall CreateToolCall(DevGPTChatTool tool, KernelArguments arguments)
+    private HazinaChatToolCall CreateToolCall(HazinaChatTool tool, KernelArguments arguments)
     {
         // Build JSON arguments from KernelArguments
         var argumentsDict = new Dictionary<string, object?>();
@@ -99,7 +99,7 @@ public class ToolsContextPluginAdapter
         var binaryData = BinaryData.FromString(jsonString);
 
         // Create the tool call
-        return new DevGPTChatToolCall(
+        return new HazinaChatToolCall(
             id: Guid.NewGuid().ToString(),
             functionName: tool.FunctionName,
             functionArguments: binaryData

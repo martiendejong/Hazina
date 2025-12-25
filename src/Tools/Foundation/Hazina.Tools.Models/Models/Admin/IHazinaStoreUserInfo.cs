@@ -1,7 +1,7 @@
 ﻿
-namespace DevGPT.GenerationTools.Models
+namespace Hazina.Tools.Models
 {
-    public interface IDevGPTStoreUserInfo
+    public interface IHazinaStoreUserInfo
     {
         string FirstName { get; set; }
         string Id { get; set; }

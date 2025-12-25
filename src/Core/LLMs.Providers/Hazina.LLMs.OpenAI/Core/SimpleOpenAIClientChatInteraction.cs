@@ -342,8 +342,8 @@ public partial class SimpleOpenAIClientChatInteraction
                         ToolsContext.SendMessage(id, tool.FunctionName, message);
                     }
                     // BEGIN PATCH: Make Execute call signature match the delegate (no cancellationToken)
-                    // string result = await tool.Execute(messages.DevGPT(), toolCall.DevGPT(), cancellationToken);
-                    string result = await tool.Execute(messages.DevGPT(), toolCall.DevGPT(), cancellationToken);
+                    // string result = await tool.Execute(messages.Hazina(), toolCall.Hazina(), cancellationToken);
+                    string result = await tool.Execute(messages.Hazina(), toolCall.Hazina(), cancellationToken);
                     if (ToolsContext?.SendMessage != null)
                     {
                         ToolsContext.SendMessage(id, tool.FunctionName, result);

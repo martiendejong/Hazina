@@ -1,7 +1,7 @@
-using DevGPT.GenerationTools.AI.Agents;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Services.FileOps.Helpers;
+using Hazina.Tools.AI.Agents;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
+using Hazina.Tools.Services.FileOps.Helpers;
 using Mscc.GenerativeAI;
 using System;
 using System.IO;
@@ -9,7 +9,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DevGPT.GenerationTools.Services.Chat
+namespace Hazina.Tools.Services.Chat
 {
     public class ChatImageService : ChatServiceBase, IChatImageService
     {

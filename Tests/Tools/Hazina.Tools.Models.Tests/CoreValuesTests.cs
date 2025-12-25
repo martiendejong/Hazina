@@ -1,7 +1,7 @@
-using DevGPT.GenerationTools.Services.Store;
+using Hazina.GenerationTools.Services.Store;
 using FluentAssertions;
 
-namespace DevGPT.GenerationTools.Models.Tests;
+namespace Hazina.GenerationTools.Models.Tests;
 
 public class CoreValuesTests
 {

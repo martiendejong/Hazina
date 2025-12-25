@@ -1,6 +1,6 @@
 using FluentAssertions;
 
-namespace DevGPT.GenerationTools.Services.Store.Tests;
+namespace Hazina.GenerationTools.Services.Store.Tests;
 
 /// <summary>
 /// Placeholder tests for Store service

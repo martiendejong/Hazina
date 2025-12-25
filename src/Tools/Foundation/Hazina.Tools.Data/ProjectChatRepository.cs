@@ -1,11 +1,11 @@
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
+using Hazina.Tools.Models;
+using Hazina.Tools.Models.WordPress.Blogs;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace DevGPT.GenerationTools.Data
+namespace Hazina.Tools.Data
 {
     /// <summary>
     /// Service responsible for chat metadata and file operations.

@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace DevGPT.GenerationTools.Services.FileOps.Helpers
+namespace Hazina.Tools.Services.FileOps.Helpers
 {
     /// <summary>
     /// Helper class for file path operations

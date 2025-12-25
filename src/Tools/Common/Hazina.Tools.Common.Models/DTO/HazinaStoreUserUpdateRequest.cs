@@ -1,6 +1,6 @@
 namespace Common.Models.DTO
 {
-    public class DevGPTStoreUserUpdateRequest
+    public class HazinaStoreUserUpdateRequest
     {
         public string Email { get; set; }
         public string FirstName { get; set; }

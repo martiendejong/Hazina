@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using DevGPTStore.Core.Models;
+using HazinaStore.Core.Models;
 
-namespace DevGPTStore.Core
+namespace HazinaStore.Core
 {
     /// <summary>
     /// Represents the entire workspace - the projects folder

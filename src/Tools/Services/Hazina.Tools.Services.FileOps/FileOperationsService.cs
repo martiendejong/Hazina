@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using DevGPT.GenerationTools.Data;
+using Hazina.Tools.Data;
 using OpenAI.Chat;
 
-namespace DevGPT.GenerationTools.Services.FileOps
+namespace Hazina.Tools.Services.FileOps
 {
     /// <summary>
     /// File operations for project/chat files. Refactored to avoid direct LLM calls.

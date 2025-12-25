@@ -81,10 +81,10 @@ public class BinaryDocumentProcessor
     {
         try
         {
-            var messages = new List<DevGPTChatMessage>
+            var messages = new List<HazinaChatMessage>
             {
-                new DevGPTChatMessage(
-                    DevGPTMessageRole.User,
+                new HazinaChatMessage(
+                    HazinaMessageRole.User,
                     "Describe this image in detail. Include any text visible in the image, the main subjects, colors, composition, and any other relevant details."
                 )
             };
@@ -95,7 +95,7 @@ public class BinaryDocumentProcessor
                 BinaryData = new BinaryData(content)
             };
 
-            var response = await _llmClient.GetResponse(messages, DevGPTChatResponseFormat.Text, null, new List<ImageData> { imageData }, CancellationToken.None);
+            var response = await _llmClient.GetResponse(messages, HazinaChatResponseFormat.Text, null, new List<ImageData> { imageData }, CancellationToken.None);
             return response.Result;
         }
         catch

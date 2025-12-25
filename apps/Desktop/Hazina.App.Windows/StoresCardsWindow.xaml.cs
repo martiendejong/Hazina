@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
-namespace DevGPT.App.Windows {
+namespace Hazina.App.Windows {
     public partial class StoresCardsWindow : Window
     {
         private StoresCardsBindingModel viewModel;

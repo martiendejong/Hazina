@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DevGPT.GenerationTools.Services.Chat.Tools;
+namespace Hazina.Tools.Services.Chat.Tools;
 
 /// <summary>
 /// Minimal tool call contract used by the chat orchestration layer.

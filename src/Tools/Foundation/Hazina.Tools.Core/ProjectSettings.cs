@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
-using LegacyProject = DevGPT.GenerationTools.Models.Project;
+using Hazina.Tools.Models;
+using Hazina.Tools.Models.WordPress.Blogs;
+using LegacyProject = Hazina.Tools.Models.Project;
 
-namespace DevGPTStore.Core
+namespace HazinaStore.Core
 {
     /// <summary>
     /// Manages project-specific settings and configuration

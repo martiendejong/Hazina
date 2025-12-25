@@ -1,26 +1,26 @@
-using DevGPTStore.Models;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Models.Social;
-using DevGPT.GenerationTools.Services.Web;
+using HazinaStore.Models;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
+using Hazina.Tools.Models.Social;
+using Hazina.Tools.Services.Web;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using DevGPTStore.ContentRetrieval;using DevGPTStore.IntakeRegenerators;
+using HazinaStore.ContentRetrieval;using HazinaStore.IntakeRegenerators;
 
-namespace DevGPT.GenerationTools.Services.Intake
+namespace Hazina.Tools.Services.Intake
 {
     // Moved to Services: orchestration for intake regeneration
-    public class DevGPTStoreIntakeWorker
+    public class HazinaStoreIntakeWorker
     {
         public ProjectsRepository Projects { get; set; }
         public IntakeRepository Intake { get; set; }
         private readonly ProjectFileLocator _fileLocator;
         private readonly ProjectGlobalSettingsRepository _globalSettings;
         public IConfiguration appConfig;
-        public DevGPTStoreConfig config;
+        public HazinaStoreConfig config;
 
         
         
@@ -29,10 +29,10 @@ namespace DevGPT.GenerationTools.Services.Intake
         private readonly ContentHooksRegenerator _ContentHooksRegenerator;
         public readonly ContentRetrievalService _contentRetrievalService;
 
-        public DevGPTStoreIntakeWorker(
+        public HazinaStoreIntakeWorker(
             IntakeRepository intake,
             IConfiguration configuration,
-            DevGPTStoreConfig storeConfig
+            HazinaStoreConfig storeConfig
         )
         {
             Intake = intake;

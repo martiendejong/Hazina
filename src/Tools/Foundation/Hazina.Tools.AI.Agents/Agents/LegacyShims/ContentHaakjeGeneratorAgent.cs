@@ -1,11 +1,11 @@
-using DevGPT.GenerationTools.AI.Agents;
+using Hazina.Tools.AI.Agents;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
 
-namespace DevGPT.GenerationTools.AI.Agents
+namespace Hazina.Tools.AI.Agents
 {
     public class ContentHookGeneratorAgent : GeneratorAgentBase
     {

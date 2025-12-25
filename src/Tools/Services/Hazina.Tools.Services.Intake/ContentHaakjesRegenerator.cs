@@ -1,6 +1,6 @@
-using DevGPTStore.Models;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
+using HazinaStore.Models;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
@@ -8,16 +8,16 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DevGPTStore.IntakeRegenerators
+namespace HazinaStore.IntakeRegenerators
 {
     public class ContentHooksRegenerator
     {
         private readonly ProjectsRepository _projects;
         private readonly ProjectFileLocator _fileLocator;
         private readonly IConfiguration _appConfig;
-        private readonly DevGPTStoreConfig _storeConfig;
+        private readonly HazinaStoreConfig _storeConfig;
 
-        public ContentHooksRegenerator(ProjectsRepository projects, IConfiguration appConfig, DevGPTStoreConfig storeConfig)
+        public ContentHooksRegenerator(ProjectsRepository projects, IConfiguration appConfig, HazinaStoreConfig storeConfig)
         {
             _projects = projects;
             _fileLocator = new ProjectFileLocator(projects.ProjectsFolder);

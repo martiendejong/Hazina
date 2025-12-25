@@ -1,4 +1,4 @@
-namespace DevGPT.Store.EmbeddingStore;
+namespace Hazina.Store.EmbeddingStore;
 
 /// <summary>
 /// Orchestration service that combines embedding generation and storage.

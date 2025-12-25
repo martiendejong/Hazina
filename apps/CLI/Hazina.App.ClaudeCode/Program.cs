@@ -7,12 +7,12 @@ var client = new OpenAIClientWrapper(config);
 
 var systemPreamble = "You are Claude Code: a pragmatic coding assistant. Be concise, give runnable code snippets, and explain only what is necessary.";
 
-List<DevGPTChatMessage> MakeContext(string prompt)
+List<HazinaChatMessage> MakeContext(string prompt)
 {
-    return new List<DevGPTChatMessage>
+    return new List<HazinaChatMessage>
     {
-        new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = systemPreamble },
-        new DevGPTChatMessage { Role = DevGPTMessageRole.User, Text = prompt }
+        new HazinaChatMessage { Role = HazinaMessageRole.System, Text = systemPreamble },
+        new HazinaChatMessage { Role = HazinaMessageRole.User, Text = prompt }
     };
 }
 
@@ -26,7 +26,7 @@ async Task RunOnce(string prompt)
         Console.Write(chunk);
     }
     Console.OutputEncoding = Encoding.UTF8;
-    var _ = await client.GetResponseStream(messages, OnChunk, DevGPTChatResponseFormat.Text, toolsContext: null, images: null, CancellationToken.None);
+    var _ = await client.GetResponseStream(messages, OnChunk, HazinaChatResponseFormat.Text, toolsContext: null, images: null, CancellationToken.None);
     Console.WriteLine();
 }
 

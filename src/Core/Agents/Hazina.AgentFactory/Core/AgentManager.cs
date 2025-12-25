@@ -7,14 +7,14 @@ using static Google.Apis.Requests.BatchRequest;
 /// <summary>
 /// AgentManager encapsulates all logic for agent and store initialization, configuration,
 /// and provides interfaces for agent interaction. It loads configuration from paths provided
-/// in the constructor and is the single point of ownership for DevGPT agents and stores,
+/// in the constructor and is the single point of ownership for Hazina agents and stores,
 /// so the rest of the application can treat it entirely as a black box for agent management.
 /// </summary>
 public class AgentManager
 {
     private List<IDocumentStore> _stores;
-    private List<DevGPTAgent> _agents;
-    private List<DevGPTFlow> _flows;
+    private List<HazinaAgent> _agents;
+    private List<HazinaFlow> _flows;
     private string _storesJson;
     private string _agentsJson;
     private string _flowsJson;
@@ -25,7 +25,7 @@ public class AgentManager
     public readonly QuickAgentCreator _quickAgentCreator;
 
     // The interaction history with agents
-    public List<DevGPTChatMessage> History { get; } = new List<DevGPTChatMessage>();
+    public List<HazinaChatMessage> History { get; } = new List<HazinaChatMessage>();
 
     /// <summary>
     /// All available stores, as loaded and constructed from stores.json
@@ -34,9 +34,9 @@ public class AgentManager
     /// <summary>
     /// All available agents, as loaded and constructed from agents.json
     /// </summary>
-    public IReadOnlyList<DevGPTAgent> Agents => _agents;
+    public IReadOnlyList<HazinaAgent> Agents => _agents;
 
-    public IReadOnlyList<DevGPTFlow> Flows => _flows;
+    public IReadOnlyList<HazinaFlow> Flows => _flows;
 
     /// <summary>
     /// Instantiates the AgentManager, loads configuration, and initializes all stores and agents.
@@ -99,11 +99,11 @@ public class AgentManager
         _flows = loader._flows;
     }
 
-    public DevGPTAgent GetAgent(string name)
+    public HazinaAgent GetAgent(string name)
     {
         return _agents.FirstOrDefault(a => a.Name == name);
     }
-    public DevGPTFlow GetFlow(string name)
+    public HazinaFlow GetFlow(string name)
     {
         return _flows.FirstOrDefault(a => a.Name == name);
     }
@@ -114,7 +114,7 @@ public class AgentManager
     /// </summary>
     public async Task InteractiveUserLoop(string agentName = null)
     {
-        DevGPTAgent agent;
+        HazinaAgent agent;
         if (string.IsNullOrEmpty(agentName))
         {
             agent = _agents.FirstOrDefault();
@@ -138,13 +138,13 @@ public class AgentManager
                 response = await agent.Generator.GetResponse<IsReadyResult>("Continue handling the user request: " + input, cancel, History, true, true, agent.Tools, null);
                 Console.WriteLine(response.Result.Message);
             }
-            History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response.Result.Message });
+            History.Add(new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = response.Result.Message });
         }
     }
 
     public async Task<string> SendMessage(string input, CancellationToken cancel, string agentName = null)
     {
-        DevGPTAgent agent;
+        HazinaAgent agent;
         if (string.IsNullOrEmpty(agentName))
         {
             agent = _agents.FirstOrDefault();
@@ -181,6 +181,6 @@ public class AgentManager
             var key = $"{DateTime.Now.ToString("yy_MM_dd_HH_mm")}_input";
             await historyStore.Store(key, input);
         }
-        History.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = input });
+        History.Add(new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = input });
     }
 }

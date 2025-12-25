@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
 
-namespace DevGPT.GenerationTools.Services.WordPress
+namespace Hazina.Tools.Services.WordPress
 {
     public class WebPageScraper
     {

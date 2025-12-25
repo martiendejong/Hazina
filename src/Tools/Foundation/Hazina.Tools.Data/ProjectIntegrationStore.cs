@@ -1,9 +1,9 @@
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Models.Social;
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
+using Hazina.Tools.Models;
+using Hazina.Tools.Models.Social;
+using Hazina.Tools.Models.WordPress.Blogs;
 using System;
 
-namespace DevGPT.GenerationTools.Data
+namespace Hazina.Tools.Data
 {
     /// <summary>
     /// Service responsible for WordPress and Social Media integration operations.

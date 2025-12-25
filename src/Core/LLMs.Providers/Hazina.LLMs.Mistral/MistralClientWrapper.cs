@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.Json;
-using DevGPT.LLMs.Mistral;
+using Hazina.LLMs.Mistral;
 
 public class MistralClientWrapper : ILLMClient
 {
@@ -25,20 +25,20 @@ public class MistralClientWrapper : ILLMClient
     private sealed record MistralUsage(int prompt_tokens, int completion_tokens, int total_tokens);
     private sealed record MistralResponse(MistralChoice[] choices, MistralUsage? usage);
 
-    private static List<MistralMessage> MapMessages(List<DevGPTChatMessage> messages)
+    private static List<MistralMessage> MapMessages(List<HazinaChatMessage> messages)
     {
         var mapped = new List<MistralMessage>();
         foreach (var m in messages)
         {
-            var role = (m.Role == DevGPTMessageRole.System || m.Role.Role == DevGPTMessageRole.System.Role) ? "system"
-                    : (m.Role == DevGPTMessageRole.Assistant || m.Role.Role == DevGPTMessageRole.Assistant.Role) ? "assistant"
+            var role = (m.Role == HazinaMessageRole.System || m.Role.Role == HazinaMessageRole.System.Role) ? "system"
+                    : (m.Role == HazinaMessageRole.Assistant || m.Role.Role == HazinaMessageRole.Assistant.Role) ? "assistant"
                     : "REGULAR";
             mapped.Add(new MistralMessage(role, m.Text));
         }
         return mapped;
     }
 
-    private async Task<(string text, TokenUsageInfo usage)> CallMistral(List<DevGPTChatMessage> messages, CancellationToken cancel, IToolsContext? tools = null)
+    private async Task<(string text, TokenUsageInfo usage)> CallMistral(List<HazinaChatMessage> messages, CancellationToken cancel, IToolsContext? tools = null)
     {
         var mapped = MapMessages(messages);
         var id = Guid.NewGuid().ToString();
@@ -68,18 +68,18 @@ public class MistralClientWrapper : ILLMClient
         return new TokenUsageInfo(input, output, 0, 0, _config.Model);
     }
 
-    public async Task<LLMResponse<string>> GetResponse(List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    public async Task<LLMResponse<string>> GetResponse(List<HazinaChatMessage> messages, HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         var (text, usage) = await CallMistral(messages, cancel, toolsContext);
         return new LLMResponse<string>(text, usage);
     }
 
-    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(List<DevGPTChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(List<HazinaChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
     {
-        var withFormat = new List<DevGPTChatMessage>(messages);
+        var withFormat = new List<HazinaChatMessage>(messages);
         var instruction = $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {ChatResponse<ResponseType>.Signature} EXAMPLE: {JsonSerializer.Serialize(ChatResponse<ResponseType>.Example)}";
         var insert = Math.Max(0, withFormat.Count - 1);
-        withFormat.Insert(insert, new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = instruction });
+        withFormat.Insert(insert, new HazinaChatMessage { Role = HazinaMessageRole.System, Text = instruction });
 
         var (text, usage) = await CallMistral(withFormat, cancel, toolsContext);
         try
@@ -105,21 +105,21 @@ public class MistralClientWrapper : ILLMClient
         }
     }
 
-    public async Task<LLMResponse<string>> GetResponseStream(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    public async Task<LLMResponse<string>> GetResponseStream(List<HazinaChatMessage> messages, Action<string> onChunkReceived, HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         var response = await GetResponse(messages, responseFormat, toolsContext, images, cancel);
         foreach (var chunk in Chunk(response.Result, 60)) onChunkReceived(chunk);
         return response;
     }
 
-    public async Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(List<HazinaChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
     {
-        var response = await GetResponseStream(messages, onChunkReceived, DevGPTChatResponseFormat.Json, toolsContext, images, cancel);
+        var response = await GetResponseStream(messages, onChunkReceived, HazinaChatResponseFormat.Json, toolsContext, images, cancel);
         var result = JsonSerializer.Deserialize<ResponseType>(response.Result);
         return new LLMResponse<ResponseType?>(result, response.TokenUsage);
     }
 
-    public Task<LLMResponse<DevGPTGeneratedImage>> GetImage(string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    public Task<LLMResponse<HazinaGeneratedImage>> GetImage(string prompt, HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
         => throw new NotSupportedException("Mistral image generation is not supported by this client.");
 
     public Task SpeakStream(string text, string voice, Action<byte[]> onAudioChunk, string mimeType, CancellationToken cancel)

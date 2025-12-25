@@ -1,10 +1,10 @@
-# LLM Instructions for DevGPTTools Project
+# LLM Instructions for HazinaTools Project
 
 This document contains important instructions for AI assistants (LLMs) working on this codebase.
 
 ## Project Overview
 
-DevGPTTools is a collection of .NET libraries for building AI-powered content generation tools. The solution consists of multiple projects organized into:
+HazinaTools is a collection of .NET libraries for building AI-powered content generation tools. The solution consists of multiple projects organized into:
 
 - **Common Libraries**: Shared utilities, models, and infrastructure
 - **Core Libraries**: Core functionality and data access
@@ -53,22 +53,22 @@ The script will:
 
 ### 3. Project Structure Guidelines
 
-- All projects follow the naming convention: `DevGPT.GenerationTools.*`
+- All projects follow the naming convention: `Hazina.Tools.*`
 - Common libraries are in the `Common/` folder
-- Service libraries follow the pattern: `DevGPT.GenerationTools.Services.*`
+- Service libraries follow the pattern: `Hazina.Tools.Services.*`
 - All projects target `.NET 8.0` (net8.0-windows)
 
 ### 4. Before Making Changes
 
 1. **Understand Dependencies**: Review project references before modifying shared libraries
-2. **Test Builds**: Run `dotnet build DevGPTTools.sln` to ensure all projects compile
+2. **Test Builds**: Run `dotnet build HazinaTools.sln` to ensure all projects compile
 3. **Check Package Configuration**: Verify .csproj files have proper NuGet metadata if adding new projects
 
 ### 5. Adding New Projects
 
 When adding a new project:
 
-1. Follow the naming convention: `DevGPT.GenerationTools.*`
+1. Follow the naming convention: `Hazina.Tools.*`
 2. Add the project to the solution:
    ```bash
    dotnet sln add path/to/NewProject.csproj
@@ -77,13 +77,13 @@ When adding a new project:
 4. Configure NuGet package properties in the .csproj:
    ```xml
    <PropertyGroup>
-     <PackageId>DevGPT.GenerationTools.YourProject</PackageId>
+     <PackageId>Hazina.Tools.YourProject</PackageId>
      <Version>1.0.0</Version>
      <Authors>Your Name</Authors>
      <Company>Your Company</Company>
      <Description>Description of your package</Description>
      <PackageLicenseExpression>MIT</PackageLicenseExpression>
-     <RepositoryUrl>https://github.com/yourusername/DevGPTTools</RepositoryUrl>
+     <RepositoryUrl>https://github.com/yourusername/HazinaTools</RepositoryUrl>
    </PropertyGroup>
    ```
 5. Test the publish script to ensure your project packages correctly
@@ -99,38 +99,38 @@ When adding a new project:
 
 **Build the entire solution:**
 ```bash
-dotnet build DevGPTTools.sln
+dotnet build HazinaTools.sln
 ```
 
 **Restore all dependencies:**
 ```bash
-dotnet restore DevGPTTools.sln
+dotnet restore HazinaTools.sln
 ```
 
 **Clean build artifacts:**
 ```bash
-dotnet clean DevGPTTools.sln
+dotnet clean HazinaTools.sln
 ```
 
 **Build in Release mode:**
 ```bash
-dotnet build DevGPTTools.sln -c Release
+dotnet build HazinaTools.sln -c Release
 ```
 
 ## Project Dependencies
 
 Key dependency relationships:
-- Most projects depend on `DevGPT.GenerationTools.Common.Models`
+- Most projects depend on `Hazina.Tools.Common.Models`
 - Service projects typically depend on:
-  - `DevGPT.GenerationTools.Models`
-  - `DevGPT.GenerationTools.Core`
-  - `DevGPT.GenerationTools.Data`
-- Text extraction functionality is in `DevGPT.GenerationTools.TextExtraction`
+  - `Hazina.Tools.Models`
+  - `Hazina.Tools.Core`
+  - `Hazina.Tools.Data`
+- Text extraction functionality is in `Hazina.Tools.TextExtraction`
 
 ## Testing
 
 Before committing changes:
-1. Build the solution: `dotnet build DevGPTTools.sln`
+1. Build the solution: `dotnet build HazinaTools.sln`
 2. Run the publish script: `./publish-nuget.ps1` or `./publish-nuget.sh`
 3. Verify all packages are created in the `./nupkgs` directory
 4. Check for any build warnings or errors

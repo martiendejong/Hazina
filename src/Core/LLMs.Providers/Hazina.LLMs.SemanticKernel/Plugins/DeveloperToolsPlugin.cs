@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 
-namespace DevGPT.LLMs.Plugins;
+namespace Hazina.LLMs.Plugins;
 
 /// <summary>
 /// Semantic Kernel plugin for developer tools (git, dotnet, npm, build)

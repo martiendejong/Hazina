@@ -1,4 +1,4 @@
-namespace DevGPT.Store.EmbeddingStore;
+namespace Hazina.Store.EmbeddingStore;
 
 /// <summary>
 /// In-memory embedding store. Data is lost when the process terminates.

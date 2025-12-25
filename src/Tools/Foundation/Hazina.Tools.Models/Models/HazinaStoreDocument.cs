@@ -1,8 +1,8 @@
-using DevGPTStore.Models;
+using HazinaStore.Models;
 
-namespace DevGPTStore.Models
+namespace HazinaStore.Models
 {
-    public class DevGPTStoreDocument : AEmbedding, IEmbedding
+    public class HazinaStoreDocument : AEmbedding, IEmbedding
     {
         public string Id { get => Label; set => Label = value; }
         public string Label { get; set; }

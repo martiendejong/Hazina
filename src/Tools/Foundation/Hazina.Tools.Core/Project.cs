@@ -1,8 +1,8 @@
 using System;
 using System.IO;
-using DevGPTStore.Core.Models;
+using HazinaStore.Core.Models;
 
-namespace DevGPTStore.Core
+namespace HazinaStore.Core
 {
     /// <summary>
     /// Represents a single project - a folder with documents, chats, and settings

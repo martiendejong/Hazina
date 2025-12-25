@@ -1,15 +1,15 @@
-using DevGPT.GenerationTools.AI.Agents;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Services.DataGathering.Abstractions;
-using DevGPT.GenerationTools.Services.Store;
-using ProjectModel = DevGPT.GenerationTools.Models.Project;
+using Hazina.Tools.AI.Agents;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
+using Hazina.Tools.Services.DataGathering.Abstractions;
+using Hazina.Tools.Services.Store;
+using ProjectModel = Hazina.Tools.Models.Project;
 using OpenAI.Chat;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
 
-namespace DevGPT.GenerationTools.Services.DataGathering.ToolsContexts;
+namespace Hazina.Tools.Services.DataGathering.ToolsContexts;
 
 /// <summary>
 /// Tools context for analysis field generation.
@@ -89,8 +89,8 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
     }
 
     private async Task<string> UpdateAnalysisFieldAsync(
-        List<DevGPTChatMessage> messages,
-        DevGPTChatToolCall toolCall,
+        List<HazinaChatMessage> messages,
+        HazinaChatToolCall toolCall,
         CancellationToken cancellationToken)
     {
         var key = GetStringParameter(toolCall, "key");
@@ -289,8 +289,8 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
     }
 
     private Task<string> GetAvailableFieldsAsync(
-        List<DevGPTChatMessage> messages,
-        DevGPTChatToolCall toolCall,
+        List<HazinaChatMessage> messages,
+        HazinaChatToolCall toolCall,
         CancellationToken cancellationToken)
     {
         var fields = _availableFields.Select(f => new
@@ -305,8 +305,8 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
     }
 
     private async Task<string> GetExistingFieldContentAsync(
-        List<DevGPTChatMessage> messages,
-        DevGPTChatToolCall toolCall,
+        List<HazinaChatMessage> messages,
+        HazinaChatToolCall toolCall,
         CancellationToken cancellationToken)
     {
         var key = GetStringParameter(toolCall, "key");
@@ -408,7 +408,7 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
     private static ChatToolParameter CreateParameter(string name, string description, string type, bool required)
         => new() { Name = name, Description = description, Type = type, Required = required };
 
-    private static string GetStringParameter(DevGPTChatToolCall toolCall, string name)
+    private static string GetStringParameter(HazinaChatToolCall toolCall, string name)
     {
         try
         {

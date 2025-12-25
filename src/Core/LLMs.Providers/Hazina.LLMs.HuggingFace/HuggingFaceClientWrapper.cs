@@ -5,8 +5,8 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using DevGPT;
-using DevGPT.LLMs.HuggingFace;
+using Hazina;
+using Hazina.LLMs.HuggingFace;
 
 
 
@@ -46,7 +46,7 @@ public class HuggingFaceClientWrapper : ILLMClient
         }
     }
 
-    public async Task<LLMResponse<DevGPTGeneratedImage>> GetImage(string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    public async Task<LLMResponse<HazinaGeneratedImage>> GetImage(string prompt, HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         var endpoint = $"{_config.Endpoint}/pipeline/text-to-image/{DefaultImageModel}";
         var payload = new { inputs = prompt };
@@ -64,14 +64,14 @@ public class HuggingFaceClientWrapper : ILLMClient
             var base64 = imgProp.GetString();
             var bytes = Convert.FromBase64String(base64);
             // Return only bytes, no URL for HuggingFace
-            var image = new DevGPTGeneratedImage(null, BinaryData.FromBytes(bytes));
+            var image = new HazinaGeneratedImage(null, BinaryData.FromBytes(bytes));
             var tokenUsage = new TokenUsageInfo(0, 0, 0, 0.05m, DefaultImageModel);
-            return new LLMResponse<DevGPTGeneratedImage>(image, tokenUsage);
+            return new LLMResponse<HazinaGeneratedImage>(image, tokenUsage);
         }
         throw new Exception($"Could not parse image response: {content}");
     }
 
-    public async Task<LLMResponse<string>> GetResponse(List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    public async Task<LLMResponse<string>> GetResponse(List<HazinaChatMessage> messages, HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         var endpoint = $"{_config.Endpoint}/pipeline/text-generation/{DefaultChatModel}";
         var id = Guid.NewGuid().ToString();
@@ -117,15 +117,15 @@ public class HuggingFaceClientWrapper : ILLMClient
         }
     }
 
-    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(List<DevGPTChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(List<HazinaChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
     {
         // Compose JSON format request as needed (like OpenAI implementation)
-        var response = await GetResponse(messages, DevGPTChatResponseFormat.Json, toolsContext, images, cancel);
+        var response = await GetResponse(messages, HazinaChatResponseFormat.Json, toolsContext, images, cancel);
         var result = System.Text.Json.JsonSerializer.Deserialize<ResponseType>(response.Result);
         return new LLMResponse<ResponseType?>(result, response.TokenUsage);
     }
 
-    public async Task<LLMResponse<string>> GetResponseStream(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    public async Task<LLMResponse<string>> GetResponseStream(List<HazinaChatMessage> messages, Action<string> onChunkReceived, HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         // HuggingFace Inference API streaming support is only on paid tiers, so here chunk the output.
         var response = await GetResponse(messages, responseFormat, toolsContext, images, cancel);
@@ -134,9 +134,9 @@ public class HuggingFaceClientWrapper : ILLMClient
         return response;
     }
 
-    public async Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(List<HazinaChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
     {
-        var response = await GetResponseStream(messages, onChunkReceived, DevGPTChatResponseFormat.Json, toolsContext, images, cancel);
+        var response = await GetResponseStream(messages, onChunkReceived, HazinaChatResponseFormat.Json, toolsContext, images, cancel);
         var result = System.Text.Json.JsonSerializer.Deserialize<ResponseType>(response.Result);
         return new LLMResponse<ResponseType?>(result, response.TokenUsage);
     }

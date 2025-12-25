@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DevGPT.GenerationTools.Models.BigQuery
+namespace Hazina.Tools.Models.BigQuery
 {
     public class ConnectedBigQueryTable
     {

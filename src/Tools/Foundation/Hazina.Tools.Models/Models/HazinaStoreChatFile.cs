@@ -1,6 +1,6 @@
-﻿namespace DevGPT.GenerationTools.Models
+﻿namespace Hazina.Tools.Models
 {
-    public class DevGPTStoreChatFile
+    public class HazinaStoreChatFile
     {
         public string File { get; set; }
         public bool IncludeInProject { get; set; } = false;

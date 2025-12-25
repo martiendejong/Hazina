@@ -261,36 +261,36 @@ Output must be pure HTML: no markdown blocks, no code fences, no annotations.";
 
         try
         {
-            var chatHistory = JsonSerializer.Deserialize<List<DevGPTChatMessage>>(ChatHistoryJson) ?? new List<DevGPTChatMessage>();
+            var chatHistory = JsonSerializer.Deserialize<List<HazinaChatMessage>>(ChatHistoryJson) ?? new List<HazinaChatMessage>();
             var toolsContext = new ToolsContextBase();
 
-            var historyCopy = new List<DevGPTChatMessage>(chatHistory);
+            var historyCopy = new List<HazinaChatMessage>(chatHistory);
 
             if (chatHistory.Count > 1)
             {
-                historyCopy.Insert(historyCopy.Count - 1, new DevGPTChatMessage(DevGPTMessageRole.System, "Current document: " + html));
+                historyCopy.Insert(historyCopy.Count - 1, new HazinaChatMessage(HazinaMessageRole.System, "Current document: " + html));
 
-                historyCopy.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _updatePromptPrompt));
-                var prompt = await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None);
-
-
+                historyCopy.Insert(0, new HazinaChatMessage(HazinaMessageRole.System, _updatePromptPrompt));
+                var prompt = await _openAiClient.GetResponse(chatHistory, HazinaChatResponseFormat.Text, toolsContext, null, CancellationToken.None);
 
 
 
-                chatHistory.Insert(chatHistory.Count - 1, new DevGPTChatMessage(DevGPTMessageRole.System, "Current document: " + html));
 
-                chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, prompt.Result));
-                chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _updateSystemPrompt));
-                html = (await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None)).Result;
+
+                chatHistory.Insert(chatHistory.Count - 1, new HazinaChatMessage(HazinaMessageRole.System, "Current document: " + html));
+
+                chatHistory.Insert(0, new HazinaChatMessage(HazinaMessageRole.System, prompt.Result));
+                chatHistory.Insert(0, new HazinaChatMessage(HazinaMessageRole.System, _updateSystemPrompt));
+                html = (await _openAiClient.GetResponse(chatHistory, HazinaChatResponseFormat.Text, toolsContext, null, CancellationToken.None)).Result;
             }
             else
             {
-                historyCopy.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _oraclePrompt));
-                var prompt = await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None);
+                historyCopy.Insert(0, new HazinaChatMessage(HazinaMessageRole.System, _oraclePrompt));
+                var prompt = await _openAiClient.GetResponse(chatHistory, HazinaChatResponseFormat.Text, toolsContext, null, CancellationToken.None);
 
-                chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, prompt.Result));
-                chatHistory.Insert(0, new DevGPTChatMessage(DevGPTMessageRole.System, _createSystemPrompt));
-                html = (await _openAiClient.GetResponse(chatHistory, DevGPTChatResponseFormat.Text, toolsContext, null, CancellationToken.None)).Result;
+                chatHistory.Insert(0, new HazinaChatMessage(HazinaMessageRole.System, prompt.Result));
+                chatHistory.Insert(0, new HazinaChatMessage(HazinaMessageRole.System, _createSystemPrompt));
+                html = (await _openAiClient.GetResponse(chatHistory, HazinaChatResponseFormat.Text, toolsContext, null, CancellationToken.None)).Result;
             }
 
             return new JsonResult(new { html });

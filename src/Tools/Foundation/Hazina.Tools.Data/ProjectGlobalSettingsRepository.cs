@@ -1,13 +1,13 @@
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
+using Hazina.Tools.Models;
+using Hazina.Tools.Models.WordPress.Blogs;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using DevGPTStore.Models;
+using HazinaStore.Models;
 
-namespace DevGPT.GenerationTools.Data
+namespace Hazina.Tools.Data
 {
     /// <summary>
     /// Service responsible for project-global configuration and settings.
@@ -77,22 +77,22 @@ namespace DevGPT.GenerationTools.Data
             File.WriteAllText(basisPromptFilePath, prompt);
         }
 
-        public List<IDevGPTStoreUserInfo> LoadUserInfos()
+        public List<IHazinaStoreUserInfo> LoadUserInfos()
         {
             var usersFilePath = Path.Combine(_projectsFolder, ProjectFileLocator.UsersFile);
             if (File.Exists(usersFilePath))
             {
                 var usersText = File.ReadAllText(usersFilePath);
-                var info = JsonSerializer.Deserialize<List<DevGPTStoreUserInfo>>(usersText);
-                return info.Select(i => i as IDevGPTStoreUserInfo).ToList();
+                var info = JsonSerializer.Deserialize<List<HazinaStoreUserInfo>>(usersText);
+                return info.Select(i => i as IHazinaStoreUserInfo).ToList();
             }
             else
             {
-                return new List<IDevGPTStoreUserInfo>();
+                return new List<IHazinaStoreUserInfo>();
             }
         }
 
-        public void SaveUserInfos(List<IDevGPTStoreUserInfo> infos)
+        public void SaveUserInfos(List<IHazinaStoreUserInfo> infos)
         {
             var usersFilePath = Path.Combine(_projectsFolder, ProjectFileLocator.UsersFile);
             var json = JsonSerializer.Serialize(infos);

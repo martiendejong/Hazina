@@ -1,6 +1,6 @@
 using FluentAssertions;
 
-namespace DevGPT.GenerationTools.TextExtraction.Tests;
+namespace Hazina.GenerationTools.TextExtraction.Tests;
 
 /// <summary>
 /// Placeholder tests for TextExtraction service

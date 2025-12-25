@@ -1,4 +1,4 @@
-namespace DevGPT.GenerationTools.Services.WordPress
+namespace Hazina.Tools.Services.WordPress
 {
     public class WordPressPageData
     {

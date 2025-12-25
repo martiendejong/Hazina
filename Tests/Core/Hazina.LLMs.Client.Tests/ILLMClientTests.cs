@@ -1,4 +1,4 @@
-namespace DevGPT.LLMs.Client.Tests;
+namespace Hazina.LLMs.Client.Tests;
 
 public class ILLMClientTests
 {

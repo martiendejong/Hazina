@@ -1,21 +1,21 @@
-using DevGPT.GenerationTools.Services.Users;
+using Hazina.Tools.Services.Users;
 using Common.Models;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Common.Models.DTO;
 
-namespace DevGPT.GenerationTools.Services.Users
+namespace Hazina.Tools.Services.Users
 {
     public interface IUserAccountManager
     {
         Task<bool> CheckPassword(string account, string password);
-        Task<Result<DevGPTStoreUser>> Create(DevGPTStoreUser user);
-        Task<Result<DevGPTStoreUser>> Update(DevGPTStoreUser user);
+        Task<Result<HazinaStoreUser>> Create(HazinaStoreUser user);
+        Task<Result<HazinaStoreUser>> Update(HazinaStoreUser user);
         Task<Result<string>> Delete(string userId);
-        Task<DevGPTStoreUser> GetUser(string id);
-        Task<List<DevGPTStoreUser>> GetUsers();
-        Task UpdateRoles(DevGPTStoreUser user);
+        Task<HazinaStoreUser> GetUser(string id);
+        Task<List<HazinaStoreUser>> GetUsers();
+        Task UpdateRoles(HazinaStoreUser user);
     }
 }
 

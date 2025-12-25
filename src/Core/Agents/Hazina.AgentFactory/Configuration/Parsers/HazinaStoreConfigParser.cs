@@ -4,9 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-public static class DevGPTStoreConfigParser
+public static class HazinaStoreConfigParser
 {
-    // Serializes a list of StoreConfig objects to .devgpt format
+    // Serializes a list of StoreConfig objects to .Hazina format
     public static string Serialize(IEnumerable<StoreConfig> stores)
     {
         var sb = new StringBuilder();
@@ -23,7 +23,7 @@ public static class DevGPTStoreConfigParser
         return sb.ToString().TrimEnd();
     }
 
-    // Parses a .devgpt formatted string into a list of StoreConfig objects
+    // Parses a .Hazina formatted string into a list of StoreConfig objects
     public static List<StoreConfig> Parse(string input)
     {
         var stores = new List<StoreConfig>();

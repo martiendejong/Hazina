@@ -1,5 +1,5 @@
-using DevGPTStore.Models;
-﻿namespace DevGPTStore.Models
+using HazinaStore.Models;
+﻿namespace HazinaStore.Models
 {
     public class ApiSettings
     {

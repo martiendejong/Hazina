@@ -1,12 +1,12 @@
-using DevGPT.GenerationTools.Models.Social;
-using DevGPT.GenerationTools.Data;
+using Hazina.Tools.Models.Social;
+using Hazina.Tools.Data;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 
-namespace DevGPT.GenerationTools.Services.Social
+namespace Hazina.Tools.Services.Social
 {
     public class FacebookService
     {

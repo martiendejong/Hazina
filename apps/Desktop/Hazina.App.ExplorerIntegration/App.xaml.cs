@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace DevGPT.App.ExplorerIntegration
+namespace Hazina.App.ExplorerIntegration
 {
     public partial class App : Application { }
 }

@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace DevGPT.App.ExplorerIntegration
+namespace Hazina.App.ExplorerIntegration
 {
     public static class EmbeddingService
     {
@@ -11,7 +11,7 @@ namespace DevGPT.App.ExplorerIntegration
         {
             if (saveKey)
             {
-                Registry.SetValue("HKEY_CURRENT_USER\\Software\\DevGPT\\OpenAI", "ApiKey", openAIKey);
+                Registry.SetValue("HKEY_CURRENT_USER\\Software\\Hazina\\OpenAI", "ApiKey", openAIKey);
             }
 
             var config = new OpenAIConfig(openAIKey);

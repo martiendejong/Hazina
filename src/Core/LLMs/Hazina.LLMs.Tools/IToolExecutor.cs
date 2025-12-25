@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DevGPT.LLMs.Tools
+namespace Hazina.LLMs.Tools
 {
     /// <summary>
     /// Core interface for executing tool calls from LLMs

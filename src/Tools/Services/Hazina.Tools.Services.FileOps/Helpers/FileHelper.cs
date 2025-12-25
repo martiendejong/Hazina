@@ -6,10 +6,10 @@ using System.Linq;
 using System.Text.Json.Serialization;
 using System.Collections.Concurrent;
 using System.Threading;
-using DevGPT.GenerationTools.Data;
-using DevGPTStore.Models;
+using Hazina.Tools.Data;
+using HazinaStore.Models;
 
-namespace DevGPT.GenerationTools.Services.FileOps.Helpers
+namespace Hazina.Tools.Services.FileOps.Helpers
 {
 
 public static class FileHelper

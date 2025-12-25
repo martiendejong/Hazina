@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace DevGPT.GenerationTools.Services.AI.Intake
+namespace Hazina.Tools.Services.AI.Intake
 {
     internal class OpenAIJsonClient
     {

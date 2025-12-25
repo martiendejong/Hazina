@@ -1,10 +1,10 @@
-# DevGPT vs Semantic Kernel Analysis
+# Hazina vs Semantic Kernel Analysis
 
-# DevGPT vs Microsoft Semantic Kernel: Complete Analysis
+# Hazina vs Microsoft Semantic Kernel: Complete Analysis
 
 ## 1. DocumentStore Architecture
 
-DevGPT: Three-tier composition (embeddings + text + chunks + metadata)
+Hazina: Three-tier composition (embeddings + text + chunks + metadata)
 - File-based JSON embeddings (no external DB)
 - Built-in document splitting with parent-child tracking
 - Token-aware relevance filtering (automatic context limiting)
@@ -17,13 +17,13 @@ Semantic Kernel:
 - Manual token budgeting required
 - Opaque metadata (only embeddings + key)
 
-Winner: DevGPT (out-of-the-box, local, token-budgeted RAG)
+Winner: Hazina (out-of-the-box, local, token-budgeted RAG)
 
 ---
 
 ## 2. Safe File Modification: UpdateStoreResponse
 
-DevGPT: Strongly-typed response pattern
+Hazina: Strongly-typed response pattern
 - Schema injected into system prompt
 - Atomic operations (full file writes, explicit deletes/moves)
 - PartialJsonParser for streaming JSON repair
@@ -35,13 +35,13 @@ Semantic Kernel:
 - No built-in safe file operation semantics
 - Developers implement custom guardrails
 
-Winner: DevGPT (deterministic, safe, atomic)
+Winner: Hazina (deterministic, safe, atomic)
 
 ---
 
 ## 3. RAG Implementation
 
-DevGPT: Complete message assembly pipeline
+Hazina: Complete message assembly pipeline
 - Conversation history (sliding window, max 20 messages)
 - Relevant documents (cosine similarity, token-limited)
 - Optional file listing for global context
@@ -56,14 +56,14 @@ Semantic Kernel:
 - Plugins for context retrieval
 - Manual message assembly
 
-Winner: DevGPT (turnkey RAG pipeline)
+Winner: Hazina (turnkey RAG pipeline)
 
 ---
 
 ## 4. Configuration System
 
-DevGPT: Dual-format (text + JSON)
-- .devgpt text format (human-readable)
+Hazina: Dual-format (text + JSON)
+- .hazina text format (human-readable)
 - JSON format (programmatic)
 - Three entities: Store, Agent, Flow
 - Per-store read/write flags
@@ -74,13 +74,13 @@ Semantic Kernel:
 - appsettings.json for models
 - No declarative configuration
 
-Winner: DevGPT (non-developer friendly)
+Winner: Hazina (non-developer friendly)
 
 ---
 
 ## 5. Tool System
 
-DevGPT: Dynamic registration with built-in sets
+Hazina: Dynamic registration with built-in sets
 - Store tools (list, read, relevancy, write, delete, move)
 - Developer tools (git, dotnet, npm, build)
 - Data tools (BigQuery, email, WordPress)
@@ -94,13 +94,13 @@ Semantic Kernel:
 - No built-in developer tools
 - Tools receive only arguments
 
-Winner: DevGPT (built-in dev tools, context-aware)
+Winner: Hazina (built-in dev tools, context-aware)
 
 ---
 
 ## 6. Multi-Agent Flows
 
-DevGPT: Sequential orchestration
+Hazina: Sequential orchestration
 - Ordered agent execution
 - Automatic context propagation (output → input)
 - Mode switching (WriteMode flag for code agents)
@@ -113,13 +113,13 @@ Semantic Kernel:
 - No mode switching
 - Basic message history
 
-Winner: DevGPT (sequential flows, auto context)
+Winner: Hazina (sequential flows, auto context)
 
 ---
 
 ## 7. Cost Tracking
 
-DevGPT: Automatic token usage + cost
+Hazina: Automatic token usage + cost
 - TokenUsageInfo class with input/output tokens and costs
 - Operator overloading for aggregation
 - Every response includes paired token usage
@@ -131,13 +131,13 @@ Semantic Kernel:
 - No aggregation semantics
 - Metadata varies by provider
 
-Winner: DevGPT (automatic, aggregatable)
+Winner: Hazina (automatic, aggregatable)
 
 ---
 
 ## 8. Developer Tools
 
-DevGPT: Out-of-the-box support
+Hazina: Out-of-the-box support
 - git: status, diff, commit, push, pull
 - dotnet: build, test, publish, clean
 - npm: install, build, test, lint, format
@@ -148,13 +148,13 @@ Semantic Kernel:
 - No built-in developer tools
 - Requires custom wrappers
 
-Winner: DevGPT (zero boilerplate)
+Winner: Hazina (zero boilerplate)
 
 ---
 
 ## 9. Store Permissions
 
-DevGPT: Granular control
+Hazina: Granular control
 - Per-store read/write flags
 - StoreRef(Name, Write boolean)
 - ExplicitModify flag for schema-based permissions
@@ -164,13 +164,13 @@ Semantic Kernel:
 - Binary function availability
 - No permission model
 
-Winner: DevGPT (explicit, granular)
+Winner: Hazina (explicit, granular)
 
 ---
 
 ## 10. Streaming
 
-DevGPT: Real-time callbacks with token tracking
+Hazina: Real-time callbacks with token tracking
 - Action<string> callback per chunk
 - Token tracking during stream
 - Support for typed responses (UpdateStoreResponse)
@@ -181,25 +181,25 @@ Semantic Kernel:
 - Inconsistent token metadata
 - No callback pattern
 
-Winner: DevGPT (callbacks, typed streaming)
+Winner: Hazina (callbacks, typed streaming)
 
 ---
 
 ## Comparison Matrix
 
-| Feature | DevGPT | SK | Winner |
+| Feature | Hazina | SK | Winner |
 |---------|--------|-----|--------|
-| File-based embeddings | ✓ | ✗ | DevGPT |
-| Multi-store composition | ✓ | ✗ | DevGPT |
-| Token-aware limiting | ✓ | ✗ | DevGPT |
-| Safe file ops | ✓ | ✗ | DevGPT |
-| Automatic RAG | ✓ | ✗ | DevGPT |
-| Declarative config | ✓ | ✗ | DevGPT |
-| Per-store permissions | ✓ | ✗ | DevGPT |
-| Built-in dev tools | ✓ | ✗ | DevGPT |
-| Sequential flows | ✓ | ✗ | DevGPT |
-| Auto cost tracking | ✓ | ✗ | DevGPT |
-| Streaming callbacks | ✓ | ✗ | DevGPT |
+| File-based embeddings | ✓ | ✗ | Hazina |
+| Multi-store composition | ✓ | ✗ | Hazina |
+| Token-aware limiting | ✓ | ✗ | Hazina |
+| Safe file ops | ✓ | ✗ | Hazina |
+| Automatic RAG | ✓ | ✗ | Hazina |
+| Declarative config | ✓ | ✗ | Hazina |
+| Per-store permissions | ✓ | ✗ | Hazina |
+| Built-in dev tools | ✓ | ✗ | Hazina |
+| Sequential flows | ✓ | ✗ | Hazina |
+| Auto cost tracking | ✓ | ✗ | Hazina |
+| Streaming callbacks | ✓ | ✗ | Hazina |
 | Large plugin ecosystem | ✗ | ✓ | SK |
 | Advanced planners | ✗ | ✓ | SK |
 | Multiple LLM providers | ✗ | ✓ | SK |
@@ -209,7 +209,7 @@ Winner: DevGPT (callbacks, typed streaming)
 
 ---
 
-## DevGPT Specialization
+## Hazina Specialization
 
 1. Code Assistants: Local repos with embeddings, git, safe commits
 2. Knowledge Q&A: Documents with rich metadata and file listing
@@ -235,13 +235,13 @@ Winner: DevGPT (callbacks, typed streaming)
 
 ## Integration Recommendations
 
-To enhance SK with DevGPT features:
+To enhance SK with Hazina features:
 1. Copy UpdateStoreResponse pattern
 2. Implement EmbeddingMatcher token limiting
-3. Use DevGPT JSON embedding format
+3. Use Hazina JSON embedding format
 4. Wrap AgentFactory tools as SK plugins
 
-To enhance DevGPT with SK features:
+To enhance Hazina with SK features:
 1. Implement ILLMClient with SK kernel
 2. Add SK planners for autonomous decomposition
 3. Connect SK vector DB adapters
@@ -251,14 +251,14 @@ To enhance DevGPT with SK features:
 
 ## Conclusion
 
-DevGPT is a specialist framework for local, code-centric AI with out-of-the-box features 
+Hazina is a specialist framework for local, code-centric AI with out-of-the-box features 
 for embeddings, safe code generation, and developer tool integration.
 
 Semantic Kernel is an orchestration platform for enterprise extensibility, multiple 
 providers, and advanced reasoning.
 
 Both are complementary. The ideal stack combines:
-- DevGPT: Local RAG, embeddings, safe modifications
+- Hazina: Local RAG, embeddings, safe modifications
 - Semantic Kernel: Multi-provider LLM, planners, production memory
 - Integration: ILLMClient wrapper around SK kernel
 

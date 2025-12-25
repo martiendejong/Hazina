@@ -1,4 +1,4 @@
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Models;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -6,9 +6,9 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using DevGPTStore.Models;
+using HazinaStore.Models;
 
-namespace DevGPT.GenerationTools.Data
+namespace Hazina.Tools.Data
 {
     public class IntakeRepository
     {
@@ -37,7 +37,7 @@ namespace DevGPT.GenerationTools.Data
         private readonly ProjectFileLocator _fileLocator;
         private readonly ProjectEmbeddingService _embeddingService;
 
-        public IntakeRepository(DevGPTStoreConfig configuration, IConfiguration appConfig)
+        public IntakeRepository(HazinaStoreConfig configuration, IConfiguration appConfig)
         {
             ProjectsFolder = configuration.ProjectSettings.ProjectsFolder;
             Projects = new ProjectsRepository(configuration, appConfig);

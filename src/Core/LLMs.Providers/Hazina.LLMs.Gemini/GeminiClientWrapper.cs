@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using DevGPT.LLMs.Gemini;
+using Hazina.LLMs.Gemini;
 
 public class GeminiClientWrapper : ILLMClient
 {
@@ -32,10 +32,10 @@ public class GeminiClientWrapper : ILLMClient
     private sealed record GeminiCandidate(GeminiCandidateContent content);
     private sealed record GeminiResponse(GeminiCandidate[] candidates, GeminiUsage? usageMetadata);
 
-    private static (object? system, List<GeminiContent> msgs) MapMessages(List<DevGPTChatMessage> messages)
+    private static (object? system, List<GeminiContent> msgs) MapMessages(List<HazinaChatMessage> messages)
     {
         var systemParts = messages
-            .Where(m => m.Role == DevGPTMessageRole.System || m.Role.Role == DevGPTMessageRole.System.Role)
+            .Where(m => m.Role == HazinaMessageRole.System || m.Role.Role == HazinaMessageRole.System.Role)
             .Select(m => m.Text)
             .ToList();
         object? system = null;
@@ -47,15 +47,15 @@ public class GeminiClientWrapper : ILLMClient
         var mapped = new List<GeminiContent>();
         foreach (var m in messages)
         {
-            if (m.Role == DevGPTMessageRole.System || m.Role.Role == DevGPTMessageRole.System.Role)
+            if (m.Role == HazinaMessageRole.System || m.Role.Role == HazinaMessageRole.System.Role)
                 continue;
-            var role = (m.Role == DevGPTMessageRole.Assistant || m.Role.Role == DevGPTMessageRole.Assistant.Role) ? "model" : "REGULAR";
+            var role = (m.Role == HazinaMessageRole.Assistant || m.Role.Role == HazinaMessageRole.Assistant.Role) ? "model" : "REGULAR";
             mapped.Add(new GeminiContent(role, [ new GeminiPart(m.Text) ]));
         }
         return (system, mapped);
     }
 
-    private async Task<(string text, TokenUsageInfo usage)> CallGemini(List<DevGPTChatMessage> messages, CancellationToken cancel, IToolsContext? tools = null)
+    private async Task<(string text, TokenUsageInfo usage)> CallGemini(List<HazinaChatMessage> messages, CancellationToken cancel, IToolsContext? tools = null)
     {
         var (system, mapped) = MapMessages(messages);
         var id = Guid.NewGuid().ToString();
@@ -102,19 +102,19 @@ public class GeminiClientWrapper : ILLMClient
         return (tokens / 1_000_000m) * pricePerMillion;
     }
 
-    public async Task<LLMResponse<string>> GetResponse(List<DevGPTChatMessage> messages, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    public async Task<LLMResponse<string>> GetResponse(List<HazinaChatMessage> messages, HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         var (text, usage) = await CallGemini(messages, cancel, toolsContext);
         return new LLMResponse<string>(text, usage);
     }
 
-    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(List<DevGPTChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(List<HazinaChatMessage> messages, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
     {
         // Add JSON format instruction similar to other clients
-        var withFormat = new List<DevGPTChatMessage>(messages);
+        var withFormat = new List<HazinaChatMessage>(messages);
         var instruction = $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {ChatResponse<ResponseType>.Signature} EXAMPLE: {JsonSerializer.Serialize(ChatResponse<ResponseType>.Example)}";
         var insert = Math.Max(0, withFormat.Count - 1);
-        withFormat.Insert(insert, new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = instruction });
+        withFormat.Insert(insert, new HazinaChatMessage { Role = HazinaMessageRole.System, Text = instruction });
 
         var (text, usage) = await CallGemini(withFormat, cancel, toolsContext);
         try
@@ -141,16 +141,16 @@ public class GeminiClientWrapper : ILLMClient
         }
     }
 
-    public async Task<LLMResponse<string>> GetResponseStream(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    public async Task<LLMResponse<string>> GetResponseStream(List<HazinaChatMessage> messages, Action<string> onChunkReceived, HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         var response = await GetResponse(messages, responseFormat, toolsContext, images, cancel);
         foreach (var chunk in Chunk(response.Result, 60)) onChunkReceived(chunk);
         return response;
     }
 
-    public async Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(List<DevGPTChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
+    public async Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(List<HazinaChatMessage> messages, Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
     {
-        var response = await GetResponseStream(messages, onChunkReceived, DevGPTChatResponseFormat.Json, toolsContext, images, cancel);
+        var response = await GetResponseStream(messages, onChunkReceived, HazinaChatResponseFormat.Json, toolsContext, images, cancel);
         var result = JsonSerializer.Deserialize<ResponseType>(response.Result);
         return new LLMResponse<ResponseType?>(result, response.TokenUsage);
     }
@@ -206,7 +206,7 @@ public class GeminiClientWrapper : ILLMClient
         return string.IsNullOrWhiteSpace(fallback) ? "MP3" : fallback;
     }
 
-    public async Task<LLMResponse<DevGPTGeneratedImage>> GetImage(string prompt, DevGPTChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+    public async Task<LLMResponse<HazinaGeneratedImage>> GetImage(string prompt, HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
     {
         // Google Generative Language Image Generation (v1beta)
         // Default endpoint/model:
@@ -260,10 +260,10 @@ public class GeminiClientWrapper : ILLMClient
             }
 
             var bytes = Convert.FromBase64String(b64);
-            var img = new DevGPTGeneratedImage(null, BinaryData.FromBytes(bytes));
+            var img = new HazinaGeneratedImage(null, BinaryData.FromBytes(bytes));
             var tokenUsage = new TokenUsageInfo(0, 0, 0, 0, _config.ImageModel);
             toolsContext?.SendMessage?.Invoke(id, "IMAGE Response (Gemini/Google)", $"Generated {bytes.Length} bytes");
-            return new LLMResponse<DevGPTGeneratedImage>(img, tokenUsage);
+            return new LLMResponse<HazinaGeneratedImage>(img, tokenUsage);
         }
         catch
         {
@@ -271,9 +271,9 @@ public class GeminiClientWrapper : ILLMClient
             try
             {
                 var bytes = Convert.FromBase64String(respText);
-                var img = new DevGPTGeneratedImage(null, BinaryData.FromBytes(bytes));
+                var img = new HazinaGeneratedImage(null, BinaryData.FromBytes(bytes));
                 var tokenUsage = new TokenUsageInfo(0, 0, 0, 0, _config.ImageModel);
-                return new LLMResponse<DevGPTGeneratedImage>(img, tokenUsage);
+                return new LLMResponse<HazinaGeneratedImage>(img, tokenUsage);
             }
             catch { throw; }
         }

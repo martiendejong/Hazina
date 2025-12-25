@@ -1,4 +1,4 @@
- Based on my comprehensive analysis of the DevGPT repository, here are 10 key improvements to make this
+ Based on my comprehensive analysis of the Hazina repository, here are 10 key improvements to make this
   production-ready for users:
 
   10 Priority Improvements for Production Readiness
@@ -35,7 +35,7 @@
 
   Current state: Basic validation, potential path traversal risks, unrestricted tool execution
   Improvement:
-  // Add to LLMs/ClientTools/
+  // Add to Core/LLMs/Hazina.LLMClientTools/
   - PathValidator.cs - Prevent directory traversal
   - ToolExecutionSandbox.cs - Restrict shell commands to allowed lists
   - InputSanitizer.cs - Validate tool parameters
@@ -56,7 +56,7 @@
   Current state: Basic file logging, inconsistent patterns
   Improvement:
   - Add Serilog/NLog with structured logging
-  - Create DevGPT.Observability package:
+  - Create Hazina.Observability package:
   - ILogger abstraction (avoid direct dependencies)
   - TokenUsageMetrics.cs - Centralized cost tracking
   - PerformanceCounters.cs - Operation timing
@@ -71,7 +71,7 @@
 
   Current state: Try-catch in places, some errors swallowed
   Improvement:
-  - Create DevGPT.LLMs.Classes/Exceptions/ with typed exceptions:
+  - Create Hazina.LLMs.Classes/Exceptions/ with typed exceptions:
   - LLMProviderException.cs (base)
   - RateLimitException.cs (with retry-after)
   - QuotaExceededException.cs
@@ -91,7 +91,7 @@
   - Add Dockerfile for console/API scenarios:
   FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
   # Multi-stage build for minimal image
-  - Create docker-compose.yml with PostgreSQL + pgvector + DevGPT API
+  - Create docker-compose.yml with PostgreSQL + pgvector + Hazina API
   - Kubernetes deployment templates (Helm chart)
   - Azure Functions / AWS Lambda deployment guides
   - Cross-platform agent hosting (not just Windows)
@@ -124,8 +124,8 @@
   Current state: Manual appsettings.json editing, unclear defaults
   Improvement:
   - Create appsettings.template.json (committed) vs appsettings.json (gitignored)
-  - Add DevGPTConfigBuilder fluent API:
-  var config = new DevGPTConfigBuilder()
+  - Add HazinaConfigBuilder fluent API:
+  var config = new HazinaConfigBuilder()
       .UseOpenAI(apiKey: Environment.GetEnvironmentVariable("OPENAI_KEY"))
       .WithDefaultModel("gpt-4-turbo")
       .WithTokenLimit(maxTokens: 100000, costLimit: 5.00m)
@@ -153,7 +153,7 @@
     - Async enumerable patterns
     - Memory pooling for large responses
   - Benchmarks:
-    - Add DevGPT.Benchmarks project using BenchmarkDotNet
+    - Add Hazina.Benchmarks project using BenchmarkDotNet
     - Publish performance baselines for each version
 
   Impact: Lower costs, faster responses, better scalability
@@ -168,7 +168,7 @@
     - Migration guides for each major version
     - Deprecation warnings (not instant removal)
   - Compatibility Matrix:
-  | DevGPT Version | .NET Version | LLM Provider Versions |
+  | Hazina Version | .NET Version | LLM Provider Versions |
   |----------------|--------------|----------------------|
   | 1.1.x          | .NET 8.0     | OpenAI API 2024-11   |
   - Automated Changelog:
@@ -198,7 +198,7 @@
     - CONTRIBUTING.md with development setup
     - Issue templates for bugs/features
     - Discussions enabled for Q&A
-    - Community showcase (who's using DevGPT)
+    - Community showcase (who's using Hazina)
 
   ---
   Implementation Priority

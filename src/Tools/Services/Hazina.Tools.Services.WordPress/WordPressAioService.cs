@@ -5,13 +5,13 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
-using DevGPTStore.Models.WordPress;
-using DevGPT.GenerationTools.Data;
+using HazinaStore.Models.WordPress;
+using Hazina.Tools.Data;
 using Microsoft.Extensions.Configuration;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Models;
 using System.Threading;
 
-namespace DevGPTStore.Services
+namespace HazinaStore.Services
 {
     public class WordPressAioService : WordpressBaseService
     {

@@ -1,6 +1,6 @@
 # NuGet Package Versioning and Publishing Guide
 
-This document explains how to manage versions and publish NuGet packages for the DevGPT project.
+This document explains how to manage versions and publish NuGet packages for the Hazina project.
 
 ## Quick Start
 
@@ -105,13 +105,13 @@ Version format: `MAJOR.MINOR.PATCH`
 
 ### Synchronized Versions
 
-All DevGPT packages share the same version number:
+All Hazina packages share the same version number:
 - ✅ Simple to manage
 - ✅ Clear which packages belong together
 - ✅ Less confusion for consumers
 - ✅ Easy dependency management
 
-Example: If you update `DevGPT.Classes`, all packages get version bump (even if unchanged).
+Example: If you update `Hazina.LLMs.Classes`, all packages get version bump (even if unchanged).
 
 ### When to Increment
 
@@ -125,16 +125,16 @@ Example: If you update `DevGPT.Classes`, all packages get version bump (even if 
 
 The following packages are managed:
 
-1. DevGPT.AgentFactory
-2. DevGPT.Classes
-3. DevGPT.DocumentStore
-4. DevGPT.EmbeddingStore
-5. DevGPT.Generator
-6. DevGPT.Helpers
-7. DevGPT.HuggingFace
-8. DevGPT.LLMClient
-9. DevGPT.LLMClientTools
-10. DevGPT.OpenAI
+1. Hazina.AgentFactory
+2. Hazina.LLMs.Classes
+3. Hazina.Store.DocumentStore
+4. Hazina.Store.EmbeddingStore
+5. Hazina.Generator
+6. Hazina.Helpers
+7. Hazina.LLMs.HuggingFace
+8. Hazina.LLMs.Client
+9. Hazina.LLMs.Tools
+10. Hazina.LLMs.OpenAI
 
 ## Git Workflow
 
@@ -188,7 +188,7 @@ The publish script uses `--skip-duplicate`, so this should be handled automatica
 increment-and-publish.bat patch
 # Commits and tags
 git add .
-git commit -m "Fix: Resolved null reference in DevGPTGeneratedImage"
+git commit -m "Fix: Resolved null reference in HazinaGeneratedImage"
 git tag v1.0.6
 git push && git push --tags
 ```

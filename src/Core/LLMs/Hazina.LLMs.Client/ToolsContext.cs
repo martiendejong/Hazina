@@ -1,12 +1,12 @@
 
 public class ToolsContext : IToolsContext
 {
-    public List<DevGPTChatTool> Tools { get; set; } = new List<DevGPTChatTool>();
+    public List<HazinaChatTool> Tools { get; set; } = new List<HazinaChatTool>();
     public Action<string, string, string>? SendMessage { get; set; }
     public string? ProjectId { get; set; } = null;
     public Action<string, int, int, string>? OnTokensUsed { get; set; } = null;
 
-    public void Add(DevGPTChatTool info)
+    public void Add(HazinaChatTool info)
     {
         Tools.Add(info);
     }

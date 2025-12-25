@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace DevGPT.GenerationTools.Services.DataGathering.Models;
+namespace Hazina.Tools.Services.DataGathering.Models;
 
 /// <summary>
 /// Represents a flexible data value that can be a string, number, large text, or a list of items.

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DevGPTStore.Core.Interfaces
+namespace HazinaStore.Core.Interfaces
 {
     /// <summary>
     /// Base interface for all documents in the system

@@ -1,10 +1,10 @@
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
 using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace DevGPT.GenerationTools.Services.Chat
+namespace Hazina.Tools.Services.Chat
 {
     /// <summary>
     /// Service for managing chat file operations and project file inclusion
@@ -38,7 +38,7 @@ namespace DevGPT.GenerationTools.Services.Chat
 
             try
             {
-                var file = JsonSerializer.Deserialize<DevGPTStoreChatFile>(messageText);
+                var file = JsonSerializer.Deserialize<HazinaStoreChatFile>(messageText);
                 if (file != null && file.IncludeInProject)
                 {
                     var fileNameWithoutTxt = RemoveTxtExtension(file.File);
@@ -47,7 +47,7 @@ namespace DevGPT.GenerationTools.Services.Chat
             }
             catch (JsonException)
             {
-                // Not a valid DevGPTStoreChatFile JSON, ignore
+                // Not a valid HazinaStoreChatFile JSON, ignore
             }
         }
 
@@ -73,7 +73,7 @@ namespace DevGPT.GenerationTools.Services.Chat
 
             try
             {
-                var file = JsonSerializer.Deserialize<DevGPTStoreChatFile>(messageText);
+                var file = JsonSerializer.Deserialize<HazinaStoreChatFile>(messageText);
                 if (file == null)
                     return;
 
@@ -89,21 +89,21 @@ namespace DevGPT.GenerationTools.Services.Chat
             }
             catch (JsonException)
             {
-                // Not a valid DevGPTStoreChatFile JSON, ignore
+                // Not a valid HazinaStoreChatFile JSON, ignore
             }
         }
 
         /// <summary>
-        /// Extracts DevGPTStoreChatFile from message text if valid JSON
+        /// Extracts HazinaStoreChatFile from message text if valid JSON
         /// </summary>
-        public DevGPTStoreChatFile TryParseChatFile(string messageText)
+        public HazinaStoreChatFile TryParseChatFile(string messageText)
         {
             if (string.IsNullOrWhiteSpace(messageText) || !messageText.StartsWith("{"))
                 return null;
 
             try
             {
-                return JsonSerializer.Deserialize<DevGPTStoreChatFile>(messageText);
+                return JsonSerializer.Deserialize<HazinaStoreChatFile>(messageText);
             }
             catch (JsonException)
             {

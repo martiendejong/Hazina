@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
-namespace DevGPT.App.Windows;
+namespace Hazina.App.Windows;
 public partial class SettingsWindow : Window
     {
         private readonly string appSettingsPath = "appsettings.json";

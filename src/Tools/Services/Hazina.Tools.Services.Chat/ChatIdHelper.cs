@@ -1,6 +1,6 @@
 using System;
 
-namespace DevGPT.GenerationTools.Services.Chat
+namespace Hazina.Tools.Services.Chat
 {
     /// <summary>
     /// Helper class for parsing and handling chat IDs

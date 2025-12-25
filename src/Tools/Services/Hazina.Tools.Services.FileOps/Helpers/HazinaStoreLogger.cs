@@ -6,19 +6,19 @@ using System.IO;
 using Serilog;
 using Serilog.Events;
 
-namespace DevGPT.GenerationTools.Services.FileOps.Helpers
+namespace Hazina.Tools.Services.FileOps.Helpers
 {
     public interface ILogger
     {
         void Log(List<OpenAI.Chat.ChatMessage> messages, string responseContent);
     }
 
-    public class DevGPTStoreLogger : ILogger
+    public class HazinaStoreLogger : ILogger
     {
         public string Project { get; set; }
         private readonly Serilog.Core.Logger _logger;
 
-        public DevGPTStoreLogger(string logFilePath, string project)
+        public HazinaStoreLogger(string logFilePath, string project)
         {
             Project = project;
             _logger = new LoggerConfiguration()

@@ -1,4 +1,4 @@
-namespace DevGPT.LLMs.Classes.Tests;
+namespace Hazina.LLMs.Classes.Tests;
 
 public class TokenUsageInfoTests
 {

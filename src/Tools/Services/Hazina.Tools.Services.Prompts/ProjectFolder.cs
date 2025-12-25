@@ -1,7 +1,7 @@
 using System.IO;
 using System.Text.Json;
 
-namespace DevGPTStore
+namespace HazinaStore
 {
     public class ProjectFolder
     {

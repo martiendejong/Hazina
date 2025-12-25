@@ -1,8 +1,8 @@
 using System.Text;
 using System.Text.Json;
-using DevGPT.DynamicAPI.Models;
+using Hazina.DynamicAPI.Models;
 
-namespace DevGPT.DynamicAPI.Core;
+namespace Hazina.DynamicAPI.Core;
 
 /// <summary>
 /// Dynamic HTTP client that can call any API endpoint based on discovered documentation

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace DevGPT.GenerationTools.Services.Store
+namespace Hazina.Tools.Services.Store
 {
     public class AnalysisFieldInfo
     {

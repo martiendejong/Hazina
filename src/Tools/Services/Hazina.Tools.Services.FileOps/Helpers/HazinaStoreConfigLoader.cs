@@ -1,12 +1,12 @@
-using DevGPTStore.Models;
+using HazinaStore.Models;
 using Microsoft.Extensions.Configuration;
 using System;
 
-namespace DevGPT.GenerationTools.Services.FileOps.Helpers
+namespace Hazina.Tools.Services.FileOps.Helpers
 {
-    public class DevGPTStoreConfigLoader
+    public class HazinaStoreConfigLoader
     {
-        public static DevGPTStoreConfig LoadDevGPTStoreConfig()
+        public static HazinaStoreConfig LoadHazinaStoreConfig()
         {
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
@@ -16,7 +16,7 @@ namespace DevGPT.GenerationTools.Services.FileOps.Helpers
             var apiSettings = configuration.GetSection("ApiSettings").Get<ApiSettings>();
             var projectSettings = configuration.GetSection("ProjectSettings").Get<ProjectSettings>();
             var googleOAuthSettings = configuration.GetSection("GoogleOAuth").Get<GoogleOAuthSettings>();
-            var config = new DevGPTStoreConfig
+            var config = new HazinaStoreConfig
             {
                 ProjectSettings = projectSettings,
                 ApiSettings = apiSettings,

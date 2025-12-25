@@ -1,9 +1,9 @@
 ﻿using OpenAI.Chat;
 using System.Collections.Generic;
-using DevGPTStore.Models;
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
+using HazinaStore.Models;
+using Hazina.Tools.Models.WordPress.Blogs;
 
-namespace DevGPT.GenerationTools.Models.Social
+namespace Hazina.Tools.Models.Social
 {
     public class SocialMediaInfo : Serializer<SocialMediaInfo>
     {

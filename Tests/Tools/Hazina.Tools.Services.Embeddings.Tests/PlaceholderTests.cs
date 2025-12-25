@@ -1,6 +1,6 @@
 using FluentAssertions;
 
-namespace DevGPT.GenerationTools.Services.Embeddings.Tests;
+namespace Hazina.GenerationTools.Services.Embeddings.Tests;
 
 /// <summary>
 /// Placeholder tests for Embeddings service

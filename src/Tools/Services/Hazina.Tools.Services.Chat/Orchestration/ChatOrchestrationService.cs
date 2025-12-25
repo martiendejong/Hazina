@@ -1,6 +1,6 @@
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Services.Chat.Tools;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
+using Hazina.Tools.Services.Chat.Tools;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DevGPT.GenerationTools.Services.Chat.Orchestration
+namespace Hazina.Tools.Services.Chat.Orchestration
 {
     /// <summary>
     /// Orchestrates chat with a single LLM that uses function/tool calling

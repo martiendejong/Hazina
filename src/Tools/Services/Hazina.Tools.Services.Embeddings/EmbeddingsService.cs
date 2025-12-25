@@ -4,20 +4,20 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Services.Store;
-using DevGPTStore.Models;
-using DevGPT.GenerationTools.Services.FileOps.Helpers;
-using DevGPTStore;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
+using Hazina.Tools.Services.Store;
+using HazinaStore.Models;
+using Hazina.Tools.Services.FileOps.Helpers;
+using HazinaStore;
 using Microsoft.Extensions.Configuration;
 
-namespace DevGPT.GenerationTools.Services.Embeddings
+namespace Hazina.Tools.Services.Embeddings
 {
     public class EmbeddingsService : IEmbeddingsService
     {
         private readonly IConfiguration _configuration;
-        private readonly DevGPTStoreConfig _config;
+        private readonly HazinaStoreConfig _config;
         private readonly ProjectsRepository _projects;
         private readonly ProjectFileLocator _fileLocator;
         private readonly ProjectEmbeddingService _embeddingService;
@@ -27,7 +27,7 @@ namespace DevGPT.GenerationTools.Services.Embeddings
         public EmbeddingsService(IConfiguration configuration)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _config = DevGPTStoreConfigLoader.LoadDevGPTStoreConfig();
+            _config = HazinaStoreConfigLoader.LoadHazinaStoreConfig();
             _projects = new ProjectsRepository(_config, configuration);
             _fileLocator = new ProjectFileLocator(_projects.ProjectsFolder);
             var chatRepository = new ProjectChatRepository(_fileLocator);

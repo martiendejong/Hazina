@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace DevGPT.GenerationTools.Data
+namespace Hazina.Tools.Data
 {
     public static class StoreProvider
     {

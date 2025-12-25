@@ -1,6 +1,6 @@
-# DevGPT.DynamicAPI
+# Hazina.DynamicAPI
 
-Dynamic API Integration for DevGPT - Call any API without pre-configuration, inspired by the [data-analytics-agent](https://github.com/agency-ai-solutions/data-analytics-agent) repository.
+Dynamic API Integration for Hazina - Call any API without pre-configuration, inspired by the [data-analytics-agent](https://github.com/agency-ai-solutions/data-analytics-agent) repository.
 
 ## Features
 
@@ -22,9 +22,9 @@ Dynamic API Integration for DevGPT - Call any API without pre-configuration, ins
 - JSON request/response handling
 - Query parameters and custom headers
 
-### 🤖 DevGPT Tool Integration
-- Ready-to-use `DevGPTChatTool` wrappers
-- Seamless integration with DevGPT agents
+### 🤖 Hazina Tool Integration
+- Ready-to-use `HazinaChatTool` wrappers
+- Seamless integration with Hazina agents
 - Tools: `web_search`, `fetch_url`, `api_call`
 
 ## Installation
@@ -32,7 +32,7 @@ Dynamic API Integration for DevGPT - Call any API without pre-configuration, ins
 Add reference to your project:
 
 ```xml
-<ProjectReference Include="..\DevGPT.DynamicAPI\DevGPT.DynamicAPI.csproj" />
+<ProjectReference Include="..\Hazina.DynamicAPI\Hazina.DynamicAPI.csproj" />
 ```
 
 ## Quick Start
@@ -99,7 +99,7 @@ foreach (var result in docs.Results)
 var content = await searchTool.FetchUrl(docs.Results.First().Url);
 ```
 
-### 4. Use with DevGPT Agents
+### 4. Use with Hazina Agents
 
 ```csharp
 // Create tools
@@ -108,12 +108,12 @@ var apiClient = new DynamicAPIClient(credStore);
 var searchTool = new WebSearchTool(credStore);
 
 var tools = new ToolsContext();
-tools.Add(new WebSearchDevGPTTool(searchTool));
-tools.Add(new FetchUrlDevGPTTool(searchTool));
-tools.Add(new DynamicAPIDevGPTTool(apiClient));
+tools.Add(new WebSearchHazinaTool(searchTool));
+tools.Add(new FetchUrlHazinaTool(searchTool));
+tools.Add(new DynamicAPIHazinaTool(apiClient));
 
 // Create agent with dynamic API capabilities
-var agent = new DevGPTAgent("api_researcher", generator, tools);
+var agent = new HazinaAgent("api_researcher", generator, tools);
 
 // Agent can now discover and call APIs dynamically!
 var response = await agent.Generator.GetResponse(
@@ -311,15 +311,15 @@ await DynamicAPIExample.RunExamples();
 ## Architecture
 
 ```
-DevGPT.DynamicAPI/
+Hazina.DynamicAPI/
 ├── Core/
 │   ├── CredentialStore.cs       # Credential management
 │   └── DynamicAPIClient.cs      # HTTP client with auth
 ├── Tools/
 │   ├── WebSearchTool.cs         # Bing search integration
-│   ├── DynamicAPIDevGPTTool.cs  # API call tool for agents
-│   ├── WebSearchDevGPTTool.cs   # Search tool for agents
-│   └── FetchUrlDevGPTTool.cs    # URL fetcher for agents
+│   ├── DynamicAPIHazinaTool.cs  # API call tool for agents
+│   ├── WebSearchHazinaTool.cs   # Search tool for agents
+│   └── FetchUrlHazinaTool.cs    # URL fetcher for agents
 ├── Models/
 │   └── ApiRequest.cs            # Request/response models
 └── Examples/
@@ -332,4 +332,4 @@ Inspired by the [data-analytics-agent](https://github.com/agency-ai-solutions/da
 
 ## License
 
-Part of the DevGPT project.
+Part of the Hazina project.

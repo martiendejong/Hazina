@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace DevGPT.GenerationTools.Data
+namespace Hazina.Tools.Data
 {
     /// <summary>
     /// Service responsible for all project file path operations and file name constants.

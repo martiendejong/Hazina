@@ -1,6 +1,6 @@
-public class DevGPTGeneratedImage
+public class HazinaGeneratedImage
 {
-    public DevGPTGeneratedImage(Uri? url, BinaryData? imageBytes)
+    public HazinaGeneratedImage(Uri? url, BinaryData? imageBytes)
     {
         Url = url;
         ImageBytes = imageBytes;

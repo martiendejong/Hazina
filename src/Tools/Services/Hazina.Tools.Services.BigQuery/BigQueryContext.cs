@@ -1,11 +1,11 @@
 using Google.Cloud.BigQuery.V2;
 using OpenAI.Chat;
 using System.Text.Json;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models.BigQuery;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models.BigQuery;
+using Hazina.Tools.Models;
 
-namespace DevGPT.GenerationTools.Services.BigQuery
+namespace Hazina.Tools.Services.BigQuery
 {
     public class BigQueryContext : ToolsContextBase
     {

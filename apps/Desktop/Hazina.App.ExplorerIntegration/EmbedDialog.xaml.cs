@@ -1,7 +1,7 @@
 using Microsoft.Win32;
 using System.Windows;
 
-namespace DevGPT.App.ExplorerIntegration
+namespace Hazina.App.ExplorerIntegration
 {
     public partial class EmbedDialog : Window
     {
@@ -15,7 +15,7 @@ namespace DevGPT.App.ExplorerIntegration
             InitializeComponent();
             Folder = folder;
             FiltersBox.Text = "txt,cs,js";
-            var existing = Registry.GetValue("HKEY_CURRENT_USER\\Software\\DevGPT\\OpenAI", "ApiKey", null) as string;
+            var existing = Registry.GetValue("HKEY_CURRENT_USER\\Software\\Hazina\\OpenAI", "ApiKey", null) as string;
             if (!string.IsNullOrWhiteSpace(existing))
             {
                 KeyBox.Password = existing;
@@ -30,7 +30,7 @@ namespace DevGPT.App.ExplorerIntegration
             SaveKeyToRegistry = SaveKeyBox.IsChecked == true;
             if (string.IsNullOrWhiteSpace(OpenAIKey))
             {
-                MessageBox.Show(this, "Please provide an OpenAI API key.", "DevGPT", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(this, "Please provide an OpenAI API key.", "Hazina", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             DialogResult = true;

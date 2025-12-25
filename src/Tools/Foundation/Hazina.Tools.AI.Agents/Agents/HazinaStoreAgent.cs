@@ -1,18 +1,18 @@
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
-using DevGPT.GenerationTools.Data;
+using Hazina.Tools.Models.WordPress.Blogs;
+using Hazina.Tools.Data;
 using System.Collections.Generic;
-using DevGPT.GenerationTools.Models;
-using DevGPTStore.Models;
+using Hazina.Tools.Models;
+using HazinaStore.Models;
 using System.Linq;
 
-namespace DevGPT.GenerationTools.AI.Agents
+namespace Hazina.Tools.AI.Agents
 {
-    public class DevGPTStoreAgent
+    public class HazinaStoreAgent
     {
         public ProjectsRepository Projects;
         private readonly ProjectFileLocator _fileLocator;
 
-        public DevGPTStoreAgent(ProjectsRepository projects)
+        public HazinaStoreAgent(ProjectsRepository projects)
         {
             Projects = projects;
             _fileLocator = new ProjectFileLocator(projects.ProjectsFolder);

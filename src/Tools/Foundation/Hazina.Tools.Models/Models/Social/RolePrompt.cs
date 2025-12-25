@@ -1,4 +1,4 @@
-namespace DevGPTStore
+namespace HazinaStore
 {
     public class RolePrompt
     {

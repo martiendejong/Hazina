@@ -5,7 +5,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Collections.Generic;
 
-namespace DevGPT.App.Windows;
+namespace Hazina.App.Windows;
 
 public partial class AgentsCardsWindow : Window
 {

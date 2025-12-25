@@ -1,4 +1,4 @@
-﻿namespace DevGPT.GenerationTools.Models
+﻿namespace Hazina.Tools.Models
 {
     /// <summary>
     /// Struct to store WordPress credential information.

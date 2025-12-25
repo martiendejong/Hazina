@@ -1,7 +1,7 @@
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Models;
 using System.Threading.Tasks;
 
-namespace DevGPT.GenerationTools.Services.Chat
+namespace Hazina.Tools.Services.Chat
 {
     public interface IChatMessageService
     {

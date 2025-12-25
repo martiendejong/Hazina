@@ -1,4 +1,4 @@
-namespace DevGPT.Store.EmbeddingStore;
+namespace Hazina.Store.EmbeddingStore;
 
 /// <summary>
 /// Backward compatibility adapter that wraps new interfaces to provide the old ITextEmbeddingStore interface.

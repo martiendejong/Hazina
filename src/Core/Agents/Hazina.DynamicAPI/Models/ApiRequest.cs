@@ -1,4 +1,4 @@
-namespace DevGPT.DynamicAPI.Models;
+namespace Hazina.DynamicAPI.Models;
 
 public class ApiRequest
 {

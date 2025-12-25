@@ -12,12 +12,13 @@ using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
-using DevGPT.DynamicAPI.Core;
-using DevGPT.DynamicAPI.Tools;
-namespace DevGPT.App.Windows;
+using Hazina.ChatShared;
+using Hazina.DynamicAPI.Core;
+using Hazina.DynamicAPI.Tools;
+namespace Hazina.App.Windows;
 // Eventueel missing modelimports, aannemende dat volgende types lokaal zijn:
-// Als deze elders staan (bijv. in DevGPT.AgentFactory) graag correcte using plaatsen.
-// using DevGPT.AgentFactory; // Bijvoorbeeld als FlowCardModel, FlowCardsBindingModel, FlowConfig hier vandaan komen.
+// Als deze elders staan (bijv. in Hazina.AgentFactory) graag correcte using plaatsen.
+// using Hazina.AgentFactory; // Bijvoorbeeld als FlowCardModel, FlowCardsBindingModel, FlowConfig hier vandaan komen.
 
 public partial class MainWindow : Window, INotifyPropertyChanged
     {
@@ -109,8 +110,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             var dlg = new OpenFileDialog
             {
-                Filter = "DevGPT files (*.devgpt)|*.devgpt|All files (*.*)|*.*",
-                Title = "Select stores.devgpt"
+                Filter = "Hazina files (*.Hazina)|*.Hazina|All files (*.*)|*.*",
+                Title = "Select stores.Hazina"
             };
             if (dlg.ShowDialog() == true)
             {
@@ -128,7 +129,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             {
                 var rawTxt = File.ReadAllText(filePath);
                 StoresDevGPTEditor.Text = rawTxt;
-                parsedStores = DevGPTStoreConfigParser.Parse(rawTxt);
+                parsedStores = HazinaStoreConfigParser.Parse(rawTxt);
                 storesDevGPTRaw = rawTxt;
                 storesLoaded = true;
             }
@@ -143,8 +144,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             var dlg = new OpenFileDialog
             {
-                Filter = "DevGPT files (*.devgpt)|*.devgpt|All files (*.*)|*.*",
-                Title = "Select agents.devgpt"
+                Filter = "Hazina files (*.Hazina)|*.Hazina|All files (*.*)|*.*",
+                Title = "Select agents.Hazina"
             };
             if (dlg.ShowDialog() == true)
             {
@@ -162,7 +163,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             {
                 var rawTxt = File.ReadAllText(filePath);
                 AgentsDevGPTEditor.Text = rawTxt;
-                parsedAgents = DevGPTAgentConfigParser.Parse(rawTxt);
+                parsedAgents = HazinaAgentConfigParser.Parse(rawTxt);
                 agentsDevGPTRaw = rawTxt;
 
                 FillAgentsAndFlows();
@@ -187,8 +188,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             var dlg = new OpenFileDialog
             {
-                Filter = "DevGPT files (*.devgpt)|*.devgpt|All files (*.*)|*.*",
-                Title = "Select flows.devgpt"
+                Filter = "Hazina files (*.Hazina)|*.Hazina|All files (*.*)|*.*",
+                Title = "Select flows.Hazina"
             };
             if (dlg.ShowDialog() == true)
             {
@@ -206,7 +207,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             {
                 var rawTxt = File.ReadAllText(filePath);
                 FlowsDevGPTEditor.Text = rawTxt;
-                parsedFlows = DevGPTFlowConfigParser.Parse(rawTxt);
+                parsedFlows = HazinaFlowConfigParser.Parse(rawTxt);
                 flowsDevGPTRaw = rawTxt;
                 FillAgentsAndFlows();
                 flowsLoaded = true;
@@ -222,9 +223,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             var saveDlg = new SaveFileDialog
             {
-                Filter = "DevGPT files (*.devgpt)|*.devgpt|All files (*.*)|*.*",
-                Title = "Save stores.devgpt",
-                FileName = storesFilePath != null ? Path.GetFileName(storesFilePath) : "stores.devgpt",
+                Filter = "Hazina files (*.Hazina)|*.Hazina|All files (*.*)|*.*",
+                Title = "Save stores.Hazina",
+                FileName = storesFilePath != null ? Path.GetFileName(storesFilePath) : "stores.Hazina",
                 InitialDirectory = storesFilePath != null ? Path.GetDirectoryName(storesFilePath) : null,
                 OverwritePrompt = true
             };
@@ -233,8 +234,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 var filePath = saveDlg.FileName;
                 try
                 {
-                    var data = DevGPTStoreConfigParser.Parse(StoresDevGPTEditor.Text);
-                    var output = DevGPTStoreConfigParser.Serialize(data);
+                    var data = HazinaStoreConfigParser.Parse(StoresDevGPTEditor.Text);
+                    var output = HazinaStoreConfigParser.Serialize(data);
                     File.WriteAllText(filePath, output);
                     storesFilePath = filePath;
                     appConfig.StoresFile = storesFilePath;
@@ -253,9 +254,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             var saveDlg = new SaveFileDialog
             {
-                Filter = "DevGPT files (*.devgpt)|*.devgpt|All files (*.*)|*.*",
-                Title = "Save agents.devgpt",
-                FileName = agentsFilePath != null ? Path.GetFileName(agentsFilePath) : "agents.devgpt",
+                Filter = "Hazina files (*.Hazina)|*.Hazina|All files (*.*)|*.*",
+                Title = "Save agents.Hazina",
+                FileName = agentsFilePath != null ? Path.GetFileName(agentsFilePath) : "agents.Hazina",
                 InitialDirectory = agentsFilePath != null ? Path.GetDirectoryName(agentsFilePath) : null,
                 OverwritePrompt = true
             };
@@ -264,8 +265,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 var filePath = saveDlg.FileName;
                 try
                 {
-                    var data = DevGPTAgentConfigParser.Parse(AgentsDevGPTEditor.Text);
-                    var output = DevGPTAgentConfigParser.Serialize(data);
+                    var data = HazinaAgentConfigParser.Parse(AgentsDevGPTEditor.Text);
+                    var output = HazinaAgentConfigParser.Serialize(data);
                     File.WriteAllText(filePath, output);
                     agentsFilePath = filePath;
                     appConfig.AgentsFile = agentsFilePath;
@@ -284,9 +285,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             var saveDlg = new SaveFileDialog
             {
-                Filter = "DevGPT files (*.devgpt)|*.devgpt|All files (*.*)|*.*",
-                Title = "Save flows.devgpt",
-                FileName = flowsFilePath != null ? Path.GetFileName(flowsFilePath) : "flows.devgpt",
+                Filter = "Hazina files (*.Hazina)|*.Hazina|All files (*.*)|*.*",
+                Title = "Save flows.Hazina",
+                FileName = flowsFilePath != null ? Path.GetFileName(flowsFilePath) : "flows.Hazina",
                 InitialDirectory = flowsFilePath != null ? Path.GetDirectoryName(flowsFilePath) : null,
                 OverwritePrompt = true
             };
@@ -295,8 +296,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 var filePath = saveDlg.FileName;
                 try
                 {
-                    var data = DevGPTFlowConfigParser.Parse(FlowsDevGPTEditor.Text);
-                    var output = DevGPTFlowConfigParser.Serialize(data);
+                    var data = HazinaFlowConfigParser.Parse(FlowsDevGPTEditor.Text);
+                    var output = HazinaFlowConfigParser.Serialize(data);
                     File.WriteAllText(filePath, output);
                     flowsFilePath = filePath;
                     appConfig.FlowsFile = flowsFilePath;
@@ -315,14 +316,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             using var dlg = new WinForms.FolderBrowserDialog
             {
-                Description = "Select a directory containing stores.devgpt, agents.devgpt and flows.devgpt"
+                Description = "Select a directory containing stores.Hazina, agents.Hazina and flows.Hazina"
             };
             if (dlg.ShowDialog() == WinForms.DialogResult.OK)
             {
                 var dir = dlg.SelectedPath;
-                var storesPath = Path.Combine(dir, "stores.devgpt");
-                var agentsPath = Path.Combine(dir, "agents.devgpt");
-                var flowsPath = Path.Combine(dir, "flows.devgpt");
+                var storesPath = Path.Combine(dir, "stores.Hazina");
+                var agentsPath = Path.Combine(dir, "agents.Hazina");
+                var flowsPath = Path.Combine(dir, "flows.Hazina");
 
                 int loadedCount = 0;
                 var missing = new List<string>();
@@ -334,7 +335,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     TryLoadStoresFromFile(storesFilePath);
                     loadedCount++;
                 }
-                else missing.Add("stores.devgpt");
+                else missing.Add("stores.Hazina");
 
                 if (File.Exists(agentsPath))
                 {
@@ -343,7 +344,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     TryLoadAgentsFromFile(agentsFilePath);
                     loadedCount++;
                 }
-                else missing.Add("agents.devgpt");
+                else missing.Add("agents.Hazina");
 
                 if (File.Exists(flowsPath))
                 {
@@ -352,7 +353,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     TryLoadFlowsFromFile(flowsFilePath);
                     loadedCount++;
                 }
-                else missing.Add("flows.devgpt");
+                else missing.Add("flows.Hazina");
 
                 SaveAppConfig();
                 SetChatVisibilityIfReady();
@@ -376,7 +377,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             using var dlg = new WinForms.FolderBrowserDialog
             {
-                Description = "Select a directory to save stores.devgpt, agents.devgpt and flows.devgpt"
+                Description = "Select a directory to save stores.Hazina, agents.Hazina and flows.Hazina"
             };
             if (dlg.ShowDialog() == WinForms.DialogResult.OK)
             {
@@ -386,27 +387,27 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     Directory.CreateDirectory(dir);
 
                     // Stores
-                    var storesData = DevGPTStoreConfigParser.Parse(StoresDevGPTEditor.Text);
-                    var storesOutput = DevGPTStoreConfigParser.Serialize(storesData);
-                    var storesPath = Path.Combine(dir, "stores.devgpt");
+                    var storesData = HazinaStoreConfigParser.Parse(StoresDevGPTEditor.Text);
+                    var storesOutput = HazinaStoreConfigParser.Serialize(storesData);
+                    var storesPath = Path.Combine(dir, "stores.Hazina");
                     File.WriteAllText(storesPath, storesOutput);
                     storesFilePath = storesPath;
                     appConfig.StoresFile = storesFilePath;
                     parsedStores = storesData;
 
                     // Agents
-                    var agentsData = DevGPTAgentConfigParser.Parse(AgentsDevGPTEditor.Text);
-                    var agentsOutput = DevGPTAgentConfigParser.Serialize(agentsData);
-                    var agentsPath = Path.Combine(dir, "agents.devgpt");
+                    var agentsData = HazinaAgentConfigParser.Parse(AgentsDevGPTEditor.Text);
+                    var agentsOutput = HazinaAgentConfigParser.Serialize(agentsData);
+                    var agentsPath = Path.Combine(dir, "agents.Hazina");
                     File.WriteAllText(agentsPath, agentsOutput);
                     agentsFilePath = agentsPath;
                     appConfig.AgentsFile = agentsFilePath;
                     parsedAgents = agentsData;
 
                     // Flows
-                    var flowsData = DevGPTFlowConfigParser.Parse(FlowsDevGPTEditor.Text);
-                    var flowsOutput = DevGPTFlowConfigParser.Serialize(flowsData);
-                    var flowsPath = Path.Combine(dir, "flows.devgpt");
+                    var flowsData = HazinaFlowConfigParser.Parse(FlowsDevGPTEditor.Text);
+                    var flowsOutput = HazinaFlowConfigParser.Serialize(flowsData);
+                    var flowsPath = Path.Combine(dir, "flows.Hazina");
                     File.WriteAllText(flowsPath, flowsOutput);
                     flowsFilePath = flowsPath;
                     appConfig.FlowsFile = flowsFilePath;
@@ -428,19 +429,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         private void StoresDevGPTEditor_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (suppressStoresEditorSync) return;
-            try { suppressStoresEditorSync = true; parsedStores = DevGPTStoreConfigParser.Parse(StoresDevGPTEditor.Text); storesDevGPTRaw = StoresDevGPTEditor.Text; } finally { suppressStoresEditorSync = false; }
+            try { suppressStoresEditorSync = true; parsedStores = HazinaStoreConfigParser.Parse(StoresDevGPTEditor.Text); storesDevGPTRaw = StoresDevGPTEditor.Text; } finally { suppressStoresEditorSync = false; }
         }
 
         private void AgentsDevGPTEditor_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (suppressAgentsEditorSync) return;
-            try { suppressAgentsEditorSync = true; parsedAgents = DevGPTAgentConfigParser.Parse(AgentsDevGPTEditor.Text); agentsDevGPTRaw = AgentsDevGPTEditor.Text; } finally { suppressAgentsEditorSync = false; }
+            try { suppressAgentsEditorSync = true; parsedAgents = HazinaAgentConfigParser.Parse(AgentsDevGPTEditor.Text); agentsDevGPTRaw = AgentsDevGPTEditor.Text; } finally { suppressAgentsEditorSync = false; }
         }
 
         private void FlowsDevGPTEditor_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (suppressFlowsEditorSync) return;
-            try { suppressFlowsEditorSync = true; parsedFlows = DevGPTFlowConfigParser.Parse(FlowsDevGPTEditor.Text); flowsDevGPTRaw = FlowsDevGPTEditor.Text; } finally { suppressFlowsEditorSync = false; }
+            try { suppressFlowsEditorSync = true; parsedFlows = HazinaFlowConfigParser.Parse(FlowsDevGPTEditor.Text); flowsDevGPTRaw = FlowsDevGPTEditor.Text; } finally { suppressFlowsEditorSync = false; }
         }
 
         private void SetChatVisibilityIfReady()
@@ -484,7 +485,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             try
             {
-                const string LogFilePath = @"C:\\Projects\\devgpt\\log";
+                const string LogFilePath = @"C:\\Projects\\Hazina\\log";
                 string openAIApiKey = openAISettings.ApiKey;
                 var storesJson = JsonSerializer.Serialize(parsedStores, new JsonSerializerOptions { WriteIndented = true });
                 var agentsJson = JsonSerializer.Serialize(parsedAgents, new JsonSerializerOptions { WriteIndented = true });
@@ -504,7 +505,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 // Add DynamicAPI tools to all agents
                 AddDynamicAPIToolsToAgents(agentManager);
 
-                var newChatWindow = new DevGPT.ChatShared.ChatWindow(new ChatControllerAgentManager(agentManager));
+                var newChatWindow = new ChatWindow(new ChatControllerAgentManager(agentManager));
                 newChatWindow.AgentOrFlow = SelectedAgentOrFlow;
                 newChatWindow.Owner = this;
                 newChatWindow.Show();
@@ -552,7 +553,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             {
                 // Sla op in flows
                 parsedFlows = dlg.ResultFlows;
-                FlowsDevGPTEditor.Text = DevGPTFlowConfigParser.Serialize(parsedFlows);
+                FlowsDevGPTEditor.Text = HazinaFlowConfigParser.Serialize(parsedFlows);
                 flowsDevGPTRaw = FlowsDevGPTEditor.Text;
                 // Wordt als normaal behandeld (eventueel vind je verderop een File.Write zoals SaveFlowsButton_Click)
             }
@@ -629,7 +630,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 // (Let op: cards na evt. bewerking)
                 parsedAgents = dlg.ResultAgents;
                 // Eventueel: update editor-weergave of bindings als nodig
-                AgentsDevGPTEditor.Text = DevGPTAgentConfigParser.Serialize(parsedAgents);
+                AgentsDevGPTEditor.Text = HazinaAgentConfigParser.Serialize(parsedAgents);
                 agentsDevGPTRaw = AgentsDevGPTEditor.Text;
             }
         }
@@ -656,7 +657,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             {
                 parsedStores = dlg.ResultStores;
                 // Update de raw editor met de nieuwe serialized stores
-                StoresDevGPTEditor.Text = DevGPTStoreConfigParser.Serialize(parsedStores);
+                StoresDevGPTEditor.Text = HazinaStoreConfigParser.Serialize(parsedStores);
                 storesDevGPTRaw = StoresDevGPTEditor.Text;
             }
         }
@@ -680,13 +681,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 foreach (var agent in agentManager.Agents)
                 {
                     // Add web search tool
-                    agent.Tools.Add(new WebSearchDevGPTTool(searchTool));
+                    agent.Tools.Add(new WebSearchHazinaTool(searchTool));
 
                     // Add fetch URL tool
-                    agent.Tools.Add(new FetchUrlDevGPTTool(searchTool));
+                    agent.Tools.Add(new FetchUrlHazinaTool(searchTool));
 
                     // Add dynamic API call tool
-                    agent.Tools.Add(new DynamicAPIDevGPTTool(apiClient));
+                    agent.Tools.Add(new DynamicAPIHazinaTool(apiClient));
                 }
             }
             catch (Exception ex)

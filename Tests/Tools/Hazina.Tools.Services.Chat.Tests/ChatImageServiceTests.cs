@@ -3,15 +3,15 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Services.Chat;
-using DevGPTStore.Models;
 using FluentAssertions;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
+using Hazina.Tools.Services.Chat;
+using HazinaStore.Models;
 using Microsoft.Extensions.Configuration;
 using Xunit;
 
-namespace DevGPT.GenerationTools.Services.Chat.Tests;
+namespace Hazina.Tools.Services.Chat.Tests;
 
 public class ChatImageServiceTests
 {
@@ -84,7 +84,7 @@ public class ChatImageServiceTests
         var apiKey = settings.ApiSettings.OpenApiKey;
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            var reason = "Provide OpenApiKey in Tests/DevGPT.GenerationTools.Services.Chat.Tests/appsettings.integration.json to run this integration test.";
+            var reason = "Provide OpenApiKey in Tests/Hazina.Tools.Services.Chat.Tests/appsettings.integration.json to run this integration test.";
             Console.WriteLine(reason);
             return;
         }
@@ -115,7 +115,7 @@ public class ChatImageServiceTests
         var apiKey = settings.ApiSettings.GeminiApiKey;
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            var reason = "Provide GeminiApiKey in Tests/DevGPT.GenerationTools.Services.Chat.Tests/appsettings.integration.json to run this integration test.";
+            var reason = "Provide GeminiApiKey in Tests/Hazina.Tools.Services.Chat.Tests/appsettings.integration.json to run this integration test.";
             Console.WriteLine(reason);
             return;
         }
@@ -139,11 +139,11 @@ public class ChatImageServiceTests
         var projectsFolder = projectSettings?.ProjectsFolder;
         if (string.IsNullOrWhiteSpace(projectsFolder))
         {
-            projectsFolder = Path.Combine(Path.GetTempPath(), "DevGPTTools", "ChatImageIntegration", Guid.NewGuid().ToString("N"));
+            projectsFolder = Path.Combine(Path.GetTempPath(), "HazinaTools", "ChatImageIntegration", Guid.NewGuid().ToString("N"));
         }
         Directory.CreateDirectory(projectsFolder);
 
-        var config = new DevGPTStoreConfig
+        var config = new HazinaStoreConfig
         {
             ApiSettings = new ApiSettings
             {
@@ -249,10 +249,10 @@ public class ChatImageServiceTests
         Func<string, ImageModel, CancellationToken, Task<string>> openAi,
         Func<string, CancellationToken, Task<string>> nanoBanana)
     {
-        var tempFolder = Path.Combine(Path.GetTempPath(), "DevGPTTools", "ChatImageTests", Guid.NewGuid().ToString("N"));
+        var tempFolder = Path.Combine(Path.GetTempPath(), "HazinaTools", "ChatImageTests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempFolder);
 
-        var config = new DevGPTStoreConfig
+        var config = new HazinaStoreConfig
         {
             ApiSettings = new ApiSettings
             {
@@ -297,7 +297,7 @@ public class ChatImageServiceTests
 
         if (configPath == null)
         {
-            var reason = "Copy Tests/DevGPT.GenerationTools.Services.Chat.Tests/appsettings.integration.json (or appsettings.json) from the repository root and add API keys before running these integration tests.";
+            var reason = "Copy Tests/Hazina.Tools.Services.Chat.Tests/appsettings.integration.json (or appsettings.json) from the repository root and add API keys before running these integration tests.";
             Console.WriteLine(reason);
             return null;
         }

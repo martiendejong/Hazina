@@ -1,6 +1,6 @@
-using DevGPT.DynamicAPI.Core;
+using Hazina.DynamicAPI.Core;
 
-namespace DevGPT.DynamicAPI.Tests;
+namespace Hazina.DynamicAPI.Tests;
 
 public class CredentialStoreTests
 {
@@ -8,7 +8,7 @@ public class CredentialStoreTests
 
     public CredentialStoreTests()
     {
-        _testDir = Path.Combine(Path.GetTempPath(), $"devgpt_test_{Guid.NewGuid()}");
+        _testDir = Path.Combine(Path.GetTempPath(), $"hazina_test_{Guid.NewGuid()}");
         Directory.CreateDirectory(_testDir);
     }
 

@@ -8,7 +8,7 @@ Summary
 Usage
 - Create a config and client:
 
-  var cfg = new DevGPT.Anthropic.AnthropicConfig {
+  var cfg = new Hazina.LLMs.Anthropic.AnthropicConfig {
       ApiKey = "YOUR_ANTHROPIC_KEY",
       Model = "claude-3-5-sonnet-latest"
   };

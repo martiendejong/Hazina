@@ -1,11 +1,11 @@
-using DevGPT.GenerationTools.AI.Agents;
-using DevGPT.GenerationTools.Data;
+using Hazina.Tools.AI.Agents;
+using Hazina.Tools.Data;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Models;
 
-namespace DevGPT.GenerationTools.Services.Chat
+namespace Hazina.Tools.Services.Chat
 {
     public class ChatCanvasService : ChatServiceBase, IChatCanvasService
     {

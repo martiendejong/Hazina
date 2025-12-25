@@ -1,4 +1,4 @@
-# DevGPT Project Value Analysis
+# Hazina Project Value Analysis
 ## Comprehensive Evaluation of All Projects with Alternatives and Value Scores
 
 **Analysis Date:** 2025-11-10
@@ -27,15 +27,15 @@ Each project is evaluated on:
 
 # CORE LIBRARY PROJECTS (NuGet Packages)
 
-## 1. DevGPT.LLMs.Classes
+## 1. Hazina.LLMs.Classes
 
 ### Description
-Core data models and contracts for the entire DevGPT ecosystem. Provides unified message formats, token usage tracking, tool definitions, and response wrappers that work across all LLM providers.
+Core data models and contracts for the entire Hazina ecosystem. Provides unified message formats, token usage tracking, tool definitions, and response wrappers that work across all LLM providers.
 
 ### Key Value Propositions
-- Provider-agnostic message format (`DevGPTChatMessage`)
+- Provider-agnostic message format (`HazinaChatMessage`)
 - Unified token tracking (`TokenUsageInfo`) for cost management
-- Consistent tool calling interface (`DevGPTChatTool`)
+- Consistent tool calling interface (`HazinaChatTool`)
 - Generic response wrapper (`LLMResponse<T>`) with metadata
 
 ### Alternatives & Comparison
@@ -71,7 +71,7 @@ Core data models and contracts for the entire DevGPT ecosystem. Provides unified
 
 ---
 
-## 2. DevGPT.LLMs.Helpers
+## 2. Hazina.LLMs.Helpers
 
 ### Description
 Utility library for token counting, document chunking, partial JSON parsing, and embedding similarity calculations. Provides critical infrastructure for RAG and context window management.
@@ -116,7 +116,7 @@ Utility library for token counting, document chunking, partial JSON parsing, and
 
 ---
 
-## 3. DevGPT.LLMs.Client
+## 3. Hazina.LLMs.Client
 
 ### Description
 Provider-agnostic LLM interface (`ILLMClient`) supporting chat, streaming, embeddings, image generation, TTS, and structured JSON outputs. Enables swapping providers without code changes.
@@ -162,7 +162,7 @@ Provider-agnostic LLM interface (`ILLMClient`) supporting chat, streaming, embed
 
 ---
 
-## 4. DevGPT.LLMs.OpenAI
+## 4. Hazina.LLMs.OpenAI
 
 ### Description
 OpenAI GPT implementation of `ILLMClient`. Handles chat completions, streaming, tool calling, DALL-E image generation, and embeddings. Includes sophisticated streaming tool-call assembly.
@@ -204,11 +204,11 @@ OpenAI GPT implementation of `ILLMClient`. Handles chat completions, streaming, 
 **Future Potential:** 7/10 - OpenAI is established, incremental updates
 
 **FINAL VERDICT: 74/100** ⭐⭐⭐⭐
-> *Solid OpenAI implementation. Well-executed but in a crowded market. Value comes from integration with DevGPT ecosystem.*
+> *Solid OpenAI implementation. Well-executed but in a crowded market. Value comes from integration with Hazina ecosystem.*
 
 ---
 
-## 5. DevGPT.LLMs.Anthropic
+## 5. Hazina.LLMs.Anthropic
 
 ### Description
 Anthropic Claude implementation supporting Opus, Sonnet, Haiku models with streaming, structured outputs, and vision capabilities.
@@ -231,7 +231,7 @@ Anthropic Claude implementation supporting Opus, Sonnet, Haiku models with strea
 ### Pros
 ✅ Claude models are high-quality (competitive with GPT-4)
 ✅ Good implementation of Anthropic Messages API
-✅ Fits cleanly into DevGPT abstraction
+✅ Fits cleanly into Hazina abstraction
 ✅ Minimal dependencies
 
 ### Cons
@@ -244,7 +244,7 @@ Anthropic Claude implementation supporting Opus, Sonnet, Haiku models with strea
 **Innovation:** 6/10 - Necessary provider but not innovative
 **Quality:** 7/10 - Good implementation with mature SDK gap
 **Market Position:** 8/10 - Claude is competitive, few .NET options
-**Usability:** 7/10 - Works well within DevGPT
+**Usability:** 7/10 - Works well within Hazina
 **Future Potential:** 8/10 - Anthropic growing rapidly
 
 **FINAL VERDICT: 72/100** ⭐⭐⭐⭐
@@ -252,7 +252,7 @@ Anthropic Claude implementation supporting Opus, Sonnet, Haiku models with strea
 
 ---
 
-## 6. DevGPT.LLMs.HuggingFace
+## 6. Hazina.LLMs.HuggingFace
 
 ### Description
 HuggingFace Inference API implementation supporting open-source models (Llama, Mixtral, Stable Diffusion) with embeddings and image generation.
@@ -295,7 +295,7 @@ HuggingFace Inference API implementation supporting open-source models (Llama, M
 
 ---
 
-## 7. DevGPT.LLMs.Gemini
+## 7. Hazina.LLMs.Gemini
 
 ### Description
 Google Gemini model implementation with chat completions, streaming, system instructions, and structured JSON outputs.
@@ -339,7 +339,7 @@ Google Gemini model implementation with chat completions, streaming, system inst
 
 ---
 
-## 8. DevGPT.LLMs.Mistral
+## 8. Hazina.LLMs.Mistral
 
 ### Description
 Mistral AI model implementation with chat completions, streaming, and structured JSON outputs.
@@ -382,36 +382,36 @@ Mistral AI model implementation with chat completions, streaming, and structured
 
 ---
 
-## 9. DevGPT.LLMs.SemanticKernel
+## 9. Hazina.LLMs.SemanticKernel
 
 ### Description
-Microsoft Semantic Kernel integration providing multi-provider support (OpenAI, Azure OpenAI, Anthropic, Ollama) through SK connectors while maintaining DevGPT's RAG and safe file modification features.
+Microsoft Semantic Kernel integration providing multi-provider support (OpenAI, Azure OpenAI, Anthropic, Ollama) through SK connectors while maintaining Hazina's RAG and safe file modification features.
 
 ### Key Value Propositions
 - Leverage Semantic Kernel ecosystem
 - Access SK plugins and planners
 - Multi-provider via SK connectors
-- Bridge pattern between DevGPT and SK
+- Bridge pattern between Hazina and SK
 
 ### Alternatives & Comparison
 
 | Alternative | Pros | Cons |
 |------------|------|------|
-| **Use SK directly** | Full SK features | Lose DevGPT RAG/safety |
+| **Use SK directly** | Full SK features | Lose Hazina RAG/safety |
 | **Ignore SK** | Simpler architecture | Miss SK ecosystem |
 | **LangChain.NET** | Python compatibility | Immature .NET port |
 
 ### Pros
 ✅ Leverages Microsoft ecosystem
 ✅ Access to SK plugins
-✅ Combines DevGPT RAG with SK orchestration
+✅ Combines Hazina RAG with SK orchestration
 ✅ Future-proof with Microsoft investment
 
 ### Cons
 ❌ OpenAI SDK version conflict (2.1.0 vs 2.1.0-beta.2 warning)
 ❌ Adds complexity and dependencies
-❌ SK abstraction may limit some DevGPT features
-❌ Dual abstraction layers (SK + DevGPT)
+❌ SK abstraction may limit some Hazina features
+❌ Dual abstraction layers (SK + Hazina)
 
 ### Value Assessment
 **Innovation:** 7/10 - Bridge pattern is clever
@@ -425,7 +425,7 @@ Microsoft Semantic Kernel integration providing multi-provider support (OpenAI, 
 
 ---
 
-## 10. DevGPT.LLMClientTools
+## 10. Hazina.LLMs.Tools
 
 ### Description
 Reusable tool implementations for AI agents including web scraping, Claude CLI execution, and base classes for custom tools.
@@ -468,7 +468,7 @@ Reusable tool implementations for AI agents including web scraping, Claude CLI e
 
 ---
 
-## 11. DevGPT.Store.EmbeddingStore
+## 11. Hazina.Store.EmbeddingStore
 
 ### Description
 Vector embedding storage and semantic search with multiple backends (PostgreSQL/pgvector, SQLite, file-based, in-memory). Supports batch operations and similarity matching.
@@ -518,7 +518,7 @@ Vector embedding storage and semantic search with multiple backends (PostgreSQL/
 
 ---
 
-## 12. DevGPT.Store.DocumentStore
+## 12. Hazina.Store.DocumentStore
 
 ### Description
 Document storage and RAG orchestration composing embedding store, text store, chunk store, and metadata store. Handles chunking, metadata management, and relevancy matching.
@@ -566,7 +566,7 @@ Document storage and RAG orchestration composing embedding store, text store, ch
 
 ---
 
-## 13. DevGPT.Generator
+## 13. Hazina.Generator
 
 ### Description
 Document-augmented LLM response orchestration assembling RAG context with prompts, streaming responses, and safe file modification handling via strongly-typed `UpdateStoreResponse`.
@@ -614,14 +614,14 @@ Document-augmented LLM response orchestration assembling RAG context with prompt
 
 ---
 
-## 14. DevGPT.AgentFactory
+## 14. Hazina.AgentFactory
 
 ### Description
-High-level agent creation, configuration parsing (`.devgpt` text format + JSON), and multi-agent flow orchestration. Includes built-in tool suites (git, dotnet, npm, BigQuery, email, WordPress).
+High-level agent creation, configuration parsing (`.hazina` text format + JSON), and multi-agent flow orchestration. Includes built-in tool suites (git, dotnet, npm, BigQuery, email, WordPress).
 
 ### Key Value Propositions
 - Declarative agent configuration (no code required)
-- `.devgpt` text format for non-developers
+- `.hazina` text format for non-developers
 - Built-in tool suites (file ops, git, build tools, BigQuery, email)
 - Multi-agent flows with explicit call graphs
 - `AgentManager` for lifecycle management
@@ -636,7 +636,7 @@ High-level agent creation, configuration parsing (`.devgpt` text format + JSON),
 | **Custom agent code** | Full control | Every project reinvents |
 
 ### Pros
-✅ `.devgpt` text format is accessible to non-programmers
+✅ `.hazina` text format is accessible to non-programmers
 ✅ JSON format for programmatic access
 ✅ Auto-detection of config format
 ✅ Rich built-in tool suites (BigQuery, email, git, build)
@@ -648,11 +648,11 @@ High-level agent creation, configuration parsing (`.devgpt` text format + JSON),
 ❌ Email/WordPress tools are placeholders (not fully implemented)
 ❌ No tool sandboxing or execution limits
 ❌ Missing tool timeout/retry configuration
-❌ No schema validation for .devgpt files
+❌ No schema validation for .hazina files
 ❌ Flow orchestration is basic (no conditional logic, loops)
 
 ### Value Assessment
-**Innovation:** 8/10 - .devgpt format is clever, multi-agent flows valuable
+**Innovation:** 8/10 - .hazina format is clever, multi-agent flows valuable
 **Quality:** 7/10 - Core solid, some tools incomplete
 **Market Position:** 8/10 - Few .NET frameworks offer config-driven agents
 **Usability:** 8/10 - Non-developer accessibility is great
@@ -663,7 +663,7 @@ High-level agent creation, configuration parsing (`.devgpt` text format + JSON),
 
 ---
 
-## 15. DevGPT.DynamicAPI
+## 15. Hazina.DynamicAPI
 
 ### Description
 Dynamic HTTP API client that calls ANY API without pre-configuration. Includes credential management, automatic authentication injection, and LLM tool integration.
@@ -712,7 +712,7 @@ Dynamic HTTP API client that calls ANY API without pre-configuration. Includes c
 
 ---
 
-## 16. DevGPT.ChatShared
+## 16. Hazina.ChatShared
 
 ### Description
 Shared WPF chat UI component providing reusable ChatWindow XAML component, IChatController interface, and chat message display models for consistent chat experience across apps.
@@ -773,7 +773,7 @@ Visual editor for stores, agents, and flows with card view and text view. Includ
 
 | Alternative | Pros | Cons |
 |------------|------|------|
-| **Text editor + .devgpt files** | Simple, version control friendly | No validation, error-prone |
+| **Text editor + .hazina files** | Simple, version control friendly | No validation, error-prone |
 | **VS Code extension** | Popular editor | Requires development |
 | **Web-based UI** | Cross-platform | Requires hosting |
 
@@ -890,7 +890,7 @@ Minimal CLI coding assistant (Claude Code style). Single-line commands or REPL m
 
 ### Key Value Propositions
 - Ultra-minimal implementation (20 lines core logic)
-- Demonstrates DevGPT can power CLI tools
+- Demonstrates Hazina can power CLI tools
 - Streaming responses
 
 ### Alternatives & Comparison
@@ -902,7 +902,7 @@ Minimal CLI coding assistant (Claude Code style). Single-line commands or REPL m
 | **GitHub Copilot CLI** | Official GitHub | Limited to GitHub models |
 
 ### Pros
-✅ Shows DevGPT flexibility
+✅ Shows Hazina flexibility
 ✅ Minimal code
 ✅ Fast to use
 
@@ -942,7 +942,7 @@ Console sample for semantic matching of CVs to job postings. Multiple document s
 | **Existing HR tools** | Mature, feature-rich | Expensive, rigid |
 
 ### Pros
-✅ Good example of DevGPT capabilities
+✅ Good example of Hazina capabilities
 ✅ Practical use case
 ✅ Shows multi-store RAG
 
@@ -1007,7 +1007,7 @@ Utility to extract and convert documents to structured formats. Demonstrates doc
 ASP.NET Razor app for LLM-based HTML generation and editing. User authentication (Google OAuth), Entity Framework Core database, real-time HTML preview.
 
 ### Key Value Propositions
-- Shows DevGPT in web apps
+- Shows Hazina in web apps
 - Full-stack example
 - Real-time preview
 
@@ -1082,31 +1082,31 @@ Unit and integration test suites for core libraries using MSTest framework.
 
 ## Tier 1: Critical & High Value (80-100) - Keep & Enhance
 
-1. **DevGPT.LLMs.Client** - 86/100 ⭐⭐⭐⭐⭐
-2. **DevGPT.Generator** - 84/100 ⭐⭐⭐⭐
-3. **DevGPT.LLMs.Classes** - 82/100 ⭐⭐⭐⭐
-4. **DevGPT.AgentFactory** - 80/100 ⭐⭐⭐⭐
+1. **Hazina.LLMs.Client** - 86/100 ⭐⭐⭐⭐⭐
+2. **Hazina.Generator** - 84/100 ⭐⭐⭐⭐
+3. **Hazina.LLMs.Classes** - 82/100 ⭐⭐⭐⭐
+4. **Hazina.AgentFactory** - 80/100 ⭐⭐⭐⭐
 
 ## Tier 2: High Value (70-79) - Keep & Improve
 
-5. **DevGPT.Store.DocumentStore** - 78/100 ⭐⭐⭐⭐
-6. **DevGPT.DynamicAPI** - 78/100 ⭐⭐⭐⭐
-7. **DevGPT.LLMs.Helpers** - 74/100 ⭐⭐⭐⭐
-8. **DevGPT.LLMs.OpenAI** - 74/100 ⭐⭐⭐⭐
-9. **DevGPT.Store.EmbeddingStore** - 74/100 ⭐⭐⭐⭐
-10. **DevGPT.LLMs.Anthropic** - 72/100 ⭐⭐⭐⭐
-11. **DevGPT.LLMs.Gemini** - 70/100 ⭐⭐⭐⭐
-12. **DevGPT.LLMs.SemanticKernel** - 70/100 ⭐⭐⭐⭐
+5. **Hazina.Store.DocumentStore** - 78/100 ⭐⭐⭐⭐
+6. **Hazina.DynamicAPI** - 78/100 ⭐⭐⭐⭐
+7. **Hazina.LLMs.Helpers** - 74/100 ⭐⭐⭐⭐
+8. **Hazina.LLMs.OpenAI** - 74/100 ⭐⭐⭐⭐
+9. **Hazina.Store.EmbeddingStore** - 74/100 ⭐⭐⭐⭐
+10. **Hazina.LLMs.Anthropic** - 72/100 ⭐⭐⭐⭐
+11. **Hazina.LLMs.Gemini** - 70/100 ⭐⭐⭐⭐
+12. **Hazina.LLMs.SemanticKernel** - 70/100 ⭐⭐⭐⭐
 
 ## Tier 3: Moderate Value (50-69) - Keep with Conditions
 
-13. **DevGPT.ExplorerIntegration** - 68/100 ⭐⭐⭐
-14. **DevGPT.LLMClientTools** - 66/100 ⭐⭐⭐
-15. **DevGPT.LLMs.Mistral** - 64/100 ⭐⭐⭐
-16. **DevGPT.LLMs.HuggingFace** - 60/100 ⭐⭐⭐
+13. **Hazina.App.ExplorerIntegration** - 68/100 ⭐⭐⭐
+14. **Hazina.LLMs.Tools** - 66/100 ⭐⭐⭐
+15. **Hazina.LLMs.Mistral** - 64/100 ⭐⭐⭐
+16. **Hazina.LLMs.HuggingFace** - 60/100 ⭐⭐⭐
 17. **Test Projects** - 60/100 ⭐⭐⭐
 18. **Windows App** - 58/100 ⭐⭐⭐
-19. **DevGPT.ChatShared** - 54/100 ⭐⭐⭐
+19. **Hazina.ChatShared** - 54/100 ⭐⭐⭐
 
 ## Tier 4: Low Value (30-49) - Consider Deprecation/Simplification
 
@@ -1141,11 +1141,11 @@ Consider replacing WPF-based projects with cross-platform alternatives:
 
 ## Market Positioning
 
-**DevGPT's Competitive Advantages:**
+**Hazina's Competitive Advantages:**
 1. **Multi-provider LLM support** - best in .NET
 2. **Safe file modification** - UpdateStoreResponse is innovative
 3. **Production RAG** - pgvector backend is solid
-4. **Config-driven agents** - .devgpt format is unique
+4. **Config-driven agents** - .hazina format is unique
 5. **Dynamic API integration** - innovative approach
 
 **Areas to Strengthen:**

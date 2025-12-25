@@ -1,7 +1,7 @@
 using System.Text.Json;
-using DevGPT.DynamicAPI.Core;
+using Hazina.DynamicAPI.Core;
 
-namespace DevGPT.DynamicAPI.Tools;
+namespace Hazina.DynamicAPI.Tools;
 
 /// <summary>
 /// Web search tool for finding API documentation and technical information.

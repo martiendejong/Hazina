@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,7 +27,7 @@ async Task<int> Run()
         return Skip("No API key found in environment or appsettings.json. Skipping integration test.");
     }
 
-    var tmpLog = Path.Combine(Path.GetTempPath(), "devgpt_image_integration_test_log.txt");
+    var tmpLog = Path.Combine(Path.GetTempPath(), "hazina_image_integration_test_log.txt");
     var config = new OpenAIConfig(
         apiKey: apiKey!,
         embeddingModel: loaded?.EmbeddingModel ?? "text-embedding-3-small",
@@ -43,7 +43,7 @@ async Task<int> Run()
     Console.WriteLine("=== Test 1: Basic image generation ===");
     var image = await wrapper.GetImage(
         prompt: "a simple red square icon on white background",
-        responseFormat: DevGPTChatResponseFormat.Text,
+        responseFormat: HazinaChatResponseFormat.Text,
         toolsContext: null,
         images: null,
         cancel: cts.Token
@@ -71,12 +71,12 @@ async Task<int> Run()
     Console.WriteLine($"URL present: {urlPresent}, Bytes present: {bytesPresent}");
     if (urlPresent) Console.WriteLine($"URL: {image.Result.Url}");
 
-    // Test 2: Test DevGPTGeneratedImage with only ImageBytes
-    Console.WriteLine("\n=== Test 2: DevGPTGeneratedImage with only ImageBytes ===");
+    // Test 2: Test HazinaGeneratedImage with only ImageBytes
+    Console.WriteLine("\n=== Test 2: HazinaGeneratedImage with only ImageBytes ===");
     {
         // Create a mock image response with only bytes
         var mockBytes = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }; // PNG header
-        var mockImage = new DevGPTGeneratedImage(null, BinaryData.FromBytes(mockBytes));
+        var mockImage = new HazinaGeneratedImage(null, BinaryData.FromBytes(mockBytes));
 
         if (mockImage.Url != null)
             return Fail("Mock image should have null URL");
@@ -84,14 +84,14 @@ async Task<int> Run()
         if (mockImage.ImageBytes == null || mockImage.ImageBytes.ToArray().Length == 0)
             return Fail("Mock image should have bytes");
 
-        Console.WriteLine("PASS: DevGPTGeneratedImage handles null URL with bytes correctly");
+        Console.WriteLine("PASS: HazinaGeneratedImage handles null URL with bytes correctly");
     }
 
-    // Test 3: Test DevGPTGeneratedImage with only URL
-    Console.WriteLine("\n=== Test 3: DevGPTGeneratedImage with only URL ===");
+    // Test 3: Test HazinaGeneratedImage with only URL
+    Console.WriteLine("\n=== Test 3: HazinaGeneratedImage with only URL ===");
     {
         var mockUrl = new Uri("https://example.com/image.png");
-        var mockImage = new DevGPTGeneratedImage(mockUrl, null);
+        var mockImage = new HazinaGeneratedImage(mockUrl, null);
 
         if (mockImage.Url == null)
             return Fail("Mock image should have URL");
@@ -99,7 +99,7 @@ async Task<int> Run()
         if (mockImage.ImageBytes != null && mockImage.ImageBytes.ToArray().Length > 0)
             return Fail("Mock image should have null bytes");
 
-        Console.WriteLine("PASS: DevGPTGeneratedImage handles null bytes with URL correctly");
+        Console.WriteLine("PASS: HazinaGeneratedImage handles null bytes with URL correctly");
     }
 
     // Optional: vision check by sending the generated image back to the chat model
@@ -115,12 +115,12 @@ async Task<int> Run()
         var looksPng = bytes.Length > 4 && bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47;
         var mime = looksPng ? "image/png" : "image/jpeg";
         var testImage = new ImageData { Name = "generated", MimeType = mime, BinaryData = image.Result.ImageBytes };
-        var messages = new List<DevGPTChatMessage>
+        var messages = new List<HazinaChatMessage>
         {
-            new DevGPTChatMessage { Role = DevGPTMessageRole.System, Text = "You are a helpful assistant." },
-            new DevGPTChatMessage { Role = DevGPTMessageRole.User, Text = "What primary color is dominant in the attached image? Answer 'red', 'green', or 'blue' only." }
+            new HazinaChatMessage { Role = HazinaMessageRole.System, Text = "You are a helpful assistant." },
+            new HazinaChatMessage { Role = HazinaMessageRole.User, Text = "What primary color is dominant in the attached image? Answer 'red', 'green', or 'blue' only." }
         };
-        var visionAnswer = await wrapper.GetResponse(messages, DevGPTChatResponseFormat.Text, toolsContext: null, images: new() { testImage }, cancel: cts.Token);
+        var visionAnswer = await wrapper.GetResponse(messages, HazinaChatResponseFormat.Text, toolsContext: null, images: new() { testImage }, cancel: cts.Token);
         Console.WriteLine($"Vision answer: {visionAnswer.Result}");
         if (visionAnswer?.Result?.ToLowerInvariant().Contains("red") == true)
         {

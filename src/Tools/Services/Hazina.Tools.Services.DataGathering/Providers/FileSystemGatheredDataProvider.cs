@@ -1,10 +1,10 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Services.DataGathering.Abstractions;
-using DevGPT.GenerationTools.Services.DataGathering.Models;
+using Hazina.Tools.Data;
+using Hazina.Tools.Services.DataGathering.Abstractions;
+using Hazina.Tools.Services.DataGathering.Models;
 
-namespace DevGPT.GenerationTools.Services.DataGathering.Providers;
+namespace Hazina.Tools.Services.DataGathering.Providers;
 
 /// <summary>
 /// File system-based implementation of <see cref="IGatheredDataProvider"/>.

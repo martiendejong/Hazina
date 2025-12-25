@@ -1,6 +1,6 @@
-# Releaseproces voor DevGPT.AgentFactory
+# Releaseproces voor Hazina.AgentFactory
 
-Dit document beschrijft het volledige releaseproces voor de `DevGPT.AgentFactory` NuGet-package, inclusief alle stappen om het pakket te bouwen, (optioneel) te testen en te publiceren op NuGet of een alternatieve feed.
+Dit document beschrijft het volledige releaseproces voor de `Hazina.AgentFactory` NuGet-package, inclusief alle stappen om het pakket te bouwen, (optioneel) te testen en te publiceren op NuGet of een alternatieve feed.
 
 ## 1. Vereisten
 - .NET 8 SDK geïnstalleerd
@@ -10,7 +10,7 @@ Dit document beschrijft het volledige releaseproces voor de `DevGPT.AgentFactory
 
 ## 2. Versienummer controleren
 
-Controleer of het versienummer correct is in het projectbestand `DevGPT.AgentFactory.csproj`. Pas dit zo nodig aan:
+Controleer of het versienummer correct is in het projectbestand `Hazina.AgentFactory.csproj`. Pas dit zo nodig aan:
 
 ```xml
   <PropertyGroup>
@@ -27,7 +27,7 @@ Volg [semver](https://semver.org/).
 Open een terminal in de root van het project en voer uit:
 
 ```sh
-cd DevGPT.AgentFactory
+cd Hazina.AgentFactory
  dotnet build -c Release
 ```
 
@@ -35,7 +35,7 @@ cd DevGPT.AgentFactory
 
 ```sh
 dotnet pack -c Release
-# Output staat standaard in: ./bin/Release/DevGPT.AgentFactory.X.Y.Z.nupkg
+# Output staat standaard in: ./bin/Release/Hazina.AgentFactory.X.Y.Z.nupkg
 ```
 
 ## 5. Lokaal testen/installeren
@@ -48,7 +48,7 @@ Lokaal testen van het .nupkg package vóór publicatie:
 
     ```sh
     mkdir -p ../local_packages
-    cp ./bin/Release/DevGPT.AgentFactory.*.nupkg ../local_packages/
+    cp ./bin/Release/Hazina.AgentFactory.*.nupkg ../local_packages/
     ```
 
 - Voeg deze feed toe aan je `NuGet.config`:
@@ -63,14 +63,14 @@ Lokaal testen van het .nupkg package vóór publicatie:
 
 - Installeer het package in een testproject:
     - Klik met rechts op het project > Manage NuGet Packages > Selecteer je lokale bron > Installeer
-    - Of via CLI: `dotnet add package DevGPT.AgentFactory --source ../local_packages`
+    - Of via CLI: `dotnet add package Hazina.AgentFactory --source ../local_packages`
 
 ### b. Testen via Dummy (privé) feed
 
 - Push naar een test-feed zoals [nuget.cloudsmith.io](https://cloudsmith.io/) of een eigen [Azure Artifacts](https://dev.azure.com/) feed:
 
     ```sh
-    dotnet nuget push ./bin/Release/DevGPT.AgentFactory.*.nupkg --source <URL-naar-je-feed> --api-key <API_KEY>
+    dotnet nuget push ./bin/Release/Hazina.AgentFactory.*.nupkg --source <URL-naar-je-feed> --api-key <API_KEY>
     ```
 
 ## 6. Testen van het package
@@ -79,20 +79,20 @@ Lokaal testen van het .nupkg package vóór publicatie:
     ```sh
     dotnet new console -n TestApp
     cd TestApp
-    dotnet add package DevGPT.AgentFactory --source <jouw-lokale-of-dummy-feed>
+    dotnet add package Hazina.AgentFactory --source <jouw-lokale-of-dummy-feed>
     dotnet build
     ```
-- Importeer een klasse (bv. `DevGPTAgent`) om te testen of alles werkt.
+- Importeer een klasse (bv. `HazinaAgent`) om te testen of alles werkt.
 
 ## 7. Publiceren naar NuGet.org
 
 - Publiceer het pakket (pas `<API_KEY>` aan):
 
     ```sh
-    dotnet nuget push ./bin/Release/DevGPT.AgentFactory.*.nupkg --api-key <API_KEY> --source https://api.nuget.org/v3/index.json
+    dotnet nuget push ./bin/Release/Hazina.AgentFactory.*.nupkg --api-key <API_KEY> --source https://api.nuget.org/v3/index.json
     ```
 
-- Na enige tijd staat het pakket live op https://www.nuget.org/packages/DevGPT.AgentFactory
+- Na enige tijd staat het pakket live op https://www.nuget.org/packages/Hazina.AgentFactory
 
 ## 8. Extra: CI/CD release pipeline
 T.b.v. automatisering (Azure DevOps, GitHub Actions enz.):
@@ -101,7 +101,7 @@ T.b.v. automatisering (Azure DevOps, GitHub Actions enz.):
 
 ## 9. Tips & Troubleshooting
 - Geef nooit je NuGet API key weg via repositories
-- Check de package-inhoud: `nuget.exe unpack DevGPT.AgentFactory.*.nupkg -Extract` en controleer de DLLs en .nuspec
+- Check de package-inhoud: `nuget.exe unpack Hazina.AgentFactory.*.nupkg -Extract` en controleer de DLLs en .nuspec
 - Zorg dat de dependencies kloppen
 
 ---

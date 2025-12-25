@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace DevGPT.LLMClientTools.Examples;
+namespace Hazina.LLMClientTools.Examples;
 
 /// <summary>
 /// Example showing how to use Claude Code and Codex tools to run

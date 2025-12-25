@@ -1,9 +1,9 @@
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Models;
 ﻿using System.Collections.Generic;
 
-namespace DevGPT.GenerationTools.Models
+namespace Hazina.Tools.Models
 {
-    public class DevGPTStoreUser : IDevGPTStoreUserInfo
+    public class HazinaStoreUser : IHazinaStoreUserInfo
     {
         public string Id { get; set; } = "";
         public string Account { get; set; } = "";
@@ -13,7 +13,7 @@ namespace DevGPT.GenerationTools.Models
         public string LastName { get; set; } = "";
         public string Role { get; set; } = "Extern";
         public List<string> Projects { get; set; } = new List<string>();
-        public DevGPTStoreUserInfo GetUserInfo() => new DevGPTStoreUserInfo
+        public HazinaStoreUserInfo GetUserInfo() => new HazinaStoreUserInfo
         {
             Id = Id,
             FirstName = FirstName,
@@ -21,7 +21,7 @@ namespace DevGPT.GenerationTools.Models
             Projects = Projects,
             Role = Role
         };
-        public void SetUserInfo(IDevGPTStoreUserInfo userInfo)
+        public void SetUserInfo(IHazinaStoreUserInfo userInfo)
         {
             FirstName = userInfo.FirstName;
             LastName = userInfo.LastName;
@@ -30,7 +30,7 @@ namespace DevGPT.GenerationTools.Models
         }
     }
 
-    public class DevGPTStoreUserInfo : IDevGPTStoreUserInfo
+    public class HazinaStoreUserInfo : IHazinaStoreUserInfo
     {
         public string Id { get; set; } = "";
         public string FirstName { get; set; } = "";

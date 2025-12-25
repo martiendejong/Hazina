@@ -3,18 +3,18 @@ using System.Text;
 
 public static class ClaudeCliTool
 {
-    public static DevGPTChatTool Create()
+    public static HazinaChatTool Create()
     {
         var promptParam = new ChatToolParameter { Name = "prompt", Description = "The message to send to Claude.", Type = "string", Required = true };
         var modelParam = new ChatToolParameter { Name = "model", Description = "Optional model override (e.g., claude-3-5-sonnet-latest).", Type = "string", Required = false };
         var extraArgsParam = new ChatToolParameter { Name = "extra_args", Description = "Optional extra CLI args passed verbatim before the prompt.", Type = "string", Required = false };
         var timeoutParam = new ChatToolParameter { Name = "timeout", Description = "Optional timeout in seconds.", Type = "number", Required = false };
 
-        return new DevGPTChatTool(
+        return new HazinaChatTool(
             name: "claude_cli",
             description: "Calls the Anthropic Claude CLI (requires 'claude' in PATH and logged-in) and returns combined stdout/stderr.",
             parameters: new List<ChatToolParameter> { promptParam, modelParam, extraArgsParam, timeoutParam },
-            execute: async (messages, toolCall, cancel) => await DevGPTChatTool.CallTool(async () =>
+            execute: async (messages, toolCall, cancel) => await HazinaChatTool.CallTool(async () =>
             {
                 if (!promptParam.TryGetValue(toolCall, out string prompt))
                     return "No prompt provided";

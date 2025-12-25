@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace DevGPT.LLMs.Tools
+namespace Hazina.LLMs.Tools
 {
     /// <summary>
     /// Represents a tool/function definition for LLM tool calling

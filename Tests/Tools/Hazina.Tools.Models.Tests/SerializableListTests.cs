@@ -1,7 +1,7 @@
-using DevGPT.GenerationTools.Models;
+using Hazina.GenerationTools.Models;
 using FluentAssertions;
 
-namespace DevGPT.GenerationTools.Models.Tests;
+namespace Hazina.GenerationTools.Models.Tests;
 
 public class SerializableListTests : IDisposable
 {

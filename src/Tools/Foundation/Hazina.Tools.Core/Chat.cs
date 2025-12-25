@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using DevGPTStore.Core.Models;
-using DevGPT.GenerationTools.Models;
+using HazinaStore.Core.Models;
+using Hazina.Tools.Models;
 
-namespace DevGPTStore.Core
+namespace HazinaStore.Core
 {
     /// <summary>
     /// Represents a single chat conversation

@@ -2,17 +2,17 @@ using System;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
-using DevGPT.ChatShared;
+using Hazina.ChatShared;
 
-namespace DevGPT.App.ExplorerIntegration
+namespace Hazina.App.ExplorerIntegration
 {
     public class ChatControllerExplorer : IChatController
     {
-        private readonly DevGPTAgent _agent;
-        private readonly System.Collections.Generic.List<DevGPTChatMessage> _history = new();
+        private readonly HazinaAgent _agent;
+        private readonly System.Collections.Generic.List<HazinaChatMessage> _history = new();
         private readonly ReadOnlyObservableCollection<string> _empty = new(new ObservableCollection<string>());
 
-        public ChatControllerExplorer(DevGPTAgent agent)
+        public ChatControllerExplorer(HazinaAgent agent)
         {
             _agent = agent ?? throw new ArgumentNullException(nameof(agent));
         }
@@ -35,10 +35,10 @@ namespace DevGPT.App.ExplorerIntegration
         public async Task<string> SendMessageAsync(string text, CancellationToken token, string agentOrFlow)
         {
             // Maintain chat history so LLM retains context across turns.
-            _history.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.User, Text = text });
+            _history.Add(new HazinaChatMessage { Role = HazinaMessageRole.User, Text = text });
             var responseObj = await _agent.Generator.UpdateStore(text, token, _history, true, true, _agent.Tools, null);
             string response = responseObj.Result;
-            _history.Add(new DevGPTChatMessage { Role = DevGPTMessageRole.Assistant, Text = response });
+            _history.Add(new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = response });
             return response;
         }
     }

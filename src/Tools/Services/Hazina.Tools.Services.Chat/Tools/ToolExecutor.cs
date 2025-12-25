@@ -1,6 +1,6 @@
-using DevGPT.GenerationTools.Services.DataGathering.Services;
-using DevGPT.GenerationTools.Services.DataGathering.Abstractions;
-using DevGPT.GenerationTools.AI.Agents;
+using Hazina.Tools.Services.DataGathering.Services;
+using Hazina.Tools.Services.DataGathering.Abstractions;
+using Hazina.Tools.AI.Agents;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -8,11 +8,11 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace DevGPT.GenerationTools.Services.Chat.Tools
+namespace Hazina.Tools.Services.Chat.Tools
 {
     /// <summary>
     /// Executes tool calls from the LLM by routing to appropriate services.
-    /// Implements the generic IToolExecutor interface from DevGPT.
+    /// Implements the generic IToolExecutor interface from Hazina.
     /// </summary>
     public class ToolExecutor : IToolExecutor
     {

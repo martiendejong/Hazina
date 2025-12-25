@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json.Serialization;
 
-namespace DevGPTStore.Models.WordPress
+namespace HazinaStore.Models.WordPress
 {
     [Serializable]
     public class PageOverview

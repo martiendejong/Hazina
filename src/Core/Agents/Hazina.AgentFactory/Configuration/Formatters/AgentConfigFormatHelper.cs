@@ -5,8 +5,8 @@ using System.Text.Json;
 public static class AgentConfigFormatHelper
 {
     /// <summary>
-    /// Auto-detects the agent config format (json or .devgpt) and parses agent definitions.
-    /// If JSON is detected, parses using System.Text.Json. Otherwise, attempts .devgpt parse logic.
+    /// Auto-detects the agent config format (json or .Hazina) and parses agent definitions.
+    /// If JSON is detected, parses using System.Text.Json. Otherwise, attempts .Hazina parse logic.
     /// </summary>
     public static List<AgentConfig> AutoDetectAndParse(string content)
     {
@@ -18,17 +18,17 @@ public static class AgentConfigFormatHelper
             }
             catch
             {
-                // Fall through to .devgpt attempt
+                // Fall through to .Hazina attempt
             }
         }
-        // Fallback: Try .devgpt format
+        // Fallback: Try .Hazina format
         try
         {
-            return DevGPTAgentConfigParser.Parse(content);
+            return HazinaAgentConfigParser.Parse(content);
         }
         catch(Exception ex)
         {
-            throw new Exception("Could not auto-detect the agent config format (JSON/.devgpt). Parse error: " + ex.Message);
+            throw new Exception("Could not auto-detect the agent config format (JSON/.Hazina). Parse error: " + ex.Message);
         }
     }
 
@@ -45,7 +45,7 @@ public static class AgentConfigFormatHelper
         // Simple check for JSON objects or arrays
         if (trimmed.StartsWith("\"") && trimmed.Contains(":") && trimmed.Contains("{"))
             return true;
-        // Defensive: check for .devgpt typical prefix
+        // Defensive: check for .Hazina typical prefix
         if (trimmed.StartsWith("Name:"))
             return false;
         return false;

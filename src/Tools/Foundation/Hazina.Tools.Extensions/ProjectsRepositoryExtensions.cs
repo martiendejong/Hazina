@@ -1,13 +1,13 @@
-using DevGPT.GenerationTools.Data;
-using DevGPT.GenerationTools.Models;
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
-using DevGPTStore.Models;
+using Hazina.Tools.Data;
+using Hazina.Tools.Models;
+using Hazina.Tools.Models.WordPress.Blogs;
+using HazinaStore.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
-namespace DevGPT.GenerationTools.Extensions
+namespace Hazina.Tools.Extensions
 {
     /// <summary>
     /// Extension methods for ProjectsRepository to add missing methods
@@ -349,7 +349,7 @@ namespace DevGPT.GenerationTools.Extensions
         /// <summary>
         /// Loads user infos from the users file
         /// </summary>
-        public static List<DevGPTStoreUserInfo> LoadUserInfos(this ProjectsRepository repository)
+        public static List<HazinaStoreUserInfo> LoadUserInfos(this ProjectsRepository repository)
         {
             var filePath = Path.Combine(repository.ProjectsFolder, "users.json");
             if (File.Exists(filePath))
@@ -357,20 +357,20 @@ namespace DevGPT.GenerationTools.Extensions
                 try
                 {
                     var json = File.ReadAllText(filePath);
-                    return JsonSerializer.Deserialize<List<DevGPTStoreUserInfo>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<DevGPTStoreUserInfo>();
+                    return JsonSerializer.Deserialize<List<HazinaStoreUserInfo>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<HazinaStoreUserInfo>();
                 }
                 catch
                 {
-                    return new List<DevGPTStoreUserInfo>();
+                    return new List<HazinaStoreUserInfo>();
                 }
             }
-            return new List<DevGPTStoreUserInfo>();
+            return new List<HazinaStoreUserInfo>();
         }
 
         /// <summary>
         /// Saves user infos to the users file
         /// </summary>
-        public static void SaveUserInfos(this ProjectsRepository repository, List<DevGPTStoreUserInfo> userInfos)
+        public static void SaveUserInfos(this ProjectsRepository repository, List<HazinaStoreUserInfo> userInfos)
         {
             var filePath = Path.Combine(repository.ProjectsFolder, "users.json");
             var json = JsonSerializer.Serialize(userInfos, new JsonSerializerOptions { WriteIndented = true });

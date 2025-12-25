@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace DevGPT.DynamicAPI.Core;
+namespace Hazina.DynamicAPI.Core;
 
 /// <summary>
 /// Centralized credential management system.
@@ -176,6 +176,7 @@ public class CredentialStore
         {
             $"{serviceName.ToUpper()}_{keyName.ToUpper()}",
             $"{serviceName.ToUpper()}{keyName.ToUpper()}",
+            $"HAZINA_{serviceName.ToUpper()}_{keyName.ToUpper()}",
             $"DEVGPT_{serviceName.ToUpper()}_{keyName.ToUpper()}"
         };
 

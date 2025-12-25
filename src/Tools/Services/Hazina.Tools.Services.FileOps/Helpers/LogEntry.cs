@@ -1,7 +1,7 @@
-using DevGPT.GenerationTools.Models.WordPress.Blogs;
-using DevGPT.GenerationTools.Models;
+using Hazina.Tools.Models.WordPress.Blogs;
+using Hazina.Tools.Models;
 
-namespace DevGPT.GenerationTools.Services.FileOps.Helpers
+namespace Hazina.Tools.Services.FileOps.Helpers
 {
     public class LogMessage
     {

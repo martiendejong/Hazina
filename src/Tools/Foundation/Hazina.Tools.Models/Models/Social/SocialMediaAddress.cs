@@ -1,6 +1,6 @@
 using System;
 
-namespace DevGPT.GenerationTools.Models.Social
+namespace Hazina.Tools.Models.Social
 {
     public class SocialMediaAddress
     {

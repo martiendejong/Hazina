@@ -2,7 +2,7 @@ using System.Configuration;
 using System.Data;
 using System.Windows;
 
-namespace DevGPT.App.Windows;
+namespace Hazina.App.Windows;
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>

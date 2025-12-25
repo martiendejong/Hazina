@@ -7,11 +7,11 @@ using Microsoft.SemanticKernel.Embeddings;
 using Microsoft.SemanticKernel.TextToImage;
 using System.Text;
 
-namespace DevGPT.LLMs;
+namespace Hazina.LLMs;
 
 /// <summary>
-/// Semantic Kernel implementation of ILLMClient for DevGPT
-/// Provides multi-provider LLM support while maintaining DevGPT interfaces
+/// Semantic Kernel implementation of ILLMClient for Hazina
+/// Provides multi-provider LLM support while maintaining Hazina interfaces
 /// </summary>
 public class SemanticKernelClientWrapper : ILLMClient
 {
@@ -96,8 +96,8 @@ public class SemanticKernelClientWrapper : ILLMClient
     #region Chat Completion
 
     public async Task<LLMResponse<string>> GetResponse(
-        List<DevGPTChatMessage> messages,
-        DevGPTChatResponseFormat responseFormat,
+        List<HazinaChatMessage> messages,
+        HazinaChatResponseFormat responseFormat,
         IToolsContext? toolsContext,
         List<ImageData>? images,
         CancellationToken cancel)
@@ -138,7 +138,7 @@ public class SemanticKernelClientWrapper : ILLMClient
     }
 
     public async Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(
-        List<DevGPTChatMessage> messages,
+        List<HazinaChatMessage> messages,
         IToolsContext? toolsContext,
         List<ImageData>? images,
         CancellationToken cancel)
@@ -173,7 +173,7 @@ public class SemanticKernelClientWrapper : ILLMClient
     /// Get typed response using native SK structured output (OpenAI, Azure only)
     /// </summary>
     private async Task<LLMResponse<ResponseType?>> GetResponseWithNativeStructuredOutput<ResponseType>(
-        List<DevGPTChatMessage> messages,
+        List<HazinaChatMessage> messages,
         IToolsContext? toolsContext,
         List<ImageData>? images,
         CancellationToken cancel)
@@ -236,7 +236,7 @@ public class SemanticKernelClientWrapper : ILLMClient
     /// Get typed response using schema injection (works with all providers)
     /// </summary>
     private async Task<LLMResponse<ResponseType?>> GetResponseWithSchemaInjection<ResponseType>(
-        List<DevGPTChatMessage> messages,
+        List<HazinaChatMessage> messages,
         IToolsContext? toolsContext,
         List<ImageData>? images,
         CancellationToken cancel)
@@ -248,7 +248,7 @@ public class SemanticKernelClientWrapper : ILLMClient
         // Get response with JSON format
         var response = await GetResponse(
             messagesWithSchema,
-            DevGPTChatResponseFormat.Json,
+            HazinaChatResponseFormat.Json,
             toolsContext,
             images,
             cancel);
@@ -278,9 +278,9 @@ public class SemanticKernelClientWrapper : ILLMClient
     #region Streaming
 
     public async Task<LLMResponse<string>> GetResponseStream(
-        List<DevGPTChatMessage> messages,
+        List<HazinaChatMessage> messages,
         Action<string> onChunkReceived,
-        DevGPTChatResponseFormat responseFormat,
+        HazinaChatResponseFormat responseFormat,
         IToolsContext? toolsContext,
         List<ImageData>? images,
         CancellationToken cancel)
@@ -320,7 +320,7 @@ public class SemanticKernelClientWrapper : ILLMClient
     }
 
     public async Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(
-        List<DevGPTChatMessage> messages,
+        List<HazinaChatMessage> messages,
         Action<string> onChunkReceived,
         IToolsContext? toolsContext,
         List<ImageData>? images,
@@ -341,7 +341,7 @@ public class SemanticKernelClientWrapper : ILLMClient
     /// Get typed streaming response with schema injection and partial JSON parsing
     /// </summary>
     private async Task<LLMResponse<ResponseType?>> GetResponseStreamWithSchemaInjection<ResponseType>(
-        List<DevGPTChatMessage> messages,
+        List<HazinaChatMessage> messages,
         Action<string> onChunkReceived,
         IToolsContext? toolsContext,
         List<ImageData>? images,
@@ -352,7 +352,7 @@ public class SemanticKernelClientWrapper : ILLMClient
         var messagesWithSchema = AddFormattingInstruction<ResponseType>(messages);
 
         var chatHistory = messagesWithSchema.ToSemanticKernelChatHistory();
-        var executionSettings = CreateExecutionSettings(DevGPTChatResponseFormat.Json, toolsContext);
+        var executionSettings = CreateExecutionSettings(HazinaChatResponseFormat.Json, toolsContext);
 
         var tokenUsage = new TokenUsageInfo { ModelName = Config.Model };
 
@@ -439,9 +439,9 @@ public class SemanticKernelClientWrapper : ILLMClient
 
     #region Image Generation
 
-    public async Task<LLMResponse<DevGPTGeneratedImage>> GetImage(
+    public async Task<LLMResponse<HazinaGeneratedImage>> GetImage(
         string prompt,
-        DevGPTChatResponseFormat responseFormat,
+        HazinaChatResponseFormat responseFormat,
         IToolsContext? toolsContext,
         List<ImageData>? images,
         CancellationToken cancel)
@@ -462,9 +462,9 @@ public class SemanticKernelClientWrapper : ILLMClient
                 Uri.TryCreate(result, UriKind.Absolute, out imageUri);
             }
 
-            var generatedImage = new DevGPTGeneratedImage(imageUri, null);
+            var generatedImage = new HazinaGeneratedImage(imageUri, null);
 
-            return new LLMResponse<DevGPTGeneratedImage>(generatedImage, tokenUsage);
+            return new LLMResponse<HazinaGeneratedImage>(generatedImage, tokenUsage);
         }
         catch (Exception ex)
         {
@@ -489,7 +489,7 @@ public class SemanticKernelClientWrapper : ILLMClient
     #region Helper Methods
 
     private PromptExecutionSettings CreateExecutionSettings(
-        DevGPTChatResponseFormat responseFormat,
+        HazinaChatResponseFormat responseFormat,
         IToolsContext? toolsContext)
     {
         PromptExecutionSettings settings;
@@ -509,7 +509,7 @@ public class SemanticKernelClientWrapper : ILLMClient
             };
 
             // Apply response format
-            if (responseFormat == DevGPTChatResponseFormat.Json)
+            if (responseFormat == HazinaChatResponseFormat.Json)
             {
                 openAISettings.ResponseFormat = "json_object";
             }
@@ -534,7 +534,7 @@ public class SemanticKernelClientWrapper : ILLMClient
     /// <summary>
     /// Register tools from IToolsContext into the kernel as plugins
     /// </summary>
-    private void RegisterToolsInKernel(IToolsContext? toolsContext, List<DevGPTChatMessage> messages, CancellationToken cancel)
+    private void RegisterToolsInKernel(IToolsContext? toolsContext, List<HazinaChatMessage> messages, CancellationToken cancel)
     {
         if (toolsContext == null || !toolsContext.Tools.Any())
             return;
@@ -543,18 +543,18 @@ public class SemanticKernelClientWrapper : ILLMClient
         adapter.RegisterToolsAsPlugins(_kernel, messages, cancel);
     }
 
-    private List<DevGPTChatMessage> AddFormattingInstruction<ResponseType>(List<DevGPTChatMessage> messages)
+    private List<HazinaChatMessage> AddFormattingInstruction<ResponseType>(List<HazinaChatMessage> messages)
         where ResponseType : ChatResponse<ResponseType>, new()
     {
         var signature = ChatResponse<ResponseType>.Signature;
         var example = ChatResponse<ResponseType>.Example;
 
-        var formattingMessage = new DevGPTChatMessage(
-            DevGPTMessageRole.System,
+        var formattingMessage = new HazinaChatMessage(
+            HazinaMessageRole.System,
             $"IMPORTANT: Respond ONLY with valid JSON matching this exact schema:\n{signature}\n\nExample:\n{Newtonsoft.Json.JsonConvert.SerializeObject(example, Newtonsoft.Json.Formatting.Indented)}"
         );
 
-        var result = new List<DevGPTChatMessage> { formattingMessage };
+        var result = new List<HazinaChatMessage> { formattingMessage };
         result.AddRange(messages);
         return result;
     }

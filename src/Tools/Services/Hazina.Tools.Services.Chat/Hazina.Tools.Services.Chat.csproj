@@ -3,15 +3,15 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>DevGPT.GenerationTools.Services.Chat</RootNamespace>
+    <RootNamespace>Hazina.Tools.Services.Chat</RootNamespace>
     <Version>1.0.17</Version>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DevGPT.GenerationTools.Models\DevGPT.GenerationTools.Models.csproj" />
-    <ProjectReference Include="..\DevGPT.GenerationTools.Core\DevGPT.GenerationTools.Core.csproj" />
-    <ProjectReference Include="..\DevGPT.GenerationTools.Data\DevGPT.GenerationTools.Data.csproj" />
-    <ProjectReference Include="..\DevGPT.GenerationTools.AI.Agents\DevGPT.GenerationTools.AI.Agents.csproj" />
-    <ProjectReference Include="..\DevGPT.GenerationTools.Services.DataGathering\DevGPT.GenerationTools.Services.DataGathering.csproj" />
+    <ProjectReference Include="..\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
+    <ProjectReference Include="..\Hazina.Tools.Core\Hazina.Tools.Core.csproj" />
+    <ProjectReference Include="..\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
+    <ProjectReference Include="..\Hazina.Tools.AI.Agents\Hazina.Tools.AI.Agents.csproj" />
+    <ProjectReference Include="..\Hazina.Tools.Services.DataGathering\Hazina.Tools.Services.DataGathering.csproj" />
   </ItemGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

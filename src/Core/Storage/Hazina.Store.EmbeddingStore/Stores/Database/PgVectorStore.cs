@@ -1,7 +1,7 @@
 using Npgsql;
 using Pgvector;
 
-namespace DevGPT.Store.EmbeddingStore;
+namespace Hazina.Store.EmbeddingStore;
 
 /// <summary>
 /// PostgreSQL + pgvector implementation with native vector search support.

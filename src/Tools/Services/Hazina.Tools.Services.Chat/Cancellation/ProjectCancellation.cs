@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DevGPT.GenerationTools.Services.Chat
+namespace Hazina.Tools.Services.Chat
 {
     public class ProjectCancellation
     {
