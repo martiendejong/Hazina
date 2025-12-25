@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -7,7 +7,6 @@
     <Version>2.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Libraries\LLMs\ClientTools\DevGPT.LLMClientTools.csproj" />
     <ProjectReference Include="..\..\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.local.csproj" />
     <ProjectReference Include="..\..\Foundation\Hazina.Tools.Models\Hazina.Tools.Models.local.csproj" />
   </ItemGroup>

@@ -1,7 +1,7 @@
-using Hazina.GenerationTools.Services.FileOps.Helpers;
+﻿using Hazina.Tools.Services.FileOps.Helpers;
 using FluentAssertions;
 
-namespace Hazina.GenerationTools.Services.FileOps.Tests.Helpers;
+namespace Hazina.Tools.Services.FileOps.Tests.Helpers;
 
 public class FilePathHelperTests
 {

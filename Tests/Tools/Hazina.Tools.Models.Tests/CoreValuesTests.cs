@@ -1,7 +1,7 @@
-using Hazina.GenerationTools.Services.Store;
+﻿using Hazina.Tools.Services.Store;
 using FluentAssertions;
 
-namespace Hazina.GenerationTools.Models.Tests;
+namespace Hazina.Tools.Models.Tests;
 
 public class CoreValuesTests
 {

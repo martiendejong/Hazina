@@ -14,8 +14,11 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Hazina.AgentFactory" Version="2.0.0" />
-    <PackageReference Include="Hazina.LLMs.OpenAI" Version="2.0.0" />
+    <ProjectReference Include="..\..\..\Core\Agents\Hazina.AgentFactory\Hazina.AgentFactory.csproj" />
+    <ProjectReference Include="..\..\..\Core\LLMs.Providers\Hazina.LLMs.OpenAI\Hazina.LLMs.OpenAI.csproj" />
+    <ProjectReference Include="..\..\..\Core\LLMs\Hazina.LLMClientTools\Hazina.LLMClientTools.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Google.Ads.GoogleAds" Version="24.1.0" />
     <PackageReference Include="MimeTypesMap" Version="1.0.9" />
     <PackageReference Include="OpenAI" Version="2.6.0" />
@@ -26,3 +29,6 @@
     <PackageReference Include="System.Memory.Data" Version="9.0.10" />
   </ItemGroup>
 </Project>
+
+
+

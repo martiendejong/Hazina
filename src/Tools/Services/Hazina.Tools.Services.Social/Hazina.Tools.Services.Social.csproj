@@ -7,7 +7,7 @@
     <Version>1.0.17</Version>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
-    <ProjectReference Include="..\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
   </ItemGroup>
 </Project>

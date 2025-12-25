@@ -1,7 +1,7 @@
-<Window x:Class="DevGPT.ChatShared.ChatWindow"
+<Window x:Class="Hazina.ChatShared.ChatWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:DevGPT.ChatShared"
+        xmlns:local="clr-namespace:Hazina.ChatShared"
         Title="Chat" Height="700" Width="700">
     <Window.Resources>
         <local:EmptyToVisibilityConverter x:Key="EmptyToVisibilityConverter" />
@@ -104,3 +104,4 @@
         </Grid>
     </Grid>
 </Window>
+

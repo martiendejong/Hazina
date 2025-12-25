@@ -8,10 +8,10 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Libraries\LLMs\OpenAI\DevGPT.LLMs.OpenAI.csproj" />
-    <ProjectReference Include="..\..\Libraries\LLMs\Classes\DevGPT.LLMs.Classes.csproj" />
-    <ProjectReference Include="..\..\Libraries\LLMs\Helpers\DevGPT.LLMs.Helpers.csproj" />
-    <ProjectReference Include="..\..\Libraries\LLMs\Client\DevGPT.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\LLMs.Providers\Hazina.LLMs.OpenAI\Hazina.LLMs.OpenAI.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Helpers\Hazina.LLMs.Helpers.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="appsettings.json">
@@ -19,4 +19,3 @@
     </Content>
   </ItemGroup>
 </Project>
-

@@ -1,7 +1,7 @@
-using Common.Models.DTO;
+﻿using Common.Models.DTO;
 using FluentAssertions;
 
-namespace Hazina.GenerationTools.Common.Models.Tests;
+namespace Hazina.Tools.Common.Models.Tests;
 
 public class ResultTests
 {

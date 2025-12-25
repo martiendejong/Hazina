@@ -1,7 +1,7 @@
-using Hazina.GenerationTools.Models;
+﻿using Hazina.Tools.Models;
 using FluentAssertions;
 
-namespace Hazina.GenerationTools.Models.Tests;
+namespace Hazina.Tools.Models.Tests;
 
 public class SerializableListTests : IDisposable
 {

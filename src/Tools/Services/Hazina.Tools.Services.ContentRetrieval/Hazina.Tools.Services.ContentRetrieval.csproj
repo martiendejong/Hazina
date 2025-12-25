@@ -7,11 +7,11 @@
     <Version>1.0.17</Version>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
-    <ProjectReference Include="..\Hazina.Tools.Core\Hazina.Tools.Core.csproj" />
-    <ProjectReference Include="..\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Core\Hazina.Tools.Core.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
     <ProjectReference Include="..\Hazina.Tools.Services.WordPress\Hazina.Tools.Services.WordPress.csproj" />
-    <ProjectReference Include="..\Common\Hazina.Tools.Common.Models\Hazina.Tools.Common.Models.csproj" />
+    <ProjectReference Include="..\..\Common\Hazina.Tools.Common.Models\Hazina.Tools.Common.Models.csproj" />
     <ProjectReference Include="..\Hazina.Tools.Services.FileOps\Hazina.Tools.Services.FileOps.csproj" />
   </ItemGroup>
 </Project>

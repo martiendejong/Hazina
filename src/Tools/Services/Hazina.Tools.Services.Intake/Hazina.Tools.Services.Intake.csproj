@@ -7,13 +7,16 @@
     <Version>1.0.17</Version>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
-    <ProjectReference Include="..\Hazina.Tools.Core\Hazina.Tools.Core.csproj" />
-    <ProjectReference Include="..\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Core\Hazina.Tools.Core.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
     <ProjectReference Include="..\Hazina.Tools.Services\Hazina.Tools.Services.csproj" />
+    <ProjectReference Include="..\..\..\Core\Agents\Hazina.Generator\Hazina.Generator.csproj" />
+    <ProjectReference Include="..\..\..\Core\Agents\Hazina.AgentFactory\Hazina.AgentFactory.csproj" />
+    <ProjectReference Include="..\..\..\Core\LLMs\Hazina.LLMClientTools\Hazina.LLMClientTools.csproj" />
+    <ProjectReference Include="..\..\..\Core\LLMs.Providers\Hazina.LLMs.OpenAI\Hazina.LLMs.OpenAI.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="OpenAI" Version="2.6.0" />
-    <PackageReference Include="DevGPT.Generator" Version="1.1.3" />
   </ItemGroup>
 </Project>

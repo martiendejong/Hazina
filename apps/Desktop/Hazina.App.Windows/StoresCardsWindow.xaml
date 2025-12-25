@@ -1,4 +1,4 @@
-<Window x:Class="DevGPT.App.Windows.StoresCardsWindow"
+<Window x:Class="Hazina.App.Windows.StoresCardsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="StoresCardsWindow" Height="500" Width="600" ResizeMode="CanResize">
@@ -48,4 +48,5 @@
         </ScrollViewer>
     </DockPanel>
 </Window>
+
 

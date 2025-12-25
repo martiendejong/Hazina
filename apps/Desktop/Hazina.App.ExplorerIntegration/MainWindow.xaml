@@ -1,4 +1,4 @@
-<Window x:Class="DevGPT.App.ExplorerIntegration.MainWindow"
+<Window x:Class="Hazina.App.ExplorerIntegration.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="DevGPT Explorer Integration" Height="220" Width="520">
@@ -23,5 +23,6 @@
         <TextBlock Grid.Row="2" x:Name="StatusText" Margin="0,12,0,0"/>
     </Grid>
 </Window>
+
 
 

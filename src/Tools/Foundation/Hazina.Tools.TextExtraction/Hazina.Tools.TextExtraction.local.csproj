@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -24,6 +24,8 @@
     <PackageReference Include="System.Memory.Data" Version="9.0.10" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Libraries\LLMs\Client\DevGPT.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\..\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
   </ItemGroup>
 </Project>
+
+

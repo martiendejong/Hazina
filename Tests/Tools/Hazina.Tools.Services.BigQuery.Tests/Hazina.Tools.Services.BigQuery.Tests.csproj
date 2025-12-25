@@ -25,6 +25,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\DevGPT.GenerationTools.Services.BigQuery\DevGPT.GenerationTools.Services.BigQuery.csproj" />
+    <ProjectReference Include="..\..\..\src\Tools\Services\Hazina.Tools.Services.BigQuery\Hazina.Tools.Services.BigQuery.csproj" />
   </ItemGroup>
 </Project>
+
+

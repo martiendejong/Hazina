@@ -11,3 +11,4 @@
     <ProjectReference Include="..\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
   </ItemGroup>
 </Project>
+

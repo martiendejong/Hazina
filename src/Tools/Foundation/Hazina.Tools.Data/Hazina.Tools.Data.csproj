@@ -13,7 +13,7 @@
     <ProjectReference Include="..\..\Common\Hazina.Tools.Common.Models\Hazina.Tools.Common.Models.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Hazina.Store.DocumentStore" Version="2.0.0" />
-    <PackageReference Include="Hazina.LLMClientTools" Version="2.0.0" />
+    <ProjectReference Include="..\..\..\Core\Storage\Hazina.Store.DocumentStore\Hazina.Store.DocumentStore.csproj" />
+    <ProjectReference Include="..\..\..\Core\LLMs\Hazina.LLMClientTools\Hazina.LLMClientTools.csproj" />
   </ItemGroup>
 </Project>

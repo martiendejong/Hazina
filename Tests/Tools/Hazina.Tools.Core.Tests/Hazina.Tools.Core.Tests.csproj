@@ -25,6 +25,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\DevGPT.GenerationTools.Core\DevGPT.GenerationTools.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\Tools\Foundation\Hazina.Tools.Core\Hazina.Tools.Core.csproj" />
   </ItemGroup>
 </Project>
+
+

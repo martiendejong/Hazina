@@ -1,6 +1,6 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 
-namespace Hazina.GenerationTools.Services.Store.Tests;
+namespace Hazina.Tools.Services.Store.Tests;
 
 /// <summary>
 /// Placeholder tests for Store service

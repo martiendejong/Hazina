@@ -12,7 +12,6 @@
     <ProjectReference Include="..\..\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.local.csproj" />
     <ProjectReference Include="..\..\Foundation\Hazina.Tools.Models\Hazina.Tools.Models.local.csproj" />
     <ProjectReference Include="..\Hazina.Tools.Services.DataGathering\Hazina.Tools.Services.DataGathering.local.csproj" />
-    <ProjectReference Include="..\Libraries\LLMs\DevGPT.LLMs.Tools\DevGPT.LLMs.Tools.csproj" />
   </ItemGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

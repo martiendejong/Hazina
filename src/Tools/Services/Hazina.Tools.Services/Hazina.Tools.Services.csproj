@@ -27,10 +27,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Google.Cloud.BigQuery.V2" Version="3.11.0" />
-    <PackageReference Include="Hazina.Store.DocumentStore" Version="2.0.0" />
     <PackageReference Include="OpenAI" Version="2.6.0" />
-    <PackageReference Include="Hazina.Generator" Version="2.0.0" />
-    <PackageReference Include="Hazina.LLMClientTools" Version="2.0.0" />
-    <PackageReference Include="Hazina.AgentFactory" Version="2.0.0" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -8,15 +8,14 @@
     <Description>Data gathering services for extracting and storing structured information from chat conversations.</Description>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Hazina.Tools.AI.Agents\Hazina.Tools.AI.Agents.csproj" />
-    <ProjectReference Include="..\Hazina.Tools.Core\Hazina.Tools.Core.csproj" />
-    <ProjectReference Include="..\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
-    <ProjectReference Include="..\Hazina.Tools.Extensions\Hazina.Tools.Extensions.csproj" />
-    <ProjectReference Include="..\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.AI.Agents\Hazina.Tools.AI.Agents.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Core\Hazina.Tools.Core.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
     <ProjectReference Include="..\Hazina.Tools.Services.Store\Hazina.Tools.Services.Store.csproj" />
+    <ProjectReference Include="..\..\..\Core\LLMs\Hazina.LLMClientTools\Hazina.LLMClientTools.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="DevGPT.LLMClientTools" Version="1.1.3" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
     <PackageReference Include="System.Text.Json" Version="10.0.0" />

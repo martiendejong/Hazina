@@ -25,7 +25,7 @@
     <Using Include="Xunit" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\DevGPT.GenerationTools.Services.Chat\DevGPT.GenerationTools.Services.Chat.csproj" />
+    <ProjectReference Include="..\..\..\src\Tools\Services\Hazina.Tools.Services.Chat\Hazina.Tools.Services.Chat.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="appsettings.integration.json" Condition="Exists('appsettings.integration.json')">
@@ -36,3 +36,5 @@
     </None>
   </ItemGroup>
 </Project>
+
+

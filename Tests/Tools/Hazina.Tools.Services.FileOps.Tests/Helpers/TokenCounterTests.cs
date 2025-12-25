@@ -1,4 +1,4 @@
-using Hazina.Tools.Services.FileOps.Helpers;
+﻿using Hazina.Tools.Services.FileOps.Helpers;
 using FluentAssertions;
 
 namespace Hazina.Tools.Services.FileOps.Tests.Helpers;

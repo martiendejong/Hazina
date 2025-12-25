@@ -1,6 +1,6 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 
-namespace Hazina.GenerationTools.Services.BigQuery.Tests;
+namespace Hazina.Tools.Services.BigQuery.Tests;
 
 /// <summary>
 /// Placeholder tests for BigQuery service

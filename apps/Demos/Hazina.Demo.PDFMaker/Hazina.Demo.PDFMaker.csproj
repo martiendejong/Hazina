@@ -9,6 +9,7 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PostgresDemo\PostgresDemo.csproj" />
+    <ProjectReference Include="..\\Hazina.Demo.Postgres\\Hazina.Demo.Postgres.csproj" />
   </ItemGroup>
 </Project>
+

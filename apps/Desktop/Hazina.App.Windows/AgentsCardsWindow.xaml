@@ -1,4 +1,4 @@
-<Window x:Class="DevGPT.App.Windows.AgentsCardsWindow"
+<Window x:Class="Hazina.App.Windows.AgentsCardsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="AgentsCardsWindow" Height="600" Width="900" ResizeMode="CanResize">
@@ -131,4 +131,5 @@
         </ScrollViewer>
     </DockPanel>
 </Window>
+
 

@@ -7,7 +7,6 @@
     <Version>2.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Libraries\DevGPT.Generator\DevGPT.Generator.csproj" />
     <ProjectReference Include="..\..\Foundation\Hazina.Tools.Core\Hazina.Tools.Core.local.csproj" />
     <ProjectReference Include="..\..\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.local.csproj" />
     <ProjectReference Include="..\..\Foundation\Hazina.Tools.Models\Hazina.Tools.Models.local.csproj" />

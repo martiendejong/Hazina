@@ -22,5 +22,6 @@
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="8.0.3" />
     <PackageReference Include="Pgvector" Version="0.2.0" />
+    <PackageReference Include="OpenAI" Version="2.6.0" />
   </ItemGroup>
 </Project>
