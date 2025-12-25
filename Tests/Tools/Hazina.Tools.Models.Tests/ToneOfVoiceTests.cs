@@ -1,4 +1,4 @@
-﻿using Hazina.Tools.Services.Store;
+﻿using Hazina.Tools.Models;
 using FluentAssertions;
 
 namespace Hazina.Tools.Models.Tests;

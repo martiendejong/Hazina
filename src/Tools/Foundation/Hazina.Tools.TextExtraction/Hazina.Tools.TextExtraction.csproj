@@ -17,6 +17,7 @@
     <ProjectReference Include="..\..\..\Core\Agents\Hazina.AgentFactory\Hazina.AgentFactory.csproj" />
     <ProjectReference Include="..\..\..\Core\LLMs.Providers\Hazina.LLMs.OpenAI\Hazina.LLMs.OpenAI.csproj" />
     <ProjectReference Include="..\..\..\Core\LLMs\Hazina.LLMClientTools\Hazina.LLMClientTools.csproj" />
+    <ProjectReference Include="..\..\..\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Google.Ads.GoogleAds" Version="24.1.0" />

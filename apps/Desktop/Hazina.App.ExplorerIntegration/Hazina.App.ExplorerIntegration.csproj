@@ -5,20 +5,18 @@
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>Hazina.App.ExplorerIntegration</RootNamespace>
-    <AssemblyName>Hazina.ExplorerIntegration</AssemblyName>
+    <RootNamespace>DevGPT.App.ExplorerIntegration</RootNamespace>
+    <AssemblyName>DevGPT.ExplorerIntegration</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Core\Agents\Hazina.AgentFactory\Hazina.AgentFactory.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\Agents\Hazina.Generator\Hazina.Generator.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Helpers\Hazina.LLMs.Helpers.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\LLMs.Providers\Hazina.LLMs.OpenAI\Hazina.LLMs.OpenAI.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\Storage\Hazina.Store.DocumentStore\Hazina.Store.DocumentStore.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\Storage\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />
     <ProjectReference Include="..\..\..\src\Core\UI\Hazina.ChatShared\Hazina.ChatShared.csproj" />
   </ItemGroup>
 </Project>
+
+
+
+
+
