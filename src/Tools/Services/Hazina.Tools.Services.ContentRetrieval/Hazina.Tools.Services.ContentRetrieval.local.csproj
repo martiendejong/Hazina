@@ -3,15 +3,15 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>DevGPTStore.ContentRetrieval</RootNamespace>
-    <Version>1.0.17</Version>
+    <RootNamespace>Hazina.Tools.Services.ContentRetrieval</RootNamespace>
+    <Version>2.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Common\DevGPT.GenerationTools.Common.Models\DevGPT.GenerationTools.Common.Models.local.csproj" />
-    <ProjectReference Include="..\DevGPT.GenerationTools.Core\DevGPT.GenerationTools.Core.local.csproj" />
-    <ProjectReference Include="..\DevGPT.GenerationTools.Data\DevGPT.GenerationTools.Data.local.csproj" />
-    <ProjectReference Include="..\DevGPT.GenerationTools.Models\DevGPT.GenerationTools.Models.local.csproj" />
-    <ProjectReference Include="..\DevGPT.GenerationTools.Services.FileOps\DevGPT.GenerationTools.Services.FileOps.local.csproj" />
-    <ProjectReference Include="..\DevGPT.GenerationTools.Services.WordPress\DevGPT.GenerationTools.Services.WordPress.local.csproj" />
+    <ProjectReference Include="..\..\Common\Hazina.Tools.Common.Models\Hazina.Tools.Common.Models.local.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Core\Hazina.Tools.Core.local.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.local.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Models\Hazina.Tools.Models.local.csproj" />
+    <ProjectReference Include="..\Hazina.Tools.Services.FileOps\Hazina.Tools.Services.FileOps.local.csproj" />
+    <ProjectReference Include="..\Hazina.Tools.Services.WordPress\Hazina.Tools.Services.WordPress.local.csproj" />
   </ItemGroup>
 </Project>

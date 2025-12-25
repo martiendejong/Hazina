@@ -3,11 +3,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>DevGPT.GenerationTools.Models</RootNamespace>
-    <Description>Domain models for DevGPT content generation tools</Description>
-    <Version>1.0.17</Version>
+    <RootNamespace>Hazina.Tools.Models</RootNamespace>
+    <Description>Domain models for Hazina content generation tools</Description>
+    <Version>2.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Common\DevGPT.GenerationTools.Common.Models\DevGPT.GenerationTools.Common.Models.local.csproj" />
+    <ProjectReference Include="..\..\Common\Hazina.Tools.Common.Models\Hazina.Tools.Common.Models.local.csproj" />
   </ItemGroup>
 </Project>

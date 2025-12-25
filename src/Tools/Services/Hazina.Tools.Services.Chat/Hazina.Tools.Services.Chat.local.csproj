@@ -3,15 +3,15 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>DevGPT.GenerationTools.Services.Chat</RootNamespace>
-    <Version>1.0.17</Version>
+    <RootNamespace>Hazina.Tools.Services.Chat</RootNamespace>
+    <Version>2.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DevGPT.GenerationTools.AI.Agents\DevGPT.GenerationTools.AI.Agents.local.csproj" />
-    <ProjectReference Include="..\DevGPT.GenerationTools.Core\DevGPT.GenerationTools.Core.local.csproj" />
-    <ProjectReference Include="..\DevGPT.GenerationTools.Data\DevGPT.GenerationTools.Data.local.csproj" />
-    <ProjectReference Include="..\DevGPT.GenerationTools.Models\DevGPT.GenerationTools.Models.local.csproj" />
-    <ProjectReference Include="..\DevGPT.GenerationTools.Services.DataGathering\DevGPT.GenerationTools.Services.DataGathering.local.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.AI.Agents\Hazina.Tools.AI.Agents.local.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Core\Hazina.Tools.Core.local.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.local.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Models\Hazina.Tools.Models.local.csproj" />
+    <ProjectReference Include="..\Hazina.Tools.Services.DataGathering\Hazina.Tools.Services.DataGathering.local.csproj" />
     <ProjectReference Include="..\Libraries\LLMs\DevGPT.LLMs.Tools\DevGPT.LLMs.Tools.csproj" />
   </ItemGroup>
   <ItemGroup>
