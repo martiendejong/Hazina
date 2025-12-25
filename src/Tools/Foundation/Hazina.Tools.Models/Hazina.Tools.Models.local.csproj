@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DevGPT.GenerationTools.Models</RootNamespace>
+    <Description>Domain models for DevGPT content generation tools</Description>
+    <Version>1.0.17</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Common\DevGPT.GenerationTools.Common.Models\DevGPT.GenerationTools.Common.Models.local.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DevGPT.GenerationTools.Data</RootNamespace>
+    <Description>Data access layer for DevGPT generation tools</Description>
+    <Version>1.0.17</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Libraries\Store\DocumentStore\DevGPT.Store.DocumentStore.csproj" />
+    <ProjectReference Include="..\Common\DevGPT.GenerationTools.Common.Models\DevGPT.GenerationTools.Common.Models.local.csproj" />
+    <ProjectReference Include="..\DevGPT.GenerationTools.Core\DevGPT.GenerationTools.Core.local.csproj" />
+    <ProjectReference Include="..\DevGPT.GenerationTools.Models\DevGPT.GenerationTools.Models.local.csproj" />
+  </ItemGroup>
+</Project>

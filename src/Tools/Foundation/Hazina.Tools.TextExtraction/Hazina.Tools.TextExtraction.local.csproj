@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>DevGPT.GenerationTools.TextExtraction</RootNamespace>
+    <Description>Text extraction utilities for PDF, Word, Excel and other document formats</Description>
+    <Version>1.0.17</Version>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Google.Ads.GoogleAds" Version="24.1.0" />
+    <PackageReference Include="MimeTypesMap" Version="1.0.9" />
+    <PackageReference Include="OpenAI" Version="2.6.0" />
+    <PackageReference Include="PDFiumCore" Version="134.0.6982" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+    <PackageReference Include="Spire.Doc" Version="13.10.3" />
+    <PackageReference Include="Spire.XLS" Version="15.10.3" />
+    <PackageReference Include="System.Memory.Data" Version="9.0.10" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Libraries\LLMs\Client\DevGPT.LLMs.Client.csproj" />
+  </ItemGroup>
+</Project>
