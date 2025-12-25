@@ -1,14 +1,14 @@
-﻿using Hazina.Tools.Extensions;
+using Hazina.Tools.Extensions;
 using Hazina.Tools.AI.Agents;
 using Hazina.Tools.Data;
 using Hazina.Tools.Models;
 using Hazina.Tools.Services.DataGathering.Abstractions;
 using Hazina.Tools.Services.DataGathering.ToolsContexts;
 using Hazina.Tools.Services.Store;
-using ProjectModel = Hazina.Tools.Models.Project;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
+using ProjectModel = Hazina.Tools.Models.Project;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;

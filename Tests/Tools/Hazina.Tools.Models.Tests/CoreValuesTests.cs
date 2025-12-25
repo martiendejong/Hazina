@@ -1,5 +1,6 @@
-﻿using Hazina.Tools.Services.Store;
-using FluentAssertions;
+﻿using FluentAssertions;
+using Hazina.Tools.Models;
+using Hazina.Tools.Services.Store;
 
 namespace Hazina.Tools.Models.Tests;
 
