@@ -1,22 +1,21 @@
 # Hazina.LLMs.OpenAI.Tests
 
 ## Purpose
-Part of the Hazina platform.
+Test suite for Hazina.LLMs.OpenAI.
 
 ## Getting Started
-- Restore/build: `dotnet build Tests/Core/Hazina.LLMs.OpenAI.Tests/Hazina.LLMs.OpenAI.Tests.csproj`
-- Add as project reference if consumed from another project: `dotnet add <your>.csproj reference Tests/Core/Hazina.LLMs.OpenAI.Tests/Hazina.LLMs.OpenAI.Tests.csproj`
+- Run tests: `dotnet test Tests/Core/Hazina.LLMs.OpenAI.Tests/Hazina.LLMs.OpenAI.Tests.csproj`
+- Build only (optional): `dotnet build Tests/Core/Hazina.LLMs.OpenAI.Tests/Hazina.LLMs.OpenAI.Tests.csproj`
 
 ## Usage
-- Add reference: `dotnet add <your>.csproj reference Tests/Core/Hazina.LLMs.OpenAI.Tests/Hazina.LLMs.OpenAI.Tests.csproj`
-- Build: `dotnet build Tests/Core/Hazina.LLMs.OpenAI.Tests/Hazina.LLMs.OpenAI.Tests.csproj`
+- Run entire suite: `dotnet test Tests/Core/Hazina.LLMs.OpenAI.Tests/Hazina.LLMs.OpenAI.Tests.csproj`
+- Filter tests (example): `dotnet test Tests/Core/Hazina.LLMs.OpenAI.Tests/Hazina.LLMs.OpenAI.Tests.csproj --filter Category=Unit`
 
 ## API Reference
-- XML docs generated on build: `bin/Debug/net8.0/Hazina.LLMs.OpenAI.Tests.xml`.
-- Use IDE tooling or `dotnet doc`/Sandcastle/DocFX to render API docs if desired.
+- Tests describe expected behavior; inspect test classes for API usage patterns.
+- Build emits XML docs if needed under `bin/Debug/net8.0/`.
 
 ## Examples
-```csharp
-using Hazina.LLMs.OpenAI.Tests;
-// Instantiate and use the types from Hazina.LLMs.OpenAI.Tests as needed.
+```bash
+dotnet test Tests/Core/Hazina.LLMs.OpenAI.Tests/Hazina.LLMs.OpenAI.Tests.csproj
 ```

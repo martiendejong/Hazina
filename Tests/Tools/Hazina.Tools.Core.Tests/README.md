@@ -1,22 +1,21 @@
 # Hazina.Tools.Core.Tests
 
 ## Purpose
-Part of the Hazina platform.
+Test suite for Hazina.Tools.Core.
 
 ## Getting Started
-- Restore/build: `dotnet build Tests/Tools/Hazina.Tools.Core.Tests/Hazina.Tools.Core.Tests.csproj`
-- Add as project reference if consumed from another project: `dotnet add <your>.csproj reference Tests/Tools/Hazina.Tools.Core.Tests/Hazina.Tools.Core.Tests.csproj`
+- Run tests: `dotnet test Tests/Tools/Hazina.Tools.Core.Tests/Hazina.Tools.Core.Tests.csproj`
+- Build only (optional): `dotnet build Tests/Tools/Hazina.Tools.Core.Tests/Hazina.Tools.Core.Tests.csproj`
 
 ## Usage
-- Add reference: `dotnet add <your>.csproj reference Tests/Tools/Hazina.Tools.Core.Tests/Hazina.Tools.Core.Tests.csproj`
-- Build: `dotnet build Tests/Tools/Hazina.Tools.Core.Tests/Hazina.Tools.Core.Tests.csproj`
+- Run entire suite: `dotnet test Tests/Tools/Hazina.Tools.Core.Tests/Hazina.Tools.Core.Tests.csproj`
+- Filter tests (example): `dotnet test Tests/Tools/Hazina.Tools.Core.Tests/Hazina.Tools.Core.Tests.csproj --filter Category=Unit`
 
 ## API Reference
-- XML docs generated on build: `bin/Debug/net8.0/Hazina.Tools.Core.Tests.xml`.
-- Use IDE tooling or `dotnet doc`/Sandcastle/DocFX to render API docs if desired.
+- Tests describe expected behavior; inspect test classes for API usage patterns.
+- Build emits XML docs if needed under `bin/Debug/net8.0/`.
 
 ## Examples
-```csharp
-using Hazina.Tools.Core.Tests;
-// Instantiate and use the types from Hazina.Tools.Core.Tests as needed.
+```bash
+dotnet test Tests/Tools/Hazina.Tools.Core.Tests/Hazina.Tools.Core.Tests.csproj
 ```

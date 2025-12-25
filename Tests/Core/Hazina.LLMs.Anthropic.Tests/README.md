@@ -1,22 +1,21 @@
 # Hazina.LLMs.Anthropic.Tests
 
 ## Purpose
-Part of the Hazina platform.
+Test suite for Hazina.LLMs.Anthropic.
 
 ## Getting Started
-- Restore/build: `dotnet build Tests/Core/Hazina.LLMs.Anthropic.Tests/Hazina.LLMs.Anthropic.Tests.csproj`
-- Add as project reference if consumed from another project: `dotnet add <your>.csproj reference Tests/Core/Hazina.LLMs.Anthropic.Tests/Hazina.LLMs.Anthropic.Tests.csproj`
+- Run tests: `dotnet test Tests/Core/Hazina.LLMs.Anthropic.Tests/Hazina.LLMs.Anthropic.Tests.csproj`
+- Build only (optional): `dotnet build Tests/Core/Hazina.LLMs.Anthropic.Tests/Hazina.LLMs.Anthropic.Tests.csproj`
 
 ## Usage
-- Add reference: `dotnet add <your>.csproj reference Tests/Core/Hazina.LLMs.Anthropic.Tests/Hazina.LLMs.Anthropic.Tests.csproj`
-- Build: `dotnet build Tests/Core/Hazina.LLMs.Anthropic.Tests/Hazina.LLMs.Anthropic.Tests.csproj`
+- Run entire suite: `dotnet test Tests/Core/Hazina.LLMs.Anthropic.Tests/Hazina.LLMs.Anthropic.Tests.csproj`
+- Filter tests (example): `dotnet test Tests/Core/Hazina.LLMs.Anthropic.Tests/Hazina.LLMs.Anthropic.Tests.csproj --filter Category=Unit`
 
 ## API Reference
-- XML docs generated on build: `bin/Debug/net8.0/Hazina.LLMs.Anthropic.Tests.xml`.
-- Use IDE tooling or `dotnet doc`/Sandcastle/DocFX to render API docs if desired.
+- Tests describe expected behavior; inspect test classes for API usage patterns.
+- Build emits XML docs if needed under `bin/Debug/net8.0/`.
 
 ## Examples
-```csharp
-using Hazina.LLMs.Anthropic.Tests;
-// Instantiate and use the types from Hazina.LLMs.Anthropic.Tests as needed.
+```bash
+dotnet test Tests/Core/Hazina.LLMs.Anthropic.Tests/Hazina.LLMs.Anthropic.Tests.csproj
 ```
