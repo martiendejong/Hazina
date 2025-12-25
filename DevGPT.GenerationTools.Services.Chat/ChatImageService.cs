@@ -1,6 +1,7 @@
 using DevGPT.GenerationTools.AI.Agents;
 using DevGPT.GenerationTools.Data;
 using DevGPT.GenerationTools.Models;
+using DevGPT.GenerationTools.Services.FileOps.Helpers;
 using Mscc.GenerativeAI;
 using System;
 using System.IO;
@@ -115,6 +116,23 @@ namespace DevGPT.GenerationTools.Services.Chat
                 Console.WriteLine($"ChatImageService: projectId={projectId}, userId={userId}, storedUserId={storedUserId}, fileName={fileName}");
 
                 await _generatedImageRepository.SaveImageAsync(projectId, storedUserId, fileName, resolved.Data);
+
+                // Also persist to uploads so it shows as an uploaded document and can be selected in chat input
+                try
+                {
+                    var uploadsFolder = Path.Combine(FileLocator.GetProjectFolder(projectId), "uploads");
+                    FileHelper.EnsureDirectoryExists(uploadsFolder);
+                    var uploadPath = Path.Combine(uploadsFolder, fileName);
+                    await File.WriteAllBytesAsync(uploadPath, resolved.Data);
+
+                    var listFilePath = Path.Combine(FileLocator.GetProjectFolder(projectId), "uploadedFiles.json");
+                    var uploadedFile = FileHelper.GetUploadedFileDetails(uploadPath, fileName, 0);
+                    await FileHelper.UpdateUploadedFilesListAsync(listFilePath, uploadedFile);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"ChatImageService: Failed to sync generated image to uploads: {ex.Message}");
+                }
 
                 var metadata = new GeneratedImageInfo
                 {
