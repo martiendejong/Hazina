@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LanguageVersion>latest</LanguageVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Hazina.LLMs</RootNamespace>
+    <Version>2.0.0</Version>
+    <PackageVersion>2.0.0</PackageVersion>
+    <Authors>Prospergenics</Authors>
+    <Description>HuggingFace implementation of ILLMClient for Hazina. Provides access to open-source models via HuggingFace Inference API including Llama, Mixtral, and others. Supports chat completions, embeddings (sentence transformers), and image generation (Stable Diffusion).</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>huggingface;llm;ai;open-source;llama;mixtral;stable-diffusion;embeddings;transformers</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
+    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Helpers\Hazina.LLMs.Helpers.csproj" />
+  </ItemGroup>
+</Project>

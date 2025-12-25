@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Hazina.Tools.Services.FileOps</RootNamespace>
+    <Version>2.0.0</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Core\Hazina.Tools.Core.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.TextExtraction\Hazina.Tools.TextExtraction.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Hazina.LLMClientTools" Version="2.0.0" />
+    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+</Project>
