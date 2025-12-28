@@ -846,6 +846,190 @@ See `Examples/SessionExamples.cs` for comprehensive examples including:
 5. Session hooks
 6. Filtering and listing sessions
 
+## Memory Bank (Step 5)
+
+### Overview
+
+The Memory Bank provides long-term memory capabilities for agents, enabling them to remember facts, experiences, and procedures across sessions.
+
+### Memory Types
+
+1. **Episodic Memory**: Specific events and experiences ("User asked about Python on Jan 15")
+2. **Semantic Memory**: Facts and general knowledge ("The capital of France is Paris")
+3. **Procedural Memory**: How to do things ("To commit: use 'git commit -m message'")
+4. **Working Memory**: Short-term, temporary information
+
+### Key Features
+
+- **Semantic Search**: Find memories by meaning (with embeddings)
+- **Importance Scoring**: Prioritize important memories
+- **Memory Strength**: Calculated from recency, access frequency, and importance
+- **Auto-Consolidation**: Automatic removal of weak/forgotten memories
+- **Memory Tagging**: Organize memories with tags
+- **Related Memories**: Link memories together
+
+### Using Memory Bank
+
+```csharp
+using Hazina.LLMs.GoogleADK.Memory;
+using Hazina.LLMs.GoogleADK.Memory.Storage;
+using Hazina.LLMs.GoogleADK.Agents;
+
+// Create memory bank
+var memoryStorage = new InMemoryMemoryStorage();
+var memoryBank = new MemoryBank(memoryStorage);
+
+// Store memories
+await memoryBank.StoreMemoryAsync(
+    content: "User prefers dark mode",
+    type: MemoryType.Semantic,
+    importance: 0.8,
+    tags: new List<string> { "preferences" }
+);
+
+// Search memories
+var results = await memoryBank.SearchByTextAsync("dark mode", limit: 5);
+
+// Use with agent
+var agent = new MemoryEnabledAgent(
+    name: "SmartBot",
+    llmClient: llmClient,
+    sessionManager: sessionManager,
+    memoryBank: memoryBank
+);
+
+await agent.ExecuteWithMemoryAsync("What are my preferences?");
+```
+
+### Memory Consolidation
+
+Memories have a "strength" calculated from:
+- **Recency**: How recently accessed (exponential decay)
+- **Frequency**: How often accessed
+- **Importance**: User-defined importance score
+
+Weak memories are automatically consolidated (forgotten):
+
+```csharp
+// Remove memories with strength < 0.1
+var removed = await memoryBank.ConsolidateMemoriesAsync(strengthThreshold: 0.1);
+```
+
+## Enhanced Event System (Step 6)
+
+### Overview
+
+The enhanced event system adds streaming, filtering, and replay capabilities for real-time agent monitoring and debugging.
+
+### Key Components
+
+1. **StreamingEventBus**: Streaming event subscriptions with filters
+2. **ServerSentEventStream**: SSE (Server-Sent Events) for web clients
+3. **EventReplay**: Record and replay events for debugging
+
+### Features
+
+- **Event Streaming**: Subscribe to real-time event streams
+- **Event Filtering**: Filter events by type, agent, time, custom predicates
+- **SSE Support**: Stream events to web clients via Server-Sent Events
+- **Event History**: Record events for analysis and debugging
+- **Event Replay**: Replay historical events at configurable speed
+- **Bidirectional**: Both publish and consume events
+
+### Using Streaming Events
+
+#### Basic Streaming
+
+```csharp
+var eventBus = new StreamingEventBus();
+
+// Create streaming subscription
+eventBus.CreateStream<AgentEvent>(
+    subscriptionId: "all-events",
+    filter: null,
+    bufferSize: 100
+);
+
+// Consume events
+await foreach (var evt in eventBus.GetEventStream("all-events"))
+{
+    Console.WriteLine($"{evt.EventType}: {evt.AgentName}");
+}
+```
+
+#### Filtered Streams
+
+```csharp
+// Only successful completions
+eventBus.CreateStream<AgentCompletedEvent>(
+    subscriptionId: "success-only",
+    filter: evt => evt.Success == true
+);
+
+// Only errors
+eventBus.CreateStream<AgentErrorEvent>("errors-only");
+```
+
+#### Server-Sent Events (SSE)
+
+```csharp
+eventBus.CreateStream<AgentEvent>("sse-stream");
+var sseStream = new ServerSentEventStream(eventBus, "sse-stream");
+
+// Stream to HTTP response
+await sseStream.StreamToWriterAsync(httpResponse.Body);
+```
+
+#### Event Replay
+
+```csharp
+var eventReplay = new EventReplay(maxHistorySize: 1000);
+
+// Record events
+eventBus.Subscribe<AgentEvent>(evt => eventReplay.RecordEvent(evt));
+
+// Later... replay events
+await eventReplay.ReplayEventsAsync(
+    targetBus: newEventBus,
+    replaySpeed: TimeSpan.FromSeconds(0.1) // 10x speed
+);
+
+// Export to JSON
+var json = eventReplay.ExportToJson();
+```
+
+### Event Architecture
+
+```
+┌─────────────────────────────────────┐
+│      StreamingEventBus              │
+│  ┌───────────────────────────────┐  │
+│  │   Event Subscriptions         │  │
+│  │  - Filtered Streams           │  │
+│  │  - Buffering                  │  │
+│  │  - Multiple Consumers         │  │
+│  └───────────────────────────────┘  │
+└─────────────────────────────────────┘
+           │
+    ┌──────┴──────┐
+    │             │
+┌───▼────┐   ┌───▼────────┐
+│  SSE   │   │   Event    │
+│ Stream │   │   Replay   │
+└────────┘   └────────────┘
+```
+
+### Examples
+
+See `Examples/MemoryAndEventsExamples.cs` for:
+1. Basic memory usage
+2. Memory-enabled agents
+3. Streaming events
+4. Event filtering
+5. Server-Sent Events
+6. Event replay
+7. Memory consolidation
+
 ## Dependencies
 
 - **Hazina.LLMs.Client**: ILLMClient interface
@@ -862,8 +1046,8 @@ Implementation progress (Steps 1-10 from the Google ADK plan):
 - [x] **Step 2: Workflow Agents** - SequentialAgent, ParallelAgent, LoopAgent, WorkflowEngine, JSON configuration ✅
 - [x] **Step 3: Enhanced Tool System with MCP Support** - Model Context Protocol integration, tool registry, validation ✅
 - [x] **Step 4: Session Management** - Session persistence, lifecycle, recovery, storage providers ✅
-- [ ] **Step 5: Memory Bank** - Long-term cross-session memory
-- [ ] **Step 6: Enhanced Event System** - Bidirectional streaming
+- [x] **Step 5: Memory Bank** - Long-term cross-session memory with embeddings and consolidation ✅
+- [x] **Step 6: Enhanced Event System** - Bidirectional streaming, SSE, event replay ✅
 - [ ] **Step 7: Agent2Agent (A2A) Protocol** - Inter-agent communication
 - [ ] **Step 8: Evaluation Framework** - Agent performance testing
 - [ ] **Step 9: Artifact Management** - File and binary handling
