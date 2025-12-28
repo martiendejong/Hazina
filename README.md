@@ -9,7 +9,9 @@ Hazina is a collection of agents, tooling, services, demos, and apps for LLM-pow
 
 ## Solution Organization
 
-The solution is organized into logical categories to improve navigation and maintainability:
+The solution is organized into logical categories to improve navigation and maintainability.
+
+**Architecture Diagram**: See [solution-architecture.drawio](solution-architecture.drawio) for a visual representation of how the categories relate to each other.
 
 ### 1. Agents
 Core agent orchestration, factory patterns, and content generation engines.
