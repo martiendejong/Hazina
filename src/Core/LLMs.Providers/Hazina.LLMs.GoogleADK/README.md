@@ -278,6 +278,219 @@ var snapshot = agent.GetStateSnapshot();
 agent.Context.State.RestoreSnapshot(snapshot);
 ```
 
+### Workflow Agents
+
+Workflow agents execute deterministic control flows without LLM reasoning.
+
+#### SequentialAgent
+
+Execute steps in order, one after another:
+
+```csharp
+using Hazina.LLMs.GoogleADK.Workflows;
+
+var runtime = new AgentRuntime();
+
+// Register sub-agents
+runtime.RegisterAgent(new LlmAgent("analyzer", llmClient));
+runtime.RegisterAgent(new LlmAgent("summarizer", llmClient));
+
+// Create sequential workflow
+var workflow = new SequentialAgent("DataPipeline", runtime)
+    .AddStep("Analyze", "analyzer", "Analyze this data: {lastResult}")
+    .AddStep("Summarize", "summarizer", "Summarize: {lastResult}")
+    .StopOnError(true);
+
+await workflow.InitializeAsync();
+var result = await workflow.ExecuteAsync("Raw data input");
+```
+
+#### ParallelAgent
+
+Execute steps concurrently:
+
+```csharp
+var workflow = new ParallelAgent("MultiAnalysis", runtime)
+    .AddStep("SentimentAnalysis", "sentiment-agent", "Analyze sentiment")
+    .AddStep("KeywordExtraction", "keyword-agent", "Extract keywords")
+    .AddStep("Classification", "classifier-agent", "Classify content")
+    .WithMaxDegreeOfParallelism(3)
+    .WaitForAll(true);
+
+await workflow.InitializeAsync();
+var result = await workflow.ExecuteAsync("Analyze this text...");
+
+// Access individual step results
+var workflowResult = result.Metadata["workflowResult"] as WorkflowResult;
+foreach (var stepResult in workflowResult.StepResults)
+{
+    Console.WriteLine($"{stepResult.Key}: {stepResult.Value.Output}");
+}
+```
+
+#### LoopAgent
+
+Repeat steps with conditions:
+
+```csharp
+var workflow = new LoopAgent("IterativeRefinement", runtime)
+    .AddStep("Process", "processor-agent", "Process iteration {data.iteration}")
+    .WithMaxIterations(5)
+    .WithContinueCondition(ctx =>
+    {
+        var lastResult = ctx.GetLastResult();
+        return lastResult?.Output?.Contains("continue") == true;
+    })
+    .WithBreakOnError(false)
+    .CollectResults(true);
+
+await workflow.InitializeAsync();
+var result = await workflow.ExecuteAsync("Initial input");
+
+// Access all iteration results
+var allResults = result.Metadata["allIterationResults"] as List<Dictionary<string, AgentResult>>;
+```
+
+#### WorkflowEngine with Builders
+
+Use the fluent workflow engine for easier composition:
+
+```csharp
+var runtime = new AgentRuntime();
+var engine = new WorkflowEngine(runtime);
+
+// Sequential workflow
+var sequential = engine.Sequential("Pipeline")
+    .AddStep("step1", "agent-1", "Process {lastResult}")
+    .AddStep("step2", "agent-2", "{lastResult}")
+    .StopOnError(true)
+    .Build();
+
+runtime.RegisterAgent(sequential);
+
+// Parallel workflow
+var parallel = engine.Parallel("Concurrent")
+    .AddStep("task1", "agent-a", "Task A")
+    .AddStep("task2", "agent-b", "Task B")
+    .WithMaxDegreeOfParallelism(2)
+    .Build();
+
+runtime.RegisterAgent(parallel);
+
+// Loop workflow
+var loop = engine.Loop("Retry")
+    .AddStep("attempt", "retry-agent", "Attempt {data.iteration}")
+    .WithMaxIterations(3)
+    .WithBreakOnError(false)
+    .Build();
+
+runtime.RegisterAgent(loop);
+
+// Execute workflows
+var result1 = await engine.ExecuteWorkflowAsync(sequential, "input");
+var result2 = await engine.ExecuteWorkflowAsync(parallel, "input");
+var result3 = await engine.ExecuteWorkflowAsync(loop, "input");
+```
+
+#### Workflow with Custom Actions
+
+Use custom lambda actions instead of agents:
+
+```csharp
+var workflow = new SequentialAgent("CustomWorkflow", runtime)
+    .AddStep("Validate", async ctx =>
+    {
+        var input = ctx.Get<string>("initialInput");
+        var isValid = !string.IsNullOrEmpty(input);
+        return isValid
+            ? AgentResult.CreateSuccess("Valid")
+            : AgentResult.CreateFailure("Invalid input");
+    })
+    .AddStep("Transform", async ctx =>
+    {
+        var lastResult = ctx.GetLastResult();
+        var transformed = lastResult?.Output.ToUpper() ?? "";
+        return AgentResult.CreateSuccess(transformed);
+    });
+
+await workflow.InitializeAsync();
+var result = await workflow.ExecuteAsync("test");
+```
+
+#### Workflow Configuration from JSON
+
+Define workflows in JSON and load them:
+
+```json
+{
+  "name": "DataProcessingWorkflow",
+  "type": "Sequential",
+  "settings": {
+    "stopOnError": true
+  },
+  "steps": [
+    {
+      "name": "ExtractData",
+      "agentId": "extractor-agent",
+      "input": "Extract from source",
+      "continueOnError": false
+    },
+    {
+      "name": "TransformData",
+      "agentId": "transformer-agent",
+      "input": "{lastResult}",
+      "continueOnError": false
+    },
+    {
+      "name": "LoadData",
+      "agentId": "loader-agent",
+      "input": "{lastResult}",
+      "continueOnError": true
+    }
+  ]
+}
+```
+
+Load and execute:
+
+```csharp
+var config = WorkflowConfiguration.LoadFromFile("workflow.json");
+var factory = new WorkflowFactory(runtime);
+var workflow = factory.CreateFromConfiguration(config);
+
+runtime.RegisterAgent(workflow);
+var result = await workflow.ExecuteAsync("start");
+```
+
+#### Conditional Steps
+
+Add steps that only execute based on conditions:
+
+```csharp
+var workflow = new SequentialAgent("ConditionalWorkflow", runtime)
+    .AddConditionalStep(
+        "OptionalStep",
+        ctx => ctx.Iteration > 2,  // Only execute after 3rd iteration
+        "agent-id",
+        "Conditional input"
+    );
+```
+
+#### Template Variables in Workflow Inputs
+
+Workflows support template variables in step inputs:
+
+- `{lastResult}` - Output from the previous step
+- `{stepId.output}` - Output from a specific step by ID
+- `{data.key}` - Value from workflow context data
+
+```csharp
+var workflow = new SequentialAgent("TemplateWorkflow", runtime)
+    .AddStep("Step1", "agent-1", "Process this")
+    .AddStep("Step2", "agent-2", "Use result: {lastResult}")
+    .AddStep("Step3", "agent-3", "Combine: {Step1.output} and {Step2.output}");
+```
+
 ## Architecture
 
 ### Class Hierarchy
@@ -285,6 +498,10 @@ agent.Context.State.RestoreSnapshot(snapshot);
 ```
 BaseAgent (abstract)
 ├── LlmAgent
+├── WorkflowAgent (abstract)
+│   ├── SequentialAgent
+│   ├── ParallelAgent
+│   └── LoopAgent
 └── [Custom agents extend BaseAgent]
 ```
 
@@ -353,17 +570,18 @@ BaseAgent (abstract)
 
 ## Roadmap
 
-Future implementations (Steps 2-10 from the Google ADK plan):
+Implementation progress (Steps 1-10 from the Google ADK plan):
 
-- [ ] Workflow Agents (SequentialAgent, ParallelAgent, LoopAgent)
-- [ ] Model Context Protocol (MCP) support
-- [ ] Session Management with persistence
-- [ ] Memory Bank for long-term memory
-- [ ] Enhanced Event System with streaming
-- [ ] Agent2Agent (A2A) Protocol
-- [ ] Evaluation Framework
-- [ ] Artifact Management
-- [ ] Developer UI (ASP.NET Core MVC + React)
+- [x] **Step 1: Core ADK Agent Architecture** - BaseAgent, LlmAgent, AgentContext, AgentState, EventBus, AgentRuntime ✅
+- [x] **Step 2: Workflow Agents** - SequentialAgent, ParallelAgent, LoopAgent, WorkflowEngine, JSON configuration ✅
+- [ ] **Step 3: Enhanced Tool System with MCP Support** - Model Context Protocol integration
+- [ ] **Step 4: Session Management** - Session persistence and lifecycle
+- [ ] **Step 5: Memory Bank** - Long-term cross-session memory
+- [ ] **Step 6: Enhanced Event System** - Bidirectional streaming
+- [ ] **Step 7: Agent2Agent (A2A) Protocol** - Inter-agent communication
+- [ ] **Step 8: Evaluation Framework** - Agent performance testing
+- [ ] **Step 9: Artifact Management** - File and binary handling
+- [ ] **Step 10: Developer UI** - ASP.NET Core MVC + React debugging interface
 
 ## License
 

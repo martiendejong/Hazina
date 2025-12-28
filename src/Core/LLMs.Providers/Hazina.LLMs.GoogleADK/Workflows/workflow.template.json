@@ -1,0 +1,23 @@
+{
+  "name": "ExampleWorkflow",
+  "type": "Sequential",
+  "settings": {
+    "stopOnError": true
+  },
+  "steps": [
+    {
+      "name": "Step1",
+      "agentId": "agent-1",
+      "input": "Initial input",
+      "continueOnError": false,
+      "metadata": {}
+    },
+    {
+      "name": "Step2",
+      "agentId": "agent-2",
+      "input": "{lastResult}",
+      "continueOnError": false,
+      "metadata": {}
+    }
+  ]
+}
