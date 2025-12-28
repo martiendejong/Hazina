@@ -27,6 +27,9 @@ namespace Hazina.Tools.Services.Embeddings
         {
             _logger.LogInformation("Embeddings Background Service started");
 
+            // Yield control back to the host to allow startup to complete
+            await Task.Yield();
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
