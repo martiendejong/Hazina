@@ -493,6 +493,621 @@ Console.WriteLine($"Total cost: ${sessionUsage.TotalCost:F4}");
 Console.WriteLine($"Model: {sessionUsage.ModelName}");
 ```
 
+## Document Processing Pipeline: Complete Technical Overview
+
+This section explains in detail how documents are processed, chunked, embedded, and searched in Hazina.
+
+### Overview of the Pipeline
+
+When you store a document, Hazina performs the following steps:
+1. **Document Storage** - Store the original content
+2. **Text Extraction** - Extract/generate text from binary files (images, PDFs)
+3. **Metadata Creation** - Create searchable metadata
+4. **Document Splitting** - Split large documents into token-sized chunks
+5. **Embedding Generation** - Generate vector embeddings for each chunk
+6. **Chunk Indexing** - Index chunks for parent document tracking
+7. **Relevancy Search** - Use cosine similarity to find relevant chunks
+
+### 1. Document Splitting (Chunking)
+
+**Purpose**: Large documents must be split into smaller chunks that fit within LLM context windows.
+
+**Implementation** (DocumentSplitter.cs:77):
+```csharp
+public class DocumentSplitter
+{
+    public int TokensPerPart { get; set; } = 1000;  // Default chunk size
+
+    public List<string> SplitDocument(string content, string split = "\n")
+    {
+        var tokenCounter = new TokenCounter();  // Uses SharpToken with cl100k_base encoding
+        var remainingLines = content.Split(split).ToList();
+        var result = new List<string>();
+
+        while (remainingLines.Count > 0)
+        {
+            var partLines = new List<string>();
+            bool partComplete = false;
+
+            // Keep adding lines until we reach TokensPerPart (1000 tokens)
+            while (!partComplete && remainingLines.Count > 0)
+            {
+                partLines.Add(remainingLines[0]);
+                remainingLines.RemoveAt(0);
+
+                var partTokens = tokenCounter.CountTokens(string.Join(split, partLines));
+                partComplete = partTokens >= TokensPerPart;
+            }
+
+            result.Add(string.Join(split, partLines));
+        }
+
+        return result;
+    }
+}
+```
+
+**How it works**:
+- Documents are split by newlines (`\n`) by default
+- Each chunk contains approximately **1000 tokens**
+- Token counting uses the **cl100k_base** encoding (GPT-4/GPT-3.5 tokenizer)
+- Lines are added until the token limit is reached
+- This preserves line boundaries for better semantic coherence
+
+**Example**:
+```
+Input: 3500-token document with 200 lines
+Output:
+  - Chunk 0: Lines 1-57 (≈1000 tokens)
+  - Chunk 1: Lines 58-114 (≈1000 tokens)
+  - Chunk 2: Lines 115-171 (≈1000 tokens)
+  - Chunk 3: Lines 172-200 (≈500 tokens)
+```
+
+### 2. Binary Document Processing
+
+**Purpose**: Extract searchable text from images, PDFs, and other binary files.
+
+**Implementation** (BinaryDocumentProcessor.cs:8):
+
+#### Image Processing
+```csharp
+private async Task<string> GenerateImageSummary(byte[] content, string mimeType)
+{
+    // Uses LLM vision capabilities to analyze the image
+    var messages = new List<HazinaChatMessage>
+    {
+        new HazinaChatMessage(
+            HazinaMessageRole.User,
+            "Describe this image in detail. Include any text visible in the image, " +
+            "the main subjects, colors, composition, and any other relevant details."
+        )
+    };
+
+    var imageData = new ImageData
+    {
+        MimeType = mimeType,
+        BinaryData = new BinaryData(content)
+    };
+
+    var response = await _llmClient.GetResponse(
+        messages,
+        HazinaChatResponseFormat.Text,
+        null,
+        new List<ImageData> { imageData },
+        CancellationToken.None
+    );
+
+    return response.Result;  // Returns detailed description
+}
+```
+
+**What happens**:
+- **Images** (PNG, JPEG, GIF, etc.) → Sent to LLM vision API
+- LLM generates detailed description including:
+  - Visible text in the image
+  - Main subjects and objects
+  - Colors and composition
+  - Any other relevant visual details
+- The description becomes searchable text
+
+**Example**:
+```
+Input: screenshot.png (chart showing Q4 sales data)
+Output: "This image shows a bar chart titled 'Q4 Sales Performance'.
+         The chart displays sales data across four quarters with blue bars.
+         The y-axis shows values from $0 to $500K. Text at the top reads
+         'Annual Revenue Target: $1.5M'. The chart indicates Q4 reached
+         approximately $450K in sales."
+```
+
+#### PDF Processing
+```csharp
+private async Task<string> GeneratePdfSummary(byte[] content)
+{
+    var summary = new StringBuilder();
+    summary.AppendLine("PDF Document");
+    summary.AppendLine($"Size: {content.Length} bytes");
+
+    // Detect PDF version from header
+    if (content.Length > 8)
+    {
+        var header = Encoding.ASCII.GetString(content, 0, Math.Min(8, content.Length));
+        if (header.StartsWith("%PDF-"))
+        {
+            summary.AppendLine($"PDF Version: {header}");
+        }
+    }
+
+    // Note: Full text extraction requires additional libraries
+    summary.AppendLine("Note: Full text extraction not yet implemented.");
+
+    return summary.ToString();
+}
+```
+
+**Current limitations**:
+- PDFs currently generate basic metadata (size, version)
+- Future enhancement: Use PDF libraries for full text extraction
+
+#### Other Binary Files
+```csharp
+private string GenerateBasicBinaryInfo(byte[] content, string mimeType)
+{
+    return $@"Binary file: {mimeType}
+Size: {content.Length} bytes
+File signature: {BitConverter.ToString(content, 0, Math.Min(4, content.Length))}";
+}
+```
+
+### 3. Metadata Generation and Embedding
+
+**Purpose**: Make document metadata searchable alongside content.
+
+**Implementation** (DocumentStore.cs:77-123):
+
+When storing a document, metadata is created and embedded as a **separate searchable chunk**:
+
+```csharp
+public async Task<bool> Store(string name, string content,
+    Dictionary<string, string>? metadata = null, bool split = true)
+{
+    // 1. Create metadata
+    var docMetadata = new DocumentMetadata
+    {
+        Id = name,
+        OriginalPath = "",
+        MimeType = "text/plain",
+        Size = content.Length,
+        Created = DateTime.UtcNow,
+        CustomMetadata = metadata ?? new Dictionary<string, string>(),
+        IsBinary = false,
+        Summary = null
+    };
+    await MetadataStore.Store(name, docMetadata);
+
+    var chunkKeys = new List<string>();
+
+    // 2. Store metadata as a searchable chunk
+    var metadataKey = $"{name}.metadata";
+    var metadataChunk = docMetadata.ToChunkText();  // Converts to searchable text
+    await EmbeddingStore.StoreEmbedding(metadataKey, metadataChunk);
+    await TextStore.Store(metadataKey, metadataChunk);
+    chunkKeys.Add(metadataKey);
+
+    // 3. Split and store content chunks
+    var chunks = split ? DocumentSplitter.SplitDocument(content) : [...];
+
+    if (chunks.Count == 1)
+    {
+        // Small document - no splitting needed
+        await EmbeddingStore.StoreEmbedding(name, content);
+        await TextStore.Store(name, content);
+        chunkKeys.Add(name);
+    }
+    else
+    {
+        // Large document - store each chunk
+        for (var i = 0; i < chunks.Count; ++i)
+        {
+            var chunkKey = $"{name} chunk {i}";
+            await EmbeddingStore.StoreEmbedding(chunkKey, chunks[i]);
+            await TextStore.Store(chunkKey, chunks[i]);
+            chunkKeys.Add(chunkKey);
+        }
+    }
+
+    // 4. Store chunk index for parent tracking
+    await ChunkStore.Store(name, chunkKeys);
+    return true;
+}
+```
+
+**Metadata chunk example**:
+```
+Document ID: projects/auth/login.cs
+Original Path: C:\code\auth\login.cs
+MIME Type: text/x-csharp
+Size: 3842 bytes
+Created: 2024-01-15 14:32:10 UTC
+Is Binary: False
+Custom Metadata:
+  Author: John Doe
+  Project: Authentication
+  LastModified: 2024-01-15
+```
+
+This metadata chunk gets its own embedding, making it searchable!
+
+### 4. For Binary Documents (Images, PDFs)
+
+**Complete flow** (DocumentStore.cs:126-180):
+
+```csharp
+public async Task<bool> Store(string name, byte[] content, string mimeType,
+    Dictionary<string, string>? metadata = null)
+{
+    // 1. Extract text and generate summary
+    var textContent = await BinaryProcessor.ExtractText(content, mimeType);
+    var summary = BinaryProcessor.IsBinary(mimeType)
+        ? await BinaryProcessor.GenerateSummary(content, mimeType)
+        : null;
+
+    // 2. Create metadata with summary
+    var docMetadata = new DocumentMetadata
+    {
+        Id = name,
+        MimeType = mimeType,
+        Size = content.Length,
+        IsBinary = BinaryProcessor.IsBinary(mimeType),
+        Summary = summary,  // AI-generated summary for images
+        CustomMetadata = metadata ?? new Dictionary<string, string>()
+    };
+
+    // 3. Store metadata as searchable chunk
+    var metadataKey = $"{name}.metadata";
+    var metadataChunk = docMetadata.ToChunkText();  // Includes summary!
+    await EmbeddingStore.StoreEmbedding(metadataKey, metadataChunk);
+
+    // 4. Combine summary + extracted text for content
+    var contentToStore = string.IsNullOrEmpty(summary)
+        ? textContent
+        : $"{summary}\n\nExtracted content:\n{textContent}";
+
+    // 5. Split and embed the combined content
+    var chunks = DocumentSplitter.SplitDocument(contentToStore);
+    for (var i = 0; i < chunks.Count; ++i)
+    {
+        var chunkKey = $"{name} chunk {i}";
+        await EmbeddingStore.StoreEmbedding(chunkKey, chunks[i]);
+        await TextStore.Store(chunkKey, chunks[i]);
+        chunkKeys.Add(chunkKey);
+    }
+
+    return true;
+}
+```
+
+**Example: Storing an image**:
+```
+Input: chart.png (600KB bar chart)
+
+Step 1 - Vision API generates summary:
+  "Bar chart showing Q4 sales. Values range $0-$500K.
+   Q4 reached $450K. Title: 'Annual Revenue Target: $1.5M'"
+
+Step 2 - Metadata chunk created:
+  Document ID: reports/chart.png
+  MIME Type: image/png
+  Size: 614400 bytes
+  Summary: [the vision description above]
+
+Step 3 - Both metadata and summary are embedded and searchable
+
+Step 4 - User searches "Q4 sales performance"
+  → Finds chunk: "reports/chart.png.metadata"
+  → Returns the chart because metadata mentions "Q4 sales"
+```
+
+### 5. Embedding Generation
+
+**Purpose**: Convert text into high-dimensional vectors for semantic search.
+
+**How embeddings are created**:
+```csharp
+public async Task<bool> StoreEmbedding(string key, string text)
+{
+    // 1. Generate embedding vector from LLM
+    var embedding = await _llmClient.GenerateEmbedding(text);
+
+    // 2. Create embedding info with checksum
+    var checksum = CalculateChecksum(text);
+    var embeddingInfo = new EmbeddingInfo(key, checksum, embedding);
+
+    // 3. Store to file/database
+    await AddEmbedding(embeddingInfo);
+
+    return true;
+}
+```
+
+**Embedding structure** (Embedding.cs:5):
+```csharp
+public class Embedding : List<double>
+{
+    // Typical size: 1536 dimensions for OpenAI ada-002
+    // Example: [0.0234, -0.0123, 0.0456, ..., 0.0189]
+
+    public double CosineSimilarity(Embedding compareTo)
+    {
+        // Calculate similarity: dot product / (magnitude1 * magnitude2)
+        return Vector.DotProduct(compareTo.Vector) /
+               (Vector.L2Norm() * compareTo.Vector.L2Norm());
+    }
+}
+
+public class EmbeddingInfo
+{
+    public string Key { get; set; }         // e.g., "doc.txt chunk 0"
+    public string Checksum { get; set; }    // Detect content changes
+    public Embedding Data { get; set; }     // 1536-dim vector
+}
+```
+
+**Storage format** (EmbeddingFileStore.cs:47-91):
+Embeddings are stored as JSON:
+```json
+[
+  {
+    "Key": "login.cs chunk 0",
+    "Checksum": "a3f2c1d4...",
+    "Data": [0.0234, -0.0123, 0.0456, ..., 0.0189]
+  },
+  {
+    "Key": "login.cs chunk 1",
+    "Checksum": "b5e8f2a1...",
+    "Data": [0.0145, -0.0267, 0.0389, ..., 0.0234]
+  },
+  {
+    "Key": "login.cs.metadata",
+    "Checksum": "c7d9a3f2...",
+    "Data": [0.0189, -0.0145, 0.0278, ..., 0.0167]
+  }
+]
+```
+
+### 6. Chunk Tracking
+
+**Purpose**: Map chunks back to their parent documents.
+
+**ChunkStore maintains the index** (ChunkFileStore):
+```json
+{
+  "login.cs": [
+    "login.cs.metadata",
+    "login.cs chunk 0",
+    "login.cs chunk 1",
+    "login.cs chunk 2"
+  ],
+  "chart.png": [
+    "chart.png.metadata",
+    "chart.png chunk 0"
+  ]
+}
+```
+
+This allows:
+- Finding all chunks for a document
+- Finding the parent document for any chunk
+- Deleting all chunks when removing a document
+
+### 7. Relevancy Search (The Complete Picture)
+
+**Implementation** (DocumentStore.cs:311-367):
+
+```csharp
+public async Task<List<RelevantEmbedding>> Embeddings(string query)
+{
+    // 1. Truncate query to fit token limits
+    var cutOffQuery = EmbeddingMatcher.CutOffQuery(query);  // Max 8000 tokens
+
+    // 2. Generate embedding for the search query
+    var queryEmbedding = await _llmClient.GenerateEmbedding(cutOffQuery);
+
+    // 3. Calculate cosine similarity with ALL stored embeddings
+    var similarities = EmbeddingMatcher.GetEmbeddingsWithSimilarity(
+        queryEmbedding,
+        EmbeddingStore.Embeddings
+    );
+    // Returns: [(0.89, "login.cs chunk 0"), (0.82, "chart.png.metadata"), ...]
+
+    // 4. Convert to RelevantEmbedding objects
+    var results = new List<RelevantEmbedding>();
+    foreach (var (similarity, embeddingInfo) in similarities)
+    {
+        var chunkKey = embeddingInfo.Key;
+
+        // Find parent document for this chunk
+        var parentKey = await ChunkStore.GetParentDocument(chunkKey);
+
+        results.Add(new RelevantEmbedding
+        {
+            Similarity = similarity,              // 0.82
+            StoreName = Name,
+            Document = embeddingInfo,             // The chunk
+            ParentDocumentKey = parentKey,        // "chart.png"
+            GetText = async (key) => await TextStore.Get(key)
+        });
+    }
+
+    return results.OrderByDescending(r => r.Similarity).ToList();
+}
+```
+
+**Cosine Similarity Calculation** (Embedding.cs:16-24):
+```csharp
+public double CosineSimilarity(Embedding compareTo)
+{
+    // Formula: similarity = (A · B) / (||A|| × ||B||)
+    // Where:
+    //   A · B = dot product (sum of element-wise multiplication)
+    //   ||A|| = L2 norm (magnitude/length of vector)
+
+    var dotProduct = Vector.DotProduct(compareTo.Vector);
+    var magnitudeProduct = Vector.L2Norm() * compareTo.Vector.L2Norm();
+
+    return dotProduct / magnitudeProduct;
+    // Returns value between -1 and 1
+    //   1.0 = identical semantic meaning
+    //   0.8+ = very similar
+    //   0.5-0.8 = somewhat related
+    //   <0.5 = not very related
+}
+```
+
+**Token-limited result selection** (EmbeddingMatcher.cs:31-63):
+```csharp
+public async Task<List<string>> TakeTop(List<RelevantEmbedding> total, int maxTokens = 8000)
+{
+    var selectedDocuments = new List<string>();
+    int currentTokenCount = 0;
+
+    // Results are already sorted by similarity (highest first)
+    foreach (var document in total)
+    {
+        // Get the actual text for this chunk
+        var text = await document.GetText(document.Document.Key);
+
+        // Format for LLM context
+        var documentView = $@"Store: {document.StoreName}
+File path: {document.Document.Key}
+File content:
+{text}";
+
+        // Count tokens
+        int documentTokenCount = TokenCounter.CountTokens(documentView);
+
+        // Add if it fits within limit
+        if (currentTokenCount + documentTokenCount <= maxTokens)
+        {
+            selectedDocuments.Add(documentView);
+            currentTokenCount += documentTokenCount;
+        }
+        else
+        {
+            break;  // Stop when we exceed token limit
+        }
+    }
+
+    return selectedDocuments;
+}
+```
+
+### Complete Example: End-to-End Flow
+
+**Scenario**: Store and search a codebase with an image
+
+```csharp
+// 1. STORE TEXT DOCUMENT
+await documentStore.Store(
+    "auth/login.cs",
+    "public class LoginController { /* 3000 tokens of code */ }",
+    metadata: new Dictionary<string, string> {
+        { "Author", "John" },
+        { "Project", "Auth" }
+    }
+);
+
+// Behind the scenes:
+// ✓ Creates metadata chunk: "auth/login.cs.metadata"
+// ✓ Splits into: "auth/login.cs chunk 0", "chunk 1", "chunk 2"
+// ✓ Generates embeddings for all 4 chunks (1 metadata + 3 content)
+// ✓ Stores in ChunkStore: auth/login.cs → [metadata, chunk 0, 1, 2]
+
+// 2. STORE IMAGE
+await documentStore.Store(
+    "diagrams/architecture.png",
+    imageBytes,
+    "image/png"
+);
+
+// Behind the scenes:
+// ✓ Sends to vision API → "Diagram showing microservices architecture
+//                         with API Gateway, Auth Service, User Service..."
+// ✓ Creates metadata with summary
+// ✓ Embeds metadata chunk: "diagrams/architecture.png.metadata"
+// ✓ Embeds content chunk: "diagrams/architecture.png chunk 0"
+
+// 3. UPDATE EMBEDDINGS
+await documentStore.UpdateEmbeddings();
+
+// 4. SEARCH
+var results = await documentStore.Embeddings("user authentication flow");
+
+// Behind the scenes:
+// ✓ Generates embedding for "user authentication flow"
+// ✓ Calculates cosine similarity with ALL embeddings:
+//     - auth/login.cs.metadata: 0.87 (high - mentions "Auth")
+//     - auth/login.cs chunk 0: 0.92 (very high - login code)
+//     - auth/login.cs chunk 1: 0.78
+//     - diagrams/architecture.png.metadata: 0.84 (mentions "Auth Service")
+//     - diagrams/architecture.png chunk 0: 0.81
+// ✓ Sorts by similarity (descending)
+// ✓ Selects top results within 8000 token limit
+
+// Results returned:
+// [
+//   { Similarity: 0.92, Document: "auth/login.cs chunk 0", Parent: "auth/login.cs" },
+//   { Similarity: 0.87, Document: "auth/login.cs.metadata", Parent: "auth/login.cs" },
+//   { Similarity: 0.84, Document: "diagrams/architecture.png.metadata", Parent: "diagrams/architecture.png" },
+//   { Similarity: 0.81, Document: "diagrams/architecture.png chunk 0", Parent: "diagrams/architecture.png" },
+//   ...
+// ]
+
+// 5. USE IN QUERY
+foreach (var result in results.Take(3))
+{
+    var text = await result.GetText(result.Document.Key);
+    Console.WriteLine($"[{result.Similarity:F2}] {result.ParentDocumentKey}");
+    Console.WriteLine(text.Substring(0, 200));
+}
+```
+
+**Output**:
+```
+[0.92] auth/login.cs
+public class LoginController {
+    public async Task<IActionResult> Login(string username, string password) {
+        var user = await _authService.AuthenticateAsync(username, password);
+        ...
+
+[0.87] auth/login.cs
+Document ID: auth/login.cs
+Original Path: C:\code\auth\login.cs
+MIME Type: text/x-csharp
+Custom Metadata:
+  Author: John
+  Project: Auth
+
+[0.84] diagrams/architecture.png
+Document ID: diagrams/architecture.png
+MIME Type: image/png
+Summary: Diagram showing microservices architecture with API Gateway, Auth Service, User Service connected via REST APIs...
+```
+
+### Key Takeaways
+
+1. **Documents are split** into ~1000 token chunks for embedding
+2. **Metadata is embedded separately** as its own searchable chunk
+3. **Binary files (images)** use vision APIs to generate searchable descriptions
+4. **Each chunk gets a vector embedding** (typically 1536 dimensions)
+5. **Search uses cosine similarity** to find semantically similar chunks
+6. **Results are token-limited** to fit in LLM context (default 8000 tokens)
+7. **Parent tracking** allows finding the source document for any chunk
+8. **Everything is searchable**: code, metadata, image descriptions, PDFs
+
+This architecture enables semantic search across mixed content types while maintaining the relationship between chunks and their source documents.
+
 ## Solution Organization
 
 The solution is organized into logical categories to improve navigation and maintainability.
