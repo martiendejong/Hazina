@@ -560,6 +560,128 @@ BaseAgent (abstract)
 | `Error` | Error occurred |
 | `Cancelled` | Execution cancelled |
 
+## Tool System & MCP Support
+
+### Overview
+
+The Google ADK implementation includes a comprehensive tool system with support for the **Model Context Protocol (MCP)**, enabling agents to discover and use tools from external MCP servers.
+
+### Key Components
+
+1. **ToolRegistry**: Centralized tool discovery and management
+2. **MCP Client**: Connect to MCP servers (stdio, HTTP)
+3. **MCP Server**: Expose Hazina tools via MCP protocol
+4. **Tool Validation**: Schema validation and type checking
+5. **Tool Adapters**: Seamless conversion between MCP and Hazina tools
+
+### MCP Protocol
+
+The Model Context Protocol enables:
+- **Tool Discovery**: Automatic discovery of tools from MCP servers
+- **Tool Execution**: Invoke tools on remote servers
+- **Resource Access**: Read resources exposed by servers
+- **Prompt Templates**: Use server-provided prompts
+
+### Using MCP Tools
+
+#### Connect to an MCP Server (stdio)
+
+```csharp
+using Hazina.LLMs.GoogleADK.Agents;
+using Hazina.LLMs.GoogleADK.Tools.Registry;
+
+var toolRegistry = new ToolRegistry();
+var agent = new McpAgent("Assistant", llmClient, toolRegistry);
+
+// Connect to a Node.js MCP server
+await agent.ConnectToStdioServerAsync(
+    serverCommand: "node",
+    serverArgs: new[] { "mcp-server.js" },
+    providerName: "FileSystemTools"
+);
+
+await agent.InitializeAsync();
+var result = await agent.ExecuteAsync("List files in current directory");
+```
+
+#### Connect to an HTTP MCP Server
+
+```csharp
+await agent.ConnectToHttpServerAsync(
+    serverUrl: "http://localhost:3000",
+    providerName: "WebAPITools"
+);
+```
+
+#### Use ToolEnabledAgent with Manual Tools
+
+```csharp
+var toolRegistry = new ToolRegistry();
+var agent = new ToolEnabledAgent("Assistant", llmClient, toolRegistry);
+
+// Add custom tool
+var calculatorTool = new HazinaChatTool(
+    name: "calculator",
+    description: "Performs arithmetic",
+    parameters: new List<ChatToolParameter>
+    {
+        new ChatToolParameter
+        {
+            Name = "operation",
+            Type = "string",
+            IsRequired = true
+        }
+    },
+    execute: async (messages, call, ct) => "42"
+);
+
+agent.AddTool(calculatorTool);
+await agent.InitializeAsync();
+```
+
+### Tool Registry Features
+
+- **Tool Discovery**: Auto-discover tools from multiple providers
+- **Tool Search**: Find tools by name, description, or tags
+- **Category Filtering**: Group and filter tools by category
+- **Validation**: Automatic validation of tool definitions and arguments
+- **Schema Management**: JSON Schema generation and validation
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│              McpAgent / ToolEnabledAgent        │
+│  ┌───────────────────────────────────────────┐  │
+│  │          Tool Registry                    │  │
+│  │  - Tool Discovery                         │  │
+│  │  - Tool Validation                        │  │
+│  │  - Schema Management                      │  │
+│  └───────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────┘
+                    │
+        ┌───────────┴───────────┐
+        │                       │
+┌───────▼──────┐      ┌────────▼────────┐
+│  MCP Client  │      │  Manual Tools   │
+│  (stdio/HTTP)│      │  (HazinaChatTool)│
+└──────────────┘      └─────────────────┘
+        │
+┌───────▼──────────┐
+│   MCP Server     │
+│ (Node/Python/etc)│
+└──────────────────┘
+```
+
+### Examples
+
+See `Examples/McpToolsExample.cs` for comprehensive examples including:
+1. Stdio MCP agent
+2. HTTP MCP agent
+3. Custom MCP client integration
+4. Manual tool registration
+5. Multi-server agent setup
+
 ## Dependencies
 
 - **Hazina.LLMs.Client**: ILLMClient interface
@@ -574,7 +696,7 @@ Implementation progress (Steps 1-10 from the Google ADK plan):
 
 - [x] **Step 1: Core ADK Agent Architecture** - BaseAgent, LlmAgent, AgentContext, AgentState, EventBus, AgentRuntime ✅
 - [x] **Step 2: Workflow Agents** - SequentialAgent, ParallelAgent, LoopAgent, WorkflowEngine, JSON configuration ✅
-- [ ] **Step 3: Enhanced Tool System with MCP Support** - Model Context Protocol integration
+- [x] **Step 3: Enhanced Tool System with MCP Support** - Model Context Protocol integration, tool registry, validation ✅
 - [ ] **Step 4: Session Management** - Session persistence and lifecycle
 - [ ] **Step 5: Memory Bank** - Long-term cross-session memory
 - [ ] **Step 6: Enhanced Event System** - Bidirectional streaming
