@@ -226,6 +226,273 @@ var docs = await store.List(recursive: true);
 Console.WriteLine($"\nTotal documents: {docs.Count}");
 ```
 
+## Using AgentFactory and AgentManager
+
+The AgentFactory and AgentManager provide high-level orchestration for creating and managing AI agents with tool capabilities.
+
+### 1. Setting Up AgentManager
+
+```csharp
+// Initialize AgentManager with configuration files
+var agentManager = new AgentManager(
+    storesJsonPath: "stores.hazina",
+    agentsJsonPath: "agents.hazina",
+    flowsJsonPath: "flows.hazina",
+    openAIApiKey: "sk-...",
+    logFilePath: @"C:\logs\hazina.log",
+    googleProjectId: "" // Optional, for BigQuery
+);
+
+// Load all stores and agents from config
+await agentManager.LoadStoresAndAgents();
+```
+
+### 2. Making Requests to Agents
+
+#### Simple request (returns string only)
+```csharp
+var result = await agentManager.SendMessage(
+    "Explain how authentication works",
+    cancellationToken,
+    agentName: "my_agent" // Optional, uses first agent if not specified
+);
+
+Console.WriteLine(result); // The response text
+```
+
+#### Request with full token tracking
+```csharp
+// Get the agent directly for access to token usage
+var agent = agentManager.GetAgent("my_agent");
+
+var response = await agent.Generator.GetResponse<IsReadyResult>(
+    "What files are in the project?",
+    cancellationToken,
+    agentManager.History,  // Conversation history
+    addRelevantDocuments: true,
+    addFilesList: true,
+    agent.Tools,
+    images: null
+);
+
+// Access the response
+Console.WriteLine($"Response: {response.Result.Message}");
+
+// Access token usage
+Console.WriteLine($"Input tokens: {response.TokenUsage.InputTokens}");
+Console.WriteLine($"Output tokens: {response.TokenUsage.OutputTokens}");
+Console.WriteLine($"Total tokens: {response.TokenUsage.TotalTokens}");
+Console.WriteLine($"Input cost: ${response.TokenUsage.InputCost:F4}");
+Console.WriteLine($"Output cost: ${response.TokenUsage.OutputCost:F4}");
+Console.WriteLine($"Total cost: ${response.TokenUsage.TotalCost:F4}");
+Console.WriteLine($"Model: {response.TokenUsage.ModelName}");
+```
+
+#### Streaming response with token tracking
+```csharp
+var agent = agentManager.GetAgent("my_agent");
+
+var response = await agent.Generator.StreamResponse(
+    "Write a detailed explanation of the codebase",
+    cancellationToken,
+    onChunkReceived: chunk => Console.Write(chunk), // Handle each streaming chunk
+    history: agentManager.History,
+    addRelevantDocuments: true,
+    addFilesList: true,
+    toolsContext: agent.Tools,
+    images: null
+);
+
+Console.WriteLine($"\n\nStreaming complete. Tokens used: {response.TokenUsage.TotalTokens}");
+Console.WriteLine($"Total cost: ${response.TokenUsage.TotalCost:F4}");
+```
+
+### 3. Tracking Token Usage Across Multiple Requests
+
+```csharp
+var agent = agentManager.GetAgent("my_agent");
+var totalUsage = new TokenUsageInfo();
+
+var queries = new[] {
+    "List all TypeScript files",
+    "Find authentication code",
+    "Explain the database schema"
+};
+
+foreach (var query in queries)
+{
+    var response = await agent.Generator.GetResponse(
+        query,
+        cancellationToken,
+        agentManager.History
+    );
+
+    // Aggregate token usage using the + operator
+    totalUsage += response.TokenUsage;
+
+    Console.WriteLine($"\nQuery: {query}");
+    Console.WriteLine($"Tokens: {response.TokenUsage.TotalTokens}");
+    Console.WriteLine($"Cost: ${response.TokenUsage.TotalCost:F4}");
+}
+
+Console.WriteLine($"\n--- Summary ---");
+Console.WriteLine($"Total input tokens: {totalUsage.InputTokens}");
+Console.WriteLine($"Total output tokens: {totalUsage.OutputTokens}");
+Console.WriteLine($"Total tokens: {totalUsage.TotalTokens}");
+Console.WriteLine($"Total cost: ${totalUsage.TotalCost:F4}");
+```
+
+### 4. Working with Flows
+
+```csharp
+// Execute a flow (sequence of agents)
+var flowResult = await agentManager.SendMessage_Flow(
+    "Process this document end-to-end",
+    cancellationToken,
+    flowName: "document_processing_flow"
+);
+
+Console.WriteLine($"Flow result: {flowResult}");
+```
+
+### 5. Creating Agents Programmatically
+
+```csharp
+// Using QuickAgentCreator (via AgentManager)
+var creator = agentManager._quickAgentCreator;
+
+// Create a custom agent without registering it
+var customAgent = await creator.AgentFactory.CreateUnregisteredAgent(
+    name: "temp_agent",
+    systemPrompt: "You are a helpful code reviewer",
+    stores: new[] { (myDocumentStore, write: false) },
+    function: new[] { "git", "dotnet" },
+    agents: Array.Empty<string>(),
+    flows: Array.Empty<string>(),
+    isCoder: false
+);
+
+var response = await customAgent.Generator.GetResponse(
+    "Review the authentication code",
+    cancellationToken
+);
+
+Console.WriteLine($"Review: {response.Result}");
+Console.WriteLine($"Cost: ${response.TokenUsage.TotalCost:F4}");
+```
+
+### 6. Using Typed Responses
+
+```csharp
+// Define a custom response type
+public class AnalysisResult : ChatResponse<AnalysisResult>
+{
+    public string Summary { get; set; }
+    public List<string> Issues { get; set; }
+    public int Severity { get; set; }
+}
+
+// Request with typed response
+var agent = agentManager.GetAgent("analyzer");
+var response = await agent.Generator.GetResponse<AnalysisResult>(
+    "Analyze the security of this code",
+    cancellationToken,
+    agentManager.History
+);
+
+// Access typed result
+Console.WriteLine($"Summary: {response.Result?.Summary}");
+Console.WriteLine($"Issues found: {response.Result?.Issues.Count}");
+Console.WriteLine($"Severity: {response.Result?.Severity}");
+
+// Token usage still available
+Console.WriteLine($"Analysis cost: ${response.TokenUsage.TotalCost:F4}");
+```
+
+### 7. Configuration Files
+
+#### stores.hazina
+```
+Name: my_code_store
+Description: All project source code
+Path: C:\Projects\MyApp
+FileFilters: *.cs,*.ts,*.js,*.json
+SubDirectory:
+ExcludePattern: bin,obj,node_modules
+```
+
+#### agents.hazina
+```
+Name: code_assistant
+Description: Helps with code questions and modifications
+Prompt: You are an expert code assistant. Help the user understand and modify the codebase.
+Stores: my_code_store|False
+Functions: git,dotnet
+CallsAgents:
+CallsFlows:
+ExplicitModify: False
+```
+
+### Token Usage Reference
+
+All LLM responses return `LLMResponse<T>` which contains:
+- **Result**: The actual response (string, typed object, etc.)
+- **TokenUsage**: `TokenUsageInfo` object with:
+  - `InputTokens`: Tokens in the prompt
+  - `OutputTokens`: Tokens in the response
+  - `TotalTokens`: Sum of input + output
+  - `InputCost`: Cost of input tokens (in USD)
+  - `OutputCost`: Cost of output tokens (in USD)
+  - `TotalCost`: Total cost (in USD)
+  - `ModelName`: The model used (e.g., "gpt-4", "claude-3-opus")
+
+### Example: Complete Workflow with Cost Tracking
+
+```csharp
+// Setup
+var agentManager = new AgentManager(
+    "stores.hazina", "agents.hazina", "flows.hazina",
+    "sk-...", @"C:\logs\hazina.log"
+);
+await agentManager.LoadStoresAndAgents();
+
+var agent = agentManager.GetAgent("code_assistant");
+var sessionUsage = new TokenUsageInfo();
+
+// Interactive session
+var questions = new[] {
+    "What's the project structure?",
+    "Find all API endpoints",
+    "Show me the authentication flow"
+};
+
+foreach (var question in questions)
+{
+    Console.WriteLine($"\nQ: {question}");
+
+    var response = await agent.Generator.GetResponse(
+        question,
+        CancellationToken.None,
+        agentManager.History,
+        addRelevantDocuments: true,
+        addFilesList: true,
+        agent.Tools
+    );
+
+    Console.WriteLine($"A: {response.Result}");
+    Console.WriteLine($"   Tokens: {response.TokenUsage.TotalTokens} | Cost: ${response.TokenUsage.TotalCost:F4}");
+
+    sessionUsage += response.TokenUsage;
+}
+
+// Session summary
+Console.WriteLine("\n=== Session Summary ===");
+Console.WriteLine($"Questions asked: {questions.Length}");
+Console.WriteLine($"Total tokens: {sessionUsage.TotalTokens:N0}");
+Console.WriteLine($"Total cost: ${sessionUsage.TotalCost:F4}");
+Console.WriteLine($"Model: {sessionUsage.ModelName}");
+```
+
 ## Solution Organization
 
 The solution is organized into logical categories to improve navigation and maintainability.
