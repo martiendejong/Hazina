@@ -1030,6 +1030,281 @@ See `Examples/MemoryAndEventsExamples.cs` for:
 6. Event replay
 7. Memory consolidation
 
+---
+
+## Step 7: Agent-to-Agent (A2A) Protocol
+
+The A2A protocol enables agents to discover, communicate, and delegate tasks to each other, forming a distributed agent network.
+
+### Core Components
+
+#### Agent Directory
+
+Agents register themselves in a directory for discovery:
+
+```csharp
+// Create directory and transport
+var directory = new InMemoryAgentDirectory(logger);
+var transport = new InProcessA2ATransport(logger);
+await transport.StartAsync();
+
+// Create A2A-enabled agent with capabilities
+var analyst = new A2AEnabledAgent("Analyst", llmClient, directory, transport)
+    .AddCapability("analyze", "Analyzes data", new List<string> { "analytics" });
+
+await analyst.InitializeAsync();
+```
+
+#### Agent Discovery
+
+Find agents by capability or tags:
+
+```csharp
+// Discover by capability
+var agents = await myAgent.DiscoverAgentsAsync("analyze");
+
+// Discover by tags
+var nlpAgents = await directory.FindAgentsByTagsAsync(new List<string> { "nlp", "text" });
+```
+
+#### Task Delegation
+
+Delegate tasks to other agents:
+
+```csharp
+// Delegate by capability
+var result = await manager.DelegateTaskAsync("analyze", "Sales data for Q1 2024");
+Console.WriteLine($"Analysis completed: {result.Success}");
+```
+
+#### Direct Communication
+
+Send requests between agents:
+
+```csharp
+// Send request
+var response = await coordinator.SendRequestToAgentAsync(
+    worker.AgentId,
+    "process_data",
+    payload: "Process this data"
+);
+```
+
+#### Notifications
+
+Broadcast notifications to multiple agents:
+
+```csharp
+await broadcaster.NotifyAgentsAsync(
+    new List<string> { listener1.AgentId, listener2.AgentId },
+    "update",
+    "System update available"
+);
+```
+
+### A2A Protocol Architecture
+
+```
+┌─────────────────────────────────────┐
+│      Agent Directory                │
+│  - Registration                     │
+│  - Discovery                        │
+│  - Health Monitoring                │
+└─────────────────────────────────────┘
+           │
+    ┌──────┴──────┐
+    │             │
+┌───▼────┐   ┌───▼────────┐
+│ Agent  │   │   Agent    │
+│   A    │◄──┤     B      │
+│        ├──►│            │
+└────────┘   └────────────┘
+    A2A Messages:
+    - Request/Response
+    - Notifications
+    - Handshake
+```
+
+### Message Types
+
+- **Request/Response**: Synchronous communication with timeout
+- **Notification**: Fire-and-forget messaging
+- **Handshake**: Capability negotiation
+
+### Examples
+
+See `Examples/A2AExamples.cs` for:
+1. Agent registration and discovery
+2. Agent-to-agent communication
+3. Task delegation by capability
+4. Agent notifications
+5. Custom request handlers
+6. Multi-agent workflows
+
+---
+
+## Step 8: Evaluation Framework
+
+Comprehensive framework for testing and benchmarking agent performance with metrics, test suites, and report generation.
+
+### Test Cases
+
+Define test cases with expected outputs:
+
+```csharp
+var testCase = new TestCase
+{
+    Name = "Capital Question",
+    Input = "What is the capital of France?",
+    ExpectedOutput = "Paris",
+    Difficulty = TestCaseDifficulty.Easy
+};
+
+var runner = new EvaluationRunner(logger);
+var result = await runner.RunTestCaseAsync(agent, testCase);
+
+Console.WriteLine($"Passed: {result.Passed}");
+Console.WriteLine($"Score: {result.Score:F2}");
+Console.WriteLine($"Duration: {result.Duration.TotalMilliseconds:F0}ms");
+```
+
+### Test Suites
+
+Group related test cases:
+
+```csharp
+var suite = new TestSuite
+{
+    Name = "Geography Quiz",
+    TestCases = new List<TestCase>
+    {
+        new() { Name = "France", Input = "Capital of France?", ExpectedOutput = "Paris" },
+        new() { Name = "Japan", Input = "Capital of Japan?", ExpectedOutput = "Tokyo" }
+    }
+};
+
+var suiteResult = await runner.RunTestSuiteAsync(agent, suite);
+Console.WriteLine($"Pass Rate: {suiteResult.PassRate:P}");
+```
+
+### Benchmarks
+
+Run comprehensive benchmarks with performance metrics:
+
+```csharp
+var benchmark = new Benchmark
+{
+    Name = "General Knowledge Benchmark",
+    TestSuites = new List<TestSuite> { geographySuite, scienceSuite }
+};
+
+var benchmarkRunner = new BenchmarkRunner(logger);
+var result = await benchmarkRunner.RunBenchmarkAsync(agent, benchmark);
+
+Console.WriteLine($"Pass Rate: {result.Metrics.PassRate:P}");
+Console.WriteLine($"Average Latency: {result.Metrics.AverageLatencyMs:F2}ms");
+Console.WriteLine($"P95 Latency: {result.Metrics.P95LatencyMs:F2}ms");
+```
+
+### Agent Comparison
+
+Compare multiple agents on the same benchmark:
+
+```csharp
+var comparison = await benchmarkRunner.CompareBenchmarkAsync(
+    new List<BaseAgent> { agent1, agent2, agent3 },
+    benchmark
+);
+
+Console.WriteLine($"Best Agent: {comparison.BestAgentId}");
+```
+
+### Evaluation Metrics
+
+Built-in metrics:
+- **ExactMatch**: Perfect string match
+- **Contains**: Substring matching
+- **Similarity**: Jaccard word similarity
+- **Length**: Output length measurement
+
+Custom metrics:
+
+```csharp
+public class CustomWordCountMetric : EvaluationMetric
+{
+    public override double Calculate(string expected, string actual)
+    {
+        return actual.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+    }
+}
+
+runner.RegisterMetric(new CustomWordCountMetric());
+```
+
+### Report Generation
+
+Generate reports in multiple formats:
+
+```csharp
+var reporter = new EvaluationReporter();
+
+// Markdown report
+var markdown = reporter.GenerateMarkdownReport(result);
+await reporter.SaveReportAsync(markdown, "benchmark-result.md");
+
+// HTML report
+var html = reporter.GenerateHtmlReport(result);
+await reporter.SaveReportAsync(html, "benchmark-result.html");
+
+// JSON export
+var json = reporter.GenerateJsonReport(result);
+await reporter.SaveReportAsync(json, "benchmark-result.json");
+```
+
+### Evaluation Architecture
+
+```
+┌─────────────────────────────────────┐
+│    EvaluationRunner                 │
+│  - Test Execution                   │
+│  - Metric Calculation               │
+└─────────────────────────────────────┘
+           │
+    ┌──────┴──────┐
+    │             │
+┌───▼────┐   ┌───▼────────┐
+│  Test  │   │ Benchmark  │
+│  Suite │   │   Runner   │
+└────┬───┘   └─────┬──────┘
+     │             │
+     └──────┬──────┘
+            │
+    ┌───────▼────────┐
+    │   Reporter     │
+    │  - Markdown    │
+    │  - HTML        │
+    │  - JSON        │
+    └────────────────┘
+```
+
+### Performance Metrics
+
+Automatically collected:
+- **Latency**: Average, Median, P95, P99
+- **Pass Rate**: Percentage of passing tests
+- **Score**: Average similarity/match score
+- **Duration**: Total execution time
+
+### Examples
+
+See `Examples/EvaluationExamples.cs` for:
+1. Basic test case execution
+2. Test suite execution
+3. Running benchmarks
+4. Comparing multiple agents
+5. Custom metrics
+6. Report generation
+
 ## Dependencies
 
 - **Hazina.LLMs.Client**: ILLMClient interface
@@ -1048,8 +1323,8 @@ Implementation progress (Steps 1-10 from the Google ADK plan):
 - [x] **Step 4: Session Management** - Session persistence, lifecycle, recovery, storage providers ✅
 - [x] **Step 5: Memory Bank** - Long-term cross-session memory with embeddings and consolidation ✅
 - [x] **Step 6: Enhanced Event System** - Bidirectional streaming, SSE, event replay ✅
-- [ ] **Step 7: Agent2Agent (A2A) Protocol** - Inter-agent communication
-- [ ] **Step 8: Evaluation Framework** - Agent performance testing
+- [x] **Step 7: Agent2Agent (A2A) Protocol** - Inter-agent communication, discovery, delegation ✅
+- [x] **Step 8: Evaluation Framework** - Test cases, benchmarks, metrics, reports ✅
 - [ ] **Step 9: Artifact Management** - File and binary handling
 - [ ] **Step 10: Developer UI** - ASP.NET Core MVC + React debugging interface
 
