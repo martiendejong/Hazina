@@ -682,6 +682,170 @@ See `Examples/McpToolsExample.cs` for comprehensive examples including:
 4. Manual tool registration
 5. Multi-server agent setup
 
+## Session Management
+
+### Overview
+
+The session management system provides robust session lifecycle management, persistence, recovery, and hooks for monitoring and extending agent behavior.
+
+### Key Components
+
+1. **Session**: Session model with metadata, messages, and configuration
+2. **SessionManager**: Manages session lifecycle and persistence
+3. **SessionStorage**: Pluggable storage providers (in-memory, file-based)
+4. **SessionRecoveryService**: Recover sessions after failures
+5. **SessionMiddleware**: Hooks for session lifecycle events
+
+### Session Features
+
+- **Lifecycle Management**: Create, resume, pause, complete, terminate
+- **Auto-persistence**: Configurable auto-save intervals
+- **Timeout Management**: Automatic expiration of inactive sessions
+- **Message History**: Trimmed conversation history with configurable limits
+- **Recovery**: Recover sessions after crashes or restarts
+- **Filtering**: Find sessions by agent, user, status, or tags
+- **Hooks**: Extensible middleware for monitoring and analytics
+
+### Using Sessions
+
+#### Basic Session Usage
+
+```csharp
+using Hazina.LLMs.GoogleADK.Agents;
+using Hazina.LLMs.GoogleADK.Sessions;
+using Hazina.LLMs.GoogleADK.Sessions.Storage;
+
+// Create session manager
+var sessionStorage = new InMemorySessionStorage();
+var sessionManager = new SessionManager(sessionStorage);
+
+// Create session-enabled agent
+var agent = new SessionEnabledAgent("ChatBot", llmClient, sessionManager);
+await agent.InitializeAsync();
+
+// Execute with auto-created session
+var result = await agent.ExecuteWithSessionAsync("Hello!");
+Console.WriteLine(result.Output);
+
+// Continue conversation in same session
+var result2 = await agent.ExecuteWithSessionAsync("Remember what I just said?");
+
+// Complete session
+await agent.CompleteSessionAsync();
+```
+
+#### Custom Configuration
+
+```csharp
+var config = new SessionConfiguration
+{
+    MaxMessages = 20,              // Keep only last 20 messages
+    TimeoutMinutes = 60,           // 1-hour timeout
+    AutoSaveIntervalSeconds = 30,  // Auto-save every 30 seconds
+    PersistToStorage = true,
+    EnableRecovery = true
+};
+
+var session = await agent.StartSessionAsync(
+    userId: "user-123",
+    configuration: config,
+    metadata: new Dictionary<string, object>
+    {
+        ["user_language"] = "en",
+        ["session_purpose"] = "support"
+    }
+);
+
+session.Tags.Add("important");
+```
+
+#### Resume Existing Session
+
+```csharp
+// Resume a paused or interrupted session
+var resumedSession = await agent.ResumeSessionAsync(sessionId);
+
+if (resumedSession != null)
+{
+    Console.WriteLine($"Resumed with {resumedSession.Messages.Count} messages");
+    await agent.ExecuteWithSessionAsync("Continue where we left off");
+}
+```
+
+#### Session Recovery
+
+```csharp
+var recoveryService = new SessionRecoveryService(sessionStorage);
+
+// Recover all active sessions for an agent
+var activeSessions = await recoveryService.RecoverAgentSessionsAsync("ChatBot");
+
+foreach (var session in activeSessions)
+{
+    await agent.ResumeSessionAsync(session.SessionId);
+    // Continue processing
+}
+```
+
+#### Session Hooks
+
+```csharp
+var middleware = new SessionMiddleware();
+
+// Register built-in logging hook
+middleware.RegisterHook(new LoggingSessionHook(logger));
+
+// Register custom analytics hook
+middleware.RegisterHook(new CustomAnalyticsHook());
+
+// Hooks are triggered on lifecycle events
+var session = await agent.StartSessionAsync();
+await middleware.OnSessionCreatedAsync(session);
+```
+
+### Storage Providers
+
+**In-Memory Storage** (Development/Testing):
+```csharp
+var storage = new InMemorySessionStorage();
+```
+
+**File-Based Storage** (Production):
+```csharp
+var storage = new FileSessionStorage("./sessions");
+```
+
+### Session Architecture
+
+```
+┌──────────────────────────────────────┐
+│       SessionEnabledAgent            │
+│  ┌────────────────────────────────┐  │
+│  │    SessionManager              │  │
+│  │  - Lifecycle Management        │  │
+│  │  - Auto-save Timer             │  │
+│  │  - Cleanup Timer               │  │
+│  └────────────────────────────────┘  │
+└──────────────────────────────────────┘
+                 │
+    ┌────────────┴────────────┐
+    │                         │
+┌───▼────────┐      ┌────────▼──────┐
+│  Storage   │      │  Middleware   │
+│ Providers  │      │    & Hooks    │
+└────────────┘      └───────────────┘
+```
+
+### Examples
+
+See `Examples/SessionExamples.cs` for comprehensive examples including:
+1. Basic session usage
+2. Custom configuration
+3. Session resumption
+4. Session recovery
+5. Session hooks
+6. Filtering and listing sessions
+
 ## Dependencies
 
 - **Hazina.LLMs.Client**: ILLMClient interface
@@ -697,7 +861,7 @@ Implementation progress (Steps 1-10 from the Google ADK plan):
 - [x] **Step 1: Core ADK Agent Architecture** - BaseAgent, LlmAgent, AgentContext, AgentState, EventBus, AgentRuntime ✅
 - [x] **Step 2: Workflow Agents** - SequentialAgent, ParallelAgent, LoopAgent, WorkflowEngine, JSON configuration ✅
 - [x] **Step 3: Enhanced Tool System with MCP Support** - Model Context Protocol integration, tool registry, validation ✅
-- [ ] **Step 4: Session Management** - Session persistence and lifecycle
+- [x] **Step 4: Session Management** - Session persistence, lifecycle, recovery, storage providers ✅
 - [ ] **Step 5: Memory Bank** - Long-term cross-session memory
 - [ ] **Step 6: Enhanced Event System** - Bidirectional streaming
 - [ ] **Step 7: Agent2Agent (A2A) Protocol** - Inter-agent communication
