@@ -16,4 +16,7 @@
     <ProjectReference Include="..\..\..\Core\Storage\Hazina.Store.DocumentStore\Hazina.Store.DocumentStore.csproj" />
     <ProjectReference Include="..\..\..\Core\LLMs\Hazina.LLMClientTools\Hazina.LLMClientTools.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="supabase-csharp" Version="1.7.0" />
+  </ItemGroup>
 </Project>
