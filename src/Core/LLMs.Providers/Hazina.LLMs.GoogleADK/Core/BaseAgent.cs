@@ -15,6 +15,11 @@ public abstract class BaseAgent
     protected AgentContext Context { get; private set; }
 
     /// <summary>
+    /// Public access to agent context for monitoring and debugging
+    /// </summary>
+    public AgentContext GetContext() => Context;
+
+    /// <summary>
     /// Agent name
     /// </summary>
     public string Name => Context.State.AgentName;

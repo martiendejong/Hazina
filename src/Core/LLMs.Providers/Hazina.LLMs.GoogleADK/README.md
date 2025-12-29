@@ -1305,6 +1305,329 @@ See `Examples/EvaluationExamples.cs` for:
 5. Custom metrics
 6. Report generation
 
+---
+
+## Step 9: Artifact Management
+
+Comprehensive system for handling files, binary data, and other artifacts produced or consumed by agents.
+
+### Core Components
+
+#### Artifact Model
+
+Artifacts represent files or binary data with metadata:
+
+```csharp
+var artifact = new Artifact
+{
+    Name = "report.pdf",
+    Type = ArtifactType.Document,
+    MimeType = "application/pdf",
+    Data = pdfBytes,
+    AgentId = "report-generator",
+    Tags = new List<string> { "monthly", "sales" }
+};
+```
+
+#### Artifact Storage
+
+Pluggable storage interface with file system implementation:
+
+```csharp
+// Create file system storage
+var storage = new FileSystemArtifactStorage("./artifacts", logger);
+
+// Store artifact
+var artifactId = await storage.StoreArtifactAsync(artifact);
+
+// Retrieve artifact
+var retrieved = await storage.GetArtifactAsync(artifactId);
+
+// List all artifacts
+var artifacts = await storage.ListArtifactsAsync();
+```
+
+#### Artifact Manager
+
+High-level API for common artifact operations:
+
+```csharp
+var manager = new ArtifactManager(storage, logger);
+
+// Create text artifact
+var textArtifact = await manager.CreateFromTextAsync(
+    text: "Important data",
+    name: "data.txt",
+    agentId: "processor"
+);
+
+// Create from file
+var fileArtifact = await manager.CreateFromFileAsync(
+    filePath: "input.csv",
+    agentId: "analyzer"
+);
+
+// Create binary artifact
+var imageArtifact = await manager.CreateFromBinaryAsync(
+    data: imageBytes,
+    name: "chart.png",
+    mimeType: "image/png",
+    artifactType: ArtifactType.Image
+);
+
+// Export artifact to file
+await manager.ExportArtifactAsync(artifactId, "output/report.pdf");
+```
+
+### Artifact Types
+
+Supported artifact types:
+- **File**: Generic files
+- **Binary**: Raw binary data
+- **Text**: Text documents
+- **Image**: Images (PNG, JPG, etc.)
+- **Video**: Video files
+- **Audio**: Audio files
+- **Document**: PDF, Word, etc.
+- **Code**: Source code files
+- **Data**: CSV, JSON, etc.
+- **Model**: ML model files
+
+### Artifact-Enabled Agents
+
+Agents that produce and consume artifacts:
+
+```csharp
+var agent = new ArtifactEnabledAgent(
+    name: "ReportGenerator",
+    llmClient: llmClient,
+    artifactManager: manager
+);
+
+await agent.InitializeAsync();
+
+// Execute and produce artifact
+var result = await agent.ExecuteAsync("Generate monthly sales report");
+
+// Access produced artifacts
+var artifacts = agent.GetProducedArtifacts();
+foreach (var artifactId in artifacts)
+{
+    var artifact = await manager.GetArtifactAsync(artifactId);
+    Console.WriteLine($"Produced: {artifact.Name}");
+}
+
+// Provide artifact as input
+await agent.ConsumeArtifactAsync(inputArtifactId);
+```
+
+### Artifact Metadata
+
+Rich metadata for organization:
+- **Tags**: Categorize and search
+- **Session ID**: Link to session
+- **Agent ID**: Track which agent created it
+- **Timestamps**: Creation and modification times
+- **Size**: File size in bytes
+- **MIME Type**: Content type
+
+### Artifact Architecture
+
+```
+┌─────────────────────────────────────┐
+│    ArtifactManager                  │
+│  - Create from text/file/binary     │
+│  - Export and retrieval             │
+└─────────────────────────────────────┘
+           │
+    ┌──────┴──────┐
+    │             │
+┌───▼────┐   ┌───▼────────┐
+│Storage │   │  Artifact  │
+│Provider│   │  Enabled   │
+│        │   │   Agent    │
+└────────┘   └────────────┘
+```
+
+### Examples
+
+See `Examples/ArtifactExamples.cs` for:
+1. Basic artifact creation
+2. File system storage
+3. Artifact-enabled agents
+4. Artifact export and import
+5. Searching and filtering
+6. Binary data handling
+
+---
+
+## Step 10: Developer UI and Monitoring
+
+Comprehensive monitoring, debugging, and control tools for agent development and production.
+
+### Agent Monitor
+
+Real-time monitoring of agent activity and events:
+
+```csharp
+var monitor = new AgentMonitor(maxHistorySize: 1000, logger: logger);
+
+// Register agents for monitoring
+monitor.RegisterAgent(agent1);
+monitor.RegisterAgent(agent2);
+
+// Get monitored agents
+var agents = monitor.GetAgents();
+foreach (var agentInfo in agents)
+{
+    Console.WriteLine($"{agentInfo.Name}: {agentInfo.Status}");
+    Console.WriteLine($"  Events: {agentInfo.EventCount}");
+    Console.WriteLine($"  Last Active: {agentInfo.LastEventAt}");
+}
+
+// Get event history
+var events = monitor.GetEventHistory(limit: 50);
+
+// Get events for specific agent
+var agentEvents = monitor.GetAgentEvents(agent1.AgentId, limit: 100);
+
+// Get statistics
+var stats = monitor.GetStatistics();
+Console.WriteLine($"Total Agents: {stats.TotalAgents}");
+Console.WriteLine($"Active Agents: {stats.ActiveAgents}");
+Console.WriteLine($"Total Events: {stats.TotalEvents}");
+```
+
+### Agent Controller
+
+Control and debug agent execution:
+
+```csharp
+var controller = new AgentController(logger);
+
+// Register agent for control
+controller.RegisterAgent(agent);
+
+// Execute with debugging
+var debugInfo = await controller.ExecuteWithDebuggingAsync(
+    agentId: agent.AgentId,
+    input: "Process this data"
+);
+
+Console.WriteLine($"Execution ID: {debugInfo.ExecutionId}");
+Console.WriteLine($"Status: {debugInfo.Status}");
+Console.WriteLine($"Duration: {debugInfo.Duration?.TotalMilliseconds:F2}ms");
+Console.WriteLine($"Input: {debugInfo.Input}");
+Console.WriteLine($"Output: {debugInfo.Output}");
+
+if (debugInfo.Errors.Any())
+{
+    Console.WriteLine($"Errors: {string.Join(", ", debugInfo.Errors)}");
+}
+
+// Get agent state
+var state = controller.GetAgentState(agent.AgentId);
+
+// Update configuration
+controller.UpdateAgentConfiguration(agent.AgentId, new Dictionary<string, object>
+{
+    ["maxRetries"] = 3,
+    ["timeout"] = 30000
+});
+
+// Pause/Resume agent
+controller.PauseAgent(agent.AgentId);
+controller.ResumeAgent(agent.AgentId);
+```
+
+### Performance Profiling
+
+Track and analyze agent performance:
+
+```csharp
+// Run multiple executions
+for (int i = 0; i < 10; i++)
+{
+    await controller.ExecuteWithDebuggingAsync(agent.AgentId, $"Test {i}");
+}
+
+// Get performance profile
+var profile = controller.GetPerformanceProfile(agent.AgentId);
+
+Console.WriteLine($"Total Executions: {profile.TotalExecutions}");
+Console.WriteLine($"Average Time: {profile.AverageExecutionTime.TotalMilliseconds:F2}ms");
+Console.WriteLine($"Min Time: {profile.MinExecutionTime.TotalMilliseconds:F2}ms");
+Console.WriteLine($"Max Time: {profile.MaxExecutionTime.TotalMilliseconds:F2}ms");
+Console.WriteLine($"Success Rate: {profile.SuccessRate:P}");
+```
+
+### Execution History
+
+Track all agent executions:
+
+```csharp
+// Get execution history for all agents
+var allHistory = controller.GetExecutionHistory(limit: 100);
+
+// Get execution history for specific agent
+var agentHistory = controller.GetExecutionHistory(agent.AgentId, limit: 50);
+
+// Get specific execution
+var execution = controller.GetExecution(executionId);
+```
+
+### Debug Information
+
+Rich debug data for each execution:
+- **Execution ID**: Unique identifier
+- **Agent ID**: Which agent executed
+- **Input/Output**: Request and response
+- **Status**: Execution status
+- **Duration**: How long it took
+- **Timestamps**: Start and end times
+- **State Snapshot**: Agent state during execution
+- **Errors**: Any errors that occurred
+
+### Developer UI Architecture
+
+```
+┌─────────────────────────────────────┐
+│      Agent Monitor                  │
+│  - Real-time event tracking         │
+│  - Agent status monitoring          │
+│  - Statistics aggregation           │
+└─────────────────────────────────────┘
+           │
+    ┌──────┴──────┐
+    │             │
+┌───▼────┐   ┌───▼────────┐
+│  Event │   │   Agent    │
+│ History│   │ Controller │
+│        │   │ - Debugging│
+│        │   │ - Profiling│
+└────────┘   └────────────┘
+```
+
+### Key Features
+
+- **Real-time Monitoring**: Live agent status and events
+- **Debug Execution**: Step-by-step execution with state capture
+- **Performance Profiling**: Latency percentiles and success rates
+- **Execution History**: Complete audit trail
+- **Agent Control**: Pause, resume, configure agents
+- **Statistics**: Aggregate metrics across agents
+- **Event Filtering**: Filter by agent, type, or time
+
+### Examples
+
+See `Examples/DeveloperUIExamples.cs` for:
+1. Basic agent monitoring
+2. Agent debugging
+3. Performance profiling
+4. Agent control (pause/resume)
+5. Execution history
+6. Event tracking
+
 ## Dependencies
 
 - **Hazina.LLMs.Client**: ILLMClient interface
@@ -1325,8 +1648,8 @@ Implementation progress (Steps 1-10 from the Google ADK plan):
 - [x] **Step 6: Enhanced Event System** - Bidirectional streaming, SSE, event replay ✅
 - [x] **Step 7: Agent2Agent (A2A) Protocol** - Inter-agent communication, discovery, delegation ✅
 - [x] **Step 8: Evaluation Framework** - Test cases, benchmarks, metrics, reports ✅
-- [ ] **Step 9: Artifact Management** - File and binary handling
-- [ ] **Step 10: Developer UI** - ASP.NET Core MVC + React debugging interface
+- [x] **Step 9: Artifact Management** - File and binary handling with storage providers ✅
+- [x] **Step 10: Developer UI** - Monitoring, debugging, and control tools ✅
 
 ## License
 

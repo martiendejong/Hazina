@@ -91,7 +91,7 @@ public class StreamingEventBusTests
 
         // Assert
         Assert.Equal(2, receivedEvents.Count);
-        Assert.All(receivedEvents, e => Assert.Equal("Agent1", e.AgentName));
+        Assert.All(receivedEvents, e => Assert.Equal("agent-1", e.AgentId));
 
         eventBus.Clear();
     }

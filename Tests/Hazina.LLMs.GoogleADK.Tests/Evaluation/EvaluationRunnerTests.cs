@@ -17,16 +17,45 @@ public class EvaluationRunnerTests
             _response = response;
         }
 
-        public Task<HazinaChatResponse> GenerateChatAsync(HazinaChatRequest request, CancellationToken cancellationToken = default)
+        public Task<Embedding> GenerateEmbedding(string data)
         {
-            return Task.FromResult(new HazinaChatResponse
-            {
-                Content = _response,
-                FinishReason = HazinaChatFinishReason.Stop
-            });
+            return Task.FromResult(new Embedding(new[] { 0.1, 0.2, 0.3 }));
         }
 
-        public IAsyncEnumerable<HazinaChatStreamChunk> StreamChatAsync(HazinaChatRequest request, CancellationToken cancellationToken = default)
+        public Task<LLMResponse<HazinaGeneratedImage>> GetImage(string prompt, HazinaChatResponseFormat responseFormat,
+            IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<LLMResponse<string>> GetResponse(List<HazinaChatMessage> messages, HazinaChatResponseFormat responseFormat,
+            IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+        {
+            return Task.FromResult(new LLMResponse<string>(_response, new TokenUsageInfo()));
+        }
+
+        public Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(List<HazinaChatMessage> messages,
+            IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+            where ResponseType : ChatResponse<ResponseType>, new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<LLMResponse<string>> GetResponseStream(List<HazinaChatMessage> messages, Action<string> onChunkReceived,
+            HazinaChatResponseFormat responseFormat, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+        {
+            onChunkReceived(_response);
+            return Task.FromResult(new LLMResponse<string>(_response, new TokenUsageInfo()));
+        }
+
+        public Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(List<HazinaChatMessage> messages,
+            Action<string> onChunkReceived, IToolsContext? toolsContext, List<ImageData>? images, CancellationToken cancel)
+            where ResponseType : ChatResponse<ResponseType>, new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task SpeakStream(string text, string voice, Action<byte[]> onAudioChunk, string mimeType, CancellationToken cancel)
         {
             throw new NotImplementedException();
         }
