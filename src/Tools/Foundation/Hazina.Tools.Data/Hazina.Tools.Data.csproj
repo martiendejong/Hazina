@@ -8,6 +8,9 @@
     <Version>2.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Supabase" Version="1.1.1" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
     <ProjectReference Include="..\Hazina.Tools.Core\Hazina.Tools.Core.csproj" />
     <ProjectReference Include="..\..\Common\Hazina.Tools.Common.Models\Hazina.Tools.Common.Models.csproj" />
@@ -15,8 +18,5 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Core\Storage\Hazina.Store.DocumentStore\Hazina.Store.DocumentStore.csproj" />
     <ProjectReference Include="..\..\..\Core\LLMs\Hazina.LLMClientTools\Hazina.LLMClientTools.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="supabase-csharp" Version="1.7.0" />
   </ItemGroup>
 </Project>
