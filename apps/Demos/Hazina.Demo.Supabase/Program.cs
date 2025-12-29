@@ -1,6 +1,6 @@
 using Hazina.Tools.Data;
 using Hazina.Store;
-using Hazina.LLMClient;
+using Hazina.Store.EmbeddingStore;
 using HazinaStore.Models;
 using System.Security.Cryptography;
 
@@ -130,8 +130,15 @@ class Program
             // Using dummy LLM client for demo - in production use real API key
             var llmClient = new DummyLLMClient(embeddingDimension);
 
+            // Create embedding generator for the adapter
+            var embeddingGenerator = new LLMEmbeddingGenerator(llmClient, embeddingDimension);
+
             // Create stores directly
-            var embeddingStore = new PgVectorStore(connectionString, llmClient, embeddingDimension);
+            var pgVectorStore = new PgVectorStore(connectionString, embeddingDimension);
+
+            // Wrap in legacy adapter for backward compatibility
+            var embeddingStore = new LegacyTextEmbeddingStoreAdapter(pgVectorStore, embeddingGenerator);
+
             var textStore = new PostgresTextStore(connectionString);
             var chunkStore = new PostgresChunkStore(connectionString);
             var metadataStore = new PostgresDocumentMetadataStore(connectionString);
@@ -180,12 +187,13 @@ class Program
             }
 
             Console.WriteLine("\n  Searching for documents similar to: 'database system'");
-            var searchResults = await embeddingStore.GetNearest("database system", 3);
+            var queryEmbedding = await llmClient.GenerateEmbedding("database system");
+            var searchResults = await pgVectorStore.SearchSimilarAsync(queryEmbedding, topK: 3);
 
             Console.WriteLine($"  Found {searchResults.Count} results:");
             foreach (var result in searchResults)
             {
-                Console.WriteLine($"    - {result.Key} (similarity: {result.Similarity:F4})");
+                Console.WriteLine($"    - {result.Info.Key} (similarity: {result.Similarity:F4})");
             }
             Console.WriteLine("✅ Semantic search complete!\n");
 

@@ -1,5 +1,5 @@
 using Hazina.Store;
-using Hazina.LLMClient;
+using Hazina.Store.EmbeddingStore;
 using HazinaStore.Models;
 
 namespace Hazina.Tools.Data
@@ -42,9 +42,16 @@ namespace Hazina.Tools.Data
             var config = new OpenAIConfig(apiKey);
             var llmClient = new OpenAIClientWrapper(config);
 
+            // Create embedding generator for the adapter
+            var embeddingGenerator = new LLMEmbeddingGenerator(llmClient, embeddingDimension);
+
             // Create PostgreSQL-based stores using Supabase connection
             // Supabase is PostgreSQL, so we use the existing PgVector stores
-            var embeddingStore = new PgVectorStore(connectionString, llmClient, embeddingDimension);
+            var pgVectorStore = new PgVectorStore(connectionString, embeddingDimension);
+
+            // Wrap in legacy adapter for backward compatibility
+            var embeddingStore = new LegacyTextEmbeddingStoreAdapter(pgVectorStore, embeddingGenerator);
+
             var textStore = new PostgresTextStore(connectionString);
             var chunkStore = new PostgresChunkStore(connectionString);
             var metadataStore = new PostgresDocumentMetadataStore(connectionString);
@@ -97,8 +104,15 @@ namespace Hazina.Tools.Data
             var config = new OpenAIConfig(apiKey);
             var llmClient = new OpenAIClientWrapper(config);
 
+            // Create embedding generator for the adapter
+            var embeddingGenerator = new LLMEmbeddingGenerator(llmClient, embeddingDimension);
+
             // Supabase stores for embeddings and search
-            var embeddingStore = new PgVectorStore(connectionString, llmClient, embeddingDimension);
+            var pgVectorStore = new PgVectorStore(connectionString, embeddingDimension);
+
+            // Wrap in legacy adapter for backward compatibility
+            var embeddingStore = new LegacyTextEmbeddingStoreAdapter(pgVectorStore, embeddingGenerator);
+
             var chunkStore = new PostgresChunkStore(connectionString);
             var metadataStore = new PostgresDocumentMetadataStore(connectionString);
 
