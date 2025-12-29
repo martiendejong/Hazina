@@ -14,6 +14,11 @@ public interface IProviderOrchestrator : ILLMClient
     void SetDefaultStrategy(SelectionStrategy strategy);
 
     /// <summary>
+    /// Set default selection context
+    /// </summary>
+    void SetDefaultContext(SelectionContext context);
+
+    /// <summary>
     /// Get a provider by name
     /// </summary>
     ILLMClient? GetProvider(string name);
