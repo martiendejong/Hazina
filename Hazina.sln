@@ -187,6 +187,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.AI.Providers", "src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.AI.FaultDetection", "src\Core\AI\Hazina.AI.FaultDetection\Hazina.AI.FaultDetection.csproj", "{04427AF9-3606-481D-AA3A-677F51BBBCE6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.AI.Orchestration", "src\Core\AI\Hazina.AI.Orchestration\Hazina.AI.Orchestration.csproj", "{103AD981-99DE-49E1-9816-723E6FE03419}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1085,6 +1087,18 @@ Global
 		{04427AF9-3606-481D-AA3A-677F51BBBCE6}.Release|x64.Build.0 = Release|Any CPU
 		{04427AF9-3606-481D-AA3A-677F51BBBCE6}.Release|x86.ActiveCfg = Release|Any CPU
 		{04427AF9-3606-481D-AA3A-677F51BBBCE6}.Release|x86.Build.0 = Release|Any CPU
+		{103AD981-99DE-49E1-9816-723E6FE03419}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{103AD981-99DE-49E1-9816-723E6FE03419}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{103AD981-99DE-49E1-9816-723E6FE03419}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{103AD981-99DE-49E1-9816-723E6FE03419}.Debug|x64.Build.0 = Debug|Any CPU
+		{103AD981-99DE-49E1-9816-723E6FE03419}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{103AD981-99DE-49E1-9816-723E6FE03419}.Debug|x86.Build.0 = Debug|Any CPU
+		{103AD981-99DE-49E1-9816-723E6FE03419}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{103AD981-99DE-49E1-9816-723E6FE03419}.Release|Any CPU.Build.0 = Release|Any CPU
+		{103AD981-99DE-49E1-9816-723E6FE03419}.Release|x64.ActiveCfg = Release|Any CPU
+		{103AD981-99DE-49E1-9816-723E6FE03419}.Release|x64.Build.0 = Release|Any CPU
+		{103AD981-99DE-49E1-9816-723E6FE03419}.Release|x86.ActiveCfg = Release|Any CPU
+		{103AD981-99DE-49E1-9816-723E6FE03419}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1147,5 +1161,6 @@ Global
 		{B3DEAE7C-D310-C54E-D648-3D58CC2F7B10} = {8D626EA8-CB54-BC41-363A-217881BEBA6E}
 		{80AE6DDF-56F4-440B-B28C-115C27B000F8} = {B3DEAE7C-D310-C54E-D648-3D58CC2F7B10}
 		{04427AF9-3606-481D-AA3A-677F51BBBCE6} = {B3DEAE7C-D310-C54E-D648-3D58CC2F7B10}
+		{103AD981-99DE-49E1-9816-723E6FE03419} = {B3DEAE7C-D310-C54E-D648-3D58CC2F7B10}
 	EndGlobalSection
 EndGlobal
