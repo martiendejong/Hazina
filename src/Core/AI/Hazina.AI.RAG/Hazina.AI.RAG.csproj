@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
+    <ProjectReference Include="..\..\Storage\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />
+    <ProjectReference Include="..\..\Storage\Hazina.Store.DocumentStore\Hazina.Store.DocumentStore.csproj" />
+    <ProjectReference Include="..\Hazina.AI.Providers\Hazina.AI.Providers.csproj" />
+    <ProjectReference Include="..\Hazina.Neurochain.Core\Hazina.Neurochain.Core.csproj" />
+  </ItemGroup>
+
+</Project>
