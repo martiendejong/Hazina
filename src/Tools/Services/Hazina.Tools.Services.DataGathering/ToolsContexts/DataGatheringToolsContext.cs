@@ -292,6 +292,26 @@ public sealed class DataGatheringToolsContext : ToolsContextBase
             return JsonResult(false, $"Skipped irrelevant data for key '{item.Key}'.");
         }
 
+        // Check if data already exists
+        var existingItem = await _dataProvider.GetAsync(_projectId, item.Key, cancellationToken);
+        if (existingItem != null)
+        {
+            // Compare values - only save if changed
+            var existingValue = existingItem.Data?.DisplayValue ?? string.Empty;
+            var newValue = item.Data?.DisplayValue ?? string.Empty;
+
+            if (string.Equals(existingValue, newValue, StringComparison.OrdinalIgnoreCase))
+            {
+                // Value hasn't changed - skip saving
+                return JsonSerializer.Serialize(new
+                {
+                    ok = false,
+                    key = item.Key,
+                    message = $"Data '{item.Title}' already exists with the same value. Skipped duplicate."
+                });
+            }
+        }
+
         var success = await _dataProvider.SaveAsync(_projectId, item, cancellationToken);
         if (success)
         {
@@ -301,7 +321,9 @@ public sealed class DataGatheringToolsContext : ToolsContextBase
                 ok = true,
                 key = item.Key,
                 title = item.Title,
-                message = $"Data '{item.Title}' stored successfully."
+                message = existingItem != null
+                    ? $"Data '{item.Title}' updated successfully."
+                    : $"Data '{item.Title}' stored successfully."
             });
         }
 
