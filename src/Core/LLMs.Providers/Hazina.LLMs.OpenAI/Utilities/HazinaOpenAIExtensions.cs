@@ -83,6 +83,14 @@ public static class HazinaOpenAIExtensions
                 ["description"] = prop.Description
             };
 
+            if (string.Equals(prop.Type, "array", StringComparison.OrdinalIgnoreCase))
+            {
+                properties[prop.Name]["items"] = new Dictionary<string, object>
+                {
+                    ["type"] = string.IsNullOrWhiteSpace(prop.ItemsType) ? "string" : prop.ItemsType
+                };
+            }
+
             if (prop.Required)
                 required.Add(prop.Name);
         }

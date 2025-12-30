@@ -6,6 +6,7 @@ public class ChatToolParameter
     public string Description { get; set; } = "";
     public string Type { get; set; } = "";
     public bool Required { get; set; }
+    public string? ItemsType { get; set; }
     
     public bool TryGetValue(HazinaChatToolCall call, out string value)
     {
