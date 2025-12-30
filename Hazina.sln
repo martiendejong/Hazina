@@ -205,6 +205,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Production", "Production", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Production.Monitoring", "src\Tools\Production\Hazina.Production.Monitoring\Hazina.Production.Monitoring.csproj", "{F107E308-86D5-4694-B99E-2711E9F582F7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Evals", "src\Core\AI\Hazina.Evals\Hazina.Evals.csproj", "{AF5ECD82-1C29-4A06-BC49-6492E7EAE642}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1187,6 +1189,18 @@ Global
 		{F107E308-86D5-4694-B99E-2711E9F582F7}.Release|x64.Build.0 = Release|Any CPU
 		{F107E308-86D5-4694-B99E-2711E9F582F7}.Release|x86.ActiveCfg = Release|Any CPU
 		{F107E308-86D5-4694-B99E-2711E9F582F7}.Release|x86.Build.0 = Release|Any CPU
+		{AF5ECD82-1C29-4A06-BC49-6492E7EAE642}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF5ECD82-1C29-4A06-BC49-6492E7EAE642}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF5ECD82-1C29-4A06-BC49-6492E7EAE642}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AF5ECD82-1C29-4A06-BC49-6492E7EAE642}.Debug|x64.Build.0 = Debug|Any CPU
+		{AF5ECD82-1C29-4A06-BC49-6492E7EAE642}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AF5ECD82-1C29-4A06-BC49-6492E7EAE642}.Debug|x86.Build.0 = Debug|Any CPU
+		{AF5ECD82-1C29-4A06-BC49-6492E7EAE642}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF5ECD82-1C29-4A06-BC49-6492E7EAE642}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF5ECD82-1C29-4A06-BC49-6492E7EAE642}.Release|x64.ActiveCfg = Release|Any CPU
+		{AF5ECD82-1C29-4A06-BC49-6492E7EAE642}.Release|x64.Build.0 = Release|Any CPU
+		{AF5ECD82-1C29-4A06-BC49-6492E7EAE642}.Release|x86.ActiveCfg = Release|Any CPU
+		{AF5ECD82-1C29-4A06-BC49-6492E7EAE642}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1258,5 +1272,6 @@ Global
 		{DCB6FCB8-FF92-AC57-0842-1F72A354D6B1} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{B683BDFC-B480-7815-5CAB-FAFF61FBBFF9} = {DCB6FCB8-FF92-AC57-0842-1F72A354D6B1}
 		{F107E308-86D5-4694-B99E-2711E9F582F7} = {B683BDFC-B480-7815-5CAB-FAFF61FBBFF9}
+		{AF5ECD82-1C29-4A06-BC49-6492E7EAE642} = {B3DEAE7C-D310-C54E-D648-3D58CC2F7B10}
 	EndGlobalSection
 EndGlobal
