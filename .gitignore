@@ -108,3 +108,4 @@ bin/
 /DevGPT.GenerationTools.Services.Store/obj/DevGPT.GenerationTools.Services.Store.csproj.nuget.g.targets
 /DevGPT.GenerationTools.Services.Web/obj/DevGPT.GenerationTools.Services.Web.csproj.nuget.g.targets
 /DevGPT.GenerationTools.Services.WordPress/obj/DevGPT.GenerationTools.Services.WordPress.csproj.nuget.g.targets
+/apps/CLI/Hazina.App.ClaudeCode/appsettings.json

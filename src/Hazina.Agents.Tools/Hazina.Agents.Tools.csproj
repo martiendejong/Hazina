@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Description>Claude Code-style tools for file operations and command execution</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
+    <ProjectReference Include="..\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
+  </ItemGroup>
+
+</Project>

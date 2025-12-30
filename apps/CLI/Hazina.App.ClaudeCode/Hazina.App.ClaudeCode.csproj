@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>DevGPT.App.ClaudeCode</RootNamespace>
@@ -16,6 +16,7 @@
     <ProjectReference Include="..\..\..\src\Core\LLMs.Providers\Hazina.LLMs.OpenAI\Hazina.LLMs.OpenAI.csproj" />
     <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
     <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\..\src\Hazina.Agents.Tools\Hazina.Agents.Tools.csproj" />
   </ItemGroup>
 </Project>
 
