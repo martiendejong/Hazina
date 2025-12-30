@@ -1,0 +1,31 @@
+<Project>
+  <PropertyGroup>
+    <!-- Common NuGet Package Properties -->
+    <Authors>Hazina Project</Authors>
+    <Company>Hazina</Company>
+    <Product>Hazina AI Framework</Product>
+    <Copyright>Copyright © 2025 Hazina Project</Copyright>
+    <PackageProjectUrl>https://github.com/hazina-ai/hazina</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/hazina-ai/hazina</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageTags>ai;llm;openai;anthropic;claude;gpt;gemini;mistral;agent;rag;neurochain;embeddings;vector-search;code-intelligence;monitoring</PackageTags>
+
+    <!-- Version -->
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+
+    <!-- Build Configuration -->
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- Source Link -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+</Project>

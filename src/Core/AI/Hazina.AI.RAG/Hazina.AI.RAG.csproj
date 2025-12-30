@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <Description>Retrieval-Augmented Generation (RAG) with vector search and embeddings</Description>
   </PropertyGroup>
 
   <ItemGroup>
