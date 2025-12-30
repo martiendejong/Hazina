@@ -7,6 +7,7 @@ namespace Hazina.Tools.Services.Chat
     {
         public string Message { get; set; }
         public Dictionary<string, object>? Metadata { get; set; }
+        public List<ChatAttachment>? Attachments { get; set; }
     }
 
     public class GeneratorMessageForDate

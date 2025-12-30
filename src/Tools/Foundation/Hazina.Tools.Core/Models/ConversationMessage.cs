@@ -14,8 +14,19 @@ public class ConversationMessage : Serializer<ConversationMessage>
         var content = isPayloadNull ? Text : Payload.ToString();
 
         if (Role == ChatMessageRole.User) return new HazinaChatMessage(HazinaMessageRole.User, content);
-        if (Role == ChatMessageRole.Assistant) return new HazinaChatMessage(HazinaMessageRole.Assistant, content);
         if (Role == ChatMessageRole.System) return new HazinaChatMessage(HazinaMessageRole.System, content);
         return new HazinaChatMessage(HazinaMessageRole.Assistant, content);
     }
+    
+    public List<ChatAttachment>? Attachments { get; set; }
+}
+
+public class ChatAttachment
+{
+    public string FileName { get; set; } = string.Empty;
+    public string FileUrl { get; set; } = string.Empty;
+    public string MimeType { get; set; } = string.Empty;
+    public long FileSize { get; set; }
+    public string? FileRecordId { get; set; }
+    public string? Thumbnail { get; set; }
 }

@@ -300,7 +300,7 @@ namespace Hazina.Tools.Services.Chat
             }
 
             var history = messages.ToList(); // exclude the new user message from base history sent to the model
-            messages.Add(new ConversationMessage { Role = ChatMessageRole.User, Text = chatMessage?.Message });
+            messages.Add(new ConversationMessage { Role = ChatMessageRole.User, Text = chatMessage?.Message, Attachments = chatMessage?.Attachments });
             _messageService.StoreChatMessages(projectId, chatId, messages, userId);
 
             // Send a small immediate chunk to show activity while streaming starts
@@ -453,7 +453,7 @@ namespace Hazina.Tools.Services.Chat
             }
 
             var history = messages.ToList();
-            messages.Add(new ConversationMessage { Role = ChatMessageRole.User, Text = chatMessage?.Message });
+            messages.Add(new ConversationMessage { Role = ChatMessageRole.User, Text = chatMessage?.Message, Attachments = chatMessage?.Attachments });
             _messageService.StoreChatMessages(projectId, chatId, messages);
 
             // Send a small immediate chunk to show activity while streaming starts
