@@ -147,7 +147,8 @@ namespace Hazina.Tools.Services.Chat
                     Model = modelInfo,
                     SourceUrl = resolved.SourceUrl ?? string.Empty,
                     UserId = storedUserId ?? string.Empty,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    Tags = DetermineImageTags(prompts[0])
                 };
                 _generatedImageRepository.Add(metadata, projectId, storedUserId);
 
@@ -500,6 +501,50 @@ namespace Hazina.Tools.Services.Chat
             var db = pixel.B - background.B;
             var distance = Math.Abs(dr) + Math.Abs(dg) + Math.Abs(db);
             return distance <= threshold;
+        }
+
+        /// <summary>
+        /// Determine appropriate tags for a generated image based on the prompt
+        /// </summary>
+        private static List<string> DetermineImageTags(string prompt)
+        {
+            var tags = new List<string> { "image", "generated" };
+
+            if (string.IsNullOrWhiteSpace(prompt))
+                return tags;
+
+            var lowerPrompt = prompt.ToLowerInvariant();
+
+            // Detect specific image types from prompt keywords
+            if (lowerPrompt.Contains("logo"))
+                tags.Add("logo");
+
+            if (lowerPrompt.Contains("banner") || lowerPrompt.Contains("header"))
+                tags.Add("banner");
+
+            if (lowerPrompt.Contains("icon"))
+                tags.Add("icon");
+
+            if (lowerPrompt.Contains("illustration") || lowerPrompt.Contains("drawing"))
+                tags.Add("illustration");
+
+            if (lowerPrompt.Contains("photo") || lowerPrompt.Contains("photograph") || lowerPrompt.Contains("realistic"))
+                tags.Add("photo");
+
+            if (lowerPrompt.Contains("diagram") || lowerPrompt.Contains("chart") || lowerPrompt.Contains("infographic"))
+                tags.Add("diagram");
+
+            if (lowerPrompt.Contains("background") || lowerPrompt.Contains("wallpaper"))
+                tags.Add("background");
+
+            if (lowerPrompt.Contains("product") || lowerPrompt.Contains("mockup"))
+                tags.Add("product");
+
+            if (lowerPrompt.Contains("social media") || lowerPrompt.Contains("instagram") ||
+                lowerPrompt.Contains("facebook") || lowerPrompt.Contains("twitter"))
+                tags.Add("social-media");
+
+            return tags.Distinct().ToList();
         }
 
         private readonly struct ResolvedImage

@@ -49,8 +49,9 @@ namespace HazinaStore.Core
         /// <param name="filename">Original filename</param>
         /// <param name="content">File content as bytes</param>
         /// <param name="extractedText">Extracted text content (for PDFs, images, etc.)</param>
+        /// <param name="additionalTags">Additional tags to apply (e.g., "website", "product", "webpage")</param>
         /// <returns>Uploaded document metadata</returns>
-        public UploadedDocument UploadDocument(string filename, byte[] content, string extractedText = null)
+        public UploadedDocument UploadDocument(string filename, byte[] content, string extractedText = null, List<string> additionalTags = null)
         {
             if (string.IsNullOrWhiteSpace(filename))
                 throw new ArgumentException("Filename cannot be empty", nameof(filename));
@@ -77,6 +78,8 @@ namespace HazinaStore.Core
             // Save file
             File.WriteAllBytes(filePath, content);
 
+            var mimeType = GetMimeType(filename);
+
             // Create metadata
             var document = new UploadedDocument
             {
@@ -87,7 +90,8 @@ namespace HazinaStore.Core
                 ExtractedText = extractedText ?? string.Empty,
                 UploadedAt = DateTime.UtcNow,
                 FileSize = content.Length,
-                MimeType = GetMimeType(filename)
+                MimeType = mimeType,
+                Tags = DetermineTags(mimeType, "upload", additionalTags)
             };
 
             // NOTE: We don't save to uploadedFiles.json here anymore
@@ -95,6 +99,55 @@ namespace HazinaStore.Core
             // The Core API just manages the physical file on disk
 
             return document;
+        }
+
+        /// <summary>
+        /// Determine appropriate tags for a document based on type and source
+        /// </summary>
+        private List<string> DetermineTags(string mimeType, string source, List<string> additionalTags = null)
+        {
+            var tags = new List<string>();
+
+            // Add source tag (upload, generated, website)
+            if (!string.IsNullOrWhiteSpace(source))
+            {
+                tags.Add(source.ToLowerInvariant());
+            }
+
+            // Add type tag based on mime type
+            if (!string.IsNullOrWhiteSpace(mimeType))
+            {
+                var mime = mimeType.ToLowerInvariant();
+                if (mime.StartsWith("image/"))
+                {
+                    tags.Add("image");
+                }
+                else if (mime.StartsWith("video/"))
+                {
+                    tags.Add("video");
+                }
+                else if (mime.StartsWith("audio/"))
+                {
+                    tags.Add("audio");
+                }
+                else if (mime.Contains("pdf") || mime.Contains("document") || mime.Contains("text") ||
+                         mime.Contains("word") || mime.Contains("spreadsheet") || mime.Contains("presentation"))
+                {
+                    tags.Add("text");
+                }
+                else
+                {
+                    tags.Add("file");
+                }
+            }
+
+            // Add any additional tags provided
+            if (additionalTags != null && additionalTags.Any())
+            {
+                tags.AddRange(additionalTags.Select(t => t.ToLowerInvariant()).Distinct());
+            }
+
+            return tags.Distinct().ToList();
         }
 
         /// <summary>

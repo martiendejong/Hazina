@@ -51,6 +51,12 @@ namespace HazinaStore.Core.Models
         public string MimeType { get; set; }
 
         /// <summary>
+        /// Tags for categorizing and filtering documents
+        /// Examples: "text", "image", "upload", "generated", "website", "webpage", "product"
+        /// </summary>
+        public List<string> Tags { get; set; } = new List<string>();
+
+        /// <summary>
         /// Vector embedding for semantic search
         /// </summary>
         public List<double> Embedding { get; set; }
