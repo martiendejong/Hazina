@@ -382,7 +382,8 @@ namespace Hazina.Tools.Services.Chat
 
             try
             {
-                using var image = Image.Load<Rgba32>(resolved.Data);
+                // Use fully qualified type to avoid ambiguity with Mscc.GenerativeAI.Image
+                using var image = SixLabors.ImageSharp.Image.Load<Rgba32>(resolved.Data);
                 if (HasTransparency(image))
                 {
                     return resolved;
@@ -391,18 +392,22 @@ namespace Hazina.Tools.Services.Chat
                 var background = GetCornerBackgroundColor(image);
                 var threshold = 30;
 
-                for (var y = 0; y < image.Height; y++)
+                // Use ImageSharp v3 API: ProcessPixelRows
+                image.ProcessPixelRows(accessor =>
                 {
-                    var row = image.GetPixelRowSpan(y);
-                    for (var x = 0; x < row.Length; x++)
+                    for (var y = 0; y < accessor.Height; y++)
                     {
-                        var pixel = row[x];
-                        if (IsCloseToBackground(pixel, background, threshold))
+                        var row = accessor.GetRowSpan(y);
+                        for (var x = 0; x < row.Length; x++)
                         {
-                            row[x] = new Rgba32(pixel.R, pixel.G, pixel.B, 0);
+                            var pixel = row[x];
+                            if (IsCloseToBackground(pixel, background, threshold))
+                            {
+                                row[x] = new Rgba32(pixel.R, pixel.G, pixel.B, 0);
+                            }
                         }
                     }
-                }
+                });
 
                 using var output = new MemoryStream();
                 image.SaveAsPng(output);
@@ -414,23 +419,28 @@ namespace Hazina.Tools.Services.Chat
             }
         }
 
-        private static bool HasTransparency(Image<Rgba32> image)
+        private static bool HasTransparency(SixLabors.ImageSharp.Image<Rgba32> image)
         {
-            for (var y = 0; y < image.Height; y++)
+            var hasAlpha = false;
+            image.ProcessPixelRows(accessor =>
             {
-                var row = image.GetPixelRowSpan(y);
-                for (var x = 0; x < row.Length; x++)
+                for (var y = 0; y < accessor.Height; y++)
                 {
-                    if (row[x].A < 255)
+                    var row = accessor.GetRowSpan(y);
+                    for (var x = 0; x < row.Length; x++)
                     {
-                        return true;
+                        if (row[x].A < 255)
+                        {
+                            hasAlpha = true;
+                            return; // Exit early
+                        }
                     }
                 }
-            }
-            return false;
+            });
+            return hasAlpha;
         }
 
-        private static Rgba32 GetCornerBackgroundColor(Image<Rgba32> image)
+        private static Rgba32 GetCornerBackgroundColor(SixLabors.ImageSharp.Image<Rgba32> image)
         {
             var corners = new[]
             {
