@@ -85,7 +85,7 @@ public static class HazinaOpenAIExtensions
 
             if (string.Equals(prop.Type, "array", StringComparison.OrdinalIgnoreCase))
             {
-                properties[prop.Name]["items"] = new Dictionary<string, object>
+                ((Dictionary<string, object>)properties[prop.Name])["items"] = new Dictionary<string, object>
                 {
                     ["type"] = string.IsNullOrWhiteSpace(prop.ItemsType) ? "string" : prop.ItemsType
                 };
