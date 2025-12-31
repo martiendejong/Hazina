@@ -28,7 +28,7 @@ namespace Hazina.Tools.Services.Store
         private readonly BigQueryService _bigQueryService;
         private const string AnalysisConfigFile = "analysis-fields.config.json";
 
-        public StoreToolsContext(string model, string apiKey, IDocumentStore store, ProjectsRepository projects, IntakeRepository intake, string projectId, string chatId, object agent, string userId = "", IAnalysisFieldsProvider analysisProvider = null, AnalysisToolsOptions analysisOptions = null)
+        public StoreToolsContext(string model, string apiKey, IDocumentStore store, ProjectsRepository projects, IntakeRepository intake, string projectId, string chatId, object agent, string userId = "", IAnalysisFieldsProvider analysisProvider = null, AnalysisToolsOptions analysisOptions = null, List<string> selectedDocumentIds = null)
         {
             Model = model;
             ApiKey = apiKey;
@@ -38,6 +38,7 @@ namespace Hazina.Tools.Services.Store
             ProjectId = projectId;
             ChatId = chatId;
             UserId = userId;
+            SelectedDocumentIds = selectedDocumentIds ?? new List<string>();
 
             var fileLocator = new ProjectFileLocator(projects.ProjectsFolder);
             _webScrapingService = new WebScrapingService(apiKey, model, fileLocator, intake, projectId, agent);
