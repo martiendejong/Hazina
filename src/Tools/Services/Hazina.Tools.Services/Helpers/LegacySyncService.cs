@@ -44,7 +44,8 @@ namespace Hazina.Tools.Services.Helpers
         public async Task SyncUploadedDocument(
             CoreProject project,
             string fileName,
-            int tokenCount = 0)
+            int tokenCount = 0,
+            List<string> tags = null)
         {
             if (project == null)
                 throw new ArgumentNullException(nameof(project));
@@ -59,8 +60,25 @@ namespace Hazina.Tools.Services.Helpers
             // Create legacy UploadedFile object
             var uploadedFile = FileHelper.GetUploadedFileDetails(filePath, fileName, tokenCount);
 
+            // Add tags if provided
+            if (tags != null && tags.Any())
+            {
+                uploadedFile.Tags = tags;
+            }
+
             // Update legacy uploadedFiles.json
             await FileHelper.UpdateUploadedFilesListAsync(listFilePath, uploadedFile);
+        }
+
+        /// <summary>
+        /// Synchronize uploaded document to legacy system (overload for backward compatibility)
+        /// </summary>
+        public async Task SyncUploadedDocument(
+            CoreProject project,
+            string fileName,
+            List<string> tags)
+        {
+            await SyncUploadedDocument(project, fileName, 0, tags);
         }
 
         /// <summary>
