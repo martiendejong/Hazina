@@ -337,12 +337,31 @@ public sealed class DataGatheringToolsContext : ToolsContextBase
         var title = item.Title?.ToLowerInvariant() ?? string.Empty;
         var value = item.Data?.DisplayValue?.ToLowerInvariant() ?? string.Empty;
 
+        // Block metadata/conversational noise
         string[] bannedKeyFragments = new[]
         {
             "timestamp", "time", "date", "message", "chat", "conversation", "user", "assistant", "utterance", "prompt"
         };
 
         if (bannedKeyFragments.Any(f => key.Contains(f) || title.Contains(f)))
+        {
+            return true;
+        }
+
+        // Block data that belongs in analysis fields (not gathered data)
+        // These should use UpdateAnalysisField tool instead
+        string[] analysisFieldKeys = new[]
+        {
+            "brand-name", "brandname", "brand_name", "company-name", "companyname", "company_name",
+            "business-name", "businessname", "business_name", "project-name", "projectname",
+            "target-audience", "targetaudience", "target_audience", "audience",
+            "location", "city", "country", "region",
+            "goal", "goals", "vision", "mission", "objective", "objectives",
+            "tagline", "slogan", "positioning", "differentiator", "differentiators",
+            "unique-selling-point", "usp", "value-proposition"
+        };
+
+        if (analysisFieldKeys.Any(k => key == k || key.Contains(k)))
         {
             return true;
         }
