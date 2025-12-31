@@ -348,16 +348,18 @@ public sealed class DataGatheringToolsContext : ToolsContextBase
             return true;
         }
 
-        // Block brand name variants from gathered data (brand name belongs in analysis fields)
-        string[] analysisFieldKeys = new[]
+        // Block brand/company/business NAME fields from gathered data (these belong in analysis fields only)
+        // IMPORTANT: Use EXACT match only, not Contains, to avoid blocking valid fields like "business-plan", "existing-business"
+        string[] analysisOnlyKeys = new[]
         {
             "brand-name", "brandname", "brand_name",
             "company-name", "companyname", "company_name",
             "business-name", "businessname", "business_name",
-            "project-name", "projectname"
+            "project-name", "projectname", "project_name"
         };
 
-        if (analysisFieldKeys.Any(k => key == k || key.Contains(k)))
+        // Only block if key EXACTLY matches an analysis-only field
+        if (analysisOnlyKeys.Any(k => key == k))
         {
             return true;
         }
