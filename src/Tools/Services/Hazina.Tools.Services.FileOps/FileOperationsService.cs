@@ -108,7 +108,36 @@ namespace Hazina.Tools.Services.FileOps
                 var baseFolder = string.IsNullOrEmpty(_userId)
                     ? _fileLocator.GetProjectFolder(_projectId)
                     : _fileLocator.GetProjectFolder(_projectId, _userId);
-                var fullPath = Path.Combine(baseFolder, "chats", _chatId + "_uploads", file);
+
+                // Try chat uploads first, then project uploads
+                var chatUploadsPath = Path.Combine(baseFolder, "chats", _chatId + "_uploads", file);
+                var projectUploadsPath = Path.Combine(baseFolder, "uploads", file);
+
+                // Determine which path exists (prefer chat uploads if both exist)
+                var fullPath = File.Exists(chatUploadsPath) ? chatUploadsPath : projectUploadsPath;
+
+                // If file doesn't exist in either location, try to find it in project uploads by matching filename
+                if (!File.Exists(fullPath))
+                {
+                    var uploadsFolder = Path.Combine(baseFolder, "uploads");
+                    if (Directory.Exists(uploadsFolder))
+                    {
+                        // Sanitize the file parameter for path safety
+                        var safeFileName = Path.GetFileName(file);
+                        var matchingFiles = Directory.GetFiles(uploadsFolder, "*.*", SearchOption.AllDirectories)
+                            .Where(f =>
+                            {
+                                var fileName = Path.GetFileName(f);
+                                return fileName.StartsWith(safeFileName + "_") ||
+                                       fileName.StartsWith(safeFileName + ".") ||
+                                       fileName == safeFileName;
+                            })
+                            .ToList();
+
+                        if (matchingFiles.Any())
+                            fullPath = matchingFiles.First();
+                    }
+                }
 
                 // Check if summary or text file already exists
                 var txt = fullPath + ".txt";
