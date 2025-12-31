@@ -180,7 +180,7 @@ namespace Hazina.Tools.Services.Chat
                 {
                     // Use project name when available to match client-side filtering
                     var projectKey = project?.Name ?? projectId;
-                    _notifier?.NotifyChunkReceived(projectKey, "chat", string.Empty, chunk);
+                    _notifier?.NotifyChunkReceived(projectKey, "chat", string.Empty, chunk, chatId);
                 }
                 catch { }
             };

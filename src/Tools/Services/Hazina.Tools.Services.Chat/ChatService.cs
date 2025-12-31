@@ -306,7 +306,7 @@ namespace Hazina.Tools.Services.Chat
             _messageService.StoreChatMessages(projectId, chatId, messages, userId);
 
             // Send a small immediate chunk to show activity while streaming starts
-            _ = _notifier.NotifyChunkReceived(project?.Name ?? projectId, "chat", string.Empty, "...");
+            _ = _notifier.NotifyChunkReceived(project?.Name ?? projectId, "chat", string.Empty, "...", chatId);
 
             // Pass prior history separately so the latest user message isn't duplicated
             var convo = await _streamService.SendChatMessage(projectId, chatId, userId, project, chatMessage, history, cancel);
@@ -324,7 +324,7 @@ namespace Hazina.Tools.Services.Chat
                 _metadataService.UpdateChatMetadataModified(projectId, chatId, null, userId);
 
                 // Stream final chunk
-                _ = _notifier.NotifyChunkReceived(project?.Name ?? projectId, "chat", string.Empty, reply);
+                _ = _notifier.NotifyChunkReceived(project?.Name ?? projectId, "chat", string.Empty, reply, chatId);
             }
 
             // Fire off background services AFTER chat is saved
@@ -483,7 +483,7 @@ namespace Hazina.Tools.Services.Chat
             _messageService.StoreChatMessages(projectId, chatId, messages);
 
             // Send a small immediate chunk to show activity while streaming starts
-            _ = _notifier.NotifyChunkReceived(project?.Name ?? projectId, "chat", string.Empty, "...");
+            _ = _notifier.NotifyChunkReceived(project?.Name ?? projectId, "chat", string.Empty, "...", chatId);
 
             // Pass prior history (without the newly appended user message)
             var convo = await _streamService.SendChatMessage(projectId, chatId, project, chatMessage, history, cancel);
@@ -501,7 +501,7 @@ namespace Hazina.Tools.Services.Chat
                 _metadataService.UpdateChatMetadataModified(projectId, chatId, null);
 
                 // Stream final chunk
-                _ = _notifier.NotifyChunkReceived(project?.Name ?? projectId, "chat", string.Empty, reply);
+                _ = _notifier.NotifyChunkReceived(project?.Name ?? projectId, "chat", string.Empty, reply, chatId);
             }
 
             // Fire off background services AFTER chat is saved
