@@ -348,17 +348,13 @@ public sealed class DataGatheringToolsContext : ToolsContextBase
             return true;
         }
 
-        // Block data that belongs in analysis fields (not gathered data)
-        // These should use UpdateAnalysisField tool instead
+        // Block brand name variants from gathered data (brand name belongs in analysis fields)
         string[] analysisFieldKeys = new[]
         {
-            "brand-name", "brandname", "brand_name", "company-name", "companyname", "company_name",
-            "business-name", "businessname", "business_name", "project-name", "projectname",
-            "target-audience", "targetaudience", "target_audience", "audience",
-            "location", "city", "country", "region",
-            "goal", "goals", "vision", "mission", "objective", "objectives",
-            "tagline", "slogan", "positioning", "differentiator", "differentiators",
-            "unique-selling-point", "usp", "value-proposition"
+            "brand-name", "brandname", "brand_name",
+            "company-name", "companyname", "company_name",
+            "business-name", "businessname", "business_name",
+            "project-name", "projectname"
         };
 
         if (analysisFieldKeys.Any(k => key == k || key.Contains(k)))

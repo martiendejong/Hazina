@@ -15,6 +15,7 @@ using Hazina.Tools.Services.Helpers;
 using CoreProject = HazinaStore.Core.Project;
 using LegacyProject = Hazina.Tools.Models.Project;
 using Microsoft.Extensions.Configuration;
+using Hazina.Tools.Models;
 
 namespace Hazina.Tools.Services
 {
@@ -189,6 +190,7 @@ namespace Hazina.Tools.Services
                         return;
 
                     var extractedText = await File.ReadAllTextAsync(textFilePath);
+                    await EnsureSummaryAsync(extractedText, fileName, textFilePath);
 
                     // Count tokens
                     var tokenCounter = new TokenCounter();
@@ -211,6 +213,50 @@ namespace Hazina.Tools.Services
                     Console.WriteLine($"Error extracting text for {fileName}: {ex.Message}");
                     // TODO: Add proper logging and error tracking
                 }
+            }
+        }
+
+        private async Task EnsureSummaryAsync(string extractedText, string fileName, string textFilePath)
+        {
+            if (string.IsNullOrWhiteSpace(extractedText))
+                return;
+
+            var summaryPath = textFilePath + ".summary.txt";
+            if (File.Exists(summaryPath))
+                return;
+
+            if (_extractor?.Api == null)
+                return;
+
+            var maxChars = 12000;
+            var trimmed = extractedText.Length > maxChars
+                ? extractedText.Substring(0, maxChars)
+                : extractedText;
+
+            var messages = new List<HazinaChatMessage>
+            {
+                new(HazinaMessageRole.System, "You summarize uploaded documents. Keep it concise and factual."),
+                new(HazinaMessageRole.User, $"Summarize the following document for quick reference. File: {fileName}\n\n{trimmed}")
+            };
+
+            try
+            {
+                var response = await _extractor.Api.GetResponse(
+                    messages,
+                    HazinaChatResponseFormat.Text,
+                    toolsContext: null,
+                    images: null,
+                    CancellationToken.None);
+
+                var summary = response?.Result?.Trim();
+                if (!string.IsNullOrWhiteSpace(summary))
+                {
+                    await File.WriteAllTextAsync(summaryPath, summary);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating summary for {fileName}: {ex.Message}");
             }
         }
 

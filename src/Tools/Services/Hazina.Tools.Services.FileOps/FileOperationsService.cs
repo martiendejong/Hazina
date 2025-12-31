@@ -48,12 +48,20 @@ namespace Hazina.Tools.Services.FileOps
             {
                 var fullPath = Path.Combine(_fileLocator.GetProjectFolder(_projectId), file);
                 var txt = fullPath + ".txt";
+                var summaryPath = txt + ".summary.txt";
+                var summary = File.Exists(summaryPath) ? File.ReadAllText(summaryPath) : string.Empty;
+                if (!string.IsNullOrWhiteSpace(summary))
+                    return summary;
+
                 var text = File.Exists(txt) ? File.ReadAllText(txt) : string.Empty;
                 if (!string.IsNullOrWhiteSpace(text) && !text.StartsWith("Page 1"))
                     return text;
 
                 var extractor = new TextFileExtractor(api: null);
                 await extractor.ExtractTextFromPdf(fullPath, txt);
+                if (File.Exists(summaryPath))
+                    return File.ReadAllText(summaryPath);
+
                 return File.ReadAllText(txt);
             }
             catch (Exception e)
@@ -71,12 +79,20 @@ namespace Hazina.Tools.Services.FileOps
                     : _fileLocator.GetProjectFolder(_projectId, _userId);
                 var fullPath = Path.Combine(baseFolder, "chats", _chatId + "_uploads", file);
                 var txt = fullPath + ".txt";
+                var summaryPath = txt + ".summary.txt";
+                var summary = File.Exists(summaryPath) ? File.ReadAllText(summaryPath) : string.Empty;
+                if (!string.IsNullOrWhiteSpace(summary))
+                    return summary;
+
                 var text = File.Exists(txt) ? File.ReadAllText(txt) : string.Empty;
                 if (!string.IsNullOrWhiteSpace(text) && !text.StartsWith("Page 1"))
                     return text;
 
                 var extractor = new TextFileExtractor(api: null);
                 await extractor.ExtractTextFromPdf(fullPath, txt);
+                if (File.Exists(summaryPath))
+                    return File.ReadAllText(summaryPath);
+
                 return File.ReadAllText(txt);
             }
             catch (Exception e)
@@ -94,8 +110,13 @@ namespace Hazina.Tools.Services.FileOps
                     : _fileLocator.GetProjectFolder(_projectId, _userId);
                 var fullPath = Path.Combine(baseFolder, "chats", _chatId + "_uploads", file);
 
-                // Check if text file already exists
+                // Check if summary or text file already exists
                 var txt = fullPath + ".txt";
+                var summaryPath = txt + ".summary.txt";
+                var summary = File.Exists(summaryPath) ? File.ReadAllText(summaryPath) : string.Empty;
+                if (!string.IsNullOrWhiteSpace(summary))
+                    return summary;
+
                 var text = File.Exists(txt) ? File.ReadAllText(txt) : string.Empty;
                 if (!string.IsNullOrWhiteSpace(text))
                     return text;
@@ -104,7 +125,11 @@ namespace Hazina.Tools.Services.FileOps
                 var extractor = new TextFileExtractor(api: null);
                 await extractor.ExtractTextFromDocument(fullPath, txt);
 
-                return File.Exists(txt) ? File.ReadAllText(txt) : "Document extraction failed.";
+                return File.Exists(summaryPath)
+                    ? File.ReadAllText(summaryPath)
+                    : File.Exists(txt)
+                        ? File.ReadAllText(txt)
+                        : "Document extraction failed.";
             }
             catch (Exception e)
             {

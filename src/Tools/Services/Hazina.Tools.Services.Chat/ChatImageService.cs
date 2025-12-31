@@ -6,8 +6,11 @@ using Mscc.GenerativeAI;
 using System;
 using System.IO;
 using System.Net.Http;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Hazina.Tools.Services.Chat
 {
@@ -109,6 +112,7 @@ namespace Hazina.Tools.Services.Chat
                 }
 
                 var resolved = await ResolveImageDataAsync(imageSource, cancel);
+                resolved = TryMakeLogoBackgroundTransparent(resolved, prompt, isImageSet);
                 var extension = DetermineExtension(resolved.ContentType, resolved.SourceUrl);
                 var fileName = $"{Guid.NewGuid():N}{extension}";
                 var storedUserId = string.IsNullOrWhiteSpace(userId) ? null : userId;
@@ -367,6 +371,89 @@ namespace Hazina.Tools.Services.Chat
             var data = await response.Content.ReadAsByteArrayAsync(cancel);
             var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
             return new ResolvedImage(data, contentType, source);
+        }
+
+        private static ResolvedImage TryMakeLogoBackgroundTransparent(ResolvedImage resolved, string prompt, bool isImageSet)
+        {
+            if (!isImageSet || string.IsNullOrWhiteSpace(prompt) || !prompt.Contains("logo", StringComparison.OrdinalIgnoreCase))
+            {
+                return resolved;
+            }
+
+            try
+            {
+                using var image = Image.Load<Rgba32>(resolved.Data);
+                if (HasTransparency(image))
+                {
+                    return resolved;
+                }
+
+                var background = GetCornerBackgroundColor(image);
+                var threshold = 30;
+
+                for (var y = 0; y < image.Height; y++)
+                {
+                    var row = image.GetPixelRowSpan(y);
+                    for (var x = 0; x < row.Length; x++)
+                    {
+                        var pixel = row[x];
+                        if (IsCloseToBackground(pixel, background, threshold))
+                        {
+                            row[x] = new Rgba32(pixel.R, pixel.G, pixel.B, 0);
+                        }
+                    }
+                }
+
+                using var output = new MemoryStream();
+                image.SaveAsPng(output);
+                return new ResolvedImage(output.ToArray(), "image/png", resolved.SourceUrl);
+            }
+            catch
+            {
+                return resolved;
+            }
+        }
+
+        private static bool HasTransparency(Image<Rgba32> image)
+        {
+            for (var y = 0; y < image.Height; y++)
+            {
+                var row = image.GetPixelRowSpan(y);
+                for (var x = 0; x < row.Length; x++)
+                {
+                    if (row[x].A < 255)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private static Rgba32 GetCornerBackgroundColor(Image<Rgba32> image)
+        {
+            var corners = new[]
+            {
+                image[0, 0],
+                image[image.Width - 1, 0],
+                image[0, image.Height - 1],
+                image[image.Width - 1, image.Height - 1]
+            };
+
+            return corners
+                .GroupBy(c => c)
+                .OrderByDescending(g => g.Count())
+                .Select(g => g.Key)
+                .FirstOrDefault();
+        }
+
+        private static bool IsCloseToBackground(Rgba32 pixel, Rgba32 background, int threshold)
+        {
+            var dr = pixel.R - background.R;
+            var dg = pixel.G - background.G;
+            var db = pixel.B - background.B;
+            var distance = Math.Abs(dr) + Math.Abs(dg) + Math.Abs(db);
+            return distance <= threshold;
         }
 
         private readonly struct ResolvedImage

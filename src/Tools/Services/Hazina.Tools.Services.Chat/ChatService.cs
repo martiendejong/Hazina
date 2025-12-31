@@ -336,6 +336,8 @@ namespace Hazina.Tools.Services.Chat
                 {
                     _ = Task.Run(async () =>
                     {
+                        var succeeded = false;
+                        await _notifier.NotifyOperationStatus(projectId, chatId, "gathering-data", "started");
                         try
                         {
                             await _dataGatheringService.GatherDataFromMessageAsync(
@@ -345,8 +347,17 @@ namespace Hazina.Tools.Services.Chat
                                 historyMessages,
                                 userId,
                                 CancellationToken.None);
+                            succeeded = true;
                         }
                         catch { /* Best effort */ }
+                        finally
+                        {
+                            await _notifier.NotifyOperationStatus(
+                                projectId,
+                                chatId,
+                                "gathering-data",
+                                succeeded ? "completed" : "error");
+                        }
                     });
                 }
 
@@ -355,6 +366,8 @@ namespace Hazina.Tools.Services.Chat
                 {
                     _ = Task.Run(async () =>
                     {
+                        var succeeded = false;
+                        await _notifier.NotifyOperationStatus(projectId, chatId, "generating-analysis", "started");
                         try
                         {
                             var generatedFields = await _analysisFieldService.GenerateFromConversationAsync(
@@ -391,8 +404,17 @@ namespace Hazina.Tools.Services.Chat
                                     }
                                 }
                             }
+                            succeeded = true;
                         }
                         catch { /* Best effort */ }
+                        finally
+                        {
+                            await _notifier.NotifyOperationStatus(
+                                projectId,
+                                chatId,
+                                "generating-analysis",
+                                succeeded ? "completed" : "error");
+                        }
                     });
                 }
 
@@ -489,6 +511,8 @@ namespace Hazina.Tools.Services.Chat
                 {
                     _ = Task.Run(async () =>
                     {
+                        var succeeded = false;
+                        await _notifier.NotifyOperationStatus(projectId, chatId, "gathering-data", "started");
                         try
                         {
                             await _dataGatheringService.GatherDataFromMessageAsync(
@@ -498,8 +522,17 @@ namespace Hazina.Tools.Services.Chat
                                 historyMessages,
                                 null, // no userId for project-specific chats
                                 CancellationToken.None);
+                            succeeded = true;
                         }
                         catch { /* Best effort */ }
+                        finally
+                        {
+                            await _notifier.NotifyOperationStatus(
+                                projectId,
+                                chatId,
+                                "gathering-data",
+                                succeeded ? "completed" : "error");
+                        }
                     });
                 }
 
@@ -508,6 +541,8 @@ namespace Hazina.Tools.Services.Chat
                 {
                     _ = Task.Run(async () =>
                     {
+                        var succeeded = false;
+                        await _notifier.NotifyOperationStatus(projectId, chatId, "generating-analysis", "started");
                         try
                         {
                             await _analysisFieldService.GenerateFromConversationAsync(
@@ -517,8 +552,17 @@ namespace Hazina.Tools.Services.Chat
                                 historyMessages,
                                 null, // no userId for project-specific chats
                                 CancellationToken.None);
+                            succeeded = true;
                         }
                         catch { /* Best effort */ }
+                        finally
+                        {
+                            await _notifier.NotifyOperationStatus(
+                                projectId,
+                                chatId,
+                                "generating-analysis",
+                                succeeded ? "completed" : "error");
+                        }
                     });
                 }
             }
@@ -683,4 +727,3 @@ namespace Hazina.Tools.Services.Chat
         }
     }
 }
-
