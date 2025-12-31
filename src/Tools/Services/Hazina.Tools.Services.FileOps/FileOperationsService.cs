@@ -85,6 +85,33 @@ namespace Hazina.Tools.Services.FileOps
             }
         }
 
+        public async Task<string> AnalyzeChatDocumentAsync(string file)
+        {
+            try
+            {
+                var baseFolder = string.IsNullOrEmpty(_userId)
+                    ? _fileLocator.GetProjectFolder(_projectId)
+                    : _fileLocator.GetProjectFolder(_projectId, _userId);
+                var fullPath = Path.Combine(baseFolder, "chats", _chatId + "_uploads", file);
+
+                // Check if text file already exists
+                var txt = fullPath + ".txt";
+                var text = File.Exists(txt) ? File.ReadAllText(txt) : string.Empty;
+                if (!string.IsNullOrWhiteSpace(text))
+                    return text;
+
+                // Extract text from document using generic extractor (supports PDF, DOCX, XLSX, etc.)
+                var extractor = new TextFileExtractor(api: null);
+                await extractor.ExtractTextFromDocument(fullPath, txt);
+
+                return File.Exists(txt) ? File.ReadAllText(txt) : "Document extraction failed.";
+            }
+            catch (Exception e)
+            {
+                return $"Error analyzing document: {e.Message}";
+            }
+        }
+
         public Task<string> PerformReasoningAsync(string problemStatement, System.Collections.IEnumerable messages)
         {
             if (string.IsNullOrWhiteSpace(problemStatement))

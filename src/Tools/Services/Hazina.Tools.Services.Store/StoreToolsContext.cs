@@ -21,6 +21,7 @@ namespace Hazina.Tools.Services.Store
         public string ProjectId { get; set; }
         public string ChatId { get; set; }
         public string UserId { get; set; }
+        public List<string> SelectedDocumentIds { get; set; } = new List<string>();
 
         private readonly WebScrapingService _webScrapingService;
         private readonly FileOperationsService _fileOperationsService;
@@ -149,6 +150,20 @@ namespace Hazina.Tools.Services.Store
                     if (hasQuery)
                     {
                         return await _fileOperationsService.AnalyzeChatPdfFileAsync(query.GetString());
+                    }
+                    return "Invalid call, parameter file was not provided.";
+                });
+            Tools.Add(tool);
+
+            tool = new HazinaChatTool($"AnalyseChatDocument", $"Analyse any document file (PDF, DOCX, XLSX, etc.) that is included in the chat. Returns extracted text/summary from the document.",
+                [FileParameter],
+                async (messages, toolCall, cancel) =>
+                {
+                    using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
+                    bool hasQuery = argumentsJson.RootElement.TryGetProperty("file", out JsonElement query);
+                    if (hasQuery)
+                    {
+                        return await _fileOperationsService.AnalyzeChatDocumentAsync(query.GetString());
                     }
                     return "Invalid call, parameter file was not provided.";
                 });
