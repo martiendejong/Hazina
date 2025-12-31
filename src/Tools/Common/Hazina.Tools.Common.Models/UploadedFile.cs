@@ -20,6 +20,12 @@ namespace HazinaStore.Models
 
         public List<double> Embedding { get; set; }
 
+        /// <summary>
+        /// Tags for categorizing and filtering documents
+        /// Examples: "text", "image", "upload", "generated", "website", "webpage", "product"
+        /// </summary>
+        public List<string> Tags { get; set; } = new List<string>();
+
         public string ToDescriptiveString() => Content;
     }
 }
