@@ -409,12 +409,48 @@ namespace Hazina.Tools.Services.Chat
                     }
                 });
 
+                // Validate that transparency was actually achieved
+                if (!HasTransparency(image))
+                {
+                    // Log failure - transparency processing didn't produce transparent pixels
+                    Console.WriteLine($"[Logo Transparency] Warning: Processing failed to create transparency. Background color: R={background.R}, G={background.G}, B={background.B}. Returning original image.");
+                    return resolved;
+                }
+
+                // Count transparent pixels to ensure sufficient transparency
+                var transparentPixelCount = 0;
+                var totalPixels = image.Width * image.Height;
+                image.ProcessPixelRows(accessor =>
+                {
+                    for (var y = 0; y < accessor.Height; y++)
+                    {
+                        var row = accessor.GetRowSpan(y);
+                        for (var x = 0; x < row.Length; x++)
+                        {
+                            if (row[x].A == 0)
+                                transparentPixelCount++;
+                        }
+                    }
+                });
+
+                var transparencyPercentage = (transparentPixelCount * 100.0) / totalPixels;
+
+                // If less than 5% of pixels are transparent, the processing likely failed
+                if (transparencyPercentage < 5.0)
+                {
+                    Console.WriteLine($"[Logo Transparency] Warning: Only {transparencyPercentage:F2}% of pixels are transparent. Processing may have failed. Returning original image.");
+                    return resolved;
+                }
+
+                Console.WriteLine($"[Logo Transparency] Success: {transparencyPercentage:F2}% of pixels are transparent. Background removed successfully.");
+
                 using var output = new MemoryStream();
                 image.SaveAsPng(output);
                 return new ResolvedImage(output.ToArray(), "image/png", resolved.SourceUrl);
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"[Logo Transparency] Error during transparency processing: {ex.Message}. Returning original image.");
                 return resolved;
             }
         }
