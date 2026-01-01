@@ -249,32 +249,96 @@ namespace Hazina.Tools.Services.Chat
 
         public async Task<ChatConversation> GenerateImage(string projectId, string chatId, string userId, Project project, GeneratorMessage chatMessage, CancellationToken cancel, bool isImageSet)
         {
-            await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "started");
+            Console.WriteLine($"[ChatService] GenerateImage called for project={projectId}, chat={chatId}");
+            Console.WriteLine($"[ChatService] About to send NotifyOperationStatus: generating-image started");
+            try
+            {
+                await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "started");
+                Console.WriteLine($"[ChatService] NotifyOperationStatus sent successfully: generating-image started");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ChatService] ERROR sending NotifyOperationStatus (started): {ex.Message}");
+                Console.WriteLine($"[ChatService] Stack trace: {ex.StackTrace}");
+            }
+
             try
             {
                 var result = await _imageService.GenerateImage(projectId, chatId, userId, project, chatMessage, cancel, isImageSet);
-                await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "completed");
+
+                Console.WriteLine($"[ChatService] Image generated successfully, sending completion notification");
+                try
+                {
+                    await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "completed");
+                    Console.WriteLine($"[ChatService] NotifyOperationStatus sent successfully: generating-image completed");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ChatService] ERROR sending NotifyOperationStatus (completed): {ex.Message}");
+                }
+
                 return result;
             }
             catch
             {
-                await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "failed");
+                Console.WriteLine($"[ChatService] Image generation failed, sending failure notification");
+                try
+                {
+                    await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "failed");
+                    Console.WriteLine($"[ChatService] NotifyOperationStatus sent successfully: generating-image failed");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ChatService] ERROR sending NotifyOperationStatus (failed): {ex.Message}");
+                }
                 throw;
             }
         }
 
         public async Task<ChatConversation> GenerateImage(string projectId, string chatId, Project project, GeneratorMessage chatMessage, CancellationToken cancel, bool isImageSet)
         {
-            await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "started");
+            Console.WriteLine($"[ChatService] GenerateImage called (no userId) for project={projectId}, chat={chatId}");
+            Console.WriteLine($"[ChatService] About to send NotifyOperationStatus: generating-image started");
+            try
+            {
+                await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "started");
+                Console.WriteLine($"[ChatService] NotifyOperationStatus sent successfully: generating-image started");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ChatService] ERROR sending NotifyOperationStatus (started): {ex.Message}");
+                Console.WriteLine($"[ChatService] Stack trace: {ex.StackTrace}");
+            }
+
             try
             {
                 var result = await _imageService.GenerateImage(projectId, chatId, project, chatMessage, cancel, isImageSet);
-                await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "completed");
+
+                Console.WriteLine($"[ChatService] Image generated successfully, sending completion notification");
+                try
+                {
+                    await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "completed");
+                    Console.WriteLine($"[ChatService] NotifyOperationStatus sent successfully: generating-image completed");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ChatService] ERROR sending NotifyOperationStatus (completed): {ex.Message}");
+                }
+
                 return result;
             }
             catch
             {
-                await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "failed");
+                Console.WriteLine($"[ChatService] Image generation failed, sending failure notification");
+                try
+                {
+                    await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "failed");
+                    Console.WriteLine($"[ChatService] NotifyOperationStatus sent successfully: generating-image failed");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ChatService] ERROR sending NotifyOperationStatus (failed): {ex.Message}");
+                }
                 throw;
             }
         }
