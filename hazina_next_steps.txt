@@ -1,0 +1,260 @@
+1. Define what “RAG AI application” means (strictly)
+
+You must lock this down or the tutorial explodes.
+
+For the tutorial, RAG =
+
+Upload documents (PDF / MD / TXT)
+
+Chunk + embed
+
+Store embeddings
+
+Ask questions
+
+Get grounded answers with citations
+
+Persist everything
+
+Nothing else.
+
+Explicitly exclude
+
+agents
+
+orchestration
+
+background jobs
+
+multi-tenancy
+
+custom pipelines
+
+The tutorial is not Hazina’s full power.
+It is Hazina’s entry surface.
+
+2. Freeze one opinionated default stack
+
+A 30-minute tutorial cannot ask users to choose.
+
+Pick and hardcode (for now):
+
+1 LLM provider
+
+1 embedding model
+
+1 vector store
+
+1 chunking strategy
+
+1 retrieval strategy
+
+Example (illustrative):
+
+OpenAI-compatible API
+
+text-embedding-3-large
+
+local SQLite + vector extension OR Chroma
+
+fixed chunk size
+
+cosine similarity + top-k
+
+You can abstract internally — but do not expose it.
+
+3. Create a “Hazina Starter” package
+
+Do not make users assemble Hazina.
+
+You need a single NuGet / template / repo that provides:
+
+Prewired services
+
+Default config
+
+Minimal API surface
+
+One happy path
+
+Think:
+
+Hazina.Starter.Rag
+
+
+If the user imports more than one package, you already failed.
+
+4. Design the tutorial backwards from time
+
+This is critical.
+
+Minute-by-minute budget
+
+0–5 min: setup
+
+5–10 min: ingest documents
+
+10–15 min: embeddings created
+
+15–20 min: query RAG
+
+20–25 min: persist + reload
+
+25–30 min: change something and see it still work
+
+Anything beyond that is cut.
+
+5. Reduce the API to ~6 core calls
+
+Your tutorial API should feel too small.
+
+Example shape (conceptual):
+
+var hazina = HazinaRag.CreateDefault();
+
+hazina.Ingest("./docs");
+
+var answer = hazina.Ask("What is this documentation about?");
+
+hazina.Save();
+
+
+That’s it.
+
+Internally this may do a lot — externally it must not.
+
+6. Make persistence visible
+
+This is where Hazina differentiates from toy RAGs.
+
+In the tutorial, show explicitly:
+
+Where embeddings are stored
+
+Where documents live
+
+Where chat history lives
+
+Then:
+
+restart the app
+
+ask another question
+
+show it still works
+
+This moment is the “aha”.
+
+7. Pre-generate a reference dataset
+
+Do not make the tutorial depend on:
+
+random PDFs
+
+large files
+
+slow embeddings
+
+Ship with:
+
+a /sample-docs folder
+
+small, clean, meaningful content
+
+predictable answers
+
+Speed and determinism matter more than realism.
+
+8. Write the tutorial as commands, not prose
+
+Developers skim. Respect that.
+
+Structure
+
+Step 1 – Create project
+Command
+Expected output
+
+Step 2 – Ingest documents
+Command
+Expected output
+
+Step 3 – Ask questions
+Code
+Expected output
+
+
+No philosophy. No marketing.
+
+9. Delay configurability until the end
+
+Only after success do you reveal power.
+
+Final section:
+
+“What you just built is using defaults. Here’s what you can swap later.”
+
+Then list:
+
+other LLMs
+
+other stores
+
+custom chunking
+
+agents (link, don’t explain)
+
+This preserves Hazina’s depth without blocking adoption.
+
+10. Enforce the tutorial with a stopwatch
+
+This is non-negotiable.
+
+Action
+
+Time yourself from a clean machine
+
+No cached models
+
+No prior context
+
+No undocumented steps
+
+If it takes:
+
+31–35 minutes → cut
+
+36+ minutes → redesign
+
+What you must build (concretely)
+Required artifacts
+
+Hazina.Rag.Starter
+
+One default config file
+
+One CLI or minimal API
+
+One tutorial doc
+
+One sample dataset
+
+One “restart and it still works” moment
+
+That’s it.
+
+Key insight
+
+You don’t get to claim
+“RAG in 30 minutes”
+by being clever.
+
+You get there by:
+
+removing choices
+
+hiding power
+
+enforcing a single path
+
+being brutally opinionated
