@@ -248,10 +248,36 @@ namespace Hazina.Tools.Services.Chat
             => _metadataService.GetAllChats();
 
         public async Task<ChatConversation> GenerateImage(string projectId, string chatId, string userId, Project project, GeneratorMessage chatMessage, CancellationToken cancel, bool isImageSet)
-            => await _imageService.GenerateImage(projectId, chatId, userId, project, chatMessage, cancel, isImageSet);
+        {
+            await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "started");
+            try
+            {
+                var result = await _imageService.GenerateImage(projectId, chatId, userId, project, chatMessage, cancel, isImageSet);
+                await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "completed");
+                return result;
+            }
+            catch
+            {
+                await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "failed");
+                throw;
+            }
+        }
 
         public async Task<ChatConversation> GenerateImage(string projectId, string chatId, Project project, GeneratorMessage chatMessage, CancellationToken cancel, bool isImageSet)
-            => await _imageService.GenerateImage(projectId, chatId, project, chatMessage, cancel, isImageSet);
+        {
+            await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "started");
+            try
+            {
+                var result = await _imageService.GenerateImage(projectId, chatId, project, chatMessage, cancel, isImageSet);
+                await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "completed");
+                return result;
+            }
+            catch
+            {
+                await _notifier.NotifyOperationStatus(projectId, chatId, "generating-image", "failed");
+                throw;
+            }
+        }
 
         // Overloads accepting raw string messages
         public Task<ChatConversation> GenerateImage(string projectId, string chatId, string userId, Project project, string chatMessage, CancellationToken cancel, bool isImageSet)
