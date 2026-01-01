@@ -111,6 +111,20 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
         if (field == null)
             return JsonResult(false, $"Unknown analysis field key: {key}");
 
+        // Check if field already exists on disk to prevent duplicates across sessions
+        if (_fileLocator is not null)
+        {
+            var filePath = _fileLocator.GetPath(_projectId, field.File);
+            if (File.Exists(filePath))
+            {
+                var existingContent = await File.ReadAllTextAsync(filePath, cancellationToken);
+                if (!string.IsNullOrWhiteSpace(existingContent))
+                {
+                    return JsonResult(true, $"Field {key} already exists with content. Skipping duplicate generation.");
+                }
+            }
+        }
+
         // ImageSet/logo requires special image generation pipeline (not text generation)
         if (string.Equals(field.GenericType, nameof(ImageSet), StringComparison.OrdinalIgnoreCase))
         {
