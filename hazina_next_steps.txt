@@ -258,3 +258,51 @@ hiding power
 enforcing a single path
 
 being brutally opinionated
+
+
+
+NEXT:
+
+analyse this video: https://www.youtube.com/watch?v=1gDZtt-iKFE
+
+analyse the https://github.com/martiendejong/hazina framework
+
+come up with an instruction to implement the self learning capacities of the video as a feature in Hazina that can be turned on or off with configuration parameters
+
+this is the description of the video:
+
+What if your AI could improve itself? Not metaphorically - literally.
+
+In this video, I show you how to build self-improving AI systems using Claude Code and Supabase. I built a chatbot that detects its own bad responses, grades itself on a rubric, and rewrites its own prompts - all without human intervention.
+
+This isn't science fiction anymore. Once you see this pattern, you'll never build an AI app the same way again.
+
+What's inside:
+Live demo of a self-improving chatbot
+The evaluation layer that makes AI judge itself
+How to set up Supabase MCP with Claude Code
+The mega prompt I used to build the entire system
+Safety nets to prevent overconfident self-assessments
+Version control for AI-generated prompts
+
+---
+
+TIMESTAMPS:
+00:00 - What if AI could improve itself?
+00:36 - Demo: Self-improving chatbot in action
+01:10 - Admin panel: Reflection logs and versioning
+02:01 - How the evaluation triggers work
+03:02 - Version control and audit trails
+04:31 - Traditional vs self-improving architecture
+05:35 - The only two tools you need
+06:06 - Teacher mode: How it's built
+07:06 - The evaluation layer explained
+08:00 - The feedback loop diagram
+09:07 - Building session 1: Foundations
+11:07 - The mega prompt breakdown
+14:14 - Session 2: Breaking the cooldown
+17:00 - Session 3: Admin UI and settings
+19:56 - The handoff document hack
+21:17 - Testing and stress testing
+23:01 - Creating the ruthless critic prompt
+24:16 - Beyond prompts: Self-improving features
