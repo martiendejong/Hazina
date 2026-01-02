@@ -6,7 +6,14 @@ namespace Hazina.Tools.Models
     public class ImageVariant
     {
         public string Url { get; set; }
+
+        /// <summary>
+        /// Internal prompt used to generate this image.
+        /// Marked as JsonIgnore to prevent leaking to clients.
+        /// </summary>
+        [JsonIgnore]
         public string Prompt { get; set; }
+
         public string Id { get; set; }
     }
 
@@ -14,7 +21,14 @@ namespace Hazina.Tools.Models
     {
         public List<ImageVariant> Images { get; set; } = new List<ImageVariant>();
         public int? SelectedIndex { get; set; }
+
+        /// <summary>
+        /// Internal base prompt used for generation.
+        /// Marked as JsonIgnore to prevent leaking to clients.
+        /// </summary>
+        [JsonIgnore]
         public string Title { get; set; }
+
         public string Feedback { get; set; }
         public string Key { get; set; }
 
