@@ -78,16 +78,7 @@ namespace Hazina.Tools.Services.Chat
         {
             var prompt = chatMessage?.Message ?? string.Empty;
             // If generating an image set, diversify prompts to encourage variation
-            var prompts = isImageSet
-                ? new[]
-                {
-                    $"{prompt} --variation A --style cinematic --composition wide",
-                    $"{prompt} --variation B --style minimal --composition centered",
-                    $"{prompt} --variation C --style vibrant --composition close-up",
-                    $"{prompt} --variation D --style monochrome --composition dynamic"
-                }
-                : new[] { prompt };
-            var imageModel = project?.ImageModel ?? ImageModel.DallE3;
+            var imageModel = project?.ImageModel ?? ImageModel.GptImage;
             string imageSource;
             string modelInfo;
 
@@ -96,14 +87,19 @@ namespace Hazina.Tools.Services.Chat
                 // For image sets, generate the first prompt now; additional prompts handled below
                 switch (imageModel)
                 {
+                    case ImageModel.GptImage:
+                        imageSource = await GenerateOpenAIImage(prompt, imageModel, cancel);
+                        modelInfo = "GPT Image (gpt-image-1)";
+                        break;
+
                     case ImageModel.DallE3:
                     case ImageModel.DallE2:
-                        imageSource = await GenerateOpenAIImage(prompts[0], imageModel, cancel);
+                        imageSource = await GenerateOpenAIImage(prompt, imageModel, cancel);
                         modelInfo = imageModel == ImageModel.DallE3 ? "DALL-E 3" : "DALL-E 2";
                         break;
 
                     case ImageModel.NanoBanana:
-                        imageSource = await GenerateNanoBananaImage(prompts[0], cancel);
+                        imageSource = await GenerateNanoBananaImage(prompt, cancel);
                         modelInfo = "Nano Banana (Gemini 2.5 Flash Image)";
                         break;
 
@@ -143,12 +139,12 @@ namespace Hazina.Tools.Services.Chat
                     ProjectId = projectId,
                     ChatId = chatId,
                     FileName = fileName,
-                    Prompt = prompts[0],
+                    Prompt = prompt,
                     Model = modelInfo,
                     SourceUrl = resolved.SourceUrl ?? string.Empty,
                     UserId = storedUserId ?? string.Empty,
                     CreatedAt = DateTime.UtcNow,
-                    Tags = DetermineImageTags(prompts[0])
+                    Tags = DetermineImageTags(prompt)
                 };
                 _generatedImageRepository.Add(metadata, projectId, storedUserId);
 
@@ -288,17 +284,23 @@ namespace Hazina.Tools.Services.Chat
             }
 
             var config = new OpenAIConfig(_openAiApiKey);
-            config.ImageModel = model == ImageModel.DallE3 ? "dall-e-3" : "dall-e-2";
+            config.ImageModel = model switch
+            {
+                ImageModel.GptImage => "gpt-image-1",
+                ImageModel.DallE3 => "dall-e-3",
+                ImageModel.DallE2 => "dall-e-2",
+                _ => "gpt-image-1" // Default to GPT Image
+            };
 
             var client = new OpenAIClientWrapper(config);
             var result = await client.GetImage(prompt, null, null, null, cancel);
 
             if (result?.Result != null)
             {
-                return result.Result.Url?.ToString() ?? throw new Exception("No image URL returned from DALL-E");
+                return result.Result.Url?.ToString() ?? throw new Exception("No image URL returned from OpenAI");
             }
 
-            throw new Exception("Failed to generate image with DALL-E");
+            throw new Exception("Failed to generate image with OpenAI");
         }
 
         protected virtual async Task<string> GenerateNanoBananaImage(string prompt, CancellationToken cancel)

@@ -45,7 +45,7 @@ namespace Hazina.Tools.Models
         // --- PROJECT SETTINGS ---
         public bool NotificationsEnabled { get; set; } = true;
         public string Language { get; set; } = "en";
-        public ImageModel ImageModel { get; set; } = ImageModel.DallE3;
+        public ImageModel ImageModel { get; set; } = ImageModel.GptImage;
     }
 
     public class Place
