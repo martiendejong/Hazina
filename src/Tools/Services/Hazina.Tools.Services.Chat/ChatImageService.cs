@@ -156,33 +156,52 @@ namespace Hazina.Tools.Services.Chat
 
                 Console.WriteLine($"ChatImageService: Generated imageUrl={imageUrl}");
 
-                // Create the assistant message without echoing the prompt into chat
-                // Get existing messages and append user + assistant entries so the prompt stays visible in chat
-                var chatMessages = _messageService.GetChatMessages(projectId, chatId, userId);
-                var userMessage = new ConversationMessage
-                {
-                    Role = ChatMessageRole.User,
-                    Text = prompt
-                };
-                chatMessages.Add(userMessage);
+                // For image sets (background generation), don't add prompts to chat - they're internal only
+                // For regular chat image generation, add user/assistant messages as before
+                List<ConversationMessage> chatMessages;
 
-                var assistantMessage = new ConversationMessage
+                if (isImageSet)
                 {
-                    Role = ChatMessageRole.Assistant,
-                    Text = $"![Generated Image]({imageUrl})\n\n*Generated with {modelInfo}*",
-                    Payload = !isImageSet ? null : new
+                    // Background image set generation - don't pollute the chat with prompts
+                    // Just create a minimal response for the caller without persisting to chat
+                    chatMessages = new List<ConversationMessage>
                     {
-                        type = "image-set",
-                        url = imageUrl,
-                        fileName,
-                        model = modelInfo,
-                        prompt = prompts[0]
-                    }
-                };
-                chatMessages.Add(assistantMessage);
+                        new ConversationMessage
+                        {
+                            Role = ChatMessageRole.Assistant,
+                            Text = $"![Generated Image]({imageUrl})",
+                            Payload = new
+                            {
+                                type = "image-set",
+                                url = imageUrl,
+                                fileName,
+                                model = modelInfo
+                            }
+                        }
+                    };
+                    // Do NOT persist to chat - this is background generation
+                }
+                else
+                {
+                    // Regular chat image generation - add to conversation history
+                    chatMessages = _messageService.GetChatMessages(projectId, chatId, userId);
+                    var userMessage = new ConversationMessage
+                    {
+                        Role = ChatMessageRole.User,
+                        Text = prompt
+                    };
+                    chatMessages.Add(userMessage);
 
-                // Persist messages to chat file
-                _messageService.StoreChatMessages(projectId, chatId, chatMessages, userId);
+                    var assistantMessage = new ConversationMessage
+                    {
+                        Role = ChatMessageRole.Assistant,
+                        Text = $"![Generated Image]({imageUrl})\n\n*Generated with {modelInfo}*"
+                    };
+                    chatMessages.Add(assistantMessage);
+
+                    // Persist messages to chat file only for regular image generation
+                    _messageService.StoreChatMessages(projectId, chatId, chatMessages, userId);
+                }
 
                 // Get or create metadata
                 var chatMetadata = string.IsNullOrWhiteSpace(userId)
