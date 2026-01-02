@@ -158,13 +158,13 @@ namespace Hazina.Tools.Services.Chat
 
                 // For image sets (background generation), don't add prompts to chat - they're internal only
                 // For regular chat image generation, add user/assistant messages as before
-                List<ConversationMessage> chatMessages;
+                SerializableList<ConversationMessage> chatMessages;
 
                 if (isImageSet)
                 {
                     // Background image set generation - don't pollute the chat with prompts
                     // Just create a minimal response for the caller without persisting to chat
-                    chatMessages = new List<ConversationMessage>
+                    chatMessages = new SerializableList<ConversationMessage>
                     {
                         new ConversationMessage
                         {
