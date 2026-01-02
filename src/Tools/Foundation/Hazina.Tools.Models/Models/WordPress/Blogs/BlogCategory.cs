@@ -19,6 +19,11 @@ public class BlogCategory
     /// Korte omschrijving van de blogcategorie.
     /// </summary>
     public string Description { get; set; }
+
+    /// <summary>
+    /// Whether this category is enabled for blog generation.
+    /// </summary>
+    public bool Enabled { get; set; } = true;
 }
 
 /// <summary>
