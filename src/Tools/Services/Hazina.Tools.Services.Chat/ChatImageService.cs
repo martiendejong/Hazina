@@ -297,7 +297,22 @@ namespace Hazina.Tools.Services.Chat
 
             if (result?.Result != null)
             {
-                return result.Result.Url?.ToString() ?? throw new Exception("No image URL returned from OpenAI");
+                // GPT-Image returns ImageBytes, DALL-E returns URL
+                // Check both and return appropriate format
+                if (result.Result.Url != null)
+                {
+                    return result.Result.Url.ToString();
+                }
+
+                if (result.Result.ImageBytes != null)
+                {
+                    // Convert ImageBytes to data URI for processing
+                    var bytes = result.Result.ImageBytes.ToArray();
+                    var base64 = Convert.ToBase64String(bytes);
+                    return $"data:image/png;base64,{base64}";
+                }
+
+                throw new Exception("No image URL or bytes returned from OpenAI");
             }
 
             throw new Exception("Failed to generate image with OpenAI");
