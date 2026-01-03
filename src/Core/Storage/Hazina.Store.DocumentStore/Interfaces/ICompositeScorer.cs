@@ -45,4 +45,16 @@ public interface ICompositeScorer
         TagRelevanceIndex? tagIndex,
         ScoringOptions? options = null,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Score and rank documents with detailed explanations.
+    /// </summary>
+    /// <param name="documents">Documents with base similarity scores</param>
+    /// <param name="tagIndex">Tag relevance scores for current query</param>
+    /// <param name="options">Scoring weight configuration</param>
+    /// <returns>Documents with scores and explanations, sorted by composite score</returns>
+    List<ScoredDocument> ScoreAndRankWithExplanations(
+        IEnumerable<ScoredDocument> documents,
+        TagRelevanceIndex? tagIndex,
+        ScoringOptions? options = null);
 }

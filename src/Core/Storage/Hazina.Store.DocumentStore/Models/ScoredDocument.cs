@@ -54,6 +54,12 @@ public class ScoredDocument
     public Dictionary<string, double> ScoreBreakdown { get; set; } = new();
 
     /// <summary>
+    /// Detailed explanation of why this document scored as it did.
+    /// Only populated when explanations are requested.
+    /// </summary>
+    public SearchResultExplanation? Explanation { get; set; }
+
+    /// <summary>
     /// Create a scored document from metadata and similarity.
     /// </summary>
     public static ScoredDocument FromMetadata(DocumentMetadata metadata, double similarity)
