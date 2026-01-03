@@ -43,7 +43,7 @@ namespace Hazina.Tools.Data
             var chunkStore = new ChunkFileStore(chunkIndexPath);
 
             var metadataPath = Path.Combine(folder, "metadata");
-            var metadataStore = new DocumentMetadataFileStore(metadataPath);
+            var metadataStore = new QueryableMetadataFileStore(metadataPath);
 
             var store = new DocumentStore(fileStore, textStore, chunkStore, metadataStore, llmClient);
 
@@ -53,7 +53,8 @@ namespace Hazina.Tools.Data
                 DocumentPartStore = partStore,
                 TextStore = textStore,
                 TextEmbeddingStore = fileStore,
-                Store = store
+                Store = store,
+                QueryableMetadataStore = metadataStore
             };
 
             return setup;

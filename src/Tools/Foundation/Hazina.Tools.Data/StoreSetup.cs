@@ -7,6 +7,12 @@ namespace Hazina.Tools.Data
         public ITextStore TextStore { get; set; }
         public IDocumentPartStore DocumentPartStore { get; set; }
         public IDocumentStore Store { get; set; }
+
+        /// <summary>
+        /// Queryable metadata store for metadata-first search.
+        /// Supports filtering by tags, MIME type, date range, and full-text search.
+        /// </summary>
+        public IQueryableMetadataStore QueryableMetadataStore { get; set; }
     }
 }
 
