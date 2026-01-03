@@ -339,15 +339,18 @@ public class RAGEngine
             Id = sd.Id,
             Content = sd.Content,
             Similarity = sd.CompositeScore, // Use composite score as the new similarity
-            Metadata = new Dictionary<string, object>(sd.Metadata?.CustomMetadata ?? new Dictionary<string, string>())
-            {
-                ["originalSimilarity"] = sd.Similarity,
-                ["tagScore"] = sd.TagScore,
-                ["recencyScore"] = sd.RecencyScore,
-                ["positionScore"] = sd.PositionScore,
-                ["compositeScore"] = sd.CompositeScore,
-                ["scoreBreakdown"] = sd.ScoreBreakdown
-            }
+            Metadata = (sd.Metadata?.CustomMetadata ?? new Dictionary<string, string>())
+                .ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value)
+                .Concat(new Dictionary<string, object>
+                {
+                    ["originalSimilarity"] = sd.Similarity,
+                    ["tagScore"] = sd.TagScore,
+                    ["recencyScore"] = sd.RecencyScore,
+                    ["positionScore"] = sd.PositionScore,
+                    ["compositeScore"] = sd.CompositeScore,
+                    ["scoreBreakdown"] = sd.ScoreBreakdown
+                })
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
         }).ToList();
     }
 
