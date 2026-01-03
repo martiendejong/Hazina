@@ -75,10 +75,12 @@ namespace Hazina.Tools.Services.Chat
 
         public async Task<ChatConversation> SendChatMessage(string projectId, string chatId, Project project, GeneratorMessage chatMessage, CancellationToken cancel)
         {
-            // Build a lightweight, default chat prompt and use the agent pipeline
-            var prompt = !string.IsNullOrWhiteSpace(project?.KlantSpecifiekePrompt)
-                ? project.KlantSpecifiekePrompt
-                : LoadPromptOrDefault("Je bent een behulpzame marketingassistent. Antwoord beknopt en duidelijk.");
+            // Build chat prompt: prioritize agent's workflow prompt, then project prompt, then default
+            var prompt = !string.IsNullOrWhiteSpace(_agent.BasisPrompt)
+                ? _agent.BasisPrompt
+                : (!string.IsNullOrWhiteSpace(project?.KlantSpecifiekePrompt)
+                    ? project.KlantSpecifiekePrompt
+                    : LoadPromptOrDefault("Je bent een behulpzame marketingassistent. Antwoord beknopt en duidelijk."));
 
             var generator = await _agent.GetGenerator(project, prompt);
             var context = await _agent.InitStore(project); // ensure store is ready for tools
@@ -132,9 +134,12 @@ namespace Hazina.Tools.Services.Chat
             CancellationToken cancel,
             string userId = "")
         {
-            var prompt = !string.IsNullOrWhiteSpace(project?.KlantSpecifiekePrompt)
-                ? project.KlantSpecifiekePrompt
-                : LoadPromptOrDefault("You are a helpful marketing assistant. Answer professionally and clearly.");
+            // Build chat prompt: prioritize agent's workflow prompt, then project prompt, then default
+            var prompt = !string.IsNullOrWhiteSpace(_agent.BasisPrompt)
+                ? _agent.BasisPrompt
+                : (!string.IsNullOrWhiteSpace(project?.KlantSpecifiekePrompt)
+                    ? project.KlantSpecifiekePrompt
+                    : LoadPromptOrDefault("You are a helpful marketing assistant. Answer professionally and clearly."));
 
             var generator = await _agent.GetGenerator(project, prompt);
             var context = await _agent.InitStore(project);
