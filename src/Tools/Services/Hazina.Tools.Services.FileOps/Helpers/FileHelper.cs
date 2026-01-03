@@ -86,6 +86,31 @@ public static class FileHelper
         }
     }
 
+    public static async Task UpdateUploadedFileTagsAsync(string projectFolder, string filename, List<string> tags)
+    {
+        var listFilePath = Path.Combine(projectFolder, "uploadedFiles.json");
+
+        var fileLock = GetFileLock(listFilePath);
+        await fileLock.WaitAsync();
+        try
+        {
+            var uploadedFilesList = await GetUploadedFilesListInternalAsync(listFilePath);
+
+            var fileToUpdate = uploadedFilesList.FirstOrDefault(f => f.Filename == filename);
+            if (fileToUpdate != null)
+            {
+                fileToUpdate.Tags = tags ?? new List<string>();
+
+                var jsonContent = JsonSerializer.Serialize(uploadedFilesList, new JsonSerializerOptions { WriteIndented = true });
+                await File.WriteAllTextAsync(listFilePath, jsonContent);
+            }
+        }
+        finally
+        {
+            fileLock.Release();
+        }
+    }
+
     public static void EnsureDirectoryExists(string path)
     {
         if (!Directory.Exists(path))

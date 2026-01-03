@@ -243,5 +243,22 @@ namespace Hazina.Tools.Services.Helpers
 
             await FileHelper.UpdateUploadedFileAsync(project.ProjectPath, fileName, newLabel);
         }
+
+        /// <summary>
+        /// Update legacy file tags
+        /// </summary>
+        public async Task UpdateLegacyFileTags(
+            CoreProject project,
+            string fileName,
+            List<string> tags)
+        {
+            if (project == null)
+                throw new ArgumentNullException(nameof(project));
+
+            if (string.IsNullOrWhiteSpace(fileName))
+                throw new ArgumentException("File name is required", nameof(fileName));
+
+            await FileHelper.UpdateUploadedFileTagsAsync(project.ProjectPath, fileName, tags);
+        }
     }
 }
