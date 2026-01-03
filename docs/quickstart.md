@@ -260,16 +260,16 @@ var rag = new RAGEngine(ai, vectorStore);
 
 ## Step 6: Enable/Disable Embeddings (2 minutes)
 
-Control embedding generation:
+Hazina uses a **metadata-first** architecture where embeddings are optional. The system functions correctly without embeddings, using metadata filtering and keyword search instead.
 
 ```csharp
-// With embeddings (default) - semantic search
+// With embeddings (default) - metadata + semantic search
 var rag = new RAGEngine(ai, vectorStore);
 
-// Without embeddings - keyword-based only
+// Without embeddings - metadata + keyword search
 var rag = new RAGEngine(ai, vectorStore, config: new RAGConfig
 {
-    UseEmbeddings = false  // Falls back to keyword search
+    UseEmbeddings = false  // Full functionality, no vector search
 });
 ```
 
@@ -280,6 +280,14 @@ var config = new RAGConfig
     UseEmbeddings = Environment.GetEnvironmentVariable("USE_EMBEDDINGS") != "false"
 };
 ```
+
+**Why disable embeddings?**
+- Faster indexing (no API calls for embedding generation)
+- Lower cost (no embedding API charges)
+- Works offline (no external service dependency)
+- Deterministic results (keyword matching is reproducible)
+
+See [Knowledge Storage & Search Model](KNOWLEDGE_STORAGE.md) for the full architecture.
 
 ## Step 7: Add Multi-Layer Reasoning (5 minutes)
 
@@ -416,10 +424,11 @@ Console.WriteLine($"Sources used: {response.RetrievedDocuments.Count}");
 
 You now have a production-ready RAG system. To extend it:
 
-1. **Add more document types**: See [RAG Guide](RAG_GUIDE.md) for PDF, images
-2. **Add agent workflows**: See [Agents Guide](AGENTS_GUIDE.md) for tool calling
-3. **Add monitoring**: See [Production Monitoring Guide](PRODUCTION_MONITORING_GUIDE.md)
-4. **Deploy to Supabase**: See [Supabase Setup](SUPABASE_SETUP.md)
+1. **Understand the architecture**: See [Knowledge Storage & Search Model](KNOWLEDGE_STORAGE.md) for metadata-first design
+2. **Add more document types**: See [RAG Guide](RAG_GUIDE.md) for PDF, images
+3. **Add agent workflows**: See [Agents Guide](AGENTS_GUIDE.md) for tool calling
+4. **Add monitoring**: See [Production Monitoring Guide](PRODUCTION_MONITORING_GUIDE.md)
+5. **Deploy to Supabase**: See [Supabase Setup](SUPABASE_SETUP.md)
 
 ---
 

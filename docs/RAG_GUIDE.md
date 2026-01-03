@@ -2,16 +2,20 @@
 
 ## Overview
 
-Hazina's RAG engine combines vector search with AI generation for context-aware responses.
+Hazina's RAG engine combines metadata-driven retrieval with optional vector search for context-aware responses.
+
+> **Architecture Note**: Hazina uses a knowledge database as the primary query layer, with embeddings as an optional secondary index. See [Knowledge Storage & Search Model](KNOWLEDGE_STORAGE.md) for the design principles.
 
 ## Features
 
-- Document indexing with embeddings
-- Semantic search with similarity scoring
+- Document indexing with metadata and optional embeddings
+- Metadata-first filtering with SQL queries
+- Optional semantic search with similarity scoring
 - Context building and ranking
 - Intelligent text chunking
 - Result reranking
 - Integration with NeuroChain for higher confidence
+- Full functionality with embeddings disabled
 
 ## Quick Start
 
@@ -276,18 +280,79 @@ var messages = new List<HazinaChatMessage>
 var response = await orchestrator.GetResponse(messages);
 ```
 
+## Knowledge Storage Architecture
+
+Hazina uses a **metadata-first** approach to knowledge storage:
+
+### Design Principles
+
+1. **Metadata is primary** — Tags, properties, and structure are always queryable
+2. **Embeddings are secondary** — Optional acceleration for semantic search
+3. **Database is truth** — SQLite (local) or PostgreSQL (production) holds all queryable data
+4. **Files are sources** — Documents are inputs, not the query layer
+
+### Search Strategy
+
+```csharp
+// Metadata-first search (always available)
+var results = await ragEngine.SearchAsync("query", new SearchOptions
+{
+    MetadataFilter = new Dictionary<string, object>
+    {
+        ["source"] = "api-reference.md",
+        ["category"] = "authentication"
+    },
+    UseSemanticSearch = false  // Pure metadata search
+});
+
+// Hybrid search (metadata + embeddings)
+var results = await ragEngine.SearchAsync("query", new SearchOptions
+{
+    MetadataFilter = new Dictionary<string, object>
+    {
+        ["category"] = "security"
+    },
+    UseSemanticSearch = true  // Add embedding similarity ranking
+});
+```
+
+### Embeddings Are Optional
+
+Hazina functions correctly without embeddings:
+
+```csharp
+var rag = new RAGEngine(ai, vectorStore, config: new RAGConfig
+{
+    UseEmbeddings = false  // Metadata and keyword search only
+});
+
+// Search still works — uses full-text search and metadata
+var results = await rag.SearchAsync("authentication flow");
+```
+
+When embeddings are disabled:
+- Indexing stores content and metadata (faster)
+- Search uses keyword matching (BM25/full-text)
+- Results are ranked by text relevance, not vector similarity
+
+See [Knowledge Storage & Search Model](KNOWLEDGE_STORAGE.md) for complete architecture details.
+
+---
+
 ## Vector Stores
+
+When embeddings are enabled, vector stores provide similarity search:
 
 ### Supported Stores
 
 ```csharp
-// PostgreSQL with pgvector
+// PostgreSQL with pgvector (production)
 var vectorStore = new PgVectorStore(connectionString);
 
-// In-memory (for development)
+// In-memory (development/testing)
 var vectorStore = new InMemoryVectorStore();
 
-// File-based
+// File-based (local persistence)
 var vectorStore = new FileVectorStore(path);
 ```
 

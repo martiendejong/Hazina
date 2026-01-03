@@ -239,6 +239,7 @@ var result = await neurochain.ReasonAsync("Complex question requiring high confi
 ## Documentation
 
 - [30-Minute RAG Tutorial](docs/quickstart.md) — Build production RAG in 30 minutes
+- [Knowledge Storage & Search Model](docs/KNOWLEDGE_STORAGE.md) — Agent-first architecture, metadata-driven storage
 - [RAG Guide](docs/RAG_GUIDE.md) — Document indexing, chunking, retrieval
 - [Agents Guide](docs/AGENTS_GUIDE.md) — Tool calling, workflows, coordination
 - [Neurochain Guide](docs/NEUROCHAIN_GUIDE.md) — Multi-layer reasoning

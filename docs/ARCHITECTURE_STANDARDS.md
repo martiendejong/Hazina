@@ -103,7 +103,69 @@ public void ConfigureTools(HazinaAgent agent)
 
 ---
 
-### 3. LLM Providers and Data Storage Are Always Configurable
+### 3. Knowledge Storage Is Metadata-First, Embeddings-Secondary
+
+**MANDATORY**: The knowledge database is the primary query layer. Embeddings are optional search accelerators.
+
+**Why**:
+- Agents need deterministic queries for structured information
+- Semantic similarity is not the only measure of relevance
+- Embedding providers may change; data must persist
+- Offline/cost-sensitive scenarios require non-embedding search
+
+**Design Principles**:
+
+| Principle | Implementation |
+|-----------|---------------|
+| Database is truth | SQLite (local) or PostgreSQL (production) stores all queryable data |
+| Metadata is primary | Tags, properties, and structure are always indexed and queryable |
+| Embeddings are secondary | Optional acceleration layer, not required for function |
+| Files are sources | Documents and chunks are inputs, regenerated on demand |
+
+**Implementation Pattern**:
+```csharp
+public class KnowledgeService
+{
+    // CORRECT: Metadata-first search with optional embeddings
+    public async Task<IEnumerable<Chunk>> SearchAsync(SearchRequest request)
+    {
+        // Step 1: Filter by metadata (always)
+        var filtered = await _db.FilterAsync(request.MetadataFilters);
+
+        // Step 2: Optionally rank by embeddings
+        if (request.UseSemanticSearch && _config.EmbeddingsEnabled)
+        {
+            filtered = await _embeddings.RankAsync(request.Query, filtered);
+        }
+
+        return filtered;
+    }
+}
+```
+
+**Anti-Pattern**:
+```csharp
+public class KnowledgeService
+{
+    // WRONG: Embeddings as primary (fails without vector store)
+    public async Task<IEnumerable<Chunk>> SearchAsync(string query)
+    {
+        var embedding = await _embedder.EmbedAsync(query);
+        return await _vectorStore.SearchAsync(embedding); // No metadata filtering
+    }
+}
+```
+
+**Guarantee**:
+```
+If embeddings are disabled, Hazina must continue to function correctly.
+```
+
+See [Knowledge Storage & Search Model](KNOWLEDGE_STORAGE.md) for complete architecture.
+
+---
+
+### 4. LLM Providers and Data Storage Are Always Configurable
 
 **MANDATORY**: Provider selection and storage backends must be runtime-configurable.
 
@@ -246,16 +308,22 @@ The framework resolves `${VAR_NAME}` syntax at runtime.
 - [ ] No hardcoded connection strings
 - [ ] Configuration loading uses standard patterns
 - [ ] Environment variables for secrets
+- [ ] Knowledge queries work without embeddings enabled
+- [ ] Metadata filtering precedes embedding search
+- [ ] No assumptions that vector store is always available
 
 ---
 
 ## Related Files
 
 - `src/Core/Agents/Hazina.AgentFactory/` - Agent creation with configuration
+- `src/Core/Storage/Hazina.Store.EmbeddingStore/` - Embedding storage implementations
+- `src/Core/Storage/Hazina.Store.DocumentStore/` - Document and metadata storage
 - `src/Tools/Foundation/Hazina.Tools.Core/Config/` - Configuration classes
 - `src/Tools/Services/Hazina.Tools.Services.Prompts/` - Prompt loading services
+- `docs/KNOWLEDGE_STORAGE.md` - Knowledge storage architecture
 - `docs/README.md` - Framework overview
 
 ---
 
-*Last updated: 2026-01-02*
+*Last updated: 2026-01-03*
