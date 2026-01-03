@@ -193,22 +193,47 @@ public class LinkedInProvider : ISocialProvider
             var profile = await GetProfileAsync(accessToken, cancellationToken);
             var memberUrn = $"urn:li:person:{profile.Id}";
 
-            // Import posts (shares)
+            // Import from personal profile
             if (options.ContentTypes.Contains("posts"))
             {
-                var posts = await ImportPostsAsync(accessToken, memberUrn, options, cancellationToken);
-                result.Posts.AddRange(posts);
+                var personalPosts = await ImportPostsAsync(accessToken, memberUrn, "Personal Profile", options, cancellationToken);
+                result.Posts.AddRange(personalPosts);
             }
 
-            // Import articles
             if (options.ContentTypes.Contains("articles"))
             {
-                var articles = await ImportArticlesAsync(accessToken, memberUrn, options, cancellationToken);
-                result.Articles.AddRange(articles);
+                var personalArticles = await ImportArticlesAsync(accessToken, memberUrn, "Personal Profile", options, cancellationToken);
+                result.Articles.AddRange(personalArticles);
+            }
+
+            // Get company pages the user manages
+            var organizations = await GetManagedOrganizationsAsync(accessToken, cancellationToken);
+
+            // Import from each company page
+            foreach (var org in organizations.Take(5)) // Limit to 5 pages to avoid rate limits
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+
+                var orgUrn = org.Organization;
+                var orgName = org.OrganizationName ?? "Company Page";
+
+                if (options.ContentTypes.Contains("posts"))
+                {
+                    var orgPosts = await ImportPostsAsync(accessToken, orgUrn, orgName, options, cancellationToken);
+                    result.Posts.AddRange(orgPosts);
+                }
+
+                if (options.ContentTypes.Contains("articles"))
+                {
+                    var orgArticles = await ImportArticlesAsync(accessToken, orgUrn, orgName, options, cancellationToken);
+                    result.Articles.AddRange(orgArticles);
+                }
             }
 
             result.TotalImported = result.Posts.Count + result.Articles.Count;
-            _logger.LogInformation("Imported {Count} items from LinkedIn", result.TotalImported);
+            _logger.LogInformation("Imported {Count} items from LinkedIn (personal + {OrgCount} organizations)",
+                result.TotalImported, organizations.Count);
         }
         catch (Exception ex)
         {
@@ -220,18 +245,14 @@ public class LinkedInProvider : ISocialProvider
         return result;
     }
 
-    private async Task<List<SocialPost>> ImportPostsAsync(
+    private async Task<List<LinkedInOrganization>> GetManagedOrganizationsAsync(
         string accessToken,
-        string memberUrn,
-        SocialImportOptions options,
         CancellationToken cancellationToken)
     {
-        var posts = new List<SocialPost>();
-
         try
         {
-            // LinkedIn v2 API for posts
-            var url = $"{ApiBaseUrl}/shares?q=owners&owners={HttpUtility.UrlEncode(memberUrn)}&count={options.MaxItems}";
+            // Get organizations where user has admin role
+            var url = $"{ApiBaseUrl}/organizationalEntityAcls?q=roleAssignee&projection=(elements*(organizationalTarget~(localizedName),roleAssignee,state))";
 
             var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -241,8 +262,64 @@ public class LinkedInProvider : ISocialProvider
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("LinkedIn posts fetch failed: {Status} - {Response}",
+                _logger.LogWarning("LinkedIn organizations fetch failed: {Status} - {Response}",
                     response.StatusCode, json);
+                return new List<LinkedInOrganization>();
+            }
+
+            var orgsResponse = JsonSerializer.Deserialize<LinkedInOrganizationsResponse>(json);
+            if (orgsResponse?.elements == null)
+            {
+                return new List<LinkedInOrganization>();
+            }
+
+            var result = new List<LinkedInOrganization>();
+            foreach (var element in orgsResponse.elements)
+            {
+                if (element.state == "APPROVED" && element.organizationalTarget != null)
+                {
+                    result.Add(new LinkedInOrganization
+                    {
+                        Organization = element.organizationalTarget.Value,
+                        OrganizationName = element.organizationalTarget.localizedName
+                    });
+                }
+            }
+
+            _logger.LogInformation("Found {Count} LinkedIn organizations user manages", result.Count);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error fetching LinkedIn organizations");
+            return new List<LinkedInOrganization>();
+        }
+    }
+
+    private async Task<List<SocialPost>> ImportPostsAsync(
+        string accessToken,
+        string ownerUrn,
+        string sourceName,
+        SocialImportOptions options,
+        CancellationToken cancellationToken)
+    {
+        var posts = new List<SocialPost>();
+
+        try
+        {
+            // LinkedIn v2 API for posts
+            var url = $"{ApiBaseUrl}/shares?q=owners&owners={HttpUtility.UrlEncode(ownerUrn)}&count={options.MaxItems}";
+
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("LinkedIn posts fetch failed for {Source}: {Status} - {Response}",
+                    sourceName, response.StatusCode, json);
                 return posts;
             }
 
@@ -257,13 +334,15 @@ public class LinkedInProvider : ISocialProvider
                 var post = new SocialPost
                 {
                     Id = share.id ?? "",
-                    AccountId = memberUrn,
+                    AccountId = ownerUrn,
                     Content = share.text?.text ?? "",
                     CreatedAt = DateTimeOffset.FromUnixTimeMilliseconds(share.created?.time ?? 0).UtcDateTime,
                     Url = $"https://www.linkedin.com/feed/update/{share.activity}",
                     Metadata = new Dictionary<string, string>
                     {
-                        ["activity"] = share.activity ?? ""
+                        ["activity"] = share.activity ?? "",
+                        ["source"] = sourceName,
+                        ["owner_urn"] = ownerUrn
                     }
                 };
 
@@ -272,10 +351,12 @@ public class LinkedInProvider : ISocialProvider
 
                 posts.Add(post);
             }
+
+            _logger.LogInformation("Imported {Count} posts from LinkedIn {Source}", posts.Count, sourceName);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error fetching LinkedIn posts");
+            _logger.LogWarning(ex, "Error fetching LinkedIn posts for {Source}", sourceName);
         }
 
         return posts;
@@ -283,12 +364,14 @@ public class LinkedInProvider : ISocialProvider
 
     private async Task<List<SocialArticle>> ImportArticlesAsync(
         string accessToken,
-        string memberUrn,
+        string ownerUrn,
+        string sourceName,
         SocialImportOptions options,
         CancellationToken cancellationToken)
     {
         // LinkedIn articles are accessed differently and may require additional scopes
         // This is a placeholder for article import
+        // When implemented, add sourceName to metadata similar to ImportPostsAsync
         return new List<SocialArticle>();
     }
 
@@ -359,5 +442,28 @@ public class LinkedInProvider : ISocialProvider
     private class LinkedInCreated
     {
         public long time { get; set; }
+    }
+
+    private class LinkedInOrganization
+    {
+        public string Organization { get; set; } = "";
+        public string? OrganizationName { get; set; }
+    }
+
+    private class LinkedInOrganizationsResponse
+    {
+        public List<LinkedInOrganizationAcl>? elements { get; set; }
+    }
+
+    private class LinkedInOrganizationAcl
+    {
+        public string? state { get; set; }
+        public LinkedInOrganizationalTarget? organizationalTarget { get; set; }
+    }
+
+    private class LinkedInOrganizationalTarget
+    {
+        public string Value { get; set; } = "";
+        public string? localizedName { get; set; }
     }
 }
