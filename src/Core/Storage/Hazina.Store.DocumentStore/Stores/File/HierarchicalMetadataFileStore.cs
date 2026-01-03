@@ -276,8 +276,8 @@ public class HierarchicalMetadataFileStore : IHierarchicalMetadataStore
         // Store in destination
         await toStore.Store(documentId, doc);
 
-        // Delete from source
-        await fromStore.Delete(documentId);
+        // Remove from source
+        await fromStore.Remove(documentId);
     }
 
     public async Task PromoteToParentScopeAsync(
@@ -336,7 +336,7 @@ public class HierarchicalMetadataFileStore : IHierarchicalMetadataStore
 
     #region IDocumentMetadataStore Implementation
 
-    public Task Store(string documentId, DocumentMetadata metadata)
+    public Task<bool> Store(string documentId, DocumentMetadata metadata)
     {
         throw new NotSupportedException("Use StoreInScopeAsync");
     }
@@ -346,14 +346,14 @@ public class HierarchicalMetadataFileStore : IHierarchicalMetadataStore
         throw new NotSupportedException("Use GetFromScopeAsync");
     }
 
-    public Task Delete(string documentId)
+    public Task<bool> Remove(string documentId)
     {
         throw new NotSupportedException("Use scope-specific delete");
     }
 
-    public Task<List<DocumentMetadata>> GetAll()
+    public Task<bool> Exists(string documentId)
     {
-        throw new NotSupportedException("Use QueryHierarchicalAsync");
+        throw new NotSupportedException("Use scope-specific check");
     }
 
     #endregion
