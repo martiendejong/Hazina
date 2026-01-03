@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Hazina.AI.Providers.Core;
 
 /// <summary>
 /// Default implementation of incremental embedding service.
