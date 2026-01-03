@@ -1,20 +1,26 @@
 using Hazina.AI.Providers.Core;
 using Hazina.Neurochain.Core;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Hazina.AI.RAG.Core;
 
 /// <summary>
 /// Retrieval-Augmented Generation (RAG) engine
-/// Combines vector search with AI generation for context-aware responses
+/// Combines vector search with AI generation for context-aware responses.
+/// Supports metadata-first search with optional embeddings.
 /// </summary>
 public class RAGEngine
 {
     private readonly IProviderOrchestrator _orchestrator;
-    private readonly IVectorStore _vectorStore;
+    private readonly IVectorStore? _vectorStore;
+    private readonly IQueryableMetadataStore? _metadataStore;
     private readonly NeuroChainOrchestrator? _neurochain;
     private readonly RAGConfig _config;
 
+    /// <summary>
+    /// Create RAGEngine with vector store (backwards compatible).
+    /// </summary>
     public RAGEngine(
         IProviderOrchestrator orchestrator,
         IVectorStore vectorStore,
@@ -28,7 +34,26 @@ public class RAGEngine
     }
 
     /// <summary>
-    /// Query using RAG - retrieve relevant context and generate response
+    /// Create RAGEngine with metadata store for metadata-first search.
+    /// Vector store is optional when using metadata-only search.
+    /// </summary>
+    public RAGEngine(
+        IProviderOrchestrator orchestrator,
+        IQueryableMetadataStore metadataStore,
+        IVectorStore? vectorStore = null,
+        NeuroChainOrchestrator? neurochain = null,
+        RAGConfig? config = null)
+    {
+        _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
+        _metadataStore = metadataStore ?? throw new ArgumentNullException(nameof(metadataStore));
+        _vectorStore = vectorStore;
+        _neurochain = neurochain;
+        _config = config ?? new RAGConfig();
+    }
+
+    /// <summary>
+    /// Query using RAG - retrieve relevant context and generate response.
+    /// Supports both embedding-based and metadata-only search.
     /// </summary>
     public async Task<RAGResponse> QueryAsync(
         string query,
@@ -45,22 +70,31 @@ public class RAGEngine
 
         try
         {
-            // Step 1: Generate embedding for query
-            var queryEmbedding = await GenerateEmbeddingAsync(query, cancellationToken);
+            // Determine search strategy
+            if (options.UseEmbeddings && _vectorStore != null)
+            {
+                // Embedding-based search (original behavior)
+                response.RetrievedDocuments = await RetrieveWithEmbeddingsAsync(
+                    query, options, cancellationToken);
+            }
+            else if (_metadataStore != null)
+            {
+                // Metadata-only search (new capability)
+                response.RetrievedDocuments = await RetrieveWithMetadataAsync(
+                    query, options, cancellationToken);
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    "No search backend available. Provide a vector store (for embeddings) " +
+                    "or a queryable metadata store (for metadata search).");
+            }
 
-            // Step 2: Retrieve relevant documents
-            response.RetrievedDocuments = await RetrieveDocumentsAsync(
-                queryEmbedding,
-                options.TopK,
-                options.MinSimilarity,
-                cancellationToken
-            );
-
-            // Step 3: Build context from retrieved documents
+            // Build context from retrieved documents
             var context = BuildContext(response.RetrievedDocuments, options.MaxContextLength);
             response.ContextUsed = context;
 
-            // Step 4: Generate response with context
+            // Generate response with context
             response.Answer = await GenerateResponseAsync(
                 query,
                 context,
@@ -77,6 +111,79 @@ public class RAGEngine
         }
 
         return response;
+    }
+
+    /// <summary>
+    /// Retrieve documents using embedding-based vector search.
+    /// </summary>
+    private async Task<List<RetrievedDocument>> RetrieveWithEmbeddingsAsync(
+        string query,
+        RAGQueryOptions options,
+        CancellationToken cancellationToken)
+    {
+        var queryEmbedding = await GenerateEmbeddingAsync(query, cancellationToken);
+        return await RetrieveDocumentsAsync(
+            queryEmbedding,
+            options.TopK,
+            options.MinSimilarity,
+            cancellationToken
+        );
+    }
+
+    /// <summary>
+    /// Retrieve documents using metadata filtering and keyword search.
+    /// No embeddings required.
+    /// </summary>
+    private async Task<List<RetrievedDocument>> RetrieveWithMetadataAsync(
+        string query,
+        RAGQueryOptions options,
+        CancellationToken cancellationToken)
+    {
+        if (_metadataStore == null)
+            throw new InvalidOperationException("Metadata store not configured");
+
+        var filter = options.MetadataFilter ?? new MetadataFilter { Limit = options.TopK };
+        var searchText = options.KeywordSearchText ?? query;
+
+        // Use full-text search with optional metadata filter
+        var results = await _metadataStore.SearchTextAsync(
+            searchText,
+            filter,
+            options.TopK,
+            cancellationToken
+        );
+
+        // Convert to RetrievedDocument format
+        return results.Select((meta, index) => new RetrievedDocument
+        {
+            Id = meta.Id,
+            Content = meta.SearchableText ?? meta.Summary ?? "",
+            Similarity = CalculateKeywordRelevance(searchText, meta, index, results.Count),
+            Metadata = new Dictionary<string, object>
+            {
+                ["source"] = meta.OriginalPath,
+                ["mimeType"] = meta.MimeType,
+                ["tags"] = meta.Tags,
+                ["customMetadata"] = meta.CustomMetadata
+            }
+        }).ToList();
+    }
+
+    /// <summary>
+    /// Calculate a relevance score for keyword search results.
+    /// Uses position-based ranking since results are already ordered by relevance.
+    /// </summary>
+    private double CalculateKeywordRelevance(string searchText, DocumentMetadata meta, int position, int total)
+    {
+        // Base score from position (first result = highest score)
+        double positionScore = 1.0 - (position / (double)Math.Max(total, 1));
+
+        // Boost if search text appears in summary or searchable text
+        var content = meta.SearchableText ?? meta.Summary ?? "";
+        var matchCount = Regex.Matches(content, Regex.Escape(searchText), RegexOptions.IgnoreCase).Count;
+        double matchBoost = Math.Min(matchCount * 0.1, 0.3);
+
+        return Math.Min(positionScore + matchBoost, 1.0);
     }
 
     /// <summary>
@@ -290,6 +397,26 @@ public class RAGQueryOptions
     public bool UseNeurochain { get; set; } = false;
     public double MinConfidence { get; set; } = 0.8;
     public bool RequireCitation { get; set; } = false;
+
+    /// <summary>
+    /// Whether to use embeddings for semantic search.
+    /// Default: true (backwards compatible).
+    /// When false, uses metadata filtering and keyword search only.
+    /// </summary>
+    public bool UseEmbeddings { get; set; } = true;
+
+    /// <summary>
+    /// Optional metadata filter to apply before embedding search.
+    /// When UseEmbeddings=false, this is the primary filter.
+    /// When UseEmbeddings=true, this pre-filters before vector search.
+    /// </summary>
+    public MetadataFilter? MetadataFilter { get; set; }
+
+    /// <summary>
+    /// Text to search for when UseEmbeddings=false (keyword search).
+    /// If null, uses the query text.
+    /// </summary>
+    public string? KeywordSearchText { get; set; }
 }
 
 /// <summary>

@@ -12,6 +12,18 @@ public class DocumentMetadata
     public bool IsBinary { get; set; }
     public string? Summary { get; set; }
 
+    /// <summary>
+    /// Tags for categorization and filtering.
+    /// Enables metadata-first search without embeddings.
+    /// </summary>
+    public List<string> Tags { get; set; } = new();
+
+    /// <summary>
+    /// Full-text searchable content (optional, for keyword search fallback).
+    /// If not set, Summary is used for text search.
+    /// </summary>
+    public string? SearchableText { get; set; }
+
     public string ToChunkText()
     {
         var lines = new List<string>
@@ -36,6 +48,11 @@ public class DocumentMetadata
             {
                 lines.Add($"  {kv.Key}: {kv.Value}");
             }
+        }
+
+        if (Tags.Count > 0)
+        {
+            lines.Add($"Tags: {string.Join(", ", Tags)}");
         }
 
         return string.Join("\n", lines);
