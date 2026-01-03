@@ -47,6 +47,12 @@ namespace Hazina.Tools.Data
 
             var store = new DocumentStore(fileStore, textStore, chunkStore, metadataStore, llmClient);
 
+            // Create tag scoring components
+            var tagRelevancePath = Path.Combine(folder, "tag_relevance");
+            var tagRelevanceStore = new TagRelevanceFileStore(tagRelevancePath);
+            var tagScoringService = new LLMTagScoringService(llmClient, tagRelevanceStore);
+            var compositeScorer = new DefaultCompositeScorer();
+
             var setup = new StoreSetup()
             {
                 LLMClient = llmClient,
@@ -54,7 +60,10 @@ namespace Hazina.Tools.Data
                 TextStore = textStore,
                 TextEmbeddingStore = fileStore,
                 Store = store,
-                QueryableMetadataStore = metadataStore
+                QueryableMetadataStore = metadataStore,
+                TagRelevanceStore = tagRelevanceStore,
+                TagScoringService = tagScoringService,
+                CompositeScorer = compositeScorer
             };
 
             return setup;

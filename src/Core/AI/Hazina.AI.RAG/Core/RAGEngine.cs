@@ -9,6 +9,7 @@ namespace Hazina.AI.RAG.Core;
 /// Retrieval-Augmented Generation (RAG) engine
 /// Combines vector search with AI generation for context-aware responses.
 /// Supports metadata-first search with optional embeddings.
+/// Supports composite scoring with tag relevance, recency, and position weighting.
 /// </summary>
 public class RAGEngine
 {
@@ -17,6 +18,10 @@ public class RAGEngine
     private readonly IQueryableMetadataStore? _metadataStore;
     private readonly NeuroChainOrchestrator? _neurochain;
     private readonly RAGConfig _config;
+
+    // Composite scoring components (optional, backwards compatible)
+    private readonly ITagScoringService? _tagScoringService;
+    private readonly ICompositeScorer? _compositeScorer;
 
     /// <summary>
     /// Create RAGEngine with vector store (backwards compatible).
@@ -47,6 +52,28 @@ public class RAGEngine
         _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
         _metadataStore = metadataStore ?? throw new ArgumentNullException(nameof(metadataStore));
         _vectorStore = vectorStore;
+        _neurochain = neurochain;
+        _config = config ?? new RAGConfig();
+    }
+
+    /// <summary>
+    /// Create RAGEngine with composite scoring support.
+    /// This enables query-adaptive tag relevance scoring.
+    /// </summary>
+    public RAGEngine(
+        IProviderOrchestrator orchestrator,
+        IQueryableMetadataStore metadataStore,
+        IVectorStore? vectorStore,
+        ITagScoringService? tagScoringService,
+        ICompositeScorer? compositeScorer,
+        NeuroChainOrchestrator? neurochain = null,
+        RAGConfig? config = null)
+    {
+        _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
+        _metadataStore = metadataStore ?? throw new ArgumentNullException(nameof(metadataStore));
+        _vectorStore = vectorStore;
+        _tagScoringService = tagScoringService;
+        _compositeScorer = compositeScorer ?? (tagScoringService != null ? new DefaultCompositeScorer() : null);
         _neurochain = neurochain;
         _config = config ?? new RAGConfig();
     }
@@ -88,6 +115,13 @@ public class RAGEngine
                 throw new InvalidOperationException(
                     "No search backend available. Provide a vector store (for embeddings) " +
                     "or a queryable metadata store (for metadata search).");
+            }
+
+            // Apply composite scoring if enabled and available
+            if (options.UseCompositeScoring && _compositeScorer != null)
+            {
+                response.RetrievedDocuments = await ApplyCompositeScoringAsync(
+                    response.RetrievedDocuments, query, options, cancellationToken);
             }
 
             // Build context from retrieved documents
@@ -249,6 +283,107 @@ public class RAGEngine
     }
 
     #region Private Methods
+
+    /// <summary>
+    /// Apply composite scoring to retrieved documents.
+    /// Uses tag relevance, recency, and position to re-rank results.
+    /// </summary>
+    private async Task<List<RetrievedDocument>> ApplyCompositeScoringAsync(
+        List<RetrievedDocument> documents,
+        string query,
+        RAGQueryOptions options,
+        CancellationToken cancellationToken)
+    {
+        if (_compositeScorer == null || documents.Count == 0)
+        {
+            return documents;
+        }
+
+        // Collect all tags from documents
+        var allTags = documents
+            .Where(d => d.Metadata.TryGetValue("tags", out var tags) && tags is IEnumerable<string>)
+            .SelectMany(d => (IEnumerable<string>)d.Metadata["tags"])
+            .Distinct()
+            .ToList();
+
+        // Get or compute tag scores
+        TagRelevanceIndex? tagIndex = null;
+        if (_tagScoringService != null && allTags.Any())
+        {
+            var scoringContext = options.TagScoringContext ?? query;
+            tagIndex = await _tagScoringService.GetOrComputeScoresAsync(
+                allTags, scoringContext, options.TagScoreCacheAge, cancellationToken);
+        }
+
+        // Convert to ScoredDocument format
+        var scoredDocs = documents.Select((doc, index) =>
+        {
+            var metadata = ConvertToDocumentMetadata(doc);
+            return new ScoredDocument
+            {
+                Id = doc.Id,
+                Content = doc.Content,
+                Similarity = doc.Similarity,
+                Metadata = metadata
+            };
+        }).ToList();
+
+        // Apply composite scoring
+        var scoringOptions = options.ScoringOptions ?? ScoringOptions.Default;
+        var rankedDocs = await _compositeScorer.ScoreAndRankAsync(
+            scoredDocs, tagIndex, scoringOptions, cancellationToken);
+
+        // Convert back to RetrievedDocument format
+        return rankedDocs.Select(sd => new RetrievedDocument
+        {
+            Id = sd.Id,
+            Content = sd.Content,
+            Similarity = sd.CompositeScore, // Use composite score as the new similarity
+            Metadata = new Dictionary<string, object>(sd.Metadata?.CustomMetadata ?? new Dictionary<string, string>())
+            {
+                ["originalSimilarity"] = sd.Similarity,
+                ["tagScore"] = sd.TagScore,
+                ["recencyScore"] = sd.RecencyScore,
+                ["positionScore"] = sd.PositionScore,
+                ["compositeScore"] = sd.CompositeScore,
+                ["scoreBreakdown"] = sd.ScoreBreakdown
+            }
+        }).ToList();
+    }
+
+    /// <summary>
+    /// Convert RetrievedDocument to DocumentMetadata for scoring.
+    /// </summary>
+    private DocumentMetadata ConvertToDocumentMetadata(RetrievedDocument doc)
+    {
+        var metadata = new DocumentMetadata
+        {
+            Id = doc.Id,
+            SearchableText = doc.Content
+        };
+
+        if (doc.Metadata.TryGetValue("tags", out var tags) && tags is IEnumerable<string> tagList)
+        {
+            metadata.Tags = tagList.ToList();
+        }
+
+        if (doc.Metadata.TryGetValue("created", out var created) && created is DateTime createdDate)
+        {
+            metadata.Created = createdDate;
+        }
+
+        if (doc.Metadata.TryGetValue("source", out var source))
+        {
+            metadata.OriginalPath = source?.ToString() ?? "";
+        }
+
+        if (doc.Metadata.TryGetValue("mimeType", out var mimeType))
+        {
+            metadata.MimeType = mimeType?.ToString() ?? "";
+        }
+
+        return metadata;
+    }
 
     private async Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken)
     {
@@ -417,6 +552,33 @@ public class RAGQueryOptions
     /// If null, uses the query text.
     /// </summary>
     public string? KeywordSearchText { get; set; }
+
+    // --- Composite Scoring Options (new, backwards compatible) ---
+
+    /// <summary>
+    /// Whether to apply composite scoring to retrieved documents.
+    /// Default: false (backwards compatible).
+    /// When true, re-ranks results using tag relevance, recency, and position.
+    /// </summary>
+    public bool UseCompositeScoring { get; set; } = false;
+
+    /// <summary>
+    /// Configuration for composite scoring weights.
+    /// If null, uses ScoringOptions.Default.
+    /// </summary>
+    public ScoringOptions? ScoringOptions { get; set; }
+
+    /// <summary>
+    /// Context to use for tag scoring (e.g., system instruction or task description).
+    /// If null, uses the query text.
+    /// </summary>
+    public string? TagScoringContext { get; set; }
+
+    /// <summary>
+    /// Maximum age of cached tag scores to use.
+    /// If null, always uses cached scores regardless of age.
+    /// </summary>
+    public TimeSpan? TagScoreCacheAge { get; set; }
 }
 
 /// <summary>

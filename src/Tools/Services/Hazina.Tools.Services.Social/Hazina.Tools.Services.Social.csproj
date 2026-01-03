@@ -10,6 +10,7 @@
     <ProjectReference Include="..\..\Foundation\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
     <ProjectReference Include="..\..\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
     <ProjectReference Include="..\..\..\Core\Storage\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />
+    <ProjectReference Include="..\Hazina.Tools.Services.Chat\Hazina.Tools.Services.Chat.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
