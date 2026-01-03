@@ -1,9 +1,12 @@
 using Hazina.Observability.Core;
 using Hazina.Observability.Core.HealthChecks;
+using Hazina.Observability.Core.Tracing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Prometheus;
 
 namespace Hazina.Observability.AspNetCore;
@@ -25,6 +28,25 @@ public static class HazinaObservabilityExtensions
 
         // Add telemetry system
         services.AddSingleton<ITelemetrySystem, TelemetrySystem>();
+
+        // Add distributed tracing
+        if (options.EnableDistributedTracing)
+        {
+            services.AddOpenTelemetry()
+                .WithTracing(tracerProviderBuilder =>
+                {
+                    tracerProviderBuilder
+                        .AddSource(HazinaActivitySource.SourceName)
+                        .SetResourceBuilder(ResourceBuilder.CreateDefault()
+                            .AddService(
+                                serviceName: options.ServiceName ?? "HazinaApp",
+                                serviceVersion: options.ServiceVersion ?? "1.0.0"))
+                        .AddConsoleExporter(); // Console exporter for development
+
+                    // Allow custom configuration
+                    options.ConfigureTracing?.Invoke(tracerProviderBuilder);
+                });
+        }
 
         // Add health checks
         var healthChecksBuilder = services.AddHealthChecks();
@@ -129,6 +151,26 @@ public class HazinaObservabilityOptions
     /// Enable NeuroChain health checks
     /// </summary>
     public bool EnableNeuroChainHealthChecks { get; set; } = true;
+
+    /// <summary>
+    /// Enable distributed tracing with OpenTelemetry
+    /// </summary>
+    public bool EnableDistributedTracing { get; set; } = true;
+
+    /// <summary>
+    /// Service name for distributed tracing
+    /// </summary>
+    public string? ServiceName { get; set; }
+
+    /// <summary>
+    /// Service version for distributed tracing
+    /// </summary>
+    public string? ServiceVersion { get; set; }
+
+    /// <summary>
+    /// Additional tracing configuration (e.g., add OTLP exporter)
+    /// </summary>
+    public Action<TracerProviderBuilder>? ConfigureTracing { get; set; }
 }
 
 /// <summary>
