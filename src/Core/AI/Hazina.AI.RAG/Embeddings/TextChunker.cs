@@ -1,21 +1,37 @@
 using System.Text;
+using Hazina.Store.EmbeddingStore;
+using Microsoft.Extensions.Logging;
 
 namespace Hazina.AI.RAG.Embeddings;
 
 /// <summary>
 /// Splits text into chunks for embedding generation
+/// Supports multiple strategies including semantic similarity-based chunking
 /// </summary>
 public class TextChunker
 {
     private readonly TextChunkingOptions _options;
+    private readonly IEmbeddingGenerator? _embeddingGenerator;
+    private readonly ILogger<TextChunker>? _logger;
 
     public TextChunker(TextChunkingOptions? options = null)
     {
         _options = options ?? new TextChunkingOptions();
     }
 
+    public TextChunker(
+        IEmbeddingGenerator? embeddingGenerator,
+        TextChunkingOptions? options = null,
+        ILogger<TextChunker>? logger = null)
+    {
+        _embeddingGenerator = embeddingGenerator;
+        _options = options ?? new TextChunkingOptions();
+        _logger = logger;
+    }
+
     /// <summary>
-    /// Split text into chunks with overlap
+    /// Split text into chunks with overlap (synchronous)
+    /// Note: Semantic chunking requires async API - use ChunkTextAsync for semantic strategy
     /// </summary>
     public List<TextChunk> ChunkText(string text, Dictionary<string, object>? metadata = null)
     {
@@ -41,6 +57,71 @@ public class TextChunker
         }
 
         return chunks;
+    }
+
+    /// <summary>
+    /// Split text into chunks asynchronously (supports semantic chunking)
+    /// </summary>
+    /// <param name="text">Text to chunk</param>
+    /// <param name="options">Chunking options (overrides constructor options if provided)</param>
+    /// <param name="metadata">Base metadata to include in all chunks</param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>List of text chunks</returns>
+    public async Task<List<TextChunk>> ChunkTextAsync(
+        string text,
+        TextChunkingOptions? options = null,
+        Dictionary<string, object>? metadata = null,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return new List<TextChunk>();
+
+        var effectiveOptions = options ?? _options;
+
+        // Semantic chunking requires async and embeddings
+        if (effectiveOptions.Strategy == ChunkingStrategy.Semantic)
+        {
+            if (_embeddingGenerator == null)
+            {
+                _logger?.LogWarning(
+                    "Semantic chunking requested but no embedding generator provided. " +
+                    "Falling back to {FallbackStrategy}",
+                    effectiveOptions.SemanticOptions?.FallbackStrategy ?? ChunkingStrategy.Paragraph);
+
+                // Fallback to paragraph chunking
+                effectiveOptions = new TextChunkingOptions
+                {
+                    Strategy = effectiveOptions.SemanticOptions?.FallbackStrategy ?? ChunkingStrategy.Paragraph,
+                    ChunkSize = effectiveOptions.ChunkSize,
+                    OverlapSize = effectiveOptions.OverlapSize
+                };
+
+                return ChunkText(text, metadata);
+            }
+
+            // Use semantic similarity chunker
+            var semanticOptions = effectiveOptions.SemanticOptions ?? new SemanticChunkingOptions();
+            var semanticChunker = new SemanticSimilarityChunker(_embeddingGenerator, _logger);
+
+            var chunks = await semanticChunker.ChunkAsync(text, semanticOptions, ct);
+
+            // Merge base metadata if provided
+            if (metadata != null)
+            {
+                foreach (var chunk in chunks)
+                {
+                    foreach (var kvp in metadata)
+                    {
+                        chunk.Metadata[kvp.Key] = kvp.Value;
+                    }
+                }
+            }
+
+            return chunks;
+        }
+
+        // For non-semantic strategies, use synchronous chunking
+        return ChunkText(text, metadata);
     }
 
     private List<TextChunk> ChunkByFixedSize(string text, Dictionary<string, object>? metadata)
@@ -171,8 +252,12 @@ public class TextChunker
 
     private List<TextChunk> ChunkBySemantic(string text, Dictionary<string, object>? metadata)
     {
-        // For now, use sentence-based chunking
-        // In future, could use embeddings to find semantic boundaries
+        // Synchronous semantic chunking not supported (requires embeddings/async)
+        // Use ChunkTextAsync() for semantic chunking
+        _logger?.LogInformation(
+            "Semantic chunking requires async API. Use ChunkTextAsync() for LLM-powered chunking. " +
+            "Falling back to sentence-based chunking.");
+
         return ChunkBySentence(text, metadata);
     }
 
@@ -232,9 +317,29 @@ public class TextChunk
 /// </summary>
 public class TextChunkingOptions
 {
+    /// <summary>
+    /// Chunking strategy to use
+    /// Default: FixedSize (backwards compatible)
+    /// </summary>
     public ChunkingStrategy Strategy { get; set; } = ChunkingStrategy.FixedSize;
+
+    /// <summary>
+    /// Chunk size in characters (for FixedSize, Sentence, Paragraph strategies)
+    /// Default: 1000
+    /// </summary>
     public int ChunkSize { get; set; } = 1000;
+
+    /// <summary>
+    /// Overlap size in characters (for FixedSize strategy)
+    /// Default: 200
+    /// </summary>
     public int OverlapSize { get; set; } = 200;
+
+    /// <summary>
+    /// Semantic chunking options (only used when Strategy = Semantic)
+    /// null = use default semantic options
+    /// </summary>
+    public SemanticChunkingOptions? SemanticOptions { get; set; } = null;
 }
 
 /// <summary>
