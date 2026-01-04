@@ -253,6 +253,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Enterprise", "Enterprise", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Enterprise.Core", "src\Core\Enterprise\Hazina.Enterprise.Core\Hazina.Enterprise.Core.csproj", "{735955A9-1C68-4BE1-85CB-AD768017AB94}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Observability.LLMLogs", "src\Core\Observability\Hazina.Observability.LLMLogs\Hazina.Observability.LLMLogs.csproj", "{540F32C1-2DF4-4425-954A-1417505E7CDB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1427,6 +1429,18 @@ Global
 		{735955A9-1C68-4BE1-85CB-AD768017AB94}.Release|x64.Build.0 = Release|Any CPU
 		{735955A9-1C68-4BE1-85CB-AD768017AB94}.Release|x86.ActiveCfg = Release|Any CPU
 		{735955A9-1C68-4BE1-85CB-AD768017AB94}.Release|x86.Build.0 = Release|Any CPU
+		{540F32C1-2DF4-4425-954A-1417505E7CDB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{540F32C1-2DF4-4425-954A-1417505E7CDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{540F32C1-2DF4-4425-954A-1417505E7CDB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{540F32C1-2DF4-4425-954A-1417505E7CDB}.Debug|x64.Build.0 = Debug|Any CPU
+		{540F32C1-2DF4-4425-954A-1417505E7CDB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{540F32C1-2DF4-4425-954A-1417505E7CDB}.Debug|x86.Build.0 = Debug|Any CPU
+		{540F32C1-2DF4-4425-954A-1417505E7CDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{540F32C1-2DF4-4425-954A-1417505E7CDB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{540F32C1-2DF4-4425-954A-1417505E7CDB}.Release|x64.ActiveCfg = Release|Any CPU
+		{540F32C1-2DF4-4425-954A-1417505E7CDB}.Release|x64.Build.0 = Release|Any CPU
+		{540F32C1-2DF4-4425-954A-1417505E7CDB}.Release|x86.ActiveCfg = Release|Any CPU
+		{540F32C1-2DF4-4425-954A-1417505E7CDB}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1521,5 +1535,6 @@ Global
 		{2ADC87C3-A7E4-4DD8-A549-E238345C6444} = {E7D25DC4-1D6F-D605-3F5A-B4525A3F363B}
 		{BDD6DE50-102E-29B5-8E97-07C116917C21} = {8D626EA8-CB54-BC41-363A-217881BEBA6E}
 		{735955A9-1C68-4BE1-85CB-AD768017AB94} = {BDD6DE50-102E-29B5-8E97-07C116917C21}
+		{540F32C1-2DF4-4425-954A-1417505E7CDB} = {6B44B103-8444-A68E-72CD-545D71964A41}
 	EndGlobalSection
 EndGlobal

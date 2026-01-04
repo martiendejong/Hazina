@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -11,47 +11,47 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{A1
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Common.Models", "src\Tools\Common\Hazina.Tools.Common.Models\Hazina.Tools.Common.Models.local.csproj", "{07689AC7-D81E-467A-BD94-DE504DF9DC60}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Common.Models.local", "src\Tools\Common\Hazina.Tools.Common.Models\Hazina.Tools.Common.Models.local.csproj", "{07689AC7-D81E-467A-BD94-DE504DF9DC60}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Common.Infrastructure.AspNetCore", "src\Tools\Common\Hazina.Tools.Common.Infrastructure.AspNetCore\Hazina.Tools.Common.Infrastructure.AspNetCore.local.csproj", "{B1E3BA12-2B6C-423F-BE46-33918B569686}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Common.Infrastructure.AspNetCore.local", "src\Tools\Common\Hazina.Tools.Common.Infrastructure.AspNetCore\Hazina.Tools.Common.Infrastructure.AspNetCore.local.csproj", "{B1E3BA12-2B6C-423F-BE46-33918B569686}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.TextExtraction", "src\Tools\Foundation\Hazina.Tools.TextExtraction\Hazina.Tools.TextExtraction.local.csproj", "{3D14D858-A3C2-407B-BA14-FCF3AA8C8584}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.TextExtraction.local", "src\Tools\Foundation\Hazina.Tools.TextExtraction\Hazina.Tools.TextExtraction.local.csproj", "{3D14D858-A3C2-407B-BA14-FCF3AA8C8584}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.AI.Agents", "src\Tools\Foundation\Hazina.Tools.AI.Agents\Hazina.Tools.AI.Agents.local.csproj", "{97E6DBAC-5875-44EC-A86D-D779B374A2AB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.AI.Agents.local", "src\Tools\Foundation\Hazina.Tools.AI.Agents\Hazina.Tools.AI.Agents.local.csproj", "{97E6DBAC-5875-44EC-A86D-D779B374A2AB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Core", "src\Tools\Foundation\Hazina.Tools.Core\Hazina.Tools.Core.local.csproj", "{6CFC9678-39F3-4BE0-82A9-C622E438ACB3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Core.local", "src\Tools\Foundation\Hazina.Tools.Core\Hazina.Tools.Core.local.csproj", "{6CFC9678-39F3-4BE0-82A9-C622E438ACB3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Models", "src\Tools\Foundation\Hazina.Tools.Models\Hazina.Tools.Models.local.csproj", "{953FB8CD-2F0A-47E4-935D-B57F0E14D8B2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Models.local", "src\Tools\Foundation\Hazina.Tools.Models\Hazina.Tools.Models.local.csproj", "{953FB8CD-2F0A-47E4-935D-B57F0E14D8B2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Data", "src\Tools\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.local.csproj", "{E1F1B041-2AD5-4C11-83F7-1224F1C458DB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Data.local", "src\Tools\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.local.csproj", "{E1F1B041-2AD5-4C11-83F7-1224F1C458DB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Extensions", "src\Tools\Foundation\Hazina.Tools.Extensions\Hazina.Tools.Extensions.csproj", "{2E3F4A5B-6C7D-8E9F-0A1B-2C3D4E5F6A7B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.BigQuery", "src\Tools\Services\Hazina.Tools.Services.BigQuery\Hazina.Tools.Services.BigQuery.local.csproj", "{A2EB2015-8331-4F98-BABE-E40A56729F0F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.BigQuery.local", "src\Tools\Services\Hazina.Tools.Services.BigQuery\Hazina.Tools.Services.BigQuery.local.csproj", "{A2EB2015-8331-4F98-BABE-E40A56729F0F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.Embeddings", "src\Tools\Services\Hazina.Tools.Services.Embeddings\Hazina.Tools.Services.Embeddings.local.csproj", "{1B42AF08-A3F2-4FF8-8E3A-D50ACA8DD307}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.Embeddings.local", "src\Tools\Services\Hazina.Tools.Services.Embeddings\Hazina.Tools.Services.Embeddings.local.csproj", "{1B42AF08-A3F2-4FF8-8E3A-D50ACA8DD307}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.ContentRetrieval", "src\Tools\Services\Hazina.Tools.Services.ContentRetrieval\Hazina.Tools.Services.ContentRetrieval.local.csproj", "{A530B3E8-CFC9-493A-9417-F4459253AC34}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.ContentRetrieval.local", "src\Tools\Services\Hazina.Tools.Services.ContentRetrieval\Hazina.Tools.Services.ContentRetrieval.local.csproj", "{A530B3E8-CFC9-493A-9417-F4459253AC34}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.Chat", "src\Tools\Services\Hazina.Tools.Services.Chat\Hazina.Tools.Services.Chat.local.csproj", "{C4DDB74E-6A25-4B71-98D9-0243C575C872}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.Chat.local", "src\Tools\Services\Hazina.Tools.Services.Chat\Hazina.Tools.Services.Chat.local.csproj", "{C4DDB74E-6A25-4B71-98D9-0243C575C872}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.FileOps", "src\Tools\Services\Hazina.Tools.Services.FileOps\Hazina.Tools.Services.FileOps.local.csproj", "{C916955F-9C1A-4157-82FF-2DB87E023B84}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.FileOps.local", "src\Tools\Services\Hazina.Tools.Services.FileOps\Hazina.Tools.Services.FileOps.local.csproj", "{C916955F-9C1A-4157-82FF-2DB87E023B84}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.Store", "src\Tools\Services\Hazina.Tools.Services.Store\Hazina.Tools.Services.Store.local.csproj", "{710D3E87-F29F-4611-95EB-4492CDE825F2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.Store.local", "src\Tools\Services\Hazina.Tools.Services.Store\Hazina.Tools.Services.Store.local.csproj", "{710D3E87-F29F-4611-95EB-4492CDE825F2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.Social", "src\Tools\Services\Hazina.Tools.Services.Social\Hazina.Tools.Services.Social.local.csproj", "{FADAE9E5-6C33-4FDE-8B25-428E389B06E2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.Social.local", "src\Tools\Services\Hazina.Tools.Services.Social\Hazina.Tools.Services.Social.local.csproj", "{FADAE9E5-6C33-4FDE-8B25-428E389B06E2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.Prompts", "src\Tools\Services\Hazina.Tools.Services.Prompts\Hazina.Tools.Services.Prompts.local.csproj", "{D50C3DF5-9F3E-4EC0-9ACD-1F6CD689163D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.Prompts.local", "src\Tools\Services\Hazina.Tools.Services.Prompts\Hazina.Tools.Services.Prompts.local.csproj", "{D50C3DF5-9F3E-4EC0-9ACD-1F6CD689163D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.Intake", "src\Tools\Services\Hazina.Tools.Services.Intake\Hazina.Tools.Services.Intake.local.csproj", "{04B1BA33-2878-4720-95D0-FBDE76DC8CAC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.Intake.local", "src\Tools\Services\Hazina.Tools.Services.Intake\Hazina.Tools.Services.Intake.local.csproj", "{04B1BA33-2878-4720-95D0-FBDE76DC8CAC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.WordPress", "src\Tools\Services\Hazina.Tools.Services.WordPress\Hazina.Tools.Services.WordPress.local.csproj", "{AD9E334F-EBCA-4F44-B4E8-6F12BDC03408}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.WordPress.local", "src\Tools\Services\Hazina.Tools.Services.WordPress\Hazina.Tools.Services.WordPress.local.csproj", "{AD9E334F-EBCA-4F44-B4E8-6F12BDC03408}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.Web", "src\Tools\Services\Hazina.Tools.Services.Web\Hazina.Tools.Services.Web.local.csproj", "{80D85051-A6CF-42DA-953B-F120810D979F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.Web.local", "src\Tools\Services\Hazina.Tools.Services.Web\Hazina.Tools.Services.Web.local.csproj", "{80D85051-A6CF-42DA-953B-F120810D979F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services", "src\Tools\Services\Hazina.Tools.Services\Hazina.Tools.Services.local.csproj", "{C23E726C-E8DF-4C24-99B3-1D0CAF7820C9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.local", "src\Tools\Services\Hazina.Tools.Services\Hazina.Tools.Services.local.csproj", "{C23E726C-E8DF-4C24-99B3-1D0CAF7820C9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.DataGathering", "src\Tools\Services\Hazina.Tools.Services.DataGathering\Hazina.Tools.Services.DataGathering.local.csproj", "{3691F72E-887D-4D4A-87B0-0A5BCF0F1220}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.DataGathering.local", "src\Tools\Services\Hazina.Tools.Services.DataGathering\Hazina.Tools.Services.DataGathering.local.csproj", "{3691F72E-887D-4D4A-87B0-0A5BCF0F1220}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Common.Models.Tests", "Tests\Tools\Hazina.Tools.Common.Models.Tests\Hazina.Tools.Common.Models.Tests.csproj", "{7465FEC5-FEA8-4797-AFDC-D10D00DD5614}"
 EndProject
@@ -72,6 +72,14 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.TextExtraction.Tests", "Tests\Tools\Hazina.Tools.TextExtraction.Tests\Hazina.Tools.TextExtraction.Tests.csproj", "{C0B6B6BC-721A-497D-B639-C262EE28A715}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.Chat.Tests", "Tests\Tools\Hazina.Tools.Services.Chat.Tests\Hazina.Tools.Services.Chat.Tests.csproj", "{71800E45-1347-45FD-BFEA-32E725141DB3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{8D626EA8-CB54-BC41-363A-217881BEBA6E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Observability", "Observability", "{6B44B103-8444-A68E-72CD-545D71964A41}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Observability.LLMLogs", "src\Core\Observability\Hazina.Observability.LLMLogs\Hazina.Observability.LLMLogs.csproj", "{6E10C984-87F8-491B-9BCB-7F84784A1509}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -455,6 +463,18 @@ Global
 		{71800E45-1347-45FD-BFEA-32E725141DB3}.Release|x64.Build.0 = Release|Any CPU
 		{71800E45-1347-45FD-BFEA-32E725141DB3}.Release|x86.ActiveCfg = Release|Any CPU
 		{71800E45-1347-45FD-BFEA-32E725141DB3}.Release|x86.Build.0 = Release|Any CPU
+		{6E10C984-87F8-491B-9BCB-7F84784A1509}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E10C984-87F8-491B-9BCB-7F84784A1509}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E10C984-87F8-491B-9BCB-7F84784A1509}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6E10C984-87F8-491B-9BCB-7F84784A1509}.Debug|x64.Build.0 = Debug|Any CPU
+		{6E10C984-87F8-491B-9BCB-7F84784A1509}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6E10C984-87F8-491B-9BCB-7F84784A1509}.Debug|x86.Build.0 = Debug|Any CPU
+		{6E10C984-87F8-491B-9BCB-7F84784A1509}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E10C984-87F8-491B-9BCB-7F84784A1509}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E10C984-87F8-491B-9BCB-7F84784A1509}.Release|x64.ActiveCfg = Release|Any CPU
+		{6E10C984-87F8-491B-9BCB-7F84784A1509}.Release|x64.Build.0 = Release|Any CPU
+		{6E10C984-87F8-491B-9BCB-7F84784A1509}.Release|x86.ActiveCfg = Release|Any CPU
+		{6E10C984-87F8-491B-9BCB-7F84784A1509}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -491,5 +511,8 @@ Global
 		{BA3EC9CE-AB26-4032-A5FD-F5B87163CDD3} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{C0B6B6BC-721A-497D-B639-C262EE28A715} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{71800E45-1347-45FD-BFEA-32E725141DB3} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{8D626EA8-CB54-BC41-363A-217881BEBA6E} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{6B44B103-8444-A68E-72CD-545D71964A41} = {8D626EA8-CB54-BC41-363A-217881BEBA6E}
+		{6E10C984-87F8-491B-9BCB-7F84784A1509} = {6B44B103-8444-A68E-72CD-545D71964A41}
 	EndGlobalSection
 EndGlobal
