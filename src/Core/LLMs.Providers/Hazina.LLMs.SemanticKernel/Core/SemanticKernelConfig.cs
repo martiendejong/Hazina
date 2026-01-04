@@ -17,7 +17,7 @@ public class SemanticKernelConfig
         LLMProvider provider = LLMProvider.OpenAI,
         string apiKey = "",
         string model = "gpt-4o",
-        string embeddingModel = "text-embedding-ada-002",
+        string embeddingModel = "text-embedding-3-small",
         string imageModel = "dall-e-3",
         string ttsModel = "tts-1",
         string logPath = "c:\\projects\\hazinalogs.txt",
@@ -96,7 +96,7 @@ public class SemanticKernelConfig
                 skSettings.Provider = LLMProvider.OpenAI;
                 skSettings.ApiKey = openAISection["ApiKey"] ?? "";
                 skSettings.Model = openAISection["Model"] ?? "gpt-4o";
-                skSettings.EmbeddingModel = openAISection["EmbeddingModel"] ?? "text-embedding-ada-002";
+                skSettings.EmbeddingModel = openAISection["EmbeddingModel"] ?? "text-embedding-3-small";
                 skSettings.ImageModel = openAISection["ImageModel"] ?? "dall-e-3";
                 skSettings.TtsModel = openAISection["TtsModel"] ?? "tts-1";
                 skSettings.LogPath = openAISection["LogPath"] ?? "c:\\projects\\hazinalogs.txt";

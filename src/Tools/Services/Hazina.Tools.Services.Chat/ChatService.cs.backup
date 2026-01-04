@@ -413,9 +413,8 @@ namespace Hazina.Tools.Services.Chat
                 // Update metadata preview/modified
                 _metadataService.UpdateChatMetadataModified(projectId, chatId, null, userId);
 
-                // DUPLICATE MESSAGE FIX: ChatStreamService already streams all chunks via NotifyChunkReceived
-                // Sending the full reply here again causes duplicate messages in the UI
-                //                 _ = _notifier.NotifyChunkReceived(project?.Name ?? projectId, "chat", string.Empty, reply, chatId);
+                // Stream final chunk
+                _ = _notifier.NotifyChunkReceived(project?.Name ?? projectId, "chat", string.Empty, reply, chatId);
             }
 
             // Fire off background services AFTER chat is saved
@@ -591,9 +590,8 @@ namespace Hazina.Tools.Services.Chat
                 // Update metadata preview/modified
                 _metadataService.UpdateChatMetadataModified(projectId, chatId, null);
 
-                // DUPLICATE MESSAGE FIX: ChatStreamService already streams all chunks via NotifyChunkReceived
-                // Sending the full reply here again causes duplicate messages in the UI
-                //                 _ = _notifier.NotifyChunkReceived(project?.Name ?? projectId, "chat", string.Empty, reply, chatId);
+                // Stream final chunk
+                _ = _notifier.NotifyChunkReceived(project?.Name ?? projectId, "chat", string.Empty, reply, chatId);
             }
 
             // Fire off background services AFTER chat is saved

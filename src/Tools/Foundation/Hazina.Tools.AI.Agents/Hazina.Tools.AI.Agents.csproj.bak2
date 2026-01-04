@@ -15,7 +15,6 @@
     <ProjectReference Include="..\..\Services\Hazina.Tools.Services.Embeddings\Hazina.Tools.Services.Embeddings.csproj" />
     <ProjectReference Include="..\..\Services\Hazina.Tools.Services.FileOps\Hazina.Tools.Services.FileOps.csproj" />
     <ProjectReference Include="......CoreObservabilityHazina.Observability.LLMLogsHazina.Observability.LLMLogs.csproj" />
-    <ProjectReference Include="..\..\..\Core\Observability\Hazina.Observability.LLMLogs\Hazina.Observability.LLMLogs.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="OpenAI" Version="2.6.0" />
