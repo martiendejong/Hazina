@@ -46,6 +46,16 @@ namespace Hazina.Tools.Models
         /// </summary>
         public FragmentMetadata Metadata { get; set; } = new FragmentMetadata();
 
+        /// <summary>
+        /// URL to the generated base image (background with logo, before text overlays)
+        /// </summary>
+        public string BaseImageUrl { get; set; } = "";
+
+        /// <summary>
+        /// URL to the final generated image (with all text overlays applied)
+        /// </summary>
+        public string FinalImageUrl { get; set; } = "";
+
         [JsonIgnore]
         public override BrandDocumentFragment _example => new BrandDocumentFragment
         {
