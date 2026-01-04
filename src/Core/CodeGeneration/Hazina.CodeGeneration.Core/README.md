@@ -21,6 +21,25 @@ Analyzes natural language prompts and converts them into structured intents for 
 - **GenerateInterface**: Create interfaces
 - **GenerateModel**: Create data models
 
+### Template Engine
+
+Converts parsed intents into actual C# code using template-based generation.
+
+**Built-in Templates**:
+- **MethodTemplate**: Generates methods with XML docs, parameters, and async support
+- **ClassTemplate**: Generates classes with properties, methods, constructors, and inheritance
+- **TestTemplate**: Generates xUnit test classes with test scenarios and assertions
+
+**Features**:
+- Automatic code formatting and indentation
+- XML documentation generation
+- Support for async/await patterns
+- Constructor generation for classes
+- Property initialization
+- Test framework selection (xUnit, NUnit, MSTest)
+- Assertion library selection (FluentAssertions, Assert)
+- Mocking framework integration (Moq, NSubstitute)
+
 ## Intent Models
 
 ### CodeGenerationIntent (Base)
@@ -100,6 +119,36 @@ public class TestGenerationIntent : CodeGenerationIntent
 
 ## Usage
 
+### End-to-End Code Generation
+
+```csharp
+using Hazina.CodeGeneration.Core.Parsing;
+using Hazina.CodeGeneration.Core.Templates;
+using Microsoft.Extensions.Logging;
+
+// Create services
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var parser = new IntentParser(loggerFactory.CreateLogger<IntentParser>());
+var templateEngine = new TemplateEngine(loggerFactory.CreateLogger<TemplateEngine>());
+
+// Parse intent from natural language
+var intent = await parser.ParseAsync("Create a method called CalculateTotal that returns decimal");
+
+// Generate code from intent
+var code = await templateEngine.GenerateCodeAsync(intent);
+
+Console.WriteLine(code);
+// Output:
+// /// <summary>
+// /// Create a method called CalculateTotal that returns decimal
+// /// </summary>
+// /// <returns>Create a method called CalculateTotal that returns decimal</returns>
+// public decimal CalculateTotal()
+// {
+//     throw new NotImplementedException();
+// }
+```
+
 ### Basic Intent Parsing
 
 ```csharp
@@ -120,6 +169,52 @@ if (intent is MethodGenerationIntent methodIntent)
     Console.WriteLine($"Return Type: {methodIntent.ReturnType}");
     Console.WriteLine($"Confidence: {methodIntent.Confidence}");
 }
+```
+
+### Generating Methods with Template Engine
+
+```csharp
+using Hazina.CodeGeneration.Core.Models;
+using Hazina.CodeGeneration.Core.Templates;
+
+var templateEngine = new TemplateEngine(logger);
+
+// Create method intent programmatically
+var methodIntent = new MethodGenerationIntent
+{
+    MethodName = "ValidateEmail",
+    ReturnType = "bool",
+    AccessModifier = "public",
+    Description = "Validates an email address format",
+    Parameters = new List<MethodParameter>
+    {
+        new() { Name = "email", Type = "string", Description = "The email to validate" }
+    }
+};
+
+// Generate code
+var code = await templateEngine.GenerateCodeAsync(methodIntent);
+Console.WriteLine(code);
+```
+
+### Generating Classes with Template Engine
+
+```csharp
+var classIntent = new ClassGenerationIntent
+{
+    ClassName = "UserDto",
+    TargetNamespace = "MyApp.Models",
+    Description = "Data transfer object for user information",
+    Properties = new List<ClassProperty>
+    {
+        new() { Name = "Id", Type = "int", Description = "User identifier" },
+        new() { Name = "Email", Type = "string", IsRequired = true },
+        new() { Name = "Name", Type = "string", IsRequired = true }
+    }
+};
+
+var code = await templateEngine.GenerateCodeAsync(classIntent);
+// Generates a complete class with namespace, properties, and constructor
 ```
 
 ### Parsing Class Generation
