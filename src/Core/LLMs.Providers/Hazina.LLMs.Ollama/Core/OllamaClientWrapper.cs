@@ -13,6 +13,7 @@ public class OllamaClientWrapper : ILLMClient
     public OllamaConfig Config { get; set; }
     private readonly HttpClient _http;
     private readonly PartialJsonParser _parser;
+    private readonly PromptBasedToolsOrchestrator _toolsOrchestrator;
 
     public OllamaClientWrapper(OllamaConfig config)
     {
@@ -23,6 +24,7 @@ public class OllamaClientWrapper : ILLMClient
             Timeout = TimeSpan.FromMinutes(5)
         };
         _parser = new PartialJsonParser();
+        _toolsOrchestrator = new PromptBasedToolsOrchestrator(maxToolCalls: 50);
     }
 
     #region Chat Completion
@@ -37,9 +39,23 @@ public class OllamaClientWrapper : ILLMClient
         // Use prompt-based tool calling if tools are available
         if (toolsContext != null && toolsContext.Tools != null && toolsContext.Tools.Any())
         {
-            return await GetResponseWithTools(messages, responseFormat, toolsContext, images, false, null, cancel);
+            return await _toolsOrchestrator.GetResponseWithToolsAsync(
+                messages,
+                toolsContext,
+                async (msgs, ct) => await GetResponseInternal(msgs, responseFormat, images, ct),
+                cancel
+            );
         }
 
+        return await GetResponseInternal(messages, responseFormat, images, cancel);
+    }
+
+    private async Task<LLMResponse<string>> GetResponseInternal(
+        List<HazinaChatMessage> messages,
+        HazinaChatResponseFormat responseFormat,
+        List<ImageData>? images,
+        CancellationToken cancel)
+    {
         Log(messages.LastOrDefault()?.Text);
 
         var request = CreateChatRequest(messages, responseFormat, stream: false);
@@ -85,9 +101,25 @@ public class OllamaClientWrapper : ILLMClient
         // Use prompt-based tool calling if tools are available
         if (toolsContext != null && toolsContext.Tools != null && toolsContext.Tools.Any())
         {
-            return await GetResponseWithTools(messages, responseFormat, toolsContext, images, true, onChunkReceived, cancel);
+            return await _toolsOrchestrator.GetResponseStreamWithToolsAsync(
+                messages,
+                toolsContext,
+                async (msgs, onChunk, ct) => await GetResponseStreamInternal(msgs, onChunk, responseFormat, images, ct),
+                onChunkReceived,
+                cancel
+            );
         }
 
+        return await GetResponseStreamInternal(messages, onChunkReceived, responseFormat, images, cancel);
+    }
+
+    private async Task<LLMResponse<string>> GetResponseStreamInternal(
+        List<HazinaChatMessage> messages,
+        Action<string> onChunkReceived,
+        HazinaChatResponseFormat responseFormat,
+        List<ImageData>? images,
+        CancellationToken cancel)
+    {
         Log(messages.LastOrDefault()?.Text);
 
         var request = CreateChatRequest(messages, responseFormat, stream: true);
@@ -199,197 +231,6 @@ public class OllamaClientWrapper : ILLMClient
     public Task SpeakStream(string text, string voice, Action<byte[]> onAudioChunk, string mimeType, CancellationToken cancel)
     {
         throw new NotSupportedException("Ollama does not support text-to-speech. Use OpenAI or another provider for TTS.");
-    }
-
-    #endregion
-
-    #region Prompt-Based Tool Calling
-
-    /// <summary>
-    /// Generates a system prompt that describes available tools for models without native tool support.
-    /// The model is instructed to respond with JSON when it wants to call a tool.
-    /// </summary>
-    private string GenerateToolsSystemPrompt(IToolsContext toolsContext)
-    {
-        if (toolsContext == null || toolsContext.Tools == null || !toolsContext.Tools.Any())
-            return string.Empty;
-
-        var toolsDescription = new System.Text.StringBuilder();
-        toolsDescription.AppendLine("AVAILABLE TOOLS:");
-        toolsDescription.AppendLine("You have access to the following tools. When you need to use a tool, respond ONLY with a JSON object in this exact format:");
-        toolsDescription.AppendLine("{");
-        toolsDescription.AppendLine("  \"tool_call\": true,");
-        toolsDescription.AppendLine("  \"tool\": \"tool_name\",");
-        toolsDescription.AppendLine("  \"arguments\": { \"param1\": \"value1\", \"param2\": \"value2\" }");
-        toolsDescription.AppendLine("}");
-        toolsDescription.AppendLine();
-        toolsDescription.AppendLine("IMPORTANT: When calling a tool, respond with ONLY the JSON object above, nothing else.");
-        toolsDescription.AppendLine();
-
-        foreach (var tool in toolsContext.Tools)
-        {
-            toolsDescription.AppendLine($"Tool: {tool.FunctionName}");
-            toolsDescription.AppendLine($"Description: {tool.Description}");
-            if (tool.Parameters.Any())
-            {
-                toolsDescription.AppendLine("Parameters:");
-                foreach (var param in tool.Parameters)
-                {
-                    var required = param.Required ? "(required)" : "(optional)";
-                    toolsDescription.AppendLine($"  - {param.Name} ({param.Type}): {param.Description} {required}");
-                }
-            }
-            toolsDescription.AppendLine();
-        }
-
-        return toolsDescription.ToString();
-    }
-
-    /// <summary>
-    /// Detects if the model response is a tool call request.
-    /// </summary>
-    private bool IsToolCallResponse(string response, out OllamaToolCall? toolCall)
-    {
-        toolCall = null;
-
-        try
-        {
-            // Try to parse as JSON
-            var trimmed = response.Trim();
-            if (!trimmed.StartsWith("{") || !trimmed.EndsWith("}"))
-                return false;
-
-            var parsed = JsonSerializer.Deserialize<OllamaToolCall>(trimmed, GetJsonOptions());
-            if (parsed != null && parsed.ToolCall == true && !string.IsNullOrEmpty(parsed.Tool))
-            {
-                toolCall = parsed;
-                return true;
-            }
-        }
-        catch (JsonException)
-        {
-            // Not valid JSON, treat as regular response
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Executes a tool call and returns the result.
-    /// </summary>
-    private async Task<string> ExecuteToolCall(
-        IToolsContext toolsContext,
-        List<HazinaChatMessage> messages,
-        OllamaToolCall toolCallRequest,
-        CancellationToken cancel)
-    {
-        var tool = toolsContext.Tools.FirstOrDefault(t => t.FunctionName == toolCallRequest.Tool);
-        if (tool == null)
-        {
-            return $"Error: Tool '{toolCallRequest.Tool}' not found.";
-        }
-
-        try
-        {
-            // Convert arguments to BinaryData
-            var argsJson = JsonSerializer.Serialize(toolCallRequest.Arguments ?? new Dictionary<string, object>());
-            var argsBinary = BinaryData.FromString(argsJson);
-
-            // Create HazinaChatToolCall
-            var hazToolCall = new HazinaChatToolCall(
-                id: Guid.NewGuid().ToString(),
-                functionName: toolCallRequest.Tool,
-                functionArguments: argsBinary
-            );
-
-            // Execute the tool
-            Console.WriteLine($"[Ollama] Calling tool: {tool.FunctionName}");
-            Console.WriteLine($"[Ollama] Arguments: {argsJson}");
-
-            var result = await tool.Execute(messages, hazToolCall, cancel);
-
-            Console.WriteLine($"[Ollama] Tool result: {(result.Length > 200 ? result.Substring(0, 200) + "..." : result)}");
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            return $"Error executing tool '{toolCallRequest.Tool}': {ex.Message}";
-        }
-    }
-
-    /// <summary>
-    /// Handles the complete tool calling loop with tool execution and result feedback.
-    /// </summary>
-    private async Task<LLMResponse<string>> GetResponseWithTools(
-        List<HazinaChatMessage> messages,
-        HazinaChatResponseFormat responseFormat,
-        IToolsContext toolsContext,
-        List<ImageData>? images,
-        bool stream,
-        Action<string>? onChunkReceived,
-        CancellationToken cancel)
-    {
-        const int maxToolCalls = 50;
-        int toolCallCount = 0;
-
-        // Add tools system prompt
-        var toolsPrompt = GenerateToolsSystemPrompt(toolsContext);
-        var messagesWithTools = new List<HazinaChatMessage>(messages);
-        if (!string.IsNullOrEmpty(toolsPrompt))
-        {
-            messagesWithTools.Insert(0, new HazinaChatMessage(HazinaMessageRole.System, toolsPrompt));
-        }
-
-        LLMResponse<string> response;
-        bool requiresAction = true;
-
-        while (requiresAction && toolCallCount < maxToolCalls)
-        {
-            // Get response from model
-            if (stream && onChunkReceived != null)
-            {
-                response = await GetResponseStream(messagesWithTools, onChunkReceived, responseFormat, null, images, cancel);
-            }
-            else
-            {
-                response = await GetResponse(messagesWithTools, responseFormat, null, images, cancel);
-            }
-
-            // Check if response is a tool call
-            if (IsToolCallResponse(response.Result, out var toolCall) && toolCall != null)
-            {
-                toolCallCount++;
-
-                // Add assistant message with tool call
-                messagesWithTools.Add(new HazinaChatMessage(HazinaMessageRole.Assistant, response.Result));
-
-                // Execute tool
-                var toolResult = await ExecuteToolCall(toolsContext, messages, toolCall, cancel);
-
-                // Add tool result as user message
-                messagesWithTools.Add(new HazinaChatMessage(
-                    HazinaMessageRole.System,
-                    $"Tool '{toolCall.Tool}' result:\n{toolResult}"
-                ));
-
-                // Continue loop
-                requiresAction = true;
-            }
-            else
-            {
-                // Regular response, exit loop
-                return response;
-            }
-        }
-
-        if (toolCallCount >= maxToolCalls)
-        {
-            throw new InvalidOperationException($"Maximum tool call limit ({maxToolCalls}) exceeded.");
-        }
-
-        // This should never be reached, but return empty response if it does
-        return new LLMResponse<string>("", new TokenUsageInfo { ModelName = Config.Model });
     }
 
     #endregion
@@ -570,21 +411,6 @@ internal class OllamaEmbeddingResponse
 {
     [JsonPropertyName("embedding")]
     public float[]? Embedding { get; set; }
-}
-
-/// <summary>
-/// Model for prompt-based tool call requests (for models without native tool support)
-/// </summary>
-internal class OllamaToolCall
-{
-    [JsonPropertyName("tool_call")]
-    public bool ToolCall { get; set; }
-
-    [JsonPropertyName("tool")]
-    public string Tool { get; set; } = string.Empty;
-
-    [JsonPropertyName("arguments")]
-    public Dictionary<string, object>? Arguments { get; set; }
 }
 
 #endregion
