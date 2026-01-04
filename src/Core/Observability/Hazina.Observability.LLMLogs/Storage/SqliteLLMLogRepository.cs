@@ -69,6 +69,9 @@ namespace Hazina.Observability.LLMLogs.Storage
                         tool_arguments TEXT NULL,
                         request_messages TEXT NOT NULL,
                         response_data TEXT NOT NULL,
+                        message_count INTEGER NOT NULL DEFAULT 0,
+                        embedded_documents TEXT NULL,
+                        embedded_document_count INTEGER NOT NULL DEFAULT 0,
                         input_tokens INTEGER NOT NULL DEFAULT 0,
                         output_tokens INTEGER NOT NULL DEFAULT 0,
                         total_tokens INTEGER NOT NULL DEFAULT 0,
@@ -113,6 +116,7 @@ namespace Hazina.Observability.LLMLogs.Storage
                     call_id, parent_call_id, username, feature, step, datetime_utc,
                     provider, model, is_tool_call, tool_name, tool_arguments,
                     request_messages, response_data,
+                    message_count, embedded_documents, embedded_document_count,
                     input_tokens, output_tokens, total_tokens,
                     input_cost, output_cost, total_cost,
                     execution_time_ms, success, error_message, created_at
@@ -120,6 +124,7 @@ namespace Hazina.Observability.LLMLogs.Storage
                     @CallId, @ParentCallId, @Username, @Feature, @Step, @DateTimeUtc,
                     @Provider, @Model, @IsToolCall, @ToolName, @ToolArguments,
                     @RequestMessages, @ResponseData,
+                    @MessageCount, @EmbeddedDocuments, @EmbeddedDocumentCount,
                     @InputTokens, @OutputTokens, @TotalTokens,
                     @InputCost, @OutputCost, @TotalCost,
                     @ExecutionTimeMs, @Success, @ErrorMessage, @CreatedAt
@@ -140,6 +145,9 @@ namespace Hazina.Observability.LLMLogs.Storage
             command.Parameters.AddWithValue("@ToolArguments", log.ToolArguments ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@RequestMessages", _options.LogRequestMessages ? log.RequestMessages : string.Empty);
             command.Parameters.AddWithValue("@ResponseData", _options.LogResponseData ? log.ResponseData : string.Empty);
+            command.Parameters.AddWithValue("@MessageCount", log.MessageCount);
+            command.Parameters.AddWithValue("@EmbeddedDocuments", log.EmbeddedDocuments ?? (object)DBNull.Value);
+            command.Parameters.AddWithValue("@EmbeddedDocumentCount", log.EmbeddedDocumentCount);
             command.Parameters.AddWithValue("@InputTokens", log.InputTokens);
             command.Parameters.AddWithValue("@OutputTokens", log.OutputTokens);
             command.Parameters.AddWithValue("@TotalTokens", log.TotalTokens);
@@ -303,6 +311,9 @@ namespace Hazina.Observability.LLMLogs.Storage
                 ToolArguments = reader.IsDBNull(reader.GetOrdinal("tool_arguments")) ? null : reader.GetString(reader.GetOrdinal("tool_arguments")),
                 RequestMessages = reader.GetString(reader.GetOrdinal("request_messages")),
                 ResponseData = reader.GetString(reader.GetOrdinal("response_data")),
+                MessageCount = reader.GetInt32(reader.GetOrdinal("message_count")),
+                EmbeddedDocuments = reader.IsDBNull(reader.GetOrdinal("embedded_documents")) ? null : reader.GetString(reader.GetOrdinal("embedded_documents")),
+                EmbeddedDocumentCount = reader.GetInt32(reader.GetOrdinal("embedded_document_count")),
                 InputTokens = reader.GetInt32(reader.GetOrdinal("input_tokens")),
                 OutputTokens = reader.GetInt32(reader.GetOrdinal("output_tokens")),
                 TotalTokens = reader.GetInt32(reader.GetOrdinal("total_tokens")),

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace Hazina.Observability.LLMLogs.Context
@@ -39,6 +40,12 @@ namespace Hazina.Observability.LLMLogs.Context
         /// Parent call ID if this is a nested/child LLM call.
         /// </summary>
         public string? ParentCallId { get; set; }
+
+        /// <summary>
+        /// Embedded documents added to the context via RAG/similarity search.
+        /// Each entry should contain document name, chunk, and relevance score.
+        /// </summary>
+        public List<EmbeddedDocument>? EmbeddedDocuments { get; set; }
 
         /// <summary>
         /// Creates a new logging context scope.
@@ -100,5 +107,31 @@ namespace Hazina.Observability.LLMLogs.Context
                 Current = _previous;
             }
         }
+    }
+
+    /// <summary>
+    /// Represents a document that was embedded into the LLM context via RAG/similarity search.
+    /// </summary>
+    public class EmbeddedDocument
+    {
+        /// <summary>
+        /// Name or identifier of the document.
+        /// </summary>
+        public string DocumentName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The text chunk that was embedded.
+        /// </summary>
+        public string Chunk { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Relevance score from similarity search (0.0 to 1.0).
+        /// </summary>
+        public double RelevanceScore { get; set; }
+
+        /// <summary>
+        /// Optional metadata about the document (e.g., page number, section, etc.).
+        /// </summary>
+        public string? Metadata { get; set; }
     }
 }

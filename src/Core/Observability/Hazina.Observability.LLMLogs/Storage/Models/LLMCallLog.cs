@@ -74,6 +74,22 @@ namespace Hazina.Observability.LLMLogs.Storage.Models
         public string ResponseData { get; set; } = string.Empty;
 
         /// <summary>
+        /// Number of messages in the request.
+        /// </summary>
+        public int MessageCount { get; set; }
+
+        /// <summary>
+        /// Embedded documents/context added via RAG/similarity search (serialized as JSON).
+        /// Includes document names, chunks, and relevance scores.
+        /// </summary>
+        public string? EmbeddedDocuments { get; set; }
+
+        /// <summary>
+        /// Number of documents/chunks added to context via embeddings.
+        /// </summary>
+        public int EmbeddedDocumentCount { get; set; }
+
+        /// <summary>
         /// Number of tokens used in the input/request.
         /// </summary>
         public int InputTokens { get; set; }

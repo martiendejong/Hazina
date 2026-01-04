@@ -311,6 +311,11 @@ namespace Hazina.Observability.LLMLogs.Decorators
         {
             try
             {
+                var embeddedDocuments = context?.EmbeddedDocuments;
+                var embeddedDocumentsJson = embeddedDocuments != null && embeddedDocuments.Count > 0
+                    ? JsonSerializer.Serialize(embeddedDocuments)
+                    : null;
+
                 var log = new LLMCallLog
                 {
                     CallId = callId,
@@ -326,6 +331,9 @@ namespace Hazina.Observability.LLMLogs.Decorators
                     ToolArguments = null, // Could extract from toolsContext if needed
                     RequestMessages = _options.LogRequestMessages ? JsonSerializer.Serialize(messages) : string.Empty,
                     ResponseData = _options.LogResponseData ? responseData : string.Empty,
+                    MessageCount = messages?.Count ?? 0,
+                    EmbeddedDocuments = embeddedDocumentsJson,
+                    EmbeddedDocumentCount = embeddedDocuments?.Count ?? 0,
                     InputTokens = tokenUsage.InputTokens,
                     OutputTokens = tokenUsage.OutputTokens,
                     TotalTokens = tokenUsage.TotalTokens,
