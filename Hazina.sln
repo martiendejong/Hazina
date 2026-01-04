@@ -245,6 +245,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Observability.Core.B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Observability.Core.LoadTests", "tests\Core\Observability\Hazina.Observability.Core.LoadTests\Hazina.Observability.Core.LoadTests.csproj", "{A1B11B3C-0E7D-41DA-8511-10A7D0CC9821}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CodeGeneration", "CodeGeneration", "{E7D25DC4-1D6F-D605-3F5A-B4525A3F363B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.CodeGeneration.Core", "src\Core\CodeGeneration\Hazina.CodeGeneration.Core\Hazina.CodeGeneration.Core.csproj", "{2ADC87C3-A7E4-4DD8-A549-E238345C6444}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1395,6 +1399,18 @@ Global
 		{A1B11B3C-0E7D-41DA-8511-10A7D0CC9821}.Release|x64.Build.0 = Release|Any CPU
 		{A1B11B3C-0E7D-41DA-8511-10A7D0CC9821}.Release|x86.ActiveCfg = Release|Any CPU
 		{A1B11B3C-0E7D-41DA-8511-10A7D0CC9821}.Release|x86.Build.0 = Release|Any CPU
+		{2ADC87C3-A7E4-4DD8-A549-E238345C6444}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2ADC87C3-A7E4-4DD8-A549-E238345C6444}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2ADC87C3-A7E4-4DD8-A549-E238345C6444}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2ADC87C3-A7E4-4DD8-A549-E238345C6444}.Debug|x64.Build.0 = Debug|Any CPU
+		{2ADC87C3-A7E4-4DD8-A549-E238345C6444}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2ADC87C3-A7E4-4DD8-A549-E238345C6444}.Debug|x86.Build.0 = Debug|Any CPU
+		{2ADC87C3-A7E4-4DD8-A549-E238345C6444}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2ADC87C3-A7E4-4DD8-A549-E238345C6444}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2ADC87C3-A7E4-4DD8-A549-E238345C6444}.Release|x64.ActiveCfg = Release|Any CPU
+		{2ADC87C3-A7E4-4DD8-A549-E238345C6444}.Release|x64.Build.0 = Release|Any CPU
+		{2ADC87C3-A7E4-4DD8-A549-E238345C6444}.Release|x86.ActiveCfg = Release|Any CPU
+		{2ADC87C3-A7E4-4DD8-A549-E238345C6444}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1485,5 +1501,7 @@ Global
 		{A3C1D49B-CE4E-4D5C-94D1-550ADC062CCD} = {10F101C0-264C-00A2-7A58-634BC7C3B668}
 		{CB438C84-75DC-4C13-82CB-1F756BC48A79} = {10F101C0-264C-00A2-7A58-634BC7C3B668}
 		{A1B11B3C-0E7D-41DA-8511-10A7D0CC9821} = {10F101C0-264C-00A2-7A58-634BC7C3B668}
+		{E7D25DC4-1D6F-D605-3F5A-B4525A3F363B} = {8D626EA8-CB54-BC41-363A-217881BEBA6E}
+		{2ADC87C3-A7E4-4DD8-A549-E238345C6444} = {E7D25DC4-1D6F-D605-3F5A-B4525A3F363B}
 	EndGlobalSection
 EndGlobal
