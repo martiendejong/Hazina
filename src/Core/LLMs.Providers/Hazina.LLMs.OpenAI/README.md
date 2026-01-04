@@ -10,7 +10,7 @@ This library provides the OpenAI integration for the Hazina platform:
 - **Configuration**: Flexible config via `OpenAIConfig` or appsettings.json
 - **Streaming Support**: Real-time streaming responses
 - **Tool Calling**: Function calling with automatic tool execution
-- **Embeddings**: text-embedding-ada-002 and newer models
+- **Embeddings**: text-embedding-3-small, text-embedding-3-large, and other OpenAI embedding models
 - **Image Generation**: DALL-E integration
 - **Retry Logic**: Automatic retry on transient failures
 
@@ -31,7 +31,7 @@ using Hazina.LLMs.OpenAI;
 var config = new OpenAIConfig(
     apiKey: "sk-...",
     model: "gpt-4",
-    embeddingModel: "text-embedding-ada-002"
+    embeddingModel: "text-embedding-3-small"
 );
 
 var client = new OpenAIClientWrapper(config);
@@ -170,7 +170,7 @@ Configuration for OpenAI client.
 public string ApiKey { get; set; }
 public string Model { get; set; }                    // Default: "gpt-4.1"
 public string ImageModel { get; set; }               // Default: "gpt-image-1"
-public string EmbeddingModel { get; set; }           // Default: "text-embedding-ada-002"
+public string EmbeddingModel { get; set; }           // Default: "text-embedding-3-small"
 public string LogPath { get; set; }                  // Default: "c:\\projects\\hazinalogs.txt"
 public string TtsModel { get; set; }                 // Default: "gpt-4o-mini-tts"
 ```
@@ -179,7 +179,7 @@ public string TtsModel { get; set; }                 // Default: "gpt-4o-mini-tt
 ```csharp
 public OpenAIConfig(
     string apiKey = "",
-    string embeddingModel = "text-embedding-ada-002",
+    string embeddingModel = "text-embedding-3-small",
     string model = "gpt-4.1",
     string imageModel = "gpt-image-1",
     string logPath = "c:\\projects\\hazinalogs.txt",
@@ -208,7 +208,7 @@ var configFromFile = OpenAIConfig.Load();
 //   "OpenAI": {
 //     "ApiKey": "sk-...",
 //     "Model": "gpt-4",
-//     "EmbeddingModel": "text-embedding-ada-002"
+//     "EmbeddingModel": "text-embedding-3-small"
 //   }
 // }
 ```
