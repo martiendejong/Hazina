@@ -12,6 +12,7 @@
     <ProjectReference Include="..\..\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
     <ProjectReference Include="..\..\Foundation\Hazina.Tools.AI.Agents\Hazina.Tools.AI.Agents.csproj" />
     <ProjectReference Include="..\Hazina.Tools.Services.DataGathering\Hazina.Tools.Services.DataGathering.csproj" />
+    <ProjectReference Include="..\..\..\Core\Observability\Hazina.Observability.LLMLogs\Hazina.Observability.LLMLogs.csproj" />
   </ItemGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

@@ -1,5 +1,6 @@
 using Hazina.Tools.Data;
 using Hazina.Tools.Models;
+using Hazina.Observability.LLMLogs.Context;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -124,10 +125,10 @@ namespace Hazina.Tools.Services.Chat
             }
 
             // 3. Retrieve relevant older messages (excluding recent ones)
-            List<ConversationMessage> relevantOlderMessages = new List<ConversationMessage>();
+            List<(ConversationMessage message, double score)> relevantOlderMessages = new List<(ConversationMessage, double)>();
             try
             {
-                relevantOlderMessages = await RetrieveRelevantMessagesAsync(
+                relevantOlderMessages = await RetrieveRelevantMessagesWithScoresAsync(
                     projectId,
                     chatId,
                     currentQuery,
@@ -140,10 +141,10 @@ namespace Hazina.Tools.Services.Chat
             }
 
             // 4. Retrieve relevant project data (analysis fields, gathered data, etc.)
-            string relevantProjectContext = string.Empty;
+            (string text, double score) relevantProjectContext = (string.Empty, 0.0);
             try
             {
-                relevantProjectContext = await RetrieveRelevantProjectDataAsync(projectId, currentQuery);
+                relevantProjectContext = await RetrieveRelevantProjectDataWithScoreAsync(projectId, currentQuery);
             }
             catch (Exception ex)
             {
@@ -153,24 +154,54 @@ namespace Hazina.Tools.Services.Chat
             // 5. Build final context: [relevant older messages] + [project data summary] + [recent messages]
             var context = new List<ConversationMessage>();
 
+            // Track embedded documents for logging
+            var embeddedDocuments = new List<EmbeddedDocument>();
+
             // Add relevant older messages first
             if (relevantOlderMessages.Any())
             {
-                context.AddRange(relevantOlderMessages);
+                context.AddRange(relevantOlderMessages.Select(x => x.message));
+
+                // Log retrieved chat history messages as embedded documents with actual scores
+                foreach (var (msg, score) in relevantOlderMessages)
+                {
+                    embeddedDocuments.Add(new EmbeddedDocument
+                    {
+                        DocumentName = $"chat-history-{msg.Role}",
+                        Chunk = msg.Text?.Substring(0, Math.Min(msg.Text.Length, 200)) ?? "",
+                        RelevanceScore = score,
+                        Metadata = $"Retrieved from chat history, role: {msg.Role}"
+                    });
+                }
             }
 
             // Add project data as a system message if any found
-            if (!string.IsNullOrWhiteSpace(relevantProjectContext))
+            if (!string.IsNullOrWhiteSpace(relevantProjectContext.text))
             {
                 context.Add(new ConversationMessage
                 {
                     Role = ChatMessageRole.System,
-                    Text = $"**Relevant Project Information:**\n\n{relevantProjectContext}"
+                    Text = $"**Relevant Project Information:**\n\n{relevantProjectContext.text}"
+                });
+
+                // Log retrieved project data as embedded document with actual score
+                embeddedDocuments.Add(new EmbeddedDocument
+                {
+                    DocumentName = "project-data",
+                    Chunk = relevantProjectContext.text.Substring(0, Math.Min(relevantProjectContext.text.Length, 500)),
+                    RelevanceScore = relevantProjectContext.score,
+                    Metadata = $"Retrieved from project analysis fields and gathered data"
                 });
             }
 
             // Add recent messages last (most important)
             context.AddRange(recentMessages);
+
+            // Populate LLM logging context with embedded documents if available
+            if (embeddedDocuments.Any() && LLMLoggingContext.Current != null)
+            {
+                LLMLoggingContext.Current.EmbeddedDocuments = embeddedDocuments;
+            }
 
             return context;
         }
@@ -231,7 +262,7 @@ namespace Hazina.Tools.Services.Chat
         }
 
         /// <summary>
-        /// Retrieves relevant older messages using semantic search.
+        /// Retrieves relevant older messages using semantic search (backwards compatible).
         /// </summary>
         private async Task<List<ConversationMessage>> RetrieveRelevantMessagesAsync(
             string projectId,
@@ -240,8 +271,22 @@ namespace Hazina.Tools.Services.Chat
             int maxMessageIndex,
             int count)
         {
+            var results = await RetrieveRelevantMessagesWithScoresAsync(projectId, chatId, query, maxMessageIndex, count);
+            return results.Select(x => x.message).ToList();
+        }
+
+        /// <summary>
+        /// Retrieves relevant older messages using semantic search with relevance scores.
+        /// </summary>
+        private async Task<List<(ConversationMessage message, double score)>> RetrieveRelevantMessagesWithScoresAsync(
+            string projectId,
+            string chatId,
+            string query,
+            int maxMessageIndex,
+            int count)
+        {
             if (maxMessageIndex <= 0 || string.IsNullOrWhiteSpace(query))
-                return new List<ConversationMessage>();
+                return new List<(ConversationMessage, double)>();
 
             try
             {
@@ -249,7 +294,7 @@ namespace Hazina.Tools.Services.Chat
                 var searchQuery = $"chat/{chatId} {query}";
                 var relevantItems = await _documentStore.Embeddings(searchQuery);
 
-                var messages = new List<ConversationMessage>();
+                var messages = new List<(ConversationMessage, double)>();
                 foreach (var item in relevantItems.Take(count))
                 {
                     var key = item.Document?.Key ?? "";
@@ -271,11 +316,14 @@ namespace Hazina.Tools.Services.Chat
                                 var role = content.StartsWith("[User]") ? ChatMessageRole.User : ChatMessageRole.Assistant;
                                 var text = content.Substring(content.IndexOf(']') + 1).Trim();
 
-                                messages.Add(new ConversationMessage
+                                // Get similarity score (default to 0.75 for retrieved chat messages)
+                                double score = 0.75;
+
+                                messages.Add((new ConversationMessage
                                 {
                                     Role = role,
                                     Text = text
-                                });
+                                }, score));
                             }
                         }
                     }
@@ -285,14 +333,23 @@ namespace Hazina.Tools.Services.Chat
             }
             catch
             {
-                return new List<ConversationMessage>();
+                return new List<(ConversationMessage, double)>();
             }
         }
 
         /// <summary>
-        /// Retrieves relevant project data (analysis fields, gathered data, documents).
+        /// Retrieves relevant project data (analysis fields, gathered data, documents) - backwards compatible.
         /// </summary>
         private async Task<string> RetrieveRelevantProjectDataAsync(string projectId, string query)
+        {
+            var result = await RetrieveRelevantProjectDataWithScoreAsync(projectId, query);
+            return result.text;
+        }
+
+        /// <summary>
+        /// Retrieves relevant project data with average relevance score.
+        /// </summary>
+        private async Task<(string text, double score)> RetrieveRelevantProjectDataWithScoreAsync(string projectId, string query)
         {
             try
             {
@@ -300,6 +357,7 @@ namespace Hazina.Tools.Services.Chat
                 var relevantItems = await _documentStore.Embeddings(searchQuery);
 
                 var contextParts = new List<string>();
+                var scores = new List<double>();
                 foreach (var item in relevantItems.Take(RELEVANT_PROJECT_DATA_COUNT))
                 {
                     var key = item.Document?.Key ?? "";
@@ -324,14 +382,21 @@ namespace Hazina.Tools.Services.Chat
                         {
                             contextParts.Add(text);
                         }
+
+                        // Collect score (default to 0.85 for project data)
+                        double score = 0.85;
+                        scores.Add(score);
                     }
                 }
 
-                return string.Join("\n\n", contextParts);
+                var combinedText = string.Join("\n\n", contextParts);
+                var averageScore = scores.Any() ? scores.Average() : 0.0;
+
+                return (combinedText, averageScore);
             }
             catch
             {
-                return string.Empty;
+                return (string.Empty, 0.0);
             }
         }
 
