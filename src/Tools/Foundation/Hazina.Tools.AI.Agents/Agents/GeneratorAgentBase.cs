@@ -16,6 +16,10 @@ using Hazina.Tools.Services.FileOps.Helpers;
 using System.Text.Json;
 using System;
 using System.Reflection;
+using Hazina.Observability.LLMLogs.Decorators;
+using Hazina.Observability.LLMLogs.Storage;
+using Hazina.Observability.LLMLogs.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Hazina.Tools.AI.Agents
 {
@@ -32,13 +36,19 @@ namespace Hazina.Tools.AI.Agents
         private readonly Hazina.Tools.Services.Embeddings.EmbeddingsService _embeddings;
         private readonly ProjectFileLocator _fileLocator;
         private readonly ProjectEmbeddingService _embeddingService;
+        private readonly ILLMLogRepository _llmLogRepository;
+        private readonly IOptions<LLMLoggingOptions> _llmLoggingOptions;
 
         public HazinaStoreLogger GetLogger(string project)
         {
             return new HazinaStoreLogger(LogFilePath, project);
         }
 
-        public GeneratorAgentBase(IConfiguration configuration, string basisPrompt)
+        public GeneratorAgentBase(
+            IConfiguration configuration,
+            string basisPrompt,
+            ILLMLogRepository llmLogRepository = null,
+            IOptions<LLMLoggingOptions> llmLoggingOptions = null)
         {
             BasisPrompt = basisPrompt;
             AppConfig = configuration;
@@ -51,6 +61,8 @@ namespace Hazina.Tools.AI.Agents
             _fileLocator = new ProjectFileLocator(Projects.ProjectsFolder);
             var chatRepository = new ProjectChatRepository(_fileLocator);
             _embeddingService = new ProjectEmbeddingService(_fileLocator, chatRepository);
+            _llmLogRepository = llmLogRepository;
+            _llmLoggingOptions = llmLoggingOptions;
         }
 
         // TODO: Type conflict between DevGPT.Classes and DevGPT.LLMs.Classes - requires package alignment
@@ -186,7 +198,18 @@ namespace Hazina.Tools.AI.Agents
             var store = await InitStore(project);
             var folder = _fileLocator.GetProjectFolder(project.Id);
             var setup = StoreProvider.GetStoreSetup(folder, Config.ApiSettings.OpenApiKey);
-            var g = new DocumentGenerator(setup.Store, new List<HazinaChatMessage>(), setup.LLMClient, new List<IDocumentStore>());
+            
+            // Wrap LLM client with logging decorator if available
+            var llmClient = setup.LLMClient;
+            if (_llmLogRepository != null && _llmLoggingOptions != null)
+            {
+                llmClient = new LLMLoggingClientDecorator(
+                    setup.LLMClient,
+                    _llmLogRepository,
+                    _llmLoggingOptions,
+                    "OpenAI");
+            }
+            var g = new DocumentGenerator(setup.Store, new List<HazinaChatMessage>(), llmClient, new List<IDocumentStore>());
             return g;
         }
 
@@ -202,7 +225,19 @@ namespace Hazina.Tools.AI.Agents
             var store = await InitStore(project);
             var folder = _fileLocator.GetProjectFolder(project.Id);
             var setup = StoreProvider.GetStoreSetup(folder, Config.ApiSettings.OpenApiKey);
-            var g = new DocumentGenerator(store, assistantPrompts, setup.LLMClient, new List<IDocumentStore>());
+            
+            // Wrap LLM client with logging decorator if available
+            var llmClient = setup.LLMClient;
+            if (_llmLogRepository != null && _llmLoggingOptions != null)
+            {
+                llmClient = new LLMLoggingClientDecorator(
+                    setup.LLMClient,
+                    _llmLogRepository,
+                    _llmLoggingOptions,
+                    "OpenAI");
+            }
+
+            var g = new DocumentGenerator(store, assistantPrompts, llmClient, new List<IDocumentStore>());
             return g;
         }
 
