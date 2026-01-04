@@ -114,9 +114,21 @@ public class TextChunker
 
             // Use semantic similarity chunker
             var semanticOptions = effectiveOptions.SemanticOptions ?? new SemanticChunkingOptions();
-            var semanticChunker = new SemanticSimilarityChunker(_embeddingGenerator, _llmClient, _logger);
+            var semanticChunker = new SemanticSimilarityChunker(_embeddingGenerator, _llmClient);
 
-            var chunks = await semanticChunker.ChunkAsync(text, semanticOptions, ct);
+            List<TextChunk> chunks;
+
+            // Use hierarchical chunking for large documents if enabled
+            if (semanticOptions.UseHierarchicalChunking && text.Length >= semanticOptions.HierarchicalThreshold)
+            {
+                _logger?.LogDebug("Using hierarchical chunking for large document ({Length} chars)", text.Length);
+                var hierarchicalChunker = new HierarchicalChunker(semanticChunker);
+                chunks = await hierarchicalChunker.ChunkAsync(text, semanticOptions, ct);
+            }
+            else
+            {
+                chunks = await semanticChunker.ChunkAsync(text, semanticOptions, ct);
+            }
 
             // Merge base metadata if provided
             if (metadata != null)

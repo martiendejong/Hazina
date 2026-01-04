@@ -24,7 +24,7 @@ public class SemanticChunkingOptions
     /// <summary>
     /// Regex pattern for sentence splitting
     /// Default: split on periods, exclamation marks, question marks followed by whitespace
-    /// Example: @"(?<=[.!?])\s+"
+    /// Example: @"(?&lt;=[.!?])\s+"
     /// </summary>
     public string SentenceSplitPattern { get; set; } = @"(?<=[.!?])\s+";
 
@@ -158,14 +158,21 @@ public class SemanticChunkingOptions
     /// <summary>
     /// Use hierarchical chunking for large documents
     /// Splits document into sections first, then chunks each section independently
-    /// Improves performance for documents larger than HierarchicalSectionSize
+    /// Improves performance for documents larger than HierarchicalThreshold
     /// Default: false
     /// </summary>
     public bool UseHierarchicalChunking { get; set; } = false;
 
     /// <summary>
     /// Document size threshold for hierarchical chunking (characters)
-    /// Documents larger than this will be pre-split into sections
+    /// Documents larger than this will use hierarchical chunking
+    /// Default: 10000
+    /// </summary>
+    public int HierarchicalThreshold { get; set; } = 10000;
+
+    /// <summary>
+    /// Target section size for hierarchical chunking (characters)
+    /// Large documents will be split into sections of approximately this size
     /// Default: 5000
     /// </summary>
     public int HierarchicalSectionSize { get; set; } = 5000;
@@ -287,5 +294,10 @@ public enum DocumentContentType
     /// <summary>
     /// Mixed content types
     /// </summary>
-    Mixed
+    Mixed,
+
+    /// <summary>
+    /// Unknown or other content type
+    /// </summary>
+    Other
 }

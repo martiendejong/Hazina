@@ -16,8 +16,17 @@ public class LLMMetadataExtractor
 
     public LLMMetadataExtractor(
         ILLMClient llmClient,
+        SemanticChunkingOptions options)
+    {
+        _llmClient = llmClient ?? throw new ArgumentNullException(nameof(llmClient));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
+        _logger = null;
+    }
+
+    public LLMMetadataExtractor(
+        ILLMClient llmClient,
         SemanticChunkingOptions options,
-        ILogger<LLMMetadataExtractor>? logger = null)
+        ILogger<LLMMetadataExtractor>? logger)
     {
         _llmClient = llmClient ?? throw new ArgumentNullException(nameof(llmClient));
         _options = options ?? throw new ArgumentNullException(nameof(options));

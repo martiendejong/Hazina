@@ -15,6 +15,7 @@ public class SemanticSimilarityChunker
     private readonly ILLMClient? _llmClient;
     private readonly ILogger<SemanticSimilarityChunker>? _logger;
     private readonly BasicMetadataExtractor _metadataExtractor;
+    private readonly EmbeddingCache _embeddingCache;
 
     public SemanticSimilarityChunker(
         IEmbeddingGenerator embeddingGenerator,
@@ -23,6 +24,7 @@ public class SemanticSimilarityChunker
         _embeddingGenerator = embeddingGenerator ?? throw new ArgumentNullException(nameof(embeddingGenerator));
         _logger = logger;
         _metadataExtractor = new BasicMetadataExtractor();
+        _embeddingCache = new EmbeddingCache();
     }
 
     public SemanticSimilarityChunker(
@@ -34,6 +36,20 @@ public class SemanticSimilarityChunker
         _llmClient = llmClient;
         _logger = logger;
         _metadataExtractor = new BasicMetadataExtractor();
+        _embeddingCache = new EmbeddingCache();
+    }
+
+    public SemanticSimilarityChunker(
+        IEmbeddingGenerator embeddingGenerator,
+        ILLMClient? llmClient,
+        EmbeddingCache? embeddingCache,
+        ILogger<SemanticSimilarityChunker>? logger = null)
+    {
+        _embeddingGenerator = embeddingGenerator ?? throw new ArgumentNullException(nameof(embeddingGenerator));
+        _llmClient = llmClient;
+        _logger = logger;
+        _metadataExtractor = new BasicMetadataExtractor();
+        _embeddingCache = embeddingCache ?? new EmbeddingCache();
     }
 
     /// <summary>
@@ -56,6 +72,10 @@ public class SemanticSimilarityChunker
         try
         {
             _logger?.LogInformation("Starting semantic similarity chunking. Text length: {Length}", text.Length);
+
+            // 0. Detect content type and apply optimizations
+            ContentTypeDetector.ApplyContentTypeOptimizations(options, text);
+            _logger?.LogDebug("Content type detected: {Type}", options.ContentType);
 
             // 1. Split into sentences
             var sentences = SplitIntoSentences(text, options);
@@ -119,6 +139,7 @@ public class SemanticSimilarityChunker
 
     /// <summary>
     /// Generate embeddings for all sentences in batch
+    /// Uses cache to avoid redundant API calls for duplicate content
     /// </summary>
     private async Task<List<Embedding>> GenerateSentenceEmbeddingsAsync(
         List<string> sentences,
@@ -126,20 +147,67 @@ public class SemanticSimilarityChunker
     {
         try
         {
-            // Batch generation is more efficient
-            return await _embeddingGenerator.GenerateBatchAsync(sentences, ct);
+            // Check cache first
+            var embeddings = new List<Embedding>();
+            var uncachedSentences = new List<string>();
+            var uncachedIndices = new List<int>();
+
+            for (int i = 0; i < sentences.Count; i++)
+            {
+                if (_embeddingCache.TryGet(sentences[i], out var cached) && cached != null)
+                {
+                    embeddings.Add(cached);
+                }
+                else
+                {
+                    embeddings.Add(null!); // Placeholder
+                    uncachedSentences.Add(sentences[i]);
+                    uncachedIndices.Add(i);
+                }
+            }
+
+            // Generate embeddings for uncached sentences
+            if (uncachedSentences.Count > 0)
+            {
+                _logger?.LogDebug("Cache miss for {Count}/{Total} sentences", uncachedSentences.Count, sentences.Count);
+
+                var newEmbeddings = await _embeddingGenerator.GenerateBatchAsync(uncachedSentences, ct);
+
+                // Store in cache and update results
+                for (int i = 0; i < newEmbeddings.Count; i++)
+                {
+                    var sentence = uncachedSentences[i];
+                    var embedding = newEmbeddings[i];
+
+                    _embeddingCache.Add(sentence, embedding);
+                    embeddings[uncachedIndices[i]] = embedding;
+                }
+            }
+            else
+            {
+                _logger?.LogDebug("Cache hit for all {Count} sentences", sentences.Count);
+            }
+
+            // Log cache stats
+            var stats = _embeddingCache.GetStats();
+            _logger?.LogDebug("Cache stats: {Stats}", stats);
+
+            return embeddings;
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Batch embedding generation failed, falling back to individual generation");
 
-            // Fallback to individual generation
+            // Fallback to individual generation with cache
             var embeddings = new List<Embedding>();
             foreach (var sentence in sentences)
             {
                 try
                 {
-                    var embedding = await _embeddingGenerator.GenerateAsync(sentence, ct);
+                    var embedding = await _embeddingCache.GetOrAddAsync(
+                        sentence,
+                        async s => await _embeddingGenerator.GenerateAsync(s, ct)
+                    );
                     embeddings.Add(embedding);
                 }
                 catch (Exception sentenceEx)
@@ -214,7 +282,7 @@ public class SemanticSimilarityChunker
             // 2. Strong topic shift (similarity < threshold) AND meets min size
             // 3. Soft topic shift (similarity < soft threshold) AND chunk is reasonably sized
 
-            bool exceeds MaxSize = projectedLength > options.MaxChunkSize;
+            bool exceedsMaxSize = projectedLength > options.MaxChunkSize;
             bool isStrongShift = similarity < options.SimilarityThreshold;
             bool isSoftShift = similarity < options.SoftSimilarityThreshold;
             bool meetsMinSize = currentChunkLength >= options.MinChunkSize;
@@ -352,7 +420,7 @@ public class SemanticSimilarityChunker
                 {
                     _logger?.LogInformation("Extracting LLM metadata for {Count} chunks", chunks.Count);
 
-                    var llmExtractor = new LLMMetadataExtractor(_llmClient, options, _logger);
+                    var llmExtractor = new LLMMetadataExtractor(_llmClient, options);
                     await llmExtractor.EnrichChunksAsync(chunks, ct);
 
                     _logger?.LogInformation("Successfully extracted LLM metadata");
@@ -428,5 +496,31 @@ public class SemanticSimilarityChunker
         }
 
         return fallbackChunks;
+    }
+
+    /// <summary>
+    /// Get cache statistics
+    /// </summary>
+    public CacheStats GetCacheStats()
+    {
+        return _embeddingCache.GetStats();
+    }
+
+    /// <summary>
+    /// Clear the embedding cache
+    /// </summary>
+    public void ClearCache()
+    {
+        _embeddingCache.Clear();
+        _logger?.LogInformation("Embedding cache cleared");
+    }
+
+    /// <summary>
+    /// Trim cache to maximum size
+    /// </summary>
+    public void TrimCache(int maxSize)
+    {
+        _embeddingCache.Trim(maxSize);
+        _logger?.LogInformation("Embedding cache trimmed to {MaxSize} items", maxSize);
     }
 }
