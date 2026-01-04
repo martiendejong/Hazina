@@ -179,14 +179,9 @@ namespace Hazina.Tools.Services.Chat
                 }
                 else
                 {
-                    // Regular chat image generation - add to conversation history
                     chatMessages = _messageService.GetChatMessages(projectId, chatId, userId);
-                    var userMessage = new ConversationMessage
-                    {
-                        Role = ChatMessageRole.User,
-                        Text = prompt
-                    };
-                    chatMessages.Add(userMessage);
+                    // Regular chat image generation - add only the image result to conversation history
+                    // The DALL-E prompt is an internal implementation detail and should not be saved
 
                     var assistantMessage = new ConversationMessage
                     {
@@ -195,7 +190,7 @@ namespace Hazina.Tools.Services.Chat
                     };
                     chatMessages.Add(assistantMessage);
 
-                    // Persist messages to chat file only for regular image generation
+                    // Persist only the image result, not the internal DALL-E prompt
                     _messageService.StoreChatMessages(projectId, chatId, chatMessages, userId);
                 }
 
