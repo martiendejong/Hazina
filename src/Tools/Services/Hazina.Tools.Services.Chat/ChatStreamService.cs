@@ -87,24 +87,18 @@ namespace Hazina.Tools.Services.Chat
 
             // Leverage the existing generation flow to get an assistant reply
             var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancel);
-            // Use reflection to work around type constraint issue with NuGet package
-            var getResponseMethods = generator.GetType().GetMethods().Where(m => m.Name == "GetResponse" && m.IsGenericMethod);
-            var getResponseMethod = getResponseMethods.FirstOrDefault(m => m.GetParameters().Length == 7);
-            var genericMethod = getResponseMethod?.MakeGenericMethod(typeof(GeneratedTextResponse));
-            var responseTask = (Task)genericMethod.Invoke(generator, new object[] 
-            { 
+
+            var response = await generator.GetResponse(
                 chatMessage?.Message ?? string.Empty,
                 tokenSource.Token,
-                new List<HazinaChatMessage>(),
-                true,
-                true,
-                _toolsContextFactory(context, projectId, chatId, string.Empty),
-                null
-            });
-            await responseTask;
-            var response = ((dynamic)responseTask).Result;
+                history: new List<HazinaChatMessage>(),
+                addRelevantDocuments: true,
+                addFilesList: true,
+                toolsContext: _toolsContextFactory(context, projectId, chatId, string.Empty),
+                images: null
+            );
 
-            var assistantText = response?.Result?.GeneratedText ?? "";
+            var assistantText = response?.Result ?? "";
             var usage = response?.TokenUsage;
             if (usage != null)
             {
@@ -178,8 +172,7 @@ namespace Hazina.Tools.Services.Chat
             }
 
             var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancel);
-            // Stream chunks back to clients via notifier (SignalR)
-            // Use reflection to work around type constraint issue with NuGet package
+            // Stream chunks back to clients via notifier (SignalR) as plain text
             Action<string> chunkCallback = (chunk) => {
                 try
                 {
@@ -189,24 +182,20 @@ namespace Hazina.Tools.Services.Chat
                 }
                 catch { }
             };
-            var streamResponseMethods = generator.GetType().GetMethods().Where(m => m.Name == "StreamResponse" && m.IsGenericMethod);
-            var streamResponseMethod = streamResponseMethods.FirstOrDefault(m => m.GetParameters().Length == 8);
-            var genericStreamMethod = streamResponseMethod?.MakeGenericMethod(typeof(GeneratedTextResponse));
-            var responseTask = (Task)genericStreamMethod.Invoke(generator, new object[] 
-            { 
+
+            // Use plain text streaming (no JSON wrapping) for better performance and simpler client parsing
+            var response = await generator.StreamResponse(
                 chatMessage?.Message ?? string.Empty,
                 tokenSource.Token,
                 chunkCallback,
                 baseMessages,
-                true,
-                true,
-                _toolsContextFactory(context, projectId, chatId, userId),
-                null
-            });
-            await responseTask;
-            var response = ((dynamic)responseTask).Result;
+                addRelevantDocuments: true,
+                addFilesList: true,
+                toolsContext: _toolsContextFactory(context, projectId, chatId, userId),
+                images: null
+            );
 
-            var assistantText = response?.Result?.GeneratedText ?? "";
+            var assistantText = response?.Result ?? "";
             var usage = response?.TokenUsage;
             if (usage != null)
             {
