@@ -418,14 +418,102 @@ Run unit tests:
 dotnet test tests/Core/CodeGeneration/Hazina.CodeGeneration.Core.Tests/
 ```
 
+### Code Generation Pipeline
+
+End-to-end pipeline that integrates intent parsing and code generation:
+
+```csharp
+using Hazina.CodeGeneration.Core.Pipeline;
+
+// Create pipeline (can use dependency injection)
+var pipeline = new CodeGenerationPipeline(
+    intentParser,
+    templateEngine,
+    logger);
+
+// Generate code from natural language
+var result = await pipeline.GenerateFromPromptAsync(
+    "Create a method called CalculateTotal that returns decimal");
+
+if (result.Success)
+{
+    Console.WriteLine("Generated Code:");
+    Console.WriteLine(result.GeneratedCode);
+    Console.WriteLine($"\nConfidence: {result.Confidence:P}");
+}
+else
+{
+    Console.WriteLine("Errors:");
+    foreach (var error in result.Errors)
+    {
+        Console.WriteLine($"  - {error}");
+    }
+}
+
+// Generate and save to file
+var saveResult = await pipeline.GenerateAndSaveAsync(
+    "Create a class called UserService",
+    "src/Services/UserService.cs");
+```
+
+**Pipeline Features**:
+- Integrated intent parsing and code generation
+- Automatic validation
+- Error and warning collection
+- Confidence scoring
+- Metadata tracking
+- File creation with directory support
+
+**CodeGenerationResult**:
+- `Success`: Whether generation succeeded
+- `GeneratedCode`: The generated code
+- `Confidence`: Confidence score (0.0 to 1.0)
+- `Errors`: List of errors encountered
+- `Warnings`: List of warnings (e.g., low confidence)
+- `Metadata`: Additional information (intent type, code length, file path)
+
+## Architecture
+
+The code generation system consists of three main components:
+
+1. **Intent Parser**: Analyzes natural language and extracts structured intent
+2. **Template Engine**: Converts intents into formatted C# code
+3. **Pipeline**: Orchestrates the end-to-end process with error handling
+
+```
+Natural Language Prompt
+         ↓
+   Intent Parser
+         ↓
+   Code Intent (validated)
+         ↓
+   Template Engine
+         ↓
+   Generated Code (formatted)
+         ↓
+   CodeGenerationResult
+```
+
+## Dependency Injection
+
+Register services with DI container:
+
+```csharp
+services.AddSingleton<IIntentParser, IntentParser>();
+services.AddSingleton<ITemplateEngine, TemplateEngine>();
+services.AddSingleton<ICodeGenerationPipeline, CodeGenerationPipeline>();
+```
+
 ## Next Steps
 
-After Intent Parser implementation:
+Future enhancements for the code generation system:
 
-1. **Template Engine**: Convert intents into actual code
-2. **Test Generator**: Generate unit tests from intents
-3. **Documentation Generator**: Generate XML and Markdown docs
-4. **Pipeline Integration**: End-to-end code generation pipeline
+1. **LLM Integration**: Use LLMs for advanced intent understanding
+2. **Semantic Analysis**: Deep code analysis for context-aware generation
+3. **Incremental Updates**: Add code to existing files intelligently
+4. **Refactoring Support**: Advanced code transformation capabilities
+5. **Custom Templates**: User-defined code generation templates
+6. **Multi-Language Support**: Generate code in multiple languages
 
 ## License
 
@@ -434,4 +522,7 @@ Part of the Hazina AI Framework
 ---
 
 **Version**: 1.0.0
-**Status**: Phase 3.1 Complete
+**Status**: Phase 3 Complete ✅
+- Intent Parser: ✅
+- Template Engine: ✅
+- Pipeline Integration: ✅
