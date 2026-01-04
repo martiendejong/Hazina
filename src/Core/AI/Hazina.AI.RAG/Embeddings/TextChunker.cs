@@ -12,6 +12,7 @@ public class TextChunker
 {
     private readonly TextChunkingOptions _options;
     private readonly IEmbeddingGenerator? _embeddingGenerator;
+    private readonly ILLMClient? _llmClient;
     private readonly ILogger<TextChunker>? _logger;
 
     public TextChunker(TextChunkingOptions? options = null)
@@ -25,6 +26,18 @@ public class TextChunker
         ILogger<TextChunker>? logger = null)
     {
         _embeddingGenerator = embeddingGenerator;
+        _options = options ?? new TextChunkingOptions();
+        _logger = logger;
+    }
+
+    public TextChunker(
+        IEmbeddingGenerator? embeddingGenerator,
+        ILLMClient? llmClient,
+        TextChunkingOptions? options = null,
+        ILogger<TextChunker>? logger = null)
+    {
+        _embeddingGenerator = embeddingGenerator;
+        _llmClient = llmClient;
         _options = options ?? new TextChunkingOptions();
         _logger = logger;
     }
@@ -101,7 +114,7 @@ public class TextChunker
 
             // Use semantic similarity chunker
             var semanticOptions = effectiveOptions.SemanticOptions ?? new SemanticChunkingOptions();
-            var semanticChunker = new SemanticSimilarityChunker(_embeddingGenerator, _logger);
+            var semanticChunker = new SemanticSimilarityChunker(_embeddingGenerator, _llmClient, _logger);
 
             var chunks = await semanticChunker.ChunkAsync(text, semanticOptions, ct);
 

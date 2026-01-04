@@ -12,6 +12,7 @@ namespace Hazina.AI.RAG.Embeddings;
 public class SemanticSimilarityChunker
 {
     private readonly IEmbeddingGenerator _embeddingGenerator;
+    private readonly ILLMClient? _llmClient;
     private readonly ILogger<SemanticSimilarityChunker>? _logger;
     private readonly BasicMetadataExtractor _metadataExtractor;
 
@@ -20,6 +21,17 @@ public class SemanticSimilarityChunker
         ILogger<SemanticSimilarityChunker>? logger = null)
     {
         _embeddingGenerator = embeddingGenerator ?? throw new ArgumentNullException(nameof(embeddingGenerator));
+        _logger = logger;
+        _metadataExtractor = new BasicMetadataExtractor();
+    }
+
+    public SemanticSimilarityChunker(
+        IEmbeddingGenerator embeddingGenerator,
+        ILLMClient? llmClient,
+        ILogger<SemanticSimilarityChunker>? logger = null)
+    {
+        _embeddingGenerator = embeddingGenerator ?? throw new ArgumentNullException(nameof(embeddingGenerator));
+        _llmClient = llmClient;
         _logger = logger;
         _metadataExtractor = new BasicMetadataExtractor();
     }
@@ -80,7 +92,7 @@ public class SemanticSimilarityChunker
             // 6. Extract metadata (if enabled)
             if (options.ExtractMetadata)
             {
-                EnrichWithBasicMetadata(chunks, options);
+                await EnrichWithMetadataAsync(chunks, options, ct);
             }
 
             return chunks;
@@ -301,25 +313,60 @@ public class SemanticSimilarityChunker
     }
 
     /// <summary>
-    /// Enrich chunks with basic metadata (keywords, summaries, stats)
+    /// Enrich chunks with metadata (basic and/or LLM-generated)
     /// </summary>
-    private void EnrichWithBasicMetadata(List<TextChunk> chunks, SemanticChunkingOptions options)
+    private async Task EnrichWithMetadataAsync(
+        List<TextChunk> chunks,
+        SemanticChunkingOptions options,
+        CancellationToken ct)
     {
-        foreach (var chunk in chunks)
+        // 1. Always extract basic metadata (free)
+        if (options.MetadataTier == MetadataExtractionTier.Basic ||
+            options.MetadataTier == MetadataExtractionTier.LLM)
         {
-            try
+            foreach (var chunk in chunks)
             {
-                var basicMetadata = _metadataExtractor.ExtractMetadata(chunk.Text);
-
-                // Merge basic metadata into chunk metadata
-                foreach (var kvp in basicMetadata)
+                try
                 {
-                    chunk.Metadata[kvp.Key] = kvp.Value;
+                    var basicMetadata = _metadataExtractor.ExtractMetadata(chunk.Text);
+
+                    // Merge basic metadata into chunk metadata
+                    foreach (var kvp in basicMetadata)
+                    {
+                        chunk.Metadata[kvp.Key] = kvp.Value;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "Failed to extract basic metadata for chunk {Index}", chunk.Index);
                 }
             }
-            catch (Exception ex)
+        }
+
+        // 2. Extract LLM metadata (premium, if enabled)
+        if (options.MetadataTier == MetadataExtractionTier.LLM && options.UseLLMMetadata)
+        {
+            if (_llmClient != null)
             {
-                _logger?.LogWarning(ex, "Failed to extract metadata for chunk {Index}", chunk.Index);
+                try
+                {
+                    _logger?.LogInformation("Extracting LLM metadata for {Count} chunks", chunks.Count);
+
+                    var llmExtractor = new LLMMetadataExtractor(_llmClient, options, _logger);
+                    await llmExtractor.EnrichChunksAsync(chunks, ct);
+
+                    _logger?.LogInformation("Successfully extracted LLM metadata");
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "LLM metadata extraction failed");
+                }
+            }
+            else
+            {
+                _logger?.LogWarning(
+                    "LLM metadata requested but no LLM client provided. " +
+                    "Only basic metadata will be available.");
             }
         }
     }
