@@ -316,6 +316,38 @@ var stats = await orchestrator.GetStatsAsync(projectId);
 3. **Triage LLM**: TriageLLMService is implemented but not yet called by orchestrator (pattern matching takes precedence)
 4. **Message History**: Limited to last N messages - doesn't use semantic search for relevant history
 
+## Logging Improvements Completed
+
+The user reported that the logging database does not show:
+1. ✅ Username - Now properly displayed (was already in schema, context population verified)
+2. ✅ ProjectId/ProjectName - **Added new field and index**
+3. ✅ Response message text - **Added new field for easy viewing**
+
+**Changes Made**:
+- Added `ProjectId` field to `LLMCallLog` model (line 29 in LLMCallLog.cs)
+- Added `ResponseMessage` field to `LLMCallLog` model (line 35 in LLMCallLog.cs)
+- Updated `LLMLoggingContext` with `ProjectId` property and `SetProjectId()` method
+- Updated `LLMLoggingClientDecorator` to populate both fields during logging
+- Modified `SqliteLLMLogRepository` CREATE TABLE statement to include new columns
+- Added database index on `project_id` for query performance
+- Created migration SQL script for existing databases
+- Response messages are truncated to 5000 characters for storage efficiency
+
+**Database Schema**:
+```sql
+CREATE TABLE IF NOT EXISTS llm_call_logs (
+    ...
+    username TEXT NOT NULL,
+    project_id TEXT NULL,
+    response_message TEXT NULL,
+    ...
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_id ON llm_call_logs(project_id);
+```
+
+**Migration**: See `src/Core/Observability/Hazina.Observability.LLMLogs/Migrations/AddProjectIdAndResponseMessage.sql`
+
 ## User Feedback Addressed
 
 The user reported that the logging database doesn't show:
