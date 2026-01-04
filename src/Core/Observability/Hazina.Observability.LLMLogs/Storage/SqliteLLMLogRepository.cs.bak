@@ -59,8 +59,6 @@ namespace Hazina.Observability.LLMLogs.Storage
                         call_id TEXT NOT NULL UNIQUE,
                         parent_call_id TEXT NULL,
                         username TEXT NOT NULL,
-                        project_id TEXT NULL,
-                        response_message TEXT NULL,
                         feature TEXT NOT NULL,
                         step TEXT NULL,
                         datetime_utc TEXT NOT NULL,
@@ -89,7 +87,6 @@ namespace Hazina.Observability.LLMLogs.Storage
                     CREATE INDEX IF NOT EXISTS idx_call_id ON llm_call_logs(call_id);
                     CREATE INDEX IF NOT EXISTS idx_parent_call_id ON llm_call_logs(parent_call_id);
                     CREATE INDEX IF NOT EXISTS idx_username ON llm_call_logs(username);
-                    CREATE INDEX IF NOT EXISTS idx_project_id ON llm_call_logs(project_id);
                     CREATE INDEX IF NOT EXISTS idx_feature ON llm_call_logs(feature);
                     CREATE INDEX IF NOT EXISTS idx_provider ON llm_call_logs(provider);
                     CREATE INDEX IF NOT EXISTS idx_datetime_utc ON llm_call_logs(datetime_utc);
@@ -116,7 +113,7 @@ namespace Hazina.Observability.LLMLogs.Storage
 
             var sql = @"
                 INSERT INTO llm_call_logs (
-                    call_id, parent_call_id, username, project_id, response_message, feature, step, datetime_utc,
+                    call_id, parent_call_id, username, feature, step, datetime_utc,
                     provider, model, is_tool_call, tool_name, tool_arguments,
                     request_messages, response_data,
                     message_count, embedded_documents, embedded_document_count,
@@ -124,7 +121,7 @@ namespace Hazina.Observability.LLMLogs.Storage
                     input_cost, output_cost, total_cost,
                     execution_time_ms, success, error_message, created_at
                 ) VALUES (
-                    @CallId, @ParentCallId, @Username, @ProjectId, @ResponseMessage, @Feature, @Step, @DateTimeUtc,
+                    @CallId, @ParentCallId, @Username, @Feature, @Step, @DateTimeUtc,
                     @Provider, @Model, @IsToolCall, @ToolName, @ToolArguments,
                     @RequestMessages, @ResponseData,
                     @MessageCount, @EmbeddedDocuments, @EmbeddedDocumentCount,
@@ -138,8 +135,6 @@ namespace Hazina.Observability.LLMLogs.Storage
             command.Parameters.AddWithValue("@CallId", log.CallId);
             command.Parameters.AddWithValue("@ParentCallId", log.ParentCallId ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@Username", log.Username);
-            command.Parameters.AddWithValue("@ProjectId", log.ProjectId ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@ResponseMessage", log.ResponseMessage ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@Feature", log.Feature);
             command.Parameters.AddWithValue("@Step", log.Step ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@DateTimeUtc", log.DateTimeUtc.ToString("o"));
@@ -306,8 +301,6 @@ namespace Hazina.Observability.LLMLogs.Storage
                 CallId = reader.GetString(reader.GetOrdinal("call_id")),
                 ParentCallId = reader.IsDBNull(reader.GetOrdinal("parent_call_id")) ? null : reader.GetString(reader.GetOrdinal("parent_call_id")),
                 Username = reader.GetString(reader.GetOrdinal("username")),
-                ProjectId = reader.IsDBNull(reader.GetOrdinal("project_id")) ? null : reader.GetString(reader.GetOrdinal("project_id")),
-                ResponseMessage = reader.IsDBNull(reader.GetOrdinal("response_message")) ? null : reader.GetString(reader.GetOrdinal("response_message")),
                 Feature = reader.GetString(reader.GetOrdinal("feature")),
                 Step = reader.IsDBNull(reader.GetOrdinal("step")) ? null : reader.GetString(reader.GetOrdinal("step")),
                 DateTimeUtc = DateTime.Parse(reader.GetString(reader.GetOrdinal("datetime_utc"))),

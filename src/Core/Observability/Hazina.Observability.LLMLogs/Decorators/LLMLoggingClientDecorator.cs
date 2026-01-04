@@ -321,6 +321,8 @@ namespace Hazina.Observability.LLMLogs.Decorators
                     CallId = callId,
                     ParentCallId = context?.ParentCallId,
                     Username = context?.Username ?? "Unknown",
+                    ProjectId = context?.ProjectId,
+                    ResponseMessage = !string.IsNullOrEmpty(responseData) && responseData.Length <= 5000 ? responseData : (responseData.Length > 5000 ? responseData.Substring(0, 5000) + "..." : null),
                     Feature = context?.Feature ?? "Unknown",
                     Step = context?.Step,
                     DateTimeUtc = DateTime.UtcNow,

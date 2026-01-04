@@ -24,6 +24,17 @@ namespace Hazina.Observability.LLMLogs.Storage.Models
         public string Username { get; set; } = string.Empty;
 
         /// <summary>
+        /// Project ID/name for this request (if applicable).
+        /// </summary>
+        public string? ProjectId { get; set; }
+
+        /// <summary>
+        /// The actual response message text from the LLM (for easy viewing/querying).
+        /// This is extracted from ResponseData for convenience.
+        /// </summary>
+        public string? ResponseMessage { get; set; }
+
+        /// <summary>
         /// Feature/module that initiated this LLM call (e.g., "Chat", "Analysis", "BlogGeneration").
         /// </summary>
         public string Feature { get; set; } = string.Empty;

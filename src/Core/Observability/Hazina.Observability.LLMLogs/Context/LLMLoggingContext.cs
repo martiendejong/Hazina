@@ -24,6 +24,11 @@ namespace Hazina.Observability.LLMLogs.Context
         /// <summary>
         /// Username who initiated this LLM call chain.
         /// </summary>
+        /// <summary>
+        /// Project ID/name for this LLM call chain.
+        /// </summary>
+        public string? ProjectId { get; set; }
+
         public string? Username { get; set; }
 
         /// <summary>
@@ -50,12 +55,13 @@ namespace Hazina.Observability.LLMLogs.Context
         /// <summary>
         /// Creates a new logging context scope.
         /// </summary>
-        public static IDisposable BeginScope(string? username = null, string? feature = null, string? step = null, string? parentCallId = null)
+        public static IDisposable BeginScope(string? username = null, string? feature = null, string? step = null, string? parentCallId = null, string? projectId = null)
         {
             var previous = Current;
             Current = new LLMLoggingContext
             {
                 Username = username ?? previous?.Username,
+                ProjectId = projectId ?? previous?.ProjectId,
                 Feature = feature ?? previous?.Feature,
                 Step = step ?? previous?.Step,
                 ParentCallId = parentCallId ?? previous?.ParentCallId
@@ -66,6 +72,22 @@ namespace Hazina.Observability.LLMLogs.Context
         /// <summary>
         /// Updates the current step within the existing context.
         /// </summary>
+        /// <summary>
+        /// Updates the project ID within the existing context.
+        /// </summary>
+        public static void SetProjectId(string projectId)
+        {
+            if (Current != null)
+            {
+                Current.ProjectId = projectId;
+            }
+            else
+            {
+                Current = new LLMLoggingContext { ProjectId = projectId };
+            }
+        }
+
+
         public static void SetStep(string step)
         {
             if (Current != null)
