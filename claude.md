@@ -12,6 +12,11 @@ This file is used to track progress and coordinate efforts between Antigravity, 
 - [x] Add Supabase as optional database backend
 - [x] Implement CV Implementation Plan Phases 1-7
 
+## Archive
+- **Archive Location**: `archive/2025-01-completed/`
+- All completed implementation plans and historical documents have been moved to the archive for reference
+- See `archive/README.md` for details on archived content
+
 ## Notes
 - Please log your major actions and any blockers here.
 
