@@ -1,8 +1,5 @@
 using System.IO;
 using System.Threading.Tasks;
-using Spire.Doc;
-using Spire.Doc.Documents;
-using Spire.Xls;
 using System.Text;
 using System;
 using OpenAI.Chat;
@@ -11,6 +8,9 @@ using PDFiumCoreDemo;
 using HeyRed.Mime;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
+using ClosedXML.Excel;
 
 public class TextFileExtractor
 {
@@ -122,43 +122,49 @@ public class TextFileExtractor
         return;
     }
 
-    private static string RemoveMessage(string result)
-    {
-        var i = result.IndexOf("Spire.Doc for .NET.");
-        if (i >= 0)
-            result = result.Substring(i + 19);
-        return result;
-    }
-
     private Task ExtractTextFromWord(string filePath, string textFilePath)
     {
-        var document = new Document();
-        document.LoadFromFile(filePath);
-        string text = document.GetText();
-        text = RemoveMessage(text);
-        return File.WriteAllTextAsync(textFilePath, text);
+        var sb = new StringBuilder();
+
+        using (WordprocessingDocument wordDoc = WordprocessingDocument.Open(filePath, false))
+        {
+            if (wordDoc.MainDocumentPart?.Document?.Body != null)
+            {
+                foreach (var element in wordDoc.MainDocumentPart.Document.Body.Descendants<Paragraph>())
+                {
+                    sb.AppendLine(element.InnerText);
+                }
+            }
+        }
+
+        return File.WriteAllTextAsync(textFilePath, sb.ToString());
     }
 
     private Task ExtractTextFromExcel(string filePath, string textFilePath)
     {
-        var workbook = new Workbook();
-        workbook.LoadFromFile(filePath);
         var sb = new StringBuilder();
 
-        foreach (var sheet in workbook.Worksheets)
+        using (var workbook = new XLWorkbook(filePath))
         {
-            sb.AppendLine(sheet.Name);
-            foreach (var row in sheet.Rows)
+            foreach (var worksheet in workbook.Worksheets)
             {
-                foreach (var cell in row.Cells)
+                sb.AppendLine(worksheet.Name);
+
+                var usedRange = worksheet.RangeUsed();
+                if (usedRange != null)
                 {
-                    sb.Append(cell.DisplayedText + "\t");
+                    foreach (var row in usedRange.Rows())
+                    {
+                        foreach (var cell in row.Cells())
+                        {
+                            sb.Append(cell.GetString() + "\t");
+                        }
+                        sb.AppendLine();
+                    }
                 }
-                sb.AppendLine();
             }
         }
-        var text = RemoveMessage(sb.ToString());
 
-        return File.WriteAllTextAsync(textFilePath, text);
+        return File.WriteAllTextAsync(textFilePath, sb.ToString());
     }
 }

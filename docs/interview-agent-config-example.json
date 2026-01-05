@@ -1,0 +1,198 @@
+{
+  "InterviewAgent": {
+    "Interviews": [
+      {
+        "InterviewType": "onboarding",
+        "Name": "Brand Onboarding Interview",
+        "Description": "Initial interview to gather comprehensive brand information",
+        "Questions": [
+          {
+            "QuestionId": "brand_name",
+            "QuestionText": "What is your brand or business name?",
+            "Category": "basic_info",
+            "ResponseType": "text",
+            "IsRequired": true
+          },
+          {
+            "QuestionId": "industry",
+            "QuestionText": "What industry or sector does your business operate in?",
+            "Category": "basic_info",
+            "ResponseType": "text",
+            "IsRequired": true
+          },
+          {
+            "QuestionId": "business_description",
+            "QuestionText": "Can you briefly describe what your business does?",
+            "Category": "basic_info",
+            "ResponseType": "text",
+            "IsRequired": true
+          },
+          {
+            "QuestionId": "target_audience",
+            "QuestionText": "Who is your target audience or ideal customer?",
+            "Category": "marketing",
+            "ResponseType": "text",
+            "IsRequired": true,
+            "FollowUpQuestions": {
+              "B2B": ["decision_makers"],
+              "businesses": ["decision_makers"],
+              "companies": ["decision_makers"]
+            }
+          },
+          {
+            "QuestionId": "decision_makers",
+            "QuestionText": "What roles or titles do the decision-makers typically have in these organizations?",
+            "Category": "marketing",
+            "ResponseType": "text",
+            "IsRequired": false
+          },
+          {
+            "QuestionId": "brand_personality",
+            "QuestionText": "How would you describe your brand's personality? (e.g., professional, playful, innovative, trustworthy)",
+            "Category": "branding",
+            "ResponseType": "text",
+            "IsRequired": false
+          },
+          {
+            "QuestionId": "unique_value",
+            "QuestionText": "What makes your brand unique compared to competitors?",
+            "Category": "branding",
+            "ResponseType": "text",
+            "IsRequired": true
+          },
+          {
+            "QuestionId": "brand_colors",
+            "QuestionText": "Do you have specific brand colors? If so, what are they?",
+            "Category": "visual_identity",
+            "ResponseType": "text",
+            "IsRequired": false
+          },
+          {
+            "QuestionId": "content_goals",
+            "QuestionText": "What are your main goals for content creation? (e.g., brand awareness, lead generation, customer education)",
+            "Category": "content_strategy",
+            "ResponseType": "text",
+            "IsRequired": true
+          }
+        ]
+      },
+      {
+        "InterviewType": "content_planning",
+        "Name": "Content Planning Interview",
+        "Description": "Gather requirements for a specific content piece or campaign",
+        "Questions": [
+          {
+            "QuestionId": "content_type",
+            "QuestionText": "What type of content do you want to create? (blog post, social media, email, video script, etc.)",
+            "Category": "content_basics",
+            "ResponseType": "text",
+            "IsRequired": true,
+            "FollowUpQuestions": {
+              "blog": ["blog_topic"],
+              "social": ["social_platforms"],
+              "email": ["email_purpose"]
+            }
+          },
+          {
+            "QuestionId": "blog_topic",
+            "QuestionText": "What topic should the blog post cover?",
+            "Category": "content_details",
+            "ResponseType": "text",
+            "IsRequired": true
+          },
+          {
+            "QuestionId": "social_platforms",
+            "QuestionText": "Which social media platforms will you post on?",
+            "Category": "content_details",
+            "ResponseType": "text",
+            "IsRequired": true
+          },
+          {
+            "QuestionId": "email_purpose",
+            "QuestionText": "What is the purpose of this email? (promotional, newsletter, transactional, etc.)",
+            "Category": "content_details",
+            "ResponseType": "text",
+            "IsRequired": true
+          },
+          {
+            "QuestionId": "target_audience_segment",
+            "QuestionText": "Which audience segment is this content for?",
+            "Category": "targeting",
+            "ResponseType": "text",
+            "IsRequired": false
+          },
+          {
+            "QuestionId": "key_message",
+            "QuestionText": "What is the key message or takeaway you want to communicate?",
+            "Category": "messaging",
+            "ResponseType": "text",
+            "IsRequired": true
+          },
+          {
+            "QuestionId": "call_to_action",
+            "QuestionText": "What action do you want the audience to take after consuming this content?",
+            "Category": "conversion",
+            "ResponseType": "text",
+            "IsRequired": false
+          },
+          {
+            "QuestionId": "tone_preference",
+            "QuestionText": "What tone should the content have? (professional, casual, inspirational, educational, etc.)",
+            "Category": "style",
+            "ResponseType": "text",
+            "IsRequired": false
+          }
+        ]
+      },
+      {
+        "InterviewType": "brand_refresh",
+        "Name": "Brand Refresh Interview",
+        "Description": "Gather information for updating or refreshing an existing brand",
+        "Questions": [
+          {
+            "QuestionId": "current_brand_perception",
+            "QuestionText": "How do you think your brand is currently perceived by your audience?",
+            "Category": "assessment",
+            "ResponseType": "text",
+            "IsRequired": true
+          },
+          {
+            "QuestionId": "desired_brand_perception",
+            "QuestionText": "How would you like your brand to be perceived?",
+            "Category": "goals",
+            "ResponseType": "text",
+            "IsRequired": true
+          },
+          {
+            "QuestionId": "keep_elements",
+            "QuestionText": "What elements of your current brand do you want to keep?",
+            "Category": "preservation",
+            "ResponseType": "text",
+            "IsRequired": false
+          },
+          {
+            "QuestionId": "change_elements",
+            "QuestionText": "What aspects of your brand need to change or improve?",
+            "Category": "evolution",
+            "ResponseType": "text",
+            "IsRequired": true
+          },
+          {
+            "QuestionId": "competitor_analysis",
+            "QuestionText": "Who are your main competitors, and what do you think they do well?",
+            "Category": "market_research",
+            "ResponseType": "text",
+            "IsRequired": false
+          },
+          {
+            "QuestionId": "brand_story",
+            "QuestionText": "What is the story behind your brand? Why was it created?",
+            "Category": "narrative",
+            "ResponseType": "text",
+            "IsRequired": false
+          }
+        ]
+      }
+    ]
+  }
+}
