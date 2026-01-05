@@ -8,6 +8,7 @@ using Hazina.Neurochain.Core.Layers;
 using HazinaStore.Models;
 using Hazina.Tools.Data;
 using Hazina.LLMs; // All LLM providers are in this namespace
+using Hazina.LLMs.Anthropic; // For AnthropicConfig
 using Hazina.Production.Monitoring.Metrics;
 using Microsoft.Extensions.Configuration;
 
@@ -300,8 +301,12 @@ class Program
                 Console.WriteLine($"  - Use case: Simple, predictable");
 
                 Console.WriteLine("\n⏳ Testing...");
-                var result1 = await singleOrchestrator.GetResponse("Say 'Hello from OpenAI!'", "gpt-4o-mini", 0.7);
-                Console.WriteLine($"✓ Response: {result1.Text}");
+                var messages1 = new List<HazinaChatMessage>
+                {
+                    new() { Role = HazinaMessageRole.User, Text = "Say 'Hello from OpenAI!'" }
+                };
+                var result1 = await singleOrchestrator.GetResponse(messages1, HazinaChatResponseFormat.Text, null, null, default);
+                Console.WriteLine($"✓ Response: {result1.Result}");
                 break;
 
             case "2":
@@ -326,7 +331,13 @@ class Program
 
                 if (!string.IsNullOrEmpty(anthropicKey))
                 {
-                    var anthropicConfig = new AnthropicConfig { ApiKey = anthropicKey, Model = "claude-3-5-sonnet-20241022" };
+                    var anthropicConfig = new AnthropicConfig
+                    {
+                        ApiKey = anthropicKey,
+                        Model = "claude-3-5-sonnet-20241022",
+                        ApiVersion = "2023-06-01",
+                        Endpoint = "https://api.anthropic.com"
+                    };
                     var anthropicClient = new ClaudeClientWrapper(anthropicConfig);
                     orchestrator.RegisterProvider("anthropic", anthropicClient, new ProviderMetadata
                     {
@@ -343,8 +354,12 @@ class Program
                 Console.WriteLine($"  - Use case: Reliability with fallback chain");
 
                 Console.WriteLine("\n⏳ Testing...");
-                var result2 = await orchestrator.GetResponse("What is 2+2?", "gpt-4o-mini", 0.7);
-                Console.WriteLine($"✓ Response: {result2.Text}");
+                var messages2 = new List<HazinaChatMessage>
+                {
+                    new() { Role = HazinaMessageRole.User, Text = "What is 2+2?" }
+                };
+                var result2 = await orchestrator.GetResponse(messages2, HazinaChatResponseFormat.Text, null, null, default);
+                Console.WriteLine($"✓ Response: {result2.Result}");
                 break;
 
             case "3":
@@ -367,7 +382,11 @@ class Program
                 Console.WriteLine("\n⏳ Testing multiple requests...");
                 for (int i = 0; i < 3; i++)
                 {
-                    await costOrchestrator.GetResponse($"Count to {i + 1}", "gpt-4o-mini", 0.7);
+                    var messages3 = new List<HazinaChatMessage>
+                    {
+                        new() { Role = HazinaMessageRole.User, Text = $"Count to {i + 1}" }
+                    };
+                    await costOrchestrator.GetResponse(messages3, HazinaChatResponseFormat.Text, null, null, default);
                     Console.WriteLine($"  Request {i + 1}: Completed");
                 }
                 break;
@@ -396,9 +415,13 @@ class Program
 
                 Console.WriteLine("\n⏳ Testing...");
                 var startTime = DateTime.UtcNow;
-                var result4 = await speedOrchestrator.GetResponse("Quick: what is 5+5?", "gpt-4o-mini", 0.7);
+                var messages4 = new List<HazinaChatMessage>
+                {
+                    new() { Role = HazinaMessageRole.User, Text = "Quick: what is 5+5?" }
+                };
+                var result4 = await speedOrchestrator.GetResponse(messages4, HazinaChatResponseFormat.Text, null, null, default);
                 var elapsed = (DateTime.UtcNow - startTime).TotalMilliseconds;
-                Console.WriteLine($"✓ Response in {elapsed:F0}ms: {result4.Text}");
+                Console.WriteLine($"✓ Response in {elapsed:F0}ms: {result4.Result}");
                 break;
 
             case "5":
@@ -412,7 +435,6 @@ class Program
                 }
 
                 var failoverOrchestrator = QuickSetup.SetupWithFailover(openAIKey, anthropicKey);
-                Hazina.ConfigureDefaultOrchestrator(failoverOrchestrator);
 
                 Console.WriteLine($"\n✓ Configuration:");
                 Console.WriteLine($"  - Primary: OpenAI");
@@ -421,8 +443,12 @@ class Program
                 Console.WriteLine($"  - Use case: High availability required");
 
                 Console.WriteLine("\n⏳ Testing...");
-                var result5 = await Hazina.AskAsync("What is the capital of France?");
-                Console.WriteLine($"✓ Response: {result5}");
+                var messages5 = new List<HazinaChatMessage>
+                {
+                    new() { Role = HazinaMessageRole.User, Text = "What is the capital of France?" }
+                };
+                var result5 = await failoverOrchestrator.GetResponse(messages5, HazinaChatResponseFormat.Text, null, null, default);
+                Console.WriteLine($"✓ Response: {result5.Result}");
                 break;
 
             case "6":
@@ -443,8 +469,14 @@ class Program
                 }
                 if (!string.IsNullOrEmpty(anthropicKey))
                 {
-                    var anthropicConfig = new AnthropicConfig { ApiKey = anthropicKey, Model = "claude-3-5-sonnet-20241022" };
-                    rrOrchestrator.RegisterProvider("anthropic", new ClaudeClientWrapper(anthropicConfig), new ProviderMetadata
+                    var anthropicConfig2 = new AnthropicConfig
+                    {
+                        ApiKey = anthropicKey,
+                        Model = "claude-3-5-sonnet-20241022",
+                        ApiVersion = "2023-06-01",
+                        Endpoint = "https://api.anthropic.com"
+                    };
+                    rrOrchestrator.RegisterProvider("anthropic", new ClaudeClientWrapper(anthropicConfig2), new ProviderMetadata
                     {
                         Name = "anthropic",
                         Capabilities = new ProviderCapabilities { SupportsChat = true }
@@ -459,7 +491,11 @@ class Program
                 Console.WriteLine("\n⏳ Testing 3 requests...");
                 for (int i = 0; i < 3; i++)
                 {
-                    await rrOrchestrator.GetResponse($"Request {i + 1}", "gpt-4o-mini", 0.7);
+                    var messages6 = new List<HazinaChatMessage>
+                    {
+                        new() { Role = HazinaMessageRole.User, Text = $"Request {i + 1}" }
+                    };
+                    await rrOrchestrator.GetResponse(messages6, HazinaChatResponseFormat.Text, null, null, default);
                     Console.WriteLine($"  Request {i + 1} completed");
                 }
                 break;
@@ -510,25 +546,32 @@ class Program
                 };
 
                 var storeSetup = StoreProvider.GetStoreSetup(config1, "rag-demo", 1536);
-                var ragEngine = new RAGEngine(orchestrator, storeSetup.TextEmbeddingStore!);
+
+                // Create simple vector store adapter
+                var vectorStore = new SimpleVectorStoreAdapter(orchestrator);
+                var ragEngine = new RAGEngine(orchestrator, vectorStore);
 
                 Console.WriteLine($"\n✓ Configuration:");
-                Console.WriteLine($"  - Storage: File-based");
+                Console.WriteLine($"  - Storage: In-memory (demo)");
                 Console.WriteLine($"  - Features: Semantic search, context building");
 
                 // Index sample documents
                 Console.WriteLine("\n⏳ Indexing sample documents...");
-                await ragEngine.IndexDocumentAsync("doc1", "Paris is the capital of France. It is known for the Eiffel Tower.");
-                await ragEngine.IndexDocumentAsync("doc2", "London is the capital of the United Kingdom. It has Big Ben.");
-                await ragEngine.IndexDocumentAsync("doc3", "Berlin is the capital of Germany. It has the Brandenburg Gate.");
+                var docs = new List<Hazina.AI.RAG.Core.Document>
+                {
+                    new() { Id = "doc1", Content = "Paris is the capital of France. It is known for the Eiffel Tower." },
+                    new() { Id = "doc2", Content = "London is the capital of the United Kingdom. It has Big Ben." },
+                    new() { Id = "doc3", Content = "Berlin is the capital of Germany. It has the Brandenburg Gate." }
+                };
+                await ragEngine.IndexDocumentsAsync(docs);
                 Console.WriteLine("✓ Indexed 3 documents");
 
                 // Query
                 Console.WriteLine("\n⏳ Querying: 'What is the capital of France?'");
                 var ragResponse = await ragEngine.QueryAsync("What is the capital of France?");
                 Console.WriteLine($"\n✓ Response: {ragResponse.Answer}");
-                Console.WriteLine($"✓ Confidence: {ragResponse.Confidence:P0}");
-                Console.WriteLine($"✓ Sources: {ragResponse.RetrievedChunks.Count} documents");
+                Console.WriteLine($"✓ Success: {ragResponse.Success}");
+                Console.WriteLine($"✓ Sources: {ragResponse.RetrievedDocuments.Count} documents");
                 break;
 
             case "2":
@@ -572,7 +615,10 @@ class Program
                 };
 
                 var storeSetup3 = StoreProvider.GetStoreSetup(config3, "combined-demo", 1536);
-                var ragEngine3 = new RAGEngine(orchestrator, storeSetup3.TextEmbeddingStore!);
+
+                // Create simple vector store adapter
+                var vectorStore3 = new SimpleVectorStoreAdapter(orchestrator);
+                var ragEngine3 = new RAGEngine(orchestrator, vectorStore3);
 
                 // Setup Neurochain
                 var neurochain3 = new NeuroChainOrchestrator();
@@ -586,19 +632,24 @@ class Program
 
                 // Index sample documents
                 Console.WriteLine("\n⏳ Indexing sample documents...");
-                await ragEngine3.IndexDocumentAsync("climate1", "Global warming is causing sea levels to rise at an accelerating rate.");
-                await ragEngine3.IndexDocumentAsync("climate2", "Renewable energy sources like solar and wind are becoming more efficient.");
+                var docs3 = new List<Hazina.AI.RAG.Core.Document>
+                {
+                    new() { Id = "climate1", Content = "Global warming is causing sea levels to rise at an accelerating rate." },
+                    new() { Id = "climate2", Content = "Renewable energy sources like solar and wind are becoming more efficient." }
+                };
+                await ragEngine3.IndexDocumentsAsync(docs3);
                 Console.WriteLine("✓ Indexed 2 documents");
 
                 // Query with RAG
                 Console.WriteLine("\n⏳ Step 1: RAG retrieval");
                 var ragResult = await ragEngine3.QueryAsync("What is happening to sea levels?");
-                Console.WriteLine($"✓ Retrieved {ragResult.RetrievedChunks.Count} relevant documents");
+                Console.WriteLine($"✓ Retrieved {ragResult.RetrievedDocuments.Count} relevant documents");
 
                 // Reason with Neurochain using RAG context
                 Console.WriteLine("\n⏳ Step 2: Multi-layer reasoning");
+                var contextText = ragResult.RetrievedDocuments.FirstOrDefault()?.Content ?? "";
                 var combinedResult = await neurochain3.ReasonAsync(
-                    $"Based on this context: {ragResult.RetrievedChunks.FirstOrDefault()?.Text}\n\nQuestion: What is happening to sea levels and why?",
+                    $"Based on this context: {contextText}\n\nQuestion: What is happening to sea levels and why?",
                     new ReasoningContext { MinConfidence = 0.85 }
                 );
 
@@ -646,34 +697,40 @@ class Program
         // Simulate multiple requests with metrics
         for (int i = 0; i < 5; i++)
         {
-            using (metrics.TimeOperation("llm_request", new Dictionary<string, string>
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            try
             {
-                ["provider"] = "openai",
-                ["model"] = "gpt-4o-mini"
-            }))
+                var messages = new List<HazinaChatMessage>
+                {
+                    new() { Role = HazinaMessageRole.User, Text = $"Quick test {i + 1}" }
+                };
+
+                await orchestrator.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, default);
+                stopwatch.Stop();
+
+                // Track success
+                metrics.IncrementCounter("llm_requests_total", 1, new Dictionary<string, string>
+                {
+                    ["status"] = "success",
+                    ["provider"] = "openai"
+                });
+
+                metrics.RecordHistogram("llm_request_duration_ms", stopwatch.Elapsed.TotalMilliseconds, new Dictionary<string, string>
+                {
+                    ["provider"] = "openai"
+                });
+
+                Console.WriteLine($"  ✓ Request {i + 1}: Success ({stopwatch.ElapsedMilliseconds}ms)");
+            }
+            catch (Exception ex)
             {
-                try
+                stopwatch.Stop();
+                metrics.IncrementCounter("llm_requests_total", 1, new Dictionary<string, string>
                 {
-                    await orchestrator.GetResponse($"Quick test {i + 1}", "gpt-4o-mini", 0.7);
-
-                    // Track success
-                    metrics.IncrementCounter("llm_requests_total", new Dictionary<string, string>
-                    {
-                        ["status"] = "success",
-                        ["provider"] = "openai"
-                    });
-
-                    Console.WriteLine($"  ✓ Request {i + 1}: Success");
-                }
-                catch (Exception ex)
-                {
-                    metrics.IncrementCounter("llm_requests_total", new Dictionary<string, string>
-                    {
-                        ["status"] = "error",
-                        ["provider"] = "openai"
-                    });
-                    Console.WriteLine($"  ❌ Request {i + 1}: {ex.Message}");
-                }
+                    ["status"] = "error",
+                    ["provider"] = "openai"
+                });
+                Console.WriteLine($"  ❌ Request {i + 1}: {ex.Message}");
             }
 
             await Task.Delay(100); // Simulate realistic spacing
@@ -681,14 +738,24 @@ class Program
 
         // Display metrics
         Console.WriteLine("\n📈 METRICS:");
-        Console.WriteLine($"  Total requests: {metrics.GetCounterValue("llm_requests_total")}");
+        var snapshot = metrics.GetSnapshot();
 
-        var timing = metrics.GetOperationStats("llm_request");
-        if (timing != null)
+        var totalCounter = snapshot.Counters.FirstOrDefault(c => c.Name == "llm_requests_total");
+        Console.WriteLine($"  Total requests: {totalCounter?.Value ?? 0}");
+
+        var durationHistogram = snapshot.Histograms.FirstOrDefault(h => h.Name.Contains("llm_request_duration_ms"));
+        if (durationHistogram != null)
         {
-            Console.WriteLine($"  Average response time: {timing.Mean:F0}ms");
-            Console.WriteLine($"  P95 response time: {timing.P95:F0}ms");
-            Console.WriteLine($"  Success rate: {timing.SuccessRate:P0}");
+            Console.WriteLine($"  Average response time: {durationHistogram.Mean:F0}ms");
+            Console.WriteLine($"  P95 response time: {durationHistogram.P95:F0}ms");
+            Console.WriteLine($"  Min/Max: {durationHistogram.Min:F0}ms / {durationHistogram.Max:F0}ms");
+        }
+
+        var successCount = snapshot.Counters.Where(c => c.Tags?.ContainsKey("status") == true && c.Tags["status"] == "success").Sum(c => c.Value);
+        var totalCount = snapshot.Counters.Where(c => c.Name == "llm_requests_total").Sum(c => c.Value);
+        if (totalCount > 0)
+        {
+            Console.WriteLine($"  Success rate: {(successCount / totalCount):P0}");
         }
 
         Console.WriteLine("\n✅ Monitoring complete!");
@@ -729,7 +796,8 @@ class Program
         Console.WriteLine("✓ Storage: File-based configured");
 
         // Setup AI components
-        var ragEngine = new RAGEngine(orchestrator, storeSetup.TextEmbeddingStore!);
+        var vectorStore = new SimpleVectorStoreAdapter(orchestrator);
+        var ragEngine = new RAGEngine(orchestrator, vectorStore);
         var neurochain = new NeuroChainOrchestrator();
         neurochain.AddLayer(new FastReasoningLayer(orchestrator));
         neurochain.AddLayer(new DeepReasoningLayer(orchestrator));
@@ -748,7 +816,11 @@ class Program
 
         // Index knowledge
         Console.WriteLine("\n1. Indexing knowledge base...");
-        await ragEngine.IndexDocumentAsync("product1", "Our product supports multi-cloud deployment on AWS, Azure, and GCP.");
+        var productDocs = new List<Hazina.AI.RAG.Core.Document>
+        {
+            new() { Id = "product1", Content = "Our product supports multi-cloud deployment on AWS, Azure, and GCP." }
+        };
+        await ragEngine.IndexDocumentsAsync(productDocs);
         Console.WriteLine("   ✓ Indexed 1 document");
 
         // Query with RAG
@@ -811,5 +883,71 @@ class Program
         Console.WriteLine("  SUPABASE_CONNECTION_STRING=Host=... # Database connection");
 
         Console.WriteLine();
+    }
+}
+
+/// <summary>
+/// Simple in-memory vector store adapter for demo purposes
+/// </summary>
+class SimpleVectorStoreAdapter : Hazina.AI.RAG.Core.IVectorStore
+{
+    private readonly IProviderOrchestrator _orchestrator;
+    private readonly Dictionary<string, (float[] embedding, Dictionary<string, object> metadata)> _store = new();
+
+    public SimpleVectorStoreAdapter(IProviderOrchestrator orchestrator)
+    {
+        _orchestrator = orchestrator;
+    }
+
+    public async Task AddAsync(string id, float[] embedding, Dictionary<string, object> metadata, CancellationToken cancellationToken)
+    {
+        _store[id] = (embedding, metadata);
+        await Task.CompletedTask;
+    }
+
+    public async Task<List<Hazina.AI.RAG.Core.VectorSearchResult>> SearchAsync(float[] queryEmbedding, int topK, CancellationToken cancellationToken)
+    {
+        var results = new List<Hazina.AI.RAG.Core.VectorSearchResult>();
+
+        foreach (var kvp in _store)
+        {
+            var similarity = CosineSimilarity(queryEmbedding, kvp.Value.embedding);
+            results.Add(new Hazina.AI.RAG.Core.VectorSearchResult
+            {
+                Id = kvp.Key,
+                Similarity = similarity,
+                Metadata = kvp.Value.metadata
+            });
+        }
+
+        // Sort by similarity descending and take top K
+        var topResults = results
+            .OrderByDescending(r => r.Similarity)
+            .Take(topK)
+            .ToList();
+
+        return await Task.FromResult(topResults);
+    }
+
+    private static double CosineSimilarity(float[] a, float[] b)
+    {
+        if (a.Length != b.Length)
+            return 0;
+
+        double dotProduct = 0;
+        double magnitudeA = 0;
+        double magnitudeB = 0;
+
+        for (int i = 0; i < a.Length; i++)
+        {
+            dotProduct += a[i] * b[i];
+            magnitudeA += a[i] * a[i];
+            magnitudeB += b[i] * b[i];
+        }
+
+        if (magnitudeA == 0 || magnitudeB == 0)
+            return 0;
+
+        return dotProduct / (Math.Sqrt(magnitudeA) * Math.Sqrt(magnitudeB));
     }
 }
