@@ -28,7 +28,7 @@ namespace Hazina.Tools.Services.Store
         private readonly BigQueryService _bigQueryService;
         private const string AnalysisConfigFile = "analysis-fields.config.json";
 
-        public StoreToolsContext(string model, string apiKey, IDocumentStore store, ProjectsRepository projects, IntakeRepository intake, string projectId, string chatId, object agent, string userId = "", IAnalysisFieldsProvider analysisProvider = null, AnalysisToolsOptions analysisOptions = null, List<string> selectedDocumentIds = null)
+        public StoreToolsContext(string model, string apiKey, IDocumentStore store, ProjectsRepository projects, IntakeRepository intake, string projectId, string chatId, object agent, string userId = "", IAnalysisFieldsProvider analysisProvider = null, AnalysisToolsOptions analysisOptions = null, List<string> selectedDocumentIds = null, ToolsConfiguration toolsConfig = null)
         {
             Model = model;
             ApiKey = apiKey;
@@ -40,18 +40,25 @@ namespace Hazina.Tools.Services.Store
             UserId = userId;
             SelectedDocumentIds = selectedDocumentIds ?? new List<string>();
 
+            // Use provided configuration or default to all tools enabled
+            var config = toolsConfig ?? ToolsConfiguration.Default();
+
             var fileLocator = new ProjectFileLocator(projects.ProjectsFolder);
             _webScrapingService = new WebScrapingService(apiKey, model, fileLocator, intake, projectId, agent);
             _fileOperationsService = new FileOperationsService(store, projects, projectId, chatId, userId, apiKey);
             _bigQueryService = new BigQueryService(apiKey) { Projects = projects, ProjectId = projectId };
 
-            // add data gathering tools
-            AddDataGatheringTools();
+            // add data gathering tools if enabled
+            if (config.EnableDataGathering)
+            {
+                AddDataGatheringTools();
+            }
 
 
 
+            // Add analysis tools if enabled
             analysisOptions ??= new AnalysisToolsOptions { Enabled = true };
-            var enableAnalysisTools = analysisOptions.Enabled;
+            var enableAnalysisTools = analysisOptions.Enabled && config.EnableAnalysisTools;
             if (analysisProvider == null)
             {
                 // Provide a default provider if enabled and not supplied by the host
@@ -63,6 +70,7 @@ namespace Hazina.Tools.Services.Store
                 AddAnalysisTools(analysisProvider, enableAnalysisTools);
             }
 
+            // Define parameters once for reuse
             var QueryParameter = new ChatToolParameter { Name = "query", Description = "The fields and epxressions that will be added in the SELECT", Type = "string", Required = true };
             var ProblemStatementParameter = new ChatToolParameter { Name = "problem_statement", Description = "The table that will be used in the FROM.", Type = "string", Required = true };
             var UrlParameter = new ChatToolParameter { Name = "url", Description = "The fields and epxressions that will be added in the WHERE. DO NOT USE THE ACCOUNT NAME OR ID TO FILTER, THAT WILL HAPPEN AUTOMATICALLY", Type = "string", Required = false };
@@ -70,132 +78,158 @@ namespace Hazina.Tools.Services.Store
             var FileParameter = new ChatToolParameter { Name = "file", Description = "The fields and epxressions that will be added in the GROUP BY", Type = "string", Required = false };
             var PromptParameter = new ChatToolParameter { Name = "prompt", Description = "The fields and epxressions that will be added in the HAVING", Type = "string", Required = false };
 
-            var tool = new HazinaChatTool($"PerformWebSearch", $"Performs a web search using the provided query.",
-                [QueryParameter],
-                async (messages, toolCall, cancel) =>
-                {
-                    using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
-                    bool hasQuery = argumentsJson.RootElement.TryGetProperty("query", out JsonElement query);
-                    if (hasQuery)
+            HazinaChatTool tool;
+
+            // Web Search Tool
+            if (config.EnableWebSearch)
+            {
+                tool = new HazinaChatTool($"PerformWebSearch", $"Performs a web search using the provided query.",
+                    [QueryParameter],
+                    async (messages, toolCall, cancel) =>
                     {
-                        return await _webScrapingService.PerformWebSearchAsync(query.GetString());
-                    }
-                    return "Invalid call, parameter query was not provided.";
-                });
-            Tools.Add(tool);
+                        using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
+                        bool hasQuery = argumentsJson.RootElement.TryGetProperty("query", out JsonElement query);
+                        if (hasQuery)
+                        {
+                            return await _webScrapingService.PerformWebSearchAsync(query.GetString());
+                        }
+                        return "Invalid call, parameter query was not provided.";
+                    });
+                Tools.Add(tool);
+            }
 
-            tool = new HazinaChatTool($"PerformReasoning", $"Performs reasoning based on the problem statement",
-                [ProblemStatementParameter],
-                async (messages, toolCall, cancel) =>
-                {
-                    using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
-                    bool hasQuery = argumentsJson.RootElement.TryGetProperty("problem_statement", out JsonElement query);
-                    if (hasQuery)
+            // Reasoning Tool
+            if (config.EnableReasoning)
+            {
+                tool = new HazinaChatTool($"PerformReasoning", $"Performs reasoning based on the problem statement",
+                    [ProblemStatementParameter],
+                    async (messages, toolCall, cancel) =>
                     {
-                        return await _fileOperationsService.PerformReasoningAsync(query.GetString(), messages);
-                    }
-                    return "Invalid call, parameter problem_statement was not provided.";
-                });
-            Tools.Add(tool);
+                        using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
+                        bool hasQuery = argumentsJson.RootElement.TryGetProperty("problem_statement", out JsonElement query);
+                        if (hasQuery)
+                        {
+                            return await _fileOperationsService.PerformReasoningAsync(query.GetString(), messages);
+                        }
+                        return "Invalid call, parameter problem_statement was not provided.";
+                    });
+                Tools.Add(tool);
+            }
 
-            tool = new HazinaChatTool($"PerformReadSitemap", $"Reads the sitemap from a sitemap url",
-                [UrlParameter],
-                async (messages, toolCall, cancel) =>
-                {
-                    using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
-                    bool hasQuery = argumentsJson.RootElement.TryGetProperty("url", out JsonElement query);
-                    if (hasQuery)
+            // Web Scraping Tools
+            if (config.EnableWebScraping)
+            {
+                tool = new HazinaChatTool($"PerformReadSitemap", $"Reads the sitemap from a sitemap url",
+                    [UrlParameter],
+                    async (messages, toolCall, cancel) =>
                     {
-                        return await _webScrapingService.ReadSitemapAsync(query.GetString());
-                    }
-                    return "Invalid call, parameter url was not provided.";
-                });
-            Tools.Add(tool);
+                        using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
+                        bool hasQuery = argumentsJson.RootElement.TryGetProperty("url", out JsonElement query);
+                        if (hasQuery)
+                        {
+                            return await _webScrapingService.ReadSitemapAsync(query.GetString());
+                        }
+                        return "Invalid call, parameter url was not provided.";
+                    });
+                Tools.Add(tool);
 
-            tool = new HazinaChatTool($"PerformReadHtmlPage", $"Reads an HTML page and returns the content, either raw HTML or the extracted text",
-                [UrlParameter, RawParameter],
-                async (messages, toolCall, cancel) =>
-                {
-                    using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
-                    bool hasQuery = argumentsJson.RootElement.TryGetProperty("url", out JsonElement query);
-                    bool hasRaw = argumentsJson.RootElement.TryGetProperty("raw", out JsonElement queryRaw);
-                    if (hasQuery)
+                tool = new HazinaChatTool($"PerformReadHtmlPage", $"Reads an HTML page and returns the content, either raw HTML or the extracted text",
+                    [UrlParameter, RawParameter],
+                    async (messages, toolCall, cancel) =>
                     {
-                        var raw = hasRaw ? queryRaw.GetBoolean() : false;
-                        return await _webScrapingService.ReadWebPageAsync(query.GetString(), raw);
-                    }
-                    return "Invalid call, parameter url was not provided.";
-                });
-            Tools.Add(tool);
+                        using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
+                        bool hasQuery = argumentsJson.RootElement.TryGetProperty("url", out JsonElement query);
+                        bool hasRaw = argumentsJson.RootElement.TryGetProperty("raw", out JsonElement queryRaw);
+                        if (hasQuery)
+                        {
+                            var raw = hasRaw ? queryRaw.GetBoolean() : false;
+                            return await _webScrapingService.ReadWebPageAsync(query.GetString(), raw);
+                        }
+                        return "Invalid call, parameter url was not provided.";
+                    });
+                Tools.Add(tool);
+            }
 
-            tool = new HazinaChatTool($"PerformReadProjectFile", $"Reads and returns a file from the project",
-                [FileParameter],
-                async (messages, toolCall, cancel) =>
-                {
-                    using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
-                    bool hasQuery = argumentsJson.RootElement.TryGetProperty("file", out JsonElement query);
-                    if (hasQuery)
+            // File Operations Tools
+            if (config.EnableFileOperations)
+            {
+                tool = new HazinaChatTool($"PerformReadProjectFile", $"Reads and returns a file from the project",
+                    [FileParameter],
+                    async (messages, toolCall, cancel) =>
                     {
-                        return await _fileOperationsService.ReadProjectFileAsync(query.GetString());
-                    }
-                    return "Invalid call, parameter file was not provided.";
-                });
-            Tools.Add(tool);
+                        using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
+                        bool hasQuery = argumentsJson.RootElement.TryGetProperty("file", out JsonElement query);
+                        if (hasQuery)
+                        {
+                            return await _fileOperationsService.ReadProjectFileAsync(query.GetString());
+                        }
+                        return "Invalid call, parameter file was not provided.";
+                    });
+                Tools.Add(tool);
 
-            tool = new HazinaChatTool($"AnalyseChatPdfFile", $"Analyse a PDF file that is included in the chat",
-                [FileParameter],
-                async (messages, toolCall, cancel) =>
-                {
-                    using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
-                    bool hasQuery = argumentsJson.RootElement.TryGetProperty("file", out JsonElement query);
-                    if (hasQuery)
+                tool = new HazinaChatTool($"AnalyseChatPdfFile", $"Analyse a PDF file that is included in the chat",
+                    [FileParameter],
+                    async (messages, toolCall, cancel) =>
                     {
-                        return await _fileOperationsService.AnalyzeChatPdfFileAsync(query.GetString());
-                    }
-                    return "Invalid call, parameter file was not provided.";
-                });
-            Tools.Add(tool);
+                        using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
+                        bool hasQuery = argumentsJson.RootElement.TryGetProperty("file", out JsonElement query);
+                        if (hasQuery)
+                        {
+                            return await _fileOperationsService.AnalyzeChatPdfFileAsync(query.GetString());
+                        }
+                        return "Invalid call, parameter file was not provided.";
+                    });
+                Tools.Add(tool);
 
-            tool = new HazinaChatTool($"AnalyseChatDocument", $"Analyse any document file (PDF, DOCX, XLSX, etc.) that is included in the chat. Returns extracted text/summary from the document.",
-                [FileParameter],
-                async (messages, toolCall, cancel) =>
-                {
-                    using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
-                    bool hasQuery = argumentsJson.RootElement.TryGetProperty("file", out JsonElement query);
-                    if (hasQuery)
+                tool = new HazinaChatTool($"AnalyseChatDocument", $"Analyse any document file (PDF, DOCX, XLSX, etc.) that is included in the chat. Returns extracted text/summary from the document.",
+                    [FileParameter],
+                    async (messages, toolCall, cancel) =>
                     {
-                        return await _fileOperationsService.AnalyzeChatDocumentAsync(query.GetString());
-                    }
-                    return "Invalid call, parameter file was not provided.";
-                });
-            Tools.Add(tool);
+                        using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
+                        bool hasQuery = argumentsJson.RootElement.TryGetProperty("file", out JsonElement query);
+                        if (hasQuery)
+                        {
+                            return await _fileOperationsService.AnalyzeChatDocumentAsync(query.GetString());
+                        }
+                        return "Invalid call, parameter file was not provided.";
+                    });
+                Tools.Add(tool);
 
-            tool = new HazinaChatTool($"PerformGetProjectFilesList", $"Gets the list of files that are available in the project",
-                [],
-                async (messages, toolCall, cancel) =>
-                {
-                    return await _fileOperationsService.GetProjectFilesListAsync();
-                });
-            Tools.Add(tool);
+                tool = new HazinaChatTool($"PerformGetProjectFilesList", $"Gets the list of files that are available in the project",
+                    [],
+                    async (messages, toolCall, cancel) =>
+                    {
+                        return await _fileOperationsService.GetProjectFilesListAsync();
+                    });
+                Tools.Add(tool);
+            }
 
-            tool = new HazinaChatTool($"PerformGetBigQueryResults", $"Query the Google BigQuery MCP server with a prompt",
-                [PromptParameter],
-                async (messages, toolCall, cancel) =>
-                {
-                    using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
-                    bool found = argumentsJson.RootElement.TryGetProperty("prompt", out JsonElement prompt);
-                    return await _bigQueryService.PerformBigQueryResultsAsync(prompt.ToString(), ProjectId);
-                });
-            Tools.Add(tool);
+            // BigQuery Tool
+            if (config.EnableBigQuery)
+            {
+                tool = new HazinaChatTool($"PerformGetBigQueryResults", $"Query the Google BigQuery MCP server with a prompt",
+                    [PromptParameter],
+                    async (messages, toolCall, cancel) =>
+                    {
+                        using JsonDocument argumentsJson = JsonDocument.Parse(toolCall.FunctionArguments);
+                        bool found = argumentsJson.RootElement.TryGetProperty("prompt", out JsonElement prompt);
+                        return await _bigQueryService.PerformBigQueryResultsAsync(prompt.ToString(), ProjectId);
+                    });
+                Tools.Add(tool);
+            }
 
-            tool = new HazinaChatTool($"ShowLogoDecision", $"Shows an interactive component asking user if they have a logo to upload or want to generate one. This tool PAUSES the workflow until user responds.",
-                [],
-                async (messages, toolCall, cancel) =>
-                {
-                    // Return special marker that ChatController will detect and act upon
-                    return "[COMPONENT_REQUESTED:LogoDecision:{\"projectId\":\"" + ProjectId + "\",\"chatId\":\"" + ChatId + "\"}]";
-                });
-            Tools.Add(tool);
+            // Workflow Component Tools
+            if (config.EnableWorkflowComponents)
+            {
+                tool = new HazinaChatTool($"ShowLogoDecision", $"Shows an interactive component asking user if they have a logo to upload or want to generate one. This tool PAUSES the workflow until user responds.",
+                    [],
+                    async (messages, toolCall, cancel) =>
+                    {
+                        // Return special marker that ChatController will detect and act upon
+                        return "[COMPONENT_REQUESTED:LogoDecision:{\"projectId\":\"" + ProjectId + "\",\"chatId\":\"" + ChatId + "\"}]";
+                    });
+                Tools.Add(tool);
+            }
         }
 
         private void AddDataGatheringTools()
