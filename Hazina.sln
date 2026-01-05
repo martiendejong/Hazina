@@ -265,6 +265,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Security.Core", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Security.AspNetCore", "src\Core\Security\Hazina.Security.AspNetCore\Hazina.Security.AspNetCore.csproj", "{30A94A5E-9A9D-49B9-95CD-42F9224823CA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.LLMs.Ollama", "src\Core\LLMs.Providers\Hazina.LLMs.Ollama\Hazina.LLMs.Ollama.csproj", "{9D6CD7EE-9E50-404E-A166-3516F919C914}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1499,6 +1501,18 @@ Global
 		{30A94A5E-9A9D-49B9-95CD-42F9224823CA}.Release|x64.Build.0 = Release|Any CPU
 		{30A94A5E-9A9D-49B9-95CD-42F9224823CA}.Release|x86.ActiveCfg = Release|Any CPU
 		{30A94A5E-9A9D-49B9-95CD-42F9224823CA}.Release|x86.Build.0 = Release|Any CPU
+		{9D6CD7EE-9E50-404E-A166-3516F919C914}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D6CD7EE-9E50-404E-A166-3516F919C914}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D6CD7EE-9E50-404E-A166-3516F919C914}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9D6CD7EE-9E50-404E-A166-3516F919C914}.Debug|x64.Build.0 = Debug|Any CPU
+		{9D6CD7EE-9E50-404E-A166-3516F919C914}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9D6CD7EE-9E50-404E-A166-3516F919C914}.Debug|x86.Build.0 = Debug|Any CPU
+		{9D6CD7EE-9E50-404E-A166-3516F919C914}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D6CD7EE-9E50-404E-A166-3516F919C914}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D6CD7EE-9E50-404E-A166-3516F919C914}.Release|x64.ActiveCfg = Release|Any CPU
+		{9D6CD7EE-9E50-404E-A166-3516F919C914}.Release|x64.Build.0 = Release|Any CPU
+		{9D6CD7EE-9E50-404E-A166-3516F919C914}.Release|x86.ActiveCfg = Release|Any CPU
+		{9D6CD7EE-9E50-404E-A166-3516F919C914}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1599,5 +1613,6 @@ Global
 		{F84393C8-3A0A-9937-1CBE-B7A625C33FA1} = {8D626EA8-CB54-BC41-363A-217881BEBA6E}
 		{3B7BB7DA-4C03-4887-9132-5494FE6C56DC} = {F84393C8-3A0A-9937-1CBE-B7A625C33FA1}
 		{30A94A5E-9A9D-49B9-95CD-42F9224823CA} = {F84393C8-3A0A-9937-1CBE-B7A625C33FA1}
+		{9D6CD7EE-9E50-404E-A166-3516F919C914} = {BCF8D234-4E49-D9AB-8D97-3A8EF7FEA824}
 	EndGlobalSection
 EndGlobal
