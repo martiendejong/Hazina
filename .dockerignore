@@ -1,0 +1,69 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+azure-pipelines.yml
+
+# Documentation
+*.md
+docs/
+archive/
+
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+**/.vs/
+**/.vscode/
+**/TestResults/
+
+# User-specific files
+*.user
+*.suo
+*.userprefs
+
+# NuGet
+*.nupkg
+*.snupkg
+**/packages/
+.nuget/
+
+# Visual Studio
+.vs/
+*.vspscc
+*.vssscc
+
+# Rider
+.idea/
+*.sln.iml
+
+# Test coverage
+**/coverage/
+**/*.coverage
+
+# Logs
+**/logs/
+*.log
+
+# Secrets and config
+appsettings.Development.json
+appsettings.*.json
+!appsettings.json
+!appsettings.Production.json
+*.secrets.json
+.env
+.env.*
+
+# Temporary files
+**/tmp/
+**/temp/
+**/*.tmp
+**/*.swp
+**/*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
