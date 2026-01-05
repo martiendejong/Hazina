@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Hazina.AI.Providers.Core;
+using Hazina.AI.Providers.Cost;
 using Xunit;
 
 namespace Hazina.AI.Providers.Tests;
@@ -7,71 +7,87 @@ namespace Hazina.AI.Providers.Tests;
 public class CostTrackerTests
 {
     [Fact]
-    public void TrackCost_ShouldIncrementTotalCost()
+    public void RecordUsage_ShouldIncrementTotalCost()
     {
         // Arrange
         var tracker = new CostTracker();
-        var initialCost = tracker.GetTotalCost();
+        var usage1 = new TokenUsageInfo(1000, 500, 0.05m, 0.03m, "gpt-4o-mini");
 
         // Act
-        tracker.TrackCost("provider1", 0.05);
-        tracker.TrackCost("provider1", 0.03);
+        tracker.RecordUsage("provider1", usage1);
+        var totalCost = tracker.GetTotalCost();
+
+        // Assert
+        totalCost.Should().Be(0.08m); // 0.05 + 0.03
+    }
+
+    [Fact]
+    public void RecordUsage_MultipleEntries_ShouldAggregate()
+    {
+        // Arrange
+        var tracker = new CostTracker();
+        var usage1 = new TokenUsageInfo(1000, 500, 0.05m, 0.03m, "gpt-4o-mini");
+        var usage2 = new TokenUsageInfo(2000, 1000, 0.10m, 0.06m, "gpt-4o-mini");
+
+        // Act
+        tracker.RecordUsage("provider1", usage1);
+        tracker.RecordUsage("provider1", usage2);
+
+        // Assert
+        var providerCost = tracker.GetTotalCost("provider1");
+        providerCost.Should().Be(0.24m); // (0.05+0.03) + (0.10+0.06)
+    }
+
+    [Fact]
+    public void GetTotalCost_ForSpecificProvider_ShouldReturnCorrectAmount()
+    {
+        // Arrange
+        var tracker = new CostTracker();
+        var usage1 = new TokenUsageInfo(1000, 500, 0.10m, 0.05m, "gpt-4o");
+        var usage2 = new TokenUsageInfo(500, 250, 0.05m, 0.02m, "gpt-4o-mini");
+
+        // Act
+        tracker.RecordUsage("openai", usage1);
+        tracker.RecordUsage("anthropic", usage2);
+
+        // Assert
+        var openaiCost = tracker.GetTotalCost("openai");
+        var anthropicCost = tracker.GetTotalCost("anthropic");
+
+        openaiCost.Should().Be(0.15m);
+        anthropicCost.Should().Be(0.07m);
+    }
+
+    [Fact]
+    public void GetTotalCost_ForUnknownProvider_ShouldReturnZero()
+    {
+        // Arrange
+        var tracker = new CostTracker();
+
+        // Act
+        var cost = tracker.GetTotalCost("unknown-provider");
+
+        // Assert
+        cost.Should().Be(0m);
+    }
+
+    [Fact]
+    public void GetTotalCost_AcrossAllProviders_ShouldSumCorrectly()
+    {
+        // Arrange
+        var tracker = new CostTracker();
+        var usage1 = new TokenUsageInfo(1000, 500, 0.10m, 0.05m, "gpt-4o");
+        var usage2 = new TokenUsageInfo(500, 250, 0.05m, 0.02m, "gpt-4o-mini");
+        var usage3 = new TokenUsageInfo(0, 0, 0.00m, 0.00m, "llama-local");
+
+        // Act
+        tracker.RecordUsage("openai", usage1);
+        tracker.RecordUsage("anthropic", usage2);
+        tracker.RecordUsage("ollama", usage3);
 
         // Assert
         var totalCost = tracker.GetTotalCost();
-        totalCost.Should().Be(0.08);
-        totalCost.Should().BeGreaterThan(initialCost);
-    }
-
-    [Fact]
-    public void GetProviderCost_ShouldReturnCorrectAmount()
-    {
-        // Arrange
-        var tracker = new CostTracker();
-
-        // Act
-        tracker.TrackCost("provider1", 0.10);
-        tracker.TrackCost("provider2", 0.05);
-        tracker.TrackCost("provider1", 0.02);
-
-        // Assert
-        var provider1Cost = tracker.GetProviderCost("provider1");
-        var provider2Cost = tracker.GetProviderCost("provider2");
-
-        provider1Cost.Should().Be(0.12);
-        provider2Cost.Should().Be(0.05);
-    }
-
-    [Fact]
-    public void GetProviderCost_ForUnknownProvider_ShouldReturnZero()
-    {
-        // Arrange
-        var tracker = new CostTracker();
-
-        // Act
-        var cost = tracker.GetProviderCost("unknown-provider");
-
-        // Assert
-        cost.Should().Be(0);
-    }
-
-    [Fact]
-    public void TrackCost_WithMultipleProviders_ShouldTrackSeparately()
-    {
-        // Arrange
-        var tracker = new CostTracker();
-
-        // Act
-        tracker.TrackCost("openai", 0.10);
-        tracker.TrackCost("anthropic", 0.08);
-        tracker.TrackCost("ollama", 0.00); // Free local model
-        tracker.TrackCost("openai", 0.05);
-
-        // Assert
-        tracker.GetProviderCost("openai").Should().Be(0.15);
-        tracker.GetProviderCost("anthropic").Should().Be(0.08);
-        tracker.GetProviderCost("ollama").Should().Be(0.00);
-        tracker.GetTotalCost().Should().Be(0.23);
+        totalCost.Should().Be(0.22m); // 0.15 + 0.07 + 0.00
     }
 
     [Fact]
@@ -79,83 +95,127 @@ public class CostTrackerTests
     {
         // Arrange
         var tracker = new CostTracker();
-        tracker.TrackCost("provider1", 0.50);
-        tracker.TrackCost("provider2", 0.30);
+        var usage = new TokenUsageInfo(1000, 500, 0.50m, 0.30m, "gpt-4o");
+        tracker.RecordUsage("provider1", usage);
+        tracker.RecordUsage("provider2", usage);
 
         // Act
         tracker.Reset();
 
         // Assert
-        tracker.GetTotalCost().Should().Be(0);
-        tracker.GetProviderCost("provider1").Should().Be(0);
-        tracker.GetProviderCost("provider2").Should().Be(0);
+        tracker.GetTotalCost().Should().Be(0m);
+        tracker.GetTotalCost("provider1").Should().Be(0m);
+        tracker.GetTotalCost("provider2").Should().Be(0m);
     }
 
     [Fact]
-    public void TrackCost_WithNegativeAmount_ShouldThrow()
+    public void Reset_ForSpecificProvider_ShouldOnlyClearThatProvider()
+    {
+        // Arrange
+        var tracker = new CostTracker();
+        var usage = new TokenUsageInfo(1000, 500, 0.10m, 0.05m, "gpt-4o");
+        tracker.RecordUsage("provider1", usage);
+        tracker.RecordUsage("provider2", usage);
+
+        // Act
+        tracker.Reset("provider1");
+
+        // Assert
+        tracker.GetTotalCost("provider1").Should().Be(0m);
+        tracker.GetTotalCost("provider2").Should().Be(0.15m);
+        tracker.GetTotalCost().Should().Be(0.15m);
+    }
+
+    [Fact]
+    public void RecordUsage_WithNullUsage_ShouldThrow()
     {
         // Arrange
         var tracker = new CostTracker();
 
         // Act
-        Action act = () => tracker.TrackCost("provider1", -0.05);
+        Action act = () => tracker.RecordUsage("provider1", null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("usage");
+    }
+
+    [Fact]
+    public void RecordUsage_WithEmptyProviderName_ShouldThrow()
+    {
+        // Arrange
+        var tracker = new CostTracker();
+        var usage = new TokenUsageInfo(1000, 500, 0.10m, 0.05m, "gpt-4o");
+
+        // Act
+        Action act = () => tracker.RecordUsage("", usage);
 
         // Assert
         act.Should().Throw<ArgumentException>()
-            .WithMessage("*negative*");
+            .WithParameterName("providerName");
     }
 
     [Fact]
-    public void GetCostBreakdown_ShouldReturnAllProviders()
+    public void GetCostByProvider_ShouldReturnAllProviders()
     {
         // Arrange
         var tracker = new CostTracker();
-        tracker.TrackCost("provider1", 0.10);
-        tracker.TrackCost("provider2", 0.20);
-        tracker.TrackCost("provider3", 0.30);
+        var usage1 = new TokenUsageInfo(1000, 500, 0.10m, 0.00m, "gpt-4o");
+        var usage2 = new TokenUsageInfo(500, 250, 0.20m, 0.00m, "claude");
+        var usage3 = new TokenUsageInfo(2000, 1000, 0.30m, 0.00m, "llama");
 
         // Act
-        var breakdown = tracker.GetCostBreakdown();
+        tracker.RecordUsage("provider1", usage1);
+        tracker.RecordUsage("provider2", usage2);
+        tracker.RecordUsage("provider3", usage3);
+
+        var breakdown = tracker.GetCostByProvider();
 
         // Assert
         breakdown.Should().HaveCount(3);
-        breakdown.Should().ContainKey("provider1");
-        breakdown.Should().ContainKey("provider2");
-        breakdown.Should().ContainKey("provider3");
-        breakdown["provider1"].Should().Be(0.10);
-        breakdown["provider2"].Should().Be(0.20);
-        breakdown["provider3"].Should().Be(0.30);
+        breakdown.Should().ContainKey("provider1").WhoseValue.Should().Be(0.10m);
+        breakdown.Should().ContainKey("provider2").WhoseValue.Should().Be(0.20m);
+        breakdown.Should().ContainKey("provider3").WhoseValue.Should().Be(0.30m);
     }
 
     [Fact]
-    public void GetTotalCost_WithNoTracking_ShouldReturnZero()
+    public void GetUsage_ShouldReturnTokenUsageInfo()
     {
         // Arrange
         var tracker = new CostTracker();
+        var usage = new TokenUsageInfo(1000, 500, 0.10m, 0.05m, "gpt-4o");
 
         // Act
-        var totalCost = tracker.GetTotalCost();
+        tracker.RecordUsage("provider1", usage);
+        var retrieved = tracker.GetUsage("provider1");
 
         // Assert
-        totalCost.Should().Be(0);
+        retrieved.Should().NotBeNull();
+        retrieved.InputTokens.Should().Be(1000);
+        retrieved.OutputTokens.Should().Be(500);
+        retrieved.TotalTokens.Should().Be(1500);
+        retrieved.TotalCost.Should().Be(0.15m);
+        retrieved.ModelName.Should().Be("gpt-4o");
     }
 
-    [Theory]
-    [InlineData(0.001, 0.002, 0.003)]
-    [InlineData(0.1, 0.2, 0.3)]
-    [InlineData(1.0, 2.0, 3.0)]
-    [InlineData(10.5, 20.3, 30.8)]
-    public void TrackCost_WithVariousAmounts_ShouldCalculateCorrectly(double cost1, double cost2, double expected)
+    [Fact]
+    public void GetTotalUsage_ShouldAggregateAcrossProviders()
     {
         // Arrange
         var tracker = new CostTracker();
+        var usage1 = new TokenUsageInfo(1000, 500, 0.10m, 0.05m, "gpt-4o");
+        var usage2 = new TokenUsageInfo(2000, 1000, 0.20m, 0.10m, "claude");
 
         // Act
-        tracker.TrackCost("provider", cost1);
-        tracker.TrackCost("provider", cost2);
+        tracker.RecordUsage("provider1", usage1);
+        tracker.RecordUsage("provider2", usage2);
+
+        var total = tracker.GetTotalUsage();
 
         // Assert
-        var totalCost = tracker.GetProviderCost("provider");
-        totalCost.Should().BeApproximately(expected, 0.0001);
+        total.InputTokens.Should().Be(3000);
+        total.OutputTokens.Should().Be(1500);
+        total.TotalTokens.Should().Be(4500);
+        total.TotalCost.Should().Be(0.45m);
     }
 }

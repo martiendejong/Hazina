@@ -5,6 +5,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+
+    <!-- Package metadata -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>Hazina.AI.Providers</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Hazina Team</Authors>
+    <Description>Multi-provider abstraction layer for Hazina AI Framework - Seamless LLM provider switching with failover, health monitoring, and cost tracking</Description>
+    <PackageTags>ai;llm;openai;anthropic;providers;failover;monitoring</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/hazinatech/hazina</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

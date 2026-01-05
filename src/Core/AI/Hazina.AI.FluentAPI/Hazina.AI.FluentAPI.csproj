@@ -5,6 +5,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+
+    <!-- Package metadata -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>Hazina.AI.FluentAPI</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Hazina Team</Authors>
+    <Description>Developer-first Fluent API for Hazina AI Framework - Multi-provider LLM orchestration made simple</Description>
+    <PackageTags>ai;llm;openai;anthropic;fluent-api;multi-provider</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/hazinatech/hazina</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
