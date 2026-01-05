@@ -1,0 +1,59 @@
+# Hazina CODEOWNERS
+# This file defines code ownership for automated review assignments
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owners (fallback for anything not explicitly covered)
+* @martiendejong
+
+# Core AI Infrastructure
+/src/Core/AI/ @martiendejong
+/src/Core/AI/Hazina.AI.FluentAPI/ @martiendejong
+/src/Core/AI/Hazina.AI.Providers/ @martiendejong
+/src/Core/AI/Hazina.Neurochain.Core/ @martiendejong
+/src/Core/AI/Hazina.AI.RAG/ @martiendejong
+/src/Core/AI/Hazina.AI.Agents/ @martiendejong
+/src/Core/AI/Hazina.AI.FaultDetection/ @martiendejong
+/src/Core/AI/Hazina.AI.Orchestration/ @martiendejong
+/src/Core/AI/Hazina.AI.Memory/ @martiendejong
+/src/Core/AI/Hazina.CodeIntelligence/ @martiendejong
+/src/Core/AI/Hazina.Evals/ @martiendejong
+
+# LLM Providers
+/src/Core/LLMs/ @martiendejong
+/src/Core/LLMs.Providers/ @martiendejong
+
+# Storage & Data
+/src/Core/Storage/ @martiendejong
+
+# Security
+/src/Core/Security/ @martiendejong
+
+# Observability
+/src/Core/Observability/ @martiendejong
+
+# Production Tooling
+/src/Tools/Production/ @martiendejong
+
+# Tools & Services
+/src/Tools/ @martiendejong
+
+# Applications
+/apps/ @martiendejong
+/apps/CLI/ @martiendejong
+/apps/Desktop/ @martiendejong
+/apps/Web/ @martiendejong
+/apps/Demos/ @martiendejong
+
+# Tests
+/Tests/ @martiendejong
+
+# Build & Infrastructure
+*.sln @martiendejong
+*.csproj @martiendejong
+Directory.Build.props @martiendejong
+.github/ @martiendejong
+.gitignore @martiendejong
+
+# Documentation
+*.md @martiendejong
+/docs/ @martiendejong

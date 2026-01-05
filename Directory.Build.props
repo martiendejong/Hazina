@@ -1,16 +1,48 @@
 <Project>
+  <!--
+    Directory.Build.props
+
+    This file is automatically imported by all .csproj files in the repository.
+    It defines common properties and build optimizations for all projects.
+
+    Learn more: https://docs.microsoft.com/en-us/visualstudio/msbuild/customize-your-build
+  -->
+
+  <PropertyGroup>
+    <!-- Build Performance Optimizations -->
+    <IncrementalBuild>true</IncrementalBuild>
+    <BuildInParallel>true</BuildInParallel>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+
+    <!-- Faster builds in development -->
+    <UseSharedCompilation>true</UseSharedCompilation>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+
+    <!-- Deterministic builds for CI/CD -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
   <PropertyGroup>
     <!-- Common NuGet Package Properties -->
-    <Authors>DevGPT</Authors>
-    <Company>DevGPT</Company>
-    <Product>DevGPT Generation Tools</Product>
-    <Copyright>Copyright © DevGPT $([System.DateTime]::Now.Year)</Copyright>
+    <Authors>Martien de Jong</Authors>
+    <Company>Hazina</Company>
+    <Product>Hazina AI Framework</Product>
+    <Copyright>Copyright © Hazina 2024-$([System.DateTime]::Now.Year)</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/yourusername/DevGPTTools</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/yourusername/DevGPTTools</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/martiendejong/Hazina</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/martiendejong/Hazina.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageTags>ai;content-generation;gpt;text-extraction;devgpt</PackageTags>
+    <PackageTags>ai;llm;openai;anthropic;claude;gpt;rag;agents;neurochain;production;dotnet</PackageTags>
+    <PackageIcon>icon.png</PackageIcon>
+
+    <!-- Source Link for debugging -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
     <!-- Version -->
     <Version>1.0.0</Version>
@@ -20,7 +52,40 @@
     <IsPackable>true</IsPackable>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- Language Version & Nullable Reference Types -->
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <!-- Release optimizations -->
+    <Optimize>true</Optimize>
+    <DebugType>embedded</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+
+    <!-- Code analysis -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <!-- Debug settings -->
+    <Optimize>false</Optimize>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Source Link support for all projects -->
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" Condition="'$(Configuration)' == 'Release'"/>
+  </ItemGroup>
+
+  <!-- Include README.md in NuGet packages -->
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Condition="Exists('$(MSBuildThisFileDirectory)README.md')" />
   </ItemGroup>
+
 </Project>

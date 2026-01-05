@@ -238,23 +238,41 @@ var result = await neurochain.ReasonAsync("Complex question requiring high confi
 
 ## Documentation
 
+### Getting Started
+- **[Solutions Guide](SOLUTIONS.md)** — Choose the right solution file for your work (QuickStart, Core, AI, Tools, Apps)
 - [30-Minute RAG Tutorial](docs/quickstart.md) — Build production RAG in 30 minutes
+
+### Feature Guides
 - [Knowledge Storage & Search Model](docs/KNOWLEDGE_STORAGE.md) — Agent-first architecture, metadata-driven storage
 - [RAG Guide](docs/RAG_GUIDE.md) — Document indexing, chunking, retrieval
 - [Agents Guide](docs/AGENTS_GUIDE.md) — Tool calling, workflows, coordination
 - [Neurochain Guide](docs/NEUROCHAIN_GUIDE.md) — Multi-layer reasoning
 - [Code Intelligence Guide](docs/CODE_INTELLIGENCE_GUIDE.md) — Refactoring, analysis
 - [Production Monitoring Guide](docs/PRODUCTION_MONITORING_GUIDE.md) — Metrics, health checks
+
+### Setup & Configuration
 - [Supabase Setup](docs/SUPABASE_SETUP.md) — Cloud database backend
 
 ## Quick Start
 
 ```bash
-# Clone and build
+# Clone repository
 git clone https://github.com/hazina-ai/hazina.git
 cd hazina
-dotnet restore Hazina.sln
-dotnet build Hazina.sln
+
+# Choose your solution file (see SOLUTIONS.md for guidance)
+# New to Hazina? Start with QuickStart.sln
+dotnet restore Hazina.QuickStart.sln
+dotnet build Hazina.QuickStart.sln
+
+# Working on a specific area?
+# dotnet build Hazina.AI.sln       # AI features
+# dotnet build Hazina.Core.sln     # Infrastructure
+# dotnet build Hazina.Tools.sln    # Tools & services
+# dotnet build Hazina.Apps.sln     # Applications
+
+# Full build (all 62 projects)
+# dotnet build Hazina.sln
 
 # Run demos
 dotnet run --project apps/Demos/Hazina.Demo.Supabase
