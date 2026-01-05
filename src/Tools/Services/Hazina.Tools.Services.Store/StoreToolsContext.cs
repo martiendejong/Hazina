@@ -187,6 +187,15 @@ namespace Hazina.Tools.Services.Store
                     return await _bigQueryService.PerformBigQueryResultsAsync(prompt.ToString(), ProjectId);
                 });
             Tools.Add(tool);
+
+            tool = new HazinaChatTool($"ShowLogoDecision", $"Shows an interactive component asking user if they have a logo to upload or want to generate one. This tool PAUSES the workflow until user responds.",
+                [],
+                async (messages, toolCall, cancel) =>
+                {
+                    // Return special marker that ChatController will detect and act upon
+                    return "[COMPONENT_REQUESTED:LogoDecision:{\"projectId\":\"" + ProjectId + "\",\"chatId\":\"" + ChatId + "\"}]";
+                });
+            Tools.Add(tool);
         }
 
         private void AddDataGatheringTools()
