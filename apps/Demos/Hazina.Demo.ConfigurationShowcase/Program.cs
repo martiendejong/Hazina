@@ -7,9 +7,7 @@ using Hazina.Neurochain.Core;
 using Hazina.Neurochain.Core.Layers;
 using HazinaStore.Models;
 using Hazina.Tools.Data;
-using Hazina.LLMs.OpenAI;
-using Hazina.LLMs.Anthropic;
-using Hazina.LLMs.Ollama;
+using Hazina.LLMs; // All LLM providers are in this namespace
 using Hazina.Production.Monitoring.Metrics;
 using Microsoft.Extensions.Configuration;
 
@@ -125,9 +123,9 @@ class Program
                 var fileStoreSetup = StoreProvider.GetStoreSetup(baseConfig, "demo-project", 1536);
 
                 Console.WriteLine($"\n✓ Store setup created:");
-                Console.WriteLine($"  - Vector Store: {fileStoreSetup.VectorStore?.GetType().Name}");
-                Console.WriteLine($"  - Document Store: {fileStoreSetup.DocumentStore?.GetType().Name}");
-                Console.WriteLine($"  - Metadata Store: {fileStoreSetup.MetadataStore?.GetType().Name}");
+                Console.WriteLine($"  - Vector Store: {fileStoreSetup.TextEmbeddingStore?.GetType().Name}");
+                Console.WriteLine($"  - Document Store: {fileStoreSetup.Store?.GetType().Name}");
+                Console.WriteLine($"  - Metadata Store: {fileStoreSetup.QueryableMetadataStore?.GetType().Name}");
                 break;
 
             case "2":
@@ -162,14 +160,15 @@ class Program
                     Console.WriteLine("✓ Schema initialized!");
 
                     var supabaseSetup = SupabaseStoreProvider.GetSupabaseStoreSetup(
-                        baseConfig.SupabaseSettings.ConnectionString,
+                        baseConfig.SupabaseSettings,
+                        baseConfig.ApiSettings.OpenApiKey,
                         1536
                     );
 
                     Console.WriteLine($"\n✓ Store setup created:");
-                    Console.WriteLine($"  - Vector Store: {supabaseSetup.VectorStore?.GetType().Name}");
-                    Console.WriteLine($"  - Document Store: {supabaseSetup.DocumentStore?.GetType().Name}");
-                    Console.WriteLine($"  - Metadata Store: {supabaseSetup.MetadataStore?.GetType().Name}");
+                    Console.WriteLine($"  - Vector Store: {supabaseSetup.TextEmbeddingStore?.GetType().Name}");
+                    Console.WriteLine($"  - Document Store: {supabaseSetup.Store?.GetType().Name}");
+                    Console.WriteLine($"  - Metadata Store: {supabaseSetup.QueryableMetadataStore?.GetType().Name}");
                 }
                 else
                 {
@@ -202,10 +201,14 @@ class Program
                 {
                     Console.WriteLine("✓ Connection successful!");
 
-                    var pgSetup = SupabaseStoreProvider.GetSupabaseStoreSetup(pgConnectionString, 1536);
+                    var pgSetup = SupabaseStoreProvider.GetSupabaseStoreSetup(
+                        baseConfig.SupabaseSettings,
+                        baseConfig.ApiSettings.OpenApiKey,
+                        1536
+                    );
 
                     Console.WriteLine($"\n✓ Store setup created:");
-                    Console.WriteLine($"  - Vector Store: {pgSetup.VectorStore?.GetType().Name}");
+                    Console.WriteLine($"  - Vector Store: {pgSetup.TextEmbeddingStore?.GetType().Name}");
                     Console.WriteLine($"  - Using pgvector extension");
                 }
                 else
@@ -238,15 +241,15 @@ class Program
                 Console.WriteLine($"  - Use case: Fast file access + Cloud semantic search");
 
                 var hybridSetup = SupabaseStoreProvider.GetHybridStoreSetup(
-                    baseConfig.SupabaseSettings.ConnectionString,
-                    baseConfig.ProjectSettings.ProjectsFolder,
-                    "demo-project",
+                    Path.Combine(baseConfig.ProjectSettings.ProjectsFolder, "demo-project"),
+                    baseConfig.SupabaseSettings,
+                    baseConfig.ApiSettings.OpenApiKey,
                     1536
                 );
 
                 Console.WriteLine($"\n✓ Store setup created:");
-                Console.WriteLine($"  - Vector Store: {hybridSetup.VectorStore?.GetType().Name} (Cloud)");
-                Console.WriteLine($"  - Document Store: {hybridSetup.DocumentStore?.GetType().Name} (Local)");
+                Console.WriteLine($"  - Vector Store: {hybridSetup.TextEmbeddingStore?.GetType().Name} (Cloud)");
+                Console.WriteLine($"  - Document Store: {hybridSetup.Store?.GetType().Name} (Local)");
                 Console.WriteLine($"  - Best of both worlds!");
                 break;
 
@@ -507,7 +510,7 @@ class Program
                 };
 
                 var storeSetup = StoreProvider.GetStoreSetup(config1, "rag-demo", 1536);
-                var ragEngine = new RAGEngine(orchestrator, storeSetup.VectorStore!);
+                var ragEngine = new RAGEngine(orchestrator, storeSetup.TextEmbeddingStore!);
 
                 Console.WriteLine($"\n✓ Configuration:");
                 Console.WriteLine($"  - Storage: File-based");
@@ -569,7 +572,7 @@ class Program
                 };
 
                 var storeSetup3 = StoreProvider.GetStoreSetup(config3, "combined-demo", 1536);
-                var ragEngine3 = new RAGEngine(orchestrator, storeSetup3.VectorStore!);
+                var ragEngine3 = new RAGEngine(orchestrator, storeSetup3.TextEmbeddingStore!);
 
                 // Setup Neurochain
                 var neurochain3 = new NeuroChainOrchestrator();
@@ -726,7 +729,7 @@ class Program
         Console.WriteLine("✓ Storage: File-based configured");
 
         // Setup AI components
-        var ragEngine = new RAGEngine(orchestrator, storeSetup.VectorStore!);
+        var ragEngine = new RAGEngine(orchestrator, storeSetup.TextEmbeddingStore!);
         var neurochain = new NeuroChainOrchestrator();
         neurochain.AddLayer(new FastReasoningLayer(orchestrator));
         neurochain.AddLayer(new DeepReasoningLayer(orchestrator));
