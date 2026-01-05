@@ -40,8 +40,7 @@ public static class HazinaObservabilityExtensions
                         .SetResourceBuilder(ResourceBuilder.CreateDefault()
                             .AddService(
                                 serviceName: options.ServiceName ?? "HazinaApp",
-                                serviceVersion: options.ServiceVersion ?? "1.0.0"))
-                        .AddConsoleExporter(); // Console exporter for development
+                                serviceVersion: options.ServiceVersion ?? "1.0.0"));
 
                     // Allow custom configuration
                     options.ConfigureTracing?.Invoke(tracerProviderBuilder);
