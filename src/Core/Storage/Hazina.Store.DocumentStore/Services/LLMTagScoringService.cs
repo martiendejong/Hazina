@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Hazina.LLMs;
 
 /// <summary>
 /// LLM-based tag scoring service that uses AI to score tags based on query relevance.

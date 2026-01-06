@@ -1,5 +1,6 @@
 using Npgsql;
 using Pgvector;
+using Hazina.LLMs;
 
 /// <summary>
 /// Legacy PostgreSQL + pgvector embedding store.

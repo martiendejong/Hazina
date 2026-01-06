@@ -1,3 +1,5 @@
+using Hazina.LLMs;
+
 namespace Hazina.AI.Providers.Core;
 
 /// <summary>

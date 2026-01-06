@@ -8,6 +8,7 @@ using System.Text;
 using System.Linq;
 using OpenAI.Images;
 using System.Threading;
+using Hazina.LLMs;
 
 public partial class SimpleOpenAIClientChatInteraction
 {

@@ -1,3 +1,5 @@
+using Hazina.LLMs;
+
 /// <summary>
 /// Legacy abstract base class for text embedding storage.
 /// </summary>

@@ -9,6 +9,7 @@ using OpenAI.Images;
 using static System.Net.Mime.MediaTypeNames;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using Hazina.LLMs;
 
 public partial class OpenAIClientWrapper : ILLMClient
 {

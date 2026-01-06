@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using Hazina.LLMs;
 
 public static class ClaudeCliTool
 {

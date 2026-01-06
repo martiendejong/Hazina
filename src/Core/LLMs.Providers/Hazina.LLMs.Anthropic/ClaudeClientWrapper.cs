@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Hazina.LLMs.Anthropic;
+using Hazina.LLMs;
 
 public class ClaudeClientWrapper : ILLMClient
 {

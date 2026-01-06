@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Hazina.LLMs;
 
 /// <summary>
 /// Legacy file-based embedding store.
