@@ -415,3 +415,54 @@ CREATE INDEX idx_regression_reports_has_regression ON regression_reports(has_reg
 COMMENT ON TABLE evaluation_schedules IS 'Scheduled recurring evaluation runs';
 COMMENT ON TABLE regression_reports IS 'Regression analysis comparing prompt versions';
 
+-- ============================================================================
+-- ALERTS
+-- ============================================================================
+
+-- Alert history
+CREATE TABLE IF NOT EXISTS alerts (
+    alert_id VARCHAR(255) PRIMARY KEY,
+    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    severity VARCHAR(50) NOT NULL,  -- "low" | "medium" | "high" | "critical"
+    type VARCHAR(100) NOT NULL,  -- "regression" | "drift" | "failure_pattern"
+    prompt_id VARCHAR(255) NOT NULL REFERENCES prompt_templates(prompt_id) ON DELETE CASCADE,
+    title VARCHAR(500) NOT NULL,
+    message TEXT NOT NULL,
+    details JSONB,  -- Additional contextual details
+    recommended_actions JSONB,  -- Array of recommended action strings
+    acknowledged BOOLEAN NOT NULL DEFAULT false,
+    acknowledged_by VARCHAR(255),
+    acknowledged_at TIMESTAMP
+);
+
+CREATE INDEX idx_alerts_prompt_id ON alerts(prompt_id);
+CREATE INDEX idx_alerts_timestamp ON alerts(timestamp DESC);
+CREATE INDEX idx_alerts_severity ON alerts(severity);
+CREATE INDEX idx_alerts_type ON alerts(type);
+CREATE INDEX idx_alerts_acknowledged ON alerts(acknowledged);
+
+-- ============================================================================
+-- ALERT RULES
+-- ============================================================================
+
+-- Alert rule configuration
+CREATE TABLE IF NOT EXISTS alert_rules (
+    rule_id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    prompt_id VARCHAR(255) REFERENCES prompt_templates(prompt_id) ON DELETE CASCADE,  -- null = applies to all prompts
+    rule_type VARCHAR(100) NOT NULL,  -- "regression" | "drift" | "threshold"
+    enabled BOOLEAN NOT NULL DEFAULT true,
+    thresholds JSONB NOT NULL,  -- metric → threshold value mapping
+    channels JSONB NOT NULL,  -- Array of notification channels: ["email", "slack", "webhook"]
+    channel_config JSONB,  -- Channel-specific configuration
+    cooldown_period INTERVAL NOT NULL DEFAULT '1 hour',
+    last_alert_sent TIMESTAMP
+);
+
+CREATE INDEX idx_alert_rules_enabled ON alert_rules(enabled);
+CREATE INDEX idx_alert_rules_prompt_id ON alert_rules(prompt_id);
+CREATE INDEX idx_alert_rules_rule_type ON alert_rules(rule_type);
+
+COMMENT ON TABLE alerts IS 'Alert history for monitoring and troubleshooting';
+COMMENT ON TABLE alert_rules IS 'Alert rule configurations for automated monitoring';
+
