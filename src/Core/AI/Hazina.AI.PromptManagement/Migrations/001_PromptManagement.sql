@@ -205,6 +205,42 @@ CREATE INDEX idx_safety_checks_type ON safety_checks(check_type);
 CREATE INDEX idx_safety_checks_passed ON safety_checks(passed);
 
 -- ============================================================================
+-- SAFETY CONFIGURATIONS
+-- ============================================================================
+
+-- Safety configuration per prompt
+CREATE TABLE IF NOT EXISTS safety_configs (
+    prompt_id VARCHAR(255) PRIMARY KEY REFERENCES prompt_templates(prompt_id) ON DELETE CASCADE,
+
+    -- Cooldown settings
+    cooldown_period INTERVAL NOT NULL DEFAULT '24 hours',
+    enforce_cooldown BOOLEAN NOT NULL DEFAULT true,
+
+    -- Performance threshold settings
+    min_performance_ratio FLOAT NOT NULL DEFAULT 0.95,
+    enforce_performance_threshold BOOLEAN NOT NULL DEFAULT true,
+
+    -- Semantic similarity settings
+    min_semantic_similarity FLOAT NOT NULL DEFAULT 0.85,
+    enforce_semantic_similarity BOOLEAN NOT NULL DEFAULT true,
+
+    -- Sandbox testing
+    require_sandbox_test BOOLEAN NOT NULL DEFAULT true,
+    default_test_set_id VARCHAR(255) REFERENCES eval_test_sets(test_set_id),
+
+    -- Emergency stop
+    emergency_stop_active BOOLEAN NOT NULL DEFAULT false,
+    emergency_stop_reason TEXT,
+    emergency_stop_activated_at TIMESTAMP,
+    emergency_stop_activated_by VARCHAR(255),
+
+    -- Metadata
+    metadata JSONB
+);
+
+CREATE INDEX idx_safety_configs_emergency_stop ON safety_configs(emergency_stop_active);
+
+-- ============================================================================
 -- SANDBOX TESTS
 -- ============================================================================
 
