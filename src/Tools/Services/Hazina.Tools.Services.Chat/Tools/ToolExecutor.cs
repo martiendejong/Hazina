@@ -13,6 +13,46 @@ using System.Threading.Tasks;
 namespace Hazina.Tools.Services.Chat.Tools
 {
     /// <summary>
+    /// Context data passed to tool execution containing project/chat identifiers.
+    /// STAP 28: Structured context for tool-chat integration.
+    /// </summary>
+    public class ToolExecutionContext
+    {
+        public string ProjectId { get; set; }
+        public string ChatId { get; set; }
+        public string UserId { get; set; }
+
+        /// <summary>
+        /// Parse context from JSON string.
+        /// </summary>
+        public static ToolExecutionContext Parse(string contextJson)
+        {
+            if (string.IsNullOrWhiteSpace(contextJson))
+                return new ToolExecutionContext();
+
+            try
+            {
+                return JsonSerializer.Deserialize<ToolExecutionContext>(contextJson, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? new ToolExecutionContext();
+            }
+            catch
+            {
+                return new ToolExecutionContext();
+            }
+        }
+
+        /// <summary>
+        /// Create JSON string from context.
+        /// </summary>
+        public string ToJson()
+        {
+            return JsonSerializer.Serialize(this);
+        }
+    }
+
+    /// <summary>
     /// Executes tool calls from the LLM by routing to appropriate services.
     /// Implements the generic IToolExecutor interface from Hazina.
     /// </summary>
@@ -24,6 +64,8 @@ namespace Hazina.Tools.Services.Chat.Tools
         private readonly Func<ChatService> _chatServiceFactory;
         private readonly Func<ProjectsRepository> _projectsRepositoryFactory;
         private readonly Func<ProjectChatRepository> _chatRepositoryFactory;
+        // STAP 28: Add notifier for component requests
+        private readonly IProjectChatNotifier _notifier;
 
         public ToolExecutor(
             ILogger<ToolExecutor> logger,
@@ -31,7 +73,8 @@ namespace Hazina.Tools.Services.Chat.Tools
             Func<IAnalysisFieldService> analysisFieldServiceFactory,
             Func<ChatService> chatServiceFactory,
             Func<ProjectsRepository> projectsRepositoryFactory = null,
-            Func<ProjectChatRepository> chatRepositoryFactory = null)
+            Func<ProjectChatRepository> chatRepositoryFactory = null,
+            IProjectChatNotifier notifier = null)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _dataGatheringServiceFactory = dataGatheringServiceFactory ?? throw new ArgumentNullException(nameof(dataGatheringServiceFactory));
@@ -39,6 +82,7 @@ namespace Hazina.Tools.Services.Chat.Tools
             _chatServiceFactory = chatServiceFactory ?? throw new ArgumentNullException(nameof(chatServiceFactory));
             _projectsRepositoryFactory = projectsRepositoryFactory;
             _chatRepositoryFactory = chatRepositoryFactory;
+            _notifier = notifier; // Can be null for unit testing
         }
 
         public async Task<IToolResult> ExecuteAsync(
@@ -524,7 +568,7 @@ namespace Hazina.Tools.Services.Chat.Tools
             }
         }
 
-        // STAP 9: Show Guidance Card implementation
+        // STAP 9 + STAP 28: Show Guidance Card implementation with SignalR notification
         private async Task<IToolResult> ExecuteShowGuidanceCardAsync(
             string argumentsJson,
             string context,
@@ -555,8 +599,34 @@ namespace Hazina.Tools.Services.Chat.Tools
             {
                 _logger.LogInformation("Showing guidance card: {QuestionText}", args.QuestionText);
 
-                // TODO: Actually send message to chat via ChatService
-                // For now, return success with AWAITING flag
+                // STAP 28: Parse context and send SignalR notification
+                var ctx = ToolExecutionContext.Parse(context);
+                if (_notifier != null && !string.IsNullOrEmpty(ctx.ProjectId))
+                {
+                    var componentData = new
+                    {
+                        questionText = args.QuestionText,
+                        helperText = args.HelperText,
+                        options = args.Options?.Select(o => new
+                        {
+                            label = o.Label,
+                            value = o.Value ?? o.Label,
+                            description = o.Description
+                        }).ToList(),
+                        freeTextAllowed = args.AllowFreeText
+                    };
+
+                    await _notifier.NotifyComponentRequested(
+                        ctx.ProjectId,
+                        ctx.ChatId,
+                        "chat/GuidanceQuestionCard",
+                        componentData);
+
+                    _logger.LogInformation(
+                        "GuidanceCard notification sent to project {ProjectId}, chat {ChatId}",
+                        ctx.ProjectId, ctx.ChatId);
+                }
+
                 return new ToolResult
                 {
                     Success = true,
@@ -577,7 +647,7 @@ namespace Hazina.Tools.Services.Chat.Tools
             }
         }
 
-        // STAP 10: Request File Upload implementation
+        // STAP 10 + STAP 28: Request File Upload implementation with SignalR notification
         private async Task<IToolResult> ExecuteRequestFileUploadAsync(
             string argumentsJson,
             string context,
@@ -608,8 +678,32 @@ namespace Hazina.Tools.Services.Chat.Tools
             {
                 _logger.LogInformation("Requesting file upload: {Title}", args.Title);
 
-                // TODO: Actually send message to chat via ChatService
-                // For now, return success with AWAITING flag
+                // STAP 28: Parse context and send SignalR notification
+                var ctx = ToolExecutionContext.Parse(context);
+                if (_notifier != null && !string.IsNullOrEmpty(ctx.ProjectId))
+                {
+                    var componentData = new
+                    {
+                        intent = "upload",
+                        spec = new
+                        {
+                            title = args.Title,
+                            acceptedMimeTypes = args.AcceptedMimeTypes,
+                            maxSizeMb = args.MaxSizeMb
+                        }
+                    };
+
+                    await _notifier.NotifyComponentRequested(
+                        ctx.ProjectId,
+                        ctx.ChatId,
+                        "chat/InputGuidanceCard",
+                        componentData);
+
+                    _logger.LogInformation(
+                        "FileUpload notification sent to project {ProjectId}, chat {ChatId}",
+                        ctx.ProjectId, ctx.ChatId);
+                }
+
                 return new ToolResult
                 {
                     Success = true,
@@ -630,7 +724,7 @@ namespace Hazina.Tools.Services.Chat.Tools
             }
         }
 
-        // STAP 11: Show System Status implementation
+        // STAP 11 + STAP 28: Show System Status implementation with SignalR notification
         private async Task<IToolResult> ExecuteShowSystemStatusAsync(
             string argumentsJson,
             string context,
@@ -662,8 +756,29 @@ namespace Hazina.Tools.Services.Chat.Tools
             {
                 _logger.LogInformation("Showing system status [{Severity}]: {Text}", args.Severity, args.Text);
 
-                // TODO: Actually send message to chat via ChatService
-                // For now, return success (no AWAITING needed for status lines)
+                // STAP 28: Parse context and send SignalR notification
+                var ctx = ToolExecutionContext.Parse(context);
+                if (_notifier != null && !string.IsNullOrEmpty(ctx.ProjectId))
+                {
+                    var componentData = new
+                    {
+                        severity = args.Severity.ToLower(),
+                        text = args.Text,
+                        linkTo = args.LinkTo
+                    };
+
+                    await _notifier.NotifyComponentRequested(
+                        ctx.ProjectId,
+                        ctx.ChatId,
+                        "chat/SystemStatusLine",
+                        componentData);
+
+                    _logger.LogInformation(
+                        "SystemStatus notification sent to project {ProjectId}, chat {ChatId}",
+                        ctx.ProjectId, ctx.ChatId);
+                }
+
+                // No AWAITING needed for status lines - they're informational only
                 return new ToolResult
                 {
                     Success = true,
@@ -683,7 +798,7 @@ namespace Hazina.Tools.Services.Chat.Tools
             }
         }
 
-        // STAP 12: Show Artifact implementation
+        // STAP 12 + STAP 28: Show Artifact implementation with SignalR notification
         private async Task<IToolResult> ExecuteShowArtifactAsync(
             string argumentsJson,
             string context,
@@ -716,8 +831,37 @@ namespace Hazina.Tools.Services.Chat.Tools
             {
                 _logger.LogInformation("Showing artifact [{ArtifactType}]: {Title}", args.ArtifactType, args.Title);
 
-                // TODO: Actually send message to chat via ChatService
-                // For now, return success (no AWAITING needed for artifacts)
+                // STAP 28: Parse context and send SignalR notification
+                var ctx = ToolExecutionContext.Parse(context);
+                if (_notifier != null && !string.IsNullOrEmpty(ctx.ProjectId))
+                {
+                    // Convert JsonElement to object for serialization
+                    object dataObj = null;
+                    if (args.Data.ValueKind != JsonValueKind.Undefined)
+                    {
+                        dataObj = JsonSerializer.Deserialize<object>(args.Data.GetRawText());
+                    }
+
+                    var componentData = new
+                    {
+                        artifactType = args.ArtifactType.ToLower(),
+                        title = args.Title,
+                        summary = args.Summary,
+                        data = dataObj
+                    };
+
+                    await _notifier.NotifyComponentRequested(
+                        ctx.ProjectId,
+                        ctx.ChatId,
+                        "chat/ArtifactCard",
+                        componentData);
+
+                    _logger.LogInformation(
+                        "ArtifactCard notification sent to project {ProjectId}, chat {ChatId}",
+                        ctx.ProjectId, ctx.ChatId);
+                }
+
+                // No AWAITING needed for artifacts - they're display only
                 return new ToolResult
                 {
                     Success = true,
