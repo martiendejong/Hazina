@@ -71,7 +71,7 @@ namespace Hazina.Tools.Data
 
         /// <summary>
         /// Gets store setup based on configuration settings.
-        /// Supports file-based, PostgreSQL, Supabase, and hybrid modes.
+        /// Supports SQLite, file-based, PostgreSQL, Supabase, and hybrid modes.
         /// </summary>
         /// <param name="config">Hazina configuration</param>
         /// <param name="folder">Folder for file-based storage (optional)</param>
@@ -85,6 +85,31 @@ namespace Hazina.Tools.Data
             var apiKey = config.ApiSettings?.OpenApiKey
                 ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY")
                 ?? throw new InvalidOperationException("OpenAI API key is required");
+
+            // Check if SQLite is enabled (new default)
+            if (config.SqliteSettings?.Enabled == true)
+            {
+                System.Console.WriteLine("Using SQLite backend for storage");
+
+                var projectFolder = folder ?? config.ProjectSettings?.ProjectsFolder;
+
+                if (config.SqliteSettings.EmbeddingsOptional)
+                {
+                    System.Console.WriteLine("Metadata-only mode (embeddings disabled)");
+                    return SqliteStoreProvider.GetMetadataOnlyStoreSetup(
+                        config.SqliteSettings,
+                        apiKey,
+                        projectFolder);
+                }
+                else
+                {
+                    return SqliteStoreProvider.GetSqliteStoreSetup(
+                        config.SqliteSettings,
+                        apiKey,
+                        embeddingDimension,
+                        projectFolder);
+                }
+            }
 
             // Check if Supabase is enabled
             if (config.SupabaseSettings?.Enabled == true)
@@ -112,12 +137,12 @@ namespace Hazina.Tools.Data
             }
 
             // Default to file-based storage
-            var projectFolder = folder
+            var defaultProjectFolder = folder
                 ?? config.ProjectSettings?.ProjectsFolder
                 ?? throw new InvalidOperationException("Project folder is required for file-based storage");
 
-            System.Console.WriteLine($"Using file-based storage in '{projectFolder}'");
-            return GetStoreSetup(projectFolder, apiKey);
+            System.Console.WriteLine($"Using file-based storage in '{defaultProjectFolder}'");
+            return GetStoreSetup(defaultProjectFolder, apiKey);
         }
 
         /// <summary>

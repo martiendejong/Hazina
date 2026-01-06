@@ -6,5 +6,6 @@ namespace HazinaStore.Models
         public ProjectSettings ProjectSettings;
         public GoogleOAuthSettings GoogleOAuthSettings;
         public SupabaseSettings SupabaseSettings;
+        public SqliteSettings SqliteSettings;
     }
 }
