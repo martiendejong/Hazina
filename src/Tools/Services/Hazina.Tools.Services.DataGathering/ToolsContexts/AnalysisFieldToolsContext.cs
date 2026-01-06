@@ -108,6 +108,7 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
         var key = GetStringParameter(toolCall, "key");
         var content = GetStringParameter(toolCall, "content");
         var reasoning = GetStringParameter(toolCall, "reasoning");
+        var regenerateParam = GetBoolParameter(toolCall, "regenerate");
 
         if (string.IsNullOrWhiteSpace(key))
             return JsonResult(false, "Parameter 'key' is required.");
@@ -123,18 +124,31 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
         if (field == null)
             return JsonResult(false, $"Unknown analysis field key: {key}");
 
-        // Check if field already exists on disk to prevent duplicates across sessions
+        // Smart regeneration logic - determine if we should proceed with generation
+        var shouldRegenerate = ShouldAllowRegeneration(key, regenerateParam, reasoning);
+
+        // Check if field already exists on disk
+        string? existingContent = null;
         if (_fileLocator is not null)
         {
             var filePath = _fileLocator.GetPath(_projectId, field.File);
             if (File.Exists(filePath))
             {
-                var existingContent = await File.ReadAllTextAsync(filePath, cancellationToken);
-                if (!string.IsNullOrWhiteSpace(existingContent))
-                {
-                    return JsonResult(true, $"Field {key} already exists with content. Skipping duplicate generation.");
-                }
+                existingContent = await File.ReadAllTextAsync(filePath, cancellationToken);
             }
+        }
+
+        // If field exists with content and regeneration is not allowed, skip
+        if (!string.IsNullOrWhiteSpace(existingContent) && !shouldRegenerate)
+        {
+            Console.WriteLine($"[AnalysisFieldToolsContext] Skipping {key}: exists with content and regeneration not triggered");
+            return JsonResult(true, $"Field {key} already exists. Use regenerate=true or provide new context to update.");
+        }
+
+        // Log regeneration intent
+        if (!string.IsNullOrWhiteSpace(existingContent) && shouldRegenerate)
+        {
+            Console.WriteLine($"[AnalysisFieldToolsContext] Regenerating {key}: regenerate={regenerateParam}, userRequested={_userRequestedRegeneration}, hasNewContext={_fieldsWithNewContext.Contains(key)}");
         }
 
         // ImageSet/logo requires special image generation pipeline (not text generation)
@@ -468,5 +482,98 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
         if (string.IsNullOrWhiteSpace(language))
             return string.Empty;
         return $"Please provide your output in {language}.";
+    }
+
+    private static bool GetBoolParameter(HazinaChatToolCall toolCall, string name)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(toolCall.FunctionArguments);
+            if (doc.RootElement.TryGetProperty(name, out var prop))
+            {
+                if (prop.ValueKind == JsonValueKind.True)
+                    return true;
+                if (prop.ValueKind == JsonValueKind.False)
+                    return false;
+                // Handle string "true"/"false" as well
+                var str = prop.GetString();
+                if (bool.TryParse(str, out var result))
+                    return result;
+            }
+        }
+        catch { }
+        return false;
+    }
+
+    /// <summary>
+    /// Determines if regeneration should be allowed for a field.
+    /// Uses smart logic to balance avoiding duplicates with allowing meaningful updates.
+    /// </summary>
+    private bool ShouldAllowRegeneration(string key, bool regenerateParam, string? reasoning)
+    {
+        // 1. LLM explicitly requested regeneration
+        if (regenerateParam)
+        {
+            Console.WriteLine($"[AnalysisFieldToolsContext] Regeneration allowed for {key}: LLM set regenerate=true");
+            return true;
+        }
+
+        // 2. User explicitly requested regeneration (detected from message)
+        if (_userRequestedRegeneration)
+        {
+            Console.WriteLine($"[AnalysisFieldToolsContext] Regeneration allowed for {key}: user requested regeneration");
+            return true;
+        }
+
+        // 3. This field was flagged as having significant new context
+        if (_fieldsWithNewContext.Contains(key))
+        {
+            Console.WriteLine($"[AnalysisFieldToolsContext] Regeneration allowed for {key}: field has new context");
+            return true;
+        }
+
+        // 4. Check if reasoning indicates an update intent
+        if (!string.IsNullOrWhiteSpace(reasoning))
+        {
+            var lowerReasoning = reasoning.ToLowerInvariant();
+            var updateIndicators = new[]
+            {
+                "update", "improve", "revise", "enhance", "new information",
+                "better", "refined", "corrected", "additional", "expanded",
+                "more detail", "based on new", "user provided", "user said",
+                "conversation revealed", "now we know"
+            };
+
+            if (updateIndicators.Any(indicator => lowerReasoning.Contains(indicator)))
+            {
+                Console.WriteLine($"[AnalysisFieldToolsContext] Regeneration allowed for {key}: reasoning indicates update intent");
+                return true;
+            }
+        }
+
+        // 5. Check user message for regeneration intent
+        if (!string.IsNullOrWhiteSpace(_userMessage))
+        {
+            var lowerMessage = _userMessage.ToLowerInvariant();
+            var fieldKeyLower = key.ToLowerInvariant().Replace("-", " ").Replace("_", " ");
+
+            // Check if user is talking about this specific field and wants to update it
+            if (lowerMessage.Contains(fieldKeyLower) || lowerMessage.Contains(key.ToLowerInvariant()))
+            {
+                var updatePhrases = new[]
+                {
+                    "regenerate", "update", "redo", "create again", "make new",
+                    "change", "modify", "revise", "fix", "improve"
+                };
+
+                if (updatePhrases.Any(phrase => lowerMessage.Contains(phrase)))
+                {
+                    Console.WriteLine($"[AnalysisFieldToolsContext] Regeneration allowed for {key}: user message indicates update for this field");
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
