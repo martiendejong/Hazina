@@ -77,14 +77,18 @@ namespace Hazina.Tools.Services.Chat.Orchestration
         }
 
         /// <summary>
-        /// Execute tools requested by the LLM
+        /// Execute tools requested by the LLM.
+        /// STAP 15: Enhanced to detect AwaitingUserResponse and pause orchestration.
         /// </summary>
-        private async Task<List<IToolResult>> ExecuteToolsAsync(
+        private async Task<ToolExecutionResult> ExecuteToolsAsync(
             List<IToolCall> toolCalls,
             string context,
             CancellationToken cancellationToken)
         {
-            var results = new List<IToolResult>();
+            var executionResult = new ToolExecutionResult
+            {
+                Results = new List<IToolResult>()
+            };
 
             foreach (var toolCall in toolCalls)
             {
@@ -96,17 +100,40 @@ namespace Hazina.Tools.Services.Chat.Orchestration
                     context,
                     cancellationToken);
 
-                results.Add(result);
+                executionResult.Results.Add(result);
 
                 _logger.LogInformation(
-                    "Tool {ToolName} executed. Success: {Success}, Tokens: {Tokens}",
+                    "Tool {ToolName} executed. Success: {Success}, Tokens: {Tokens}, AwaitingResponse: {Awaiting}",
                     toolCall.FunctionName,
                     result.Success,
-                    result.TokensUsed);
+                    result.TokensUsed,
+                    result.AwaitingUserResponse);
+
+                // STAP 15: Check if tool requires user response
+                if (result.AwaitingUserResponse)
+                {
+                    _logger.LogInformation(
+                        "Tool {ToolName} is awaiting user response. Pausing orchestration.",
+                        toolCall.FunctionName);
+
+                    executionResult.AwaitingUserResponse = true;
+                    executionResult.AwaitingToolResult = result;
+                    break; // Stop processing further tools
+                }
             }
 
-            return results;
+            return executionResult;
         }
+    }
+
+    /// <summary>
+    /// Internal result from tool execution batch (STAP 15)
+    /// </summary>
+    internal class ToolExecutionResult
+    {
+        public List<IToolResult> Results { get; set; }
+        public bool AwaitingUserResponse { get; set; }
+        public IToolResult AwaitingToolResult { get; set; }
     }
 
     /// <summary>
@@ -120,5 +147,17 @@ namespace Hazina.Tools.Services.Chat.Orchestration
         public int TotalTokensUsed { get; set; }
         public List<IToolCall> ToolCalls { get; set; }
         public List<IToolResult> ToolResults { get; set; }
+
+        // STAP 15: Support for async user response pattern
+        /// <summary>
+        /// Indicates if the orchestration is paused awaiting user response.
+        /// When true, the frontend should render interactive components and wait for user input.
+        /// </summary>
+        public bool AwaitingUserResponse { get; set; }
+
+        /// <summary>
+        /// The tool result that triggered the await state (contains guidance/upload request data)
+        /// </summary>
+        public IToolResult AwaitingToolResult { get; set; }
     }
 }

@@ -277,6 +277,18 @@ namespace Hazina.Tools.Services.Chat.Optimization
         /// Duration in milliseconds.
         /// </summary>
         public long DurationMs { get; set; }
+
+        // STAP 15: Support for async user response pattern
+        /// <summary>
+        /// Indicates if the orchestration is paused awaiting user response.
+        /// When true, the frontend should render interactive components and wait for user input.
+        /// </summary>
+        public bool AwaitingUserResponse { get; set; }
+
+        /// <summary>
+        /// The tool result data that triggered the await state (contains guidance/upload request data)
+        /// </summary>
+        public object? AwaitingToolData { get; set; }
     }
 
     /// <summary>
