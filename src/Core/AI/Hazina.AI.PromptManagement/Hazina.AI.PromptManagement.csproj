@@ -23,4 +23,10 @@
     <PackageReference Include="System.Text.Json" Version="9.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Hazina dependencies -->
+    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
+  </ItemGroup>
+
 </Project>

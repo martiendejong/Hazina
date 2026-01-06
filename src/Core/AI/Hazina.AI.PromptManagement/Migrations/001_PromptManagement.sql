@@ -366,3 +366,52 @@ COMMENT ON TABLE sandbox_tests IS 'Sandbox testing results before production dep
 COMMENT ON TABLE rollback_history IS 'History of all rollback operations';
 
 -- End of migration
+
+-- ============================================================================
+-- EVALUATION SCHEDULES
+-- ============================================================================
+
+-- Scheduled evaluation runs
+CREATE TABLE IF NOT EXISTS evaluation_schedules (
+    schedule_id VARCHAR(255) PRIMARY KEY,
+    prompt_id VARCHAR(255) NOT NULL REFERENCES prompt_templates(prompt_id) ON DELETE CASCADE,
+    test_set_id VARCHAR(255) NOT NULL REFERENCES eval_test_sets(test_set_id) ON DELETE CASCADE,
+    cron_expression VARCHAR(255) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_run_at TIMESTAMP,
+    next_run_at TIMESTAMP,
+    last_run_id VARCHAR(255)
+);
+
+CREATE INDEX idx_evaluation_schedules_prompt_id ON evaluation_schedules(prompt_id);
+CREATE INDEX idx_evaluation_schedules_is_active ON evaluation_schedules(is_active);
+CREATE INDEX idx_evaluation_schedules_next_run_at ON evaluation_schedules(next_run_at);
+
+-- ============================================================================
+-- REGRESSION REPORTS
+-- ============================================================================
+
+-- Regression detection reports
+CREATE TABLE IF NOT EXISTS regression_reports (
+    report_id VARCHAR(255) PRIMARY KEY,
+    prompt_id VARCHAR(255) NOT NULL REFERENCES prompt_templates(prompt_id) ON DELETE CASCADE,
+    baseline_version_id VARCHAR(64) NOT NULL REFERENCES prompt_versions(version_id),
+    new_version_id VARCHAR(64) NOT NULL REFERENCES prompt_versions(version_id),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    baseline_metrics JSONB NOT NULL,
+    new_metrics JSONB NOT NULL,
+    changes JSONB NOT NULL,  -- Percent changes per metric
+    has_regression BOOLEAN NOT NULL,
+    issues JSONB,  -- Array of regression issues
+    p_values JSONB,  -- Statistical significance p-values
+    is_significant JSONB  -- Statistical significance flags per metric
+);
+
+CREATE INDEX idx_regression_reports_prompt_id ON regression_reports(prompt_id);
+CREATE INDEX idx_regression_reports_created_at ON regression_reports(created_at DESC);
+CREATE INDEX idx_regression_reports_has_regression ON regression_reports(has_regression);
+
+COMMENT ON TABLE evaluation_schedules IS 'Scheduled recurring evaluation runs';
+COMMENT ON TABLE regression_reports IS 'Regression analysis comparing prompt versions';
+
