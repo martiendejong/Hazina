@@ -1,3 +1,5 @@
+using Hazina.LLMs;
+
 public class HazinaAgent
 {
     public string Name { get; set; }

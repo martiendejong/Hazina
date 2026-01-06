@@ -1,3 +1,5 @@
+using Hazina.LLMs;
+
 public class QuickAgentCreator
 {
     public QuickAgentCreator(AgentFactory f, ILLMClient client)

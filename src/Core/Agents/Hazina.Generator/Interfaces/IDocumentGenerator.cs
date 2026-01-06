@@ -1,3 +1,5 @@
+using Hazina.LLMs;
+
 public interface IDocumentGenerator
 {
     Task<LLMResponse<string>> GetResponse(string query, CancellationToken cancel, IEnumerable<HazinaChatMessage>? messages, bool addRelevantDocuments, bool addFilesList, IToolsContext toolsContext, List<ImageData> images);

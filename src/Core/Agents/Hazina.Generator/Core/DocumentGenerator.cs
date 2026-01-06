@@ -5,6 +5,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.Channels;
+using Hazina.LLMs;
 
 using static System.Net.Mime.MediaTypeNames;
 
