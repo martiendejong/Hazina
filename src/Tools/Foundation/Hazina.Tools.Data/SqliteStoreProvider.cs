@@ -1,3 +1,4 @@
+using System.IO;
 using Hazina.Store;
 using Hazina.Store.EmbeddingStore;
 using Hazina.Store.Sqlite;
@@ -57,9 +58,10 @@ namespace Hazina.Tools.Data
             var documentStore = new DocumentStore(embeddingStore, textStore, chunkStore, metadataStore, llmClient);
 
             // Create tag scoring components
-            // Note: TagRelevanceStore could be added to SQLite in the future if needed
-            // For now, using in-memory implementation
-            var tagRelevanceStore = new TagRelevanceMemoryStore();
+            // Note: TagRelevanceStore uses temporary file storage
+            // Could be migrated to SQLite tables in the future if needed
+            var tempPath = Path.Combine(Path.GetTempPath(), "hazina_tag_relevance");
+            var tagRelevanceStore = new TagRelevanceFileStore(tempPath);
             var tagScoringService = new LLMTagScoringService(llmClient, tagRelevanceStore);
             var compositeScorer = new DefaultCompositeScorer();
 
@@ -115,11 +117,15 @@ namespace Hazina.Tools.Data
 
             // Create a minimal embedding store that doesn't generate embeddings
             // This is a placeholder to satisfy DocumentStore constructor
-            var noOpEmbeddingStore = new EmbeddingMemoryStore(llmClient);
+            var memoryEmbeddingStore = new EmbeddingMemoryStore();
+            var embeddingGenerator = new LLMEmbeddingGenerator(llmClient, 1536);
+            var noOpEmbeddingStore = new LegacyTextEmbeddingStoreAdapter(memoryEmbeddingStore, embeddingGenerator);
 
             var documentStore = new DocumentStore(noOpEmbeddingStore, textStore, chunkStore, metadataStore, llmClient);
 
-            var tagRelevanceStore = new TagRelevanceMemoryStore();
+            // Create tag scoring components (using temporary file storage)
+            var tempPath = Path.Combine(Path.GetTempPath(), "hazina_tag_relevance");
+            var tagRelevanceStore = new TagRelevanceFileStore(tempPath);
             var tagScoringService = new LLMTagScoringService(llmClient, tagRelevanceStore);
             var compositeScorer = new DefaultCompositeScorer();
 
