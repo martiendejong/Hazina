@@ -503,3 +503,53 @@ CREATE INDEX idx_alert_rules_rule_type ON alert_rules(rule_type);
 COMMENT ON TABLE alerts IS 'Alert history for monitoring and troubleshooting';
 COMMENT ON TABLE alert_rules IS 'Alert rule configurations for automated monitoring';
 
+-- ============================================================================
+-- APPROVAL WORKFLOW
+-- ============================================================================
+
+-- Approval requests for prompt changes
+CREATE TABLE IF NOT EXISTS approval_requests (
+    request_id VARCHAR(255) PRIMARY KEY,
+    proposal_id VARCHAR(255) NOT NULL REFERENCES prompt_proposals(proposal_id) ON DELETE CASCADE,
+    prompt_id VARCHAR(255) NOT NULL REFERENCES prompt_templates(prompt_id) ON DELETE CASCADE,
+    status VARCHAR(50) NOT NULL,  -- "Pending" | "Approved" | "Rejected" | "Cancelled" | "Expired"
+    risk_level VARCHAR(50) NOT NULL,  -- "Low" | "Medium" | "High" | "Critical"
+    submitted_by VARCHAR(255) NOT NULL,
+    submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    assigned_to VARCHAR(255),  -- User ID assigned to review
+    reviewed_by VARCHAR(255),  -- User ID who reviewed
+    reviewed_at TIMESTAMP,
+    comments TEXT,  -- Approval/rejection comments
+    rejection_reason TEXT,
+    auto_approved BOOLEAN NOT NULL DEFAULT false,
+    auto_approval_reason TEXT,
+    metadata JSONB
+);
+
+CREATE INDEX idx_approval_requests_proposal ON approval_requests(proposal_id);
+CREATE INDEX idx_approval_requests_prompt ON approval_requests(prompt_id);
+CREATE INDEX idx_approval_requests_status ON approval_requests(status);
+CREATE INDEX idx_approval_requests_assigned_to ON approval_requests(assigned_to);
+CREATE INDEX idx_approval_requests_submitted_at ON approval_requests(submitted_at DESC);
+
+-- Approval configuration per prompt
+CREATE TABLE IF NOT EXISTS approval_configs (
+    prompt_id VARCHAR(255) PRIMARY KEY REFERENCES prompt_templates(prompt_id) ON DELETE CASCADE,
+    require_approval BOOLEAN NOT NULL DEFAULT true,
+    allow_auto_approval BOOLEAN NOT NULL DEFAULT true,
+    auto_approval_max_semantic_change FLOAT NOT NULL DEFAULT 0.10,  -- Max 10% semantic change
+    auto_approval_min_performance FLOAT NOT NULL DEFAULT 1.05,  -- Min 5% improvement
+    approver_user_ids JSONB,  -- Array of user IDs who can approve
+    approver_roles JSONB,  -- Array of role names who can approve
+    required_approvals INT NOT NULL DEFAULT 1,
+    approval_timeout INTERVAL NOT NULL DEFAULT '7 days',
+    notify_on_submission BOOLEAN NOT NULL DEFAULT true,
+    notification_channels JSONB,  -- Array of notification channels
+    metadata JSONB
+);
+
+CREATE INDEX idx_approval_configs_require_approval ON approval_configs(require_approval);
+
+COMMENT ON TABLE approval_requests IS 'Approval workflow for prompt change proposals';
+COMMENT ON TABLE approval_configs IS 'Approval configuration and policies per prompt';
+
