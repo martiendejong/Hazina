@@ -499,7 +499,16 @@ namespace Hazina.Tools.Services.Chat
                             }
                             succeeded = true;
                         }
-                        catch { /* Best effort */ }
+                        catch (Exception ex)
+                        {
+                            // Log the error for debugging - critical for diagnosing analysis field generation issues
+                            Console.WriteLine($"[ChatService] Analysis field generation failed for project {projectId}, chat {chatId}: {ex.Message}");
+                            Console.WriteLine($"[ChatService] Exception type: {ex.GetType().Name}");
+                            if (ex.InnerException != null)
+                            {
+                                Console.WriteLine($"[ChatService] Inner exception: {ex.InnerException.Message}");
+                            }
+                        }
                         finally
                         {
                             await _notifier.NotifyOperationStatus(

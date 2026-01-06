@@ -30,6 +30,11 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
     private readonly List<GeneratedAnalysisField> _generatedFields = new();
     private readonly List<string> _imageSetFieldsToGenerate = new();
 
+    // Smart regeneration context
+    private readonly bool _userRequestedRegeneration;
+    private readonly HashSet<string> _fieldsWithNewContext;
+    private readonly string? _userMessage;
+
     /// <summary>
     /// Gets the fields that were generated during tool execution.
     /// </summary>
@@ -49,7 +54,10 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
         string? userId,
         IReadOnlyList<AnalysisFieldInfo> availableFields,
         Func<GeneratorAgentBase>? agentFactory = null,
-        string? promptsRoot = null)
+        string? promptsRoot = null,
+        bool userRequestedRegeneration = false,
+        HashSet<string>? fieldsWithNewContext = null,
+        string? userMessage = null)
     {
         _fieldsProvider = fieldsProvider ?? throw new ArgumentNullException(nameof(fieldsProvider));
         _notifier = notifier ?? throw new ArgumentNullException(nameof(notifier));
@@ -60,6 +68,9 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
         _availableFields = availableFields ?? Array.Empty<AnalysisFieldInfo>();
         _agentFactory = agentFactory;
         _promptsRoot = promptsRoot ?? AppContext.BaseDirectory;
+        _userRequestedRegeneration = userRequestedRegeneration;
+        _fieldsWithNewContext = fieldsWithNewContext ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        _userMessage = userMessage;
 
         RegisterTools();
     }
@@ -67,11 +78,12 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
     private void RegisterTools()
     {
         Add("UpdateAnalysisField",
-            "Generate and save content for an analysis field. Only call when you have enough context to generate meaningful content. IMPORTANT: If the field has a 'typeSignature' (check GetAvailableFields), the content MUST be valid JSON matching that signature.",
+            "Generate and save content for an analysis field. Call this when: (1) The field doesn't exist yet and you have enough context, (2) The user explicitly asks to regenerate/update a field, (3) The conversation provides significantly new information that would substantially improve an existing field. IMPORTANT: If the field has a 'typeSignature' (check GetAvailableFields), the content MUST be valid JSON matching that signature.",
             [
                 CreateParameter("key", "The analysis field key (e.g., 'topic-synopsis', 'central-thesis')", "string", required: true),
                 CreateParameter("content", "The generated content for this analysis field. For fields with typeSignature, this must be valid JSON matching the signature.", "string", required: true),
-                CreateParameter("reasoning", "Brief explanation of why you generated this content now", "string", required: false)
+                CreateParameter("reasoning", "Brief explanation of why you generated this content now - especially important when updating an existing field", "string", required: false),
+                CreateParameter("regenerate", "Set to true when intentionally updating/regenerating an existing field due to user request or significant new information", "boolean", required: false)
             ],
             UpdateAnalysisFieldAsync);
 
