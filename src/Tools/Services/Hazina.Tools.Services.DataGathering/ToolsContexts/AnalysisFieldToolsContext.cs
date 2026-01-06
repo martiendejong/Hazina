@@ -518,30 +518,51 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
             return true;
         }
 
-        // 2. User explicitly requested regeneration (detected from message)
-        if (_userRequestedRegeneration)
-        {
-            Console.WriteLine($"[AnalysisFieldToolsContext] Regeneration allowed for {key}: user requested regeneration");
-            return true;
-        }
-
-        // 3. This field was flagged as having significant new context
+        // 2. This field was flagged as having significant new context
         if (_fieldsWithNewContext.Contains(key))
         {
             Console.WriteLine($"[AnalysisFieldToolsContext] Regeneration allowed for {key}: field has new context");
             return true;
         }
 
-        // 4. Check if reasoning indicates an update intent
+        // 3. User explicitly requested regeneration - but check if it's for ALL fields or this specific one
+        if (_userRequestedRegeneration)
+        {
+            // Check if user message mentions "all" fields or this specific field
+            if (!string.IsNullOrWhiteSpace(_userMessage))
+            {
+                var lowerMessage = _userMessage.ToLowerInvariant();
+                var fieldKeyLower = key.ToLowerInvariant().Replace("-", " ").Replace("_", " ");
+
+                // Allow if user said "all" or specifically mentioned this field
+                var isGlobalRequest = lowerMessage.Contains("all field") || lowerMessage.Contains("all analysis") ||
+                                      lowerMessage.Contains("regenerate all") || lowerMessage.Contains("redo all");
+                var mentionsThisField = lowerMessage.Contains(fieldKeyLower) || lowerMessage.Contains(key.ToLowerInvariant());
+
+                if (isGlobalRequest || mentionsThisField)
+                {
+                    Console.WriteLine($"[AnalysisFieldToolsContext] Regeneration allowed for {key}: user requested regeneration (global={isGlobalRequest}, specific={mentionsThisField})");
+                    return true;
+                }
+            }
+            else
+            {
+                // No message context, allow regeneration for all (fallback)
+                Console.WriteLine($"[AnalysisFieldToolsContext] Regeneration allowed for {key}: user requested regeneration (no message context)");
+                return true;
+            }
+        }
+
+        // 4. Check if reasoning indicates an update intent with specific justification
         if (!string.IsNullOrWhiteSpace(reasoning))
         {
             var lowerReasoning = reasoning.ToLowerInvariant();
+            // More specific update indicators that show actual new information
             var updateIndicators = new[]
             {
-                "update", "improve", "revise", "enhance", "new information",
-                "better", "refined", "corrected", "additional", "expanded",
-                "more detail", "based on new", "user provided", "user said",
-                "conversation revealed", "now we know"
+                "new information", "user corrected", "user clarified",
+                "based on new", "user provided", "user said",
+                "conversation revealed", "now we know", "updated to reflect"
             };
 
             if (updateIndicators.Any(indicator => lowerReasoning.Contains(indicator)))
@@ -551,19 +572,18 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
             }
         }
 
-        // 5. Check user message for regeneration intent
+        // 5. Check user message for field-specific regeneration intent
         if (!string.IsNullOrWhiteSpace(_userMessage))
         {
             var lowerMessage = _userMessage.ToLowerInvariant();
             var fieldKeyLower = key.ToLowerInvariant().Replace("-", " ").Replace("_", " ");
 
-            // Check if user is talking about this specific field and wants to update it
+            // Only allow if user specifically mentions this field with an update verb
             if (lowerMessage.Contains(fieldKeyLower) || lowerMessage.Contains(key.ToLowerInvariant()))
             {
                 var updatePhrases = new[]
                 {
-                    "regenerate", "update", "redo", "create again", "make new",
-                    "change", "modify", "revise", "fix", "improve"
+                    "regenerate", "redo", "create again", "make new", "recreate"
                 };
 
                 if (updatePhrases.Any(phrase => lowerMessage.Contains(phrase)))

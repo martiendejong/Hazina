@@ -587,13 +587,13 @@ IMPORTANT: Some fields may already be generated (marked [ALREADY GENERATED]).
 
         var lowerMessage = userMessage.ToLowerInvariant();
 
-        // Strong regeneration intent phrases
+        // Strong regeneration intent phrases - these are unambiguous
         var strongIntentPhrases = new[]
         {
             "regenerate", "re-generate", "generate again", "create again",
-            "redo", "re-do", "remake", "re-make",
-            "update the", "update my", "update all",
-            "refresh", "recreate", "re-create"
+            "redo the analysis", "re-do the analysis", "remake", "re-make",
+            "update all fields", "refresh all", "recreate", "re-create",
+            "regenerate all", "redo all"
         };
 
         if (strongIntentPhrases.Any(phrase => lowerMessage.Contains(phrase)))
@@ -602,20 +602,19 @@ IMPORTANT: Some fields may already be generated (marked [ALREADY GENERATED]).
             return true;
         }
 
-        // Check for field-specific update requests
-        var fieldUpdatePatterns = new[]
-        {
-            "change the", "modify the", "fix the", "improve the",
-            "make the .* better", "update .* field", "regenerate .* field"
-        };
+        // Field-specific update patterns - require "field" or "analysis" context
+        // Using pre-compiled-style patterns to be more specific
+        var fieldContextIndicators = new[] { "field", "analysis", "generated", "content" };
+        var updateVerbs = new[] { "regenerate", "update", "redo", "refresh", "recreate", "fix", "improve", "change" };
 
-        foreach (var pattern in fieldUpdatePatterns)
+        // Check if message has both a field context indicator AND an update verb
+        var hasFieldContext = fieldContextIndicators.Any(ind => lowerMessage.Contains(ind));
+        var hasUpdateVerb = updateVerbs.Any(verb => lowerMessage.Contains(verb));
+
+        if (hasFieldContext && hasUpdateVerb)
         {
-            if (System.Text.RegularExpressions.Regex.IsMatch(lowerMessage, pattern))
-            {
-                Console.WriteLine($"[AnalysisFieldService] Detected regeneration intent: field update pattern match");
-                return true;
-            }
+            Console.WriteLine($"[AnalysisFieldService] Detected regeneration intent: field context + update verb");
+            return true;
         }
 
         return false;
@@ -663,37 +662,50 @@ IMPORTANT: Some fields may already be generated (marked [ALREADY GENERATED]).
         // Field name keywords to detect relevance
         var fieldKeywords = GetFieldKeywords(field);
 
-        // Check if message is relevant to this field
-        var isRelevant = fieldKeywords.Any(kw => lowerMessage.Contains(kw));
-        if (!isRelevant)
+        // Check if message is relevant to this field (require at least one keyword match)
+        var matchedKeywords = fieldKeywords.Count(kw => lowerMessage.Contains(kw));
+        if (matchedKeywords == 0)
             return false;
 
-        // Check for "new information" indicators
-        var newInfoIndicators = new[]
+        // Check for explicit correction/clarification phrases (more specific than before)
+        var correctionPhrases = new[]
         {
-            "actually", "instead", "rather", "changed", "new", "different",
-            "not really", "i meant", "correction", "let me clarify",
-            "more specifically", "to be more precise", "i should mention",
-            "i forgot to mention", "also", "additionally", "furthermore"
+            "actually it's", "actually its", "instead of", "rather than",
+            "i meant", "correction:", "let me clarify", "to clarify",
+            "more specifically", "to be more precise", "i should mention that",
+            "i forgot to mention", "i need to correct", "that's not right",
+            "the correct", "should be", "is actually"
         };
 
-        if (newInfoIndicators.Any(ind => lowerMessage.Contains(ind)))
+        if (correctionPhrases.Any(phrase => lowerMessage.Contains(phrase)))
             return true;
 
-        // Check if this is substantial new information (message is long and relevant)
-        if (lowerMessage.Length > 100 && fieldKeywords.Count(kw => lowerMessage.Contains(kw)) >= 2)
+        // Check if this is substantial new information (message is long and highly relevant)
+        // Require at least 2 keyword matches for longer messages
+        if (lowerMessage.Length > 150 && matchedKeywords >= 2)
             return true;
 
         // Check if user is providing specific details that weren't in history
         var userMessages = history.Where(m => m.Role == HazinaMessageRole.User).Select(m => m.Text?.ToLowerInvariant() ?? "").ToList();
+
+        // Skip this check if no history (first message shouldn't trigger regeneration)
+        if (userMessages.Count == 0)
+            return false;
+
         var previousContent = string.Join(" ", userMessages);
 
-        // Simple heuristic: if this message has substantial content not in previous messages
-        var words = lowerMessage.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var newWords = words.Where(w => w.Length > 4 && !previousContent.Contains(w)).ToList();
+        // Simple heuristic: if this message has substantial NEW content not in previous messages
+        var words = lowerMessage.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Where(w => w.Length > 5) // Only consider words > 5 chars (more meaningful)
+            .ToList();
 
-        // If more than 30% of substantial words are new, consider it new context
-        if (words.Length > 10 && newWords.Count > words.Length * 0.3)
+        if (words.Count < 5) // Not enough substantial words to analyze
+            return false;
+
+        var newWords = words.Where(w => !previousContent.Contains(w)).ToList();
+
+        // If more than 40% of substantial words are new AND message is relevant, consider it new context
+        if (newWords.Count > words.Count * 0.4)
             return true;
 
         return false;
