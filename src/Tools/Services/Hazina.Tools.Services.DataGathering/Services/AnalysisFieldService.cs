@@ -685,7 +685,7 @@ IMPORTANT: Some fields may already be generated (marked [ALREADY GENERATED]).
             return true;
 
         // Check if user is providing specific details that weren't in history
-        var userMessages = history.Where(m => m.Role == HazinaMessageRole.User).Select(m => m.Content?.ToLowerInvariant() ?? "").ToList();
+        var userMessages = history.Where(m => m.Role == HazinaMessageRole.User).Select(m => m.Text?.ToLowerInvariant() ?? "").ToList();
         var previousContent = string.Join(" ", userMessages);
 
         // Simple heuristic: if this message has substantial content not in previous messages
