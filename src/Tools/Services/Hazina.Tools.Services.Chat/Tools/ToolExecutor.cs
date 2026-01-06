@@ -58,6 +58,11 @@ namespace Hazina.Tools.Services.Chat.Tools
                     "generate_image" => await ExecuteGenerateImageAsync(argumentsJson, context, cancellationToken),
                     "rename_project" => await ExecuteRenameProjectAsync(argumentsJson, context, cancellationToken),
                     "rename_chat" => await ExecuteRenameChatAsync(argumentsJson, context, cancellationToken),
+                    // STAP 9-12: New interactive tools
+                    "show_guidance_card" => await ExecuteShowGuidanceCardAsync(argumentsJson, context, cancellationToken),
+                    "request_file_upload" => await ExecuteRequestFileUploadAsync(argumentsJson, context, cancellationToken),
+                    "show_system_status" => await ExecuteShowSystemStatusAsync(argumentsJson, context, cancellationToken),
+                    "show_artifact" => await ExecuteShowArtifactAsync(argumentsJson, context, cancellationToken),
                     _ => new ToolResult
                     {
                         Success = false,
@@ -189,6 +194,124 @@ namespace Hazina.Tools.Services.Chat.Tools
                             }
                         },
                         ""required"": [""project_id"", ""chat_id"", ""new_name""]
+                    }")
+                },
+                // STAP 9: Guidance Card Tool
+                new ToolDefinition
+                {
+                    Name = "show_guidance_card",
+                    Description = "Present a guidance question to the user with 2-4 options to choose from. Use this when you need user input to make a decision or when offering alternatives. The LLM will pause and wait for user response.",
+                    Parameters = JsonSerializer.Deserialize<JsonElement>(@"{
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""question_text"": {
+                                ""type"": ""string"",
+                                ""description"": ""The main question to ask the user""
+                            },
+                            ""helper_text"": {
+                                ""type"": ""string"",
+                                ""description"": ""Optional additional context or explanation""
+                            },
+                            ""options"": {
+                                ""type"": ""array"",
+                                ""description"": ""2-4 options for the user to choose from"",
+                                ""items"": {
+                                    ""type"": ""object"",
+                                    ""properties"": {
+                                        ""label"": { ""type"": ""string"" },
+                                        ""value"": { ""type"": ""string"" },
+                                        ""description"": { ""type"": ""string"" }
+                                    },
+                                    ""required"": [""label""]
+                                },
+                                ""minItems"": 2,
+                                ""maxItems"": 4
+                            },
+                            ""allow_free_text"": {
+                                ""type"": ""boolean"",
+                                ""description"": ""Whether to allow user to provide free-form text instead of selecting an option""
+                            }
+                        },
+                        ""required"": [""question_text"", ""options""]
+                    }")
+                },
+                // STAP 10: File Upload Tool
+                new ToolDefinition
+                {
+                    Name = "request_file_upload",
+                    Description = "Request the user to upload a file. Use this when you need the user to provide a document, image, or other file. The LLM will pause and wait for the file upload.",
+                    Parameters = JsonSerializer.Deserialize<JsonElement>(@"{
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""title"": {
+                                ""type"": ""string"",
+                                ""description"": ""Title for the upload request""
+                            },
+                            ""accepted_mime_types"": {
+                                ""type"": ""array"",
+                                ""description"": ""Allowed MIME types (e.g., ['image/*', 'application/pdf'])"",
+                                ""items"": { ""type"": ""string"" }
+                            },
+                            ""max_size_mb"": {
+                                ""type"": ""number"",
+                                ""description"": ""Maximum file size in megabytes""
+                            }
+                        },
+                        ""required"": [""title""]
+                    }")
+                },
+                // STAP 11: System Status Tool
+                new ToolDefinition
+                {
+                    Name = "show_system_status",
+                    Description = "Display a system status message to provide feedback about ongoing operations, completed tasks, or important information. Use this to keep the user informed about what's happening.",
+                    Parameters = JsonSerializer.Deserialize<JsonElement>(@"{
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""severity"": {
+                                ""type"": ""string"",
+                                ""enum"": [""info"", ""success"", ""warning"", ""error""],
+                                ""description"": ""The severity level of the status message""
+                            },
+                            ""text"": {
+                                ""type"": ""string"",
+                                ""description"": ""The status message text""
+                            },
+                            ""link_to"": {
+                                ""type"": ""string"",
+                                ""description"": ""Optional link to a related resource or action""
+                            }
+                        },
+                        ""required"": [""severity"", ""text""]
+                    }")
+                },
+                // STAP 12: Show Artifact Tool
+                new ToolDefinition
+                {
+                    Name = "show_artifact",
+                    Description = "Display a generated artifact (document, image, color scheme, etc.) in the chat. Use this to present created content to the user with actions they can take.",
+                    Parameters = JsonSerializer.Deserialize<JsonElement>(@"{
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""artifact_type"": {
+                                ""type"": ""string"",
+                                ""enum"": [""document"", ""image"", ""color-scheme"", ""typography"", ""logo"", ""other""],
+                                ""description"": ""The type of artifact being displayed""
+                            },
+                            ""title"": {
+                                ""type"": ""string"",
+                                ""description"": ""Title of the artifact""
+                            },
+                            ""summary"": {
+                                ""type"": ""string"",
+                                ""description"": ""Brief description of the artifact""
+                            },
+                            ""data"": {
+                                ""type"": ""object"",
+                                ""description"": ""The artifact data (structure depends on artifact_type)""
+                            }
+                        },
+                        ""required"": [""artifact_type"", ""title"", ""data""]
                     }")
                 }
             };
@@ -401,6 +524,219 @@ namespace Hazina.Tools.Services.Chat.Tools
             }
         }
 
+        // STAP 9: Show Guidance Card implementation
+        private async Task<IToolResult> ExecuteShowGuidanceCardAsync(
+            string argumentsJson,
+            string context,
+            CancellationToken cancellationToken)
+        {
+            var args = JsonSerializer.Deserialize<GuidanceCardArgs>(argumentsJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (args == null || string.IsNullOrWhiteSpace(args.QuestionText))
+            {
+                return new ToolResult { Success = false, Error = "Invalid arguments: question_text is required", TokensUsed = 0 };
+            }
+
+            // Validate options count (2-4 options required)
+            if (args.Options == null || args.Options.Count < 2 || args.Options.Count > 4)
+            {
+                return new ToolResult
+                {
+                    Success = false,
+                    Error = "Invalid arguments: options must contain 2-4 items",
+                    TokensUsed = 0
+                };
+            }
+
+            try
+            {
+                _logger.LogInformation("Showing guidance card: {QuestionText}", args.QuestionText);
+
+                // TODO: Actually send message to chat via ChatService
+                // For now, return success with AWAITING flag
+                return new ToolResult
+                {
+                    Success = true,
+                    AwaitingUserResponse = true, // STAP 8: Signal that we're waiting for user
+                    Result = new
+                    {
+                        message = "Guidance card displayed, awaiting user response",
+                        questionText = args.QuestionText,
+                        optionsCount = args.Options.Count
+                    },
+                    TokensUsed = EstimateTokens(argumentsJson)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error showing guidance card");
+                return new ToolResult { Success = false, Error = ex.Message, TokensUsed = 0 };
+            }
+        }
+
+        // STAP 10: Request File Upload implementation
+        private async Task<IToolResult> ExecuteRequestFileUploadAsync(
+            string argumentsJson,
+            string context,
+            CancellationToken cancellationToken)
+        {
+            var args = JsonSerializer.Deserialize<FileUploadArgs>(argumentsJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (args == null || string.IsNullOrWhiteSpace(args.Title))
+            {
+                return new ToolResult { Success = false, Error = "Invalid arguments: title is required", TokensUsed = 0 };
+            }
+
+            // Validate max size if provided
+            if (args.MaxSizeMb.HasValue && args.MaxSizeMb.Value <= 0)
+            {
+                return new ToolResult
+                {
+                    Success = false,
+                    Error = "Invalid arguments: max_size_mb must be greater than 0",
+                    TokensUsed = 0
+                };
+            }
+
+            try
+            {
+                _logger.LogInformation("Requesting file upload: {Title}", args.Title);
+
+                // TODO: Actually send message to chat via ChatService
+                // For now, return success with AWAITING flag
+                return new ToolResult
+                {
+                    Success = true,
+                    AwaitingUserResponse = true, // STAP 8: Signal that we're waiting for user
+                    Result = new
+                    {
+                        message = "File upload request displayed, awaiting user upload",
+                        title = args.Title,
+                        acceptedMimeTypes = args.AcceptedMimeTypes
+                    },
+                    TokensUsed = EstimateTokens(argumentsJson)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error requesting file upload");
+                return new ToolResult { Success = false, Error = ex.Message, TokensUsed = 0 };
+            }
+        }
+
+        // STAP 11: Show System Status implementation
+        private async Task<IToolResult> ExecuteShowSystemStatusAsync(
+            string argumentsJson,
+            string context,
+            CancellationToken cancellationToken)
+        {
+            var args = JsonSerializer.Deserialize<SystemStatusArgs>(argumentsJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (args == null || string.IsNullOrWhiteSpace(args.Severity) || string.IsNullOrWhiteSpace(args.Text))
+            {
+                return new ToolResult { Success = false, Error = "Invalid arguments: severity and text are required", TokensUsed = 0 };
+            }
+
+            // Validate severity
+            var validSeverities = new[] { "info", "success", "warning", "error" };
+            if (!validSeverities.Contains(args.Severity.ToLower()))
+            {
+                return new ToolResult
+                {
+                    Success = false,
+                    Error = $"Invalid severity: must be one of {string.Join(", ", validSeverities)}",
+                    TokensUsed = 0
+                };
+            }
+
+            try
+            {
+                _logger.LogInformation("Showing system status [{Severity}]: {Text}", args.Severity, args.Text);
+
+                // TODO: Actually send message to chat via ChatService
+                // For now, return success (no AWAITING needed for status lines)
+                return new ToolResult
+                {
+                    Success = true,
+                    Result = new
+                    {
+                        message = "System status displayed",
+                        severity = args.Severity,
+                        text = args.Text
+                    },
+                    TokensUsed = EstimateTokens(argumentsJson)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error showing system status");
+                return new ToolResult { Success = false, Error = ex.Message, TokensUsed = 0 };
+            }
+        }
+
+        // STAP 12: Show Artifact implementation
+        private async Task<IToolResult> ExecuteShowArtifactAsync(
+            string argumentsJson,
+            string context,
+            CancellationToken cancellationToken)
+        {
+            var args = JsonSerializer.Deserialize<ShowArtifactArgs>(argumentsJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (args == null || string.IsNullOrWhiteSpace(args.ArtifactType) ||
+                string.IsNullOrWhiteSpace(args.Title) || args.Data.ValueKind == JsonValueKind.Undefined)
+            {
+                return new ToolResult { Success = false, Error = "Invalid arguments: artifact_type, title, and data are required", TokensUsed = 0 };
+            }
+
+            // Validate artifact type
+            var validTypes = new[] { "document", "image", "color-scheme", "typography", "logo", "other" };
+            if (!validTypes.Contains(args.ArtifactType.ToLower()))
+            {
+                return new ToolResult
+                {
+                    Success = false,
+                    Error = $"Invalid artifact_type: must be one of {string.Join(", ", validTypes)}",
+                    TokensUsed = 0
+                };
+            }
+
+            try
+            {
+                _logger.LogInformation("Showing artifact [{ArtifactType}]: {Title}", args.ArtifactType, args.Title);
+
+                // TODO: Actually send message to chat via ChatService
+                // For now, return success (no AWAITING needed for artifacts)
+                return new ToolResult
+                {
+                    Success = true,
+                    Result = new
+                    {
+                        message = "Artifact displayed",
+                        artifactType = args.ArtifactType,
+                        title = args.Title
+                    },
+                    TokensUsed = EstimateTokens(argumentsJson)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error showing artifact");
+                return new ToolResult { Success = false, Error = ex.Message, TokensUsed = 0 };
+            }
+        }
+
         private int EstimateTokens(string text)
         {
             return (text?.Length ?? 0) / 4; // Rough estimation: ~4 characters per token
@@ -438,6 +774,44 @@ namespace Hazina.Tools.Services.Chat.Tools
             public string ProjectId { get; set; }
             public string ChatId { get; set; }
             public string NewName { get; set; }
+        }
+
+        // STAP 9-12: New tool argument classes
+        private class GuidanceCardArgs
+        {
+            public string QuestionText { get; set; }
+            public string HelperText { get; set; }
+            public List<GuidanceOptionArg> Options { get; set; }
+            public bool AllowFreeText { get; set; }
+        }
+
+        private class GuidanceOptionArg
+        {
+            public string Label { get; set; }
+            public string Value { get; set; }
+            public string Description { get; set; }
+        }
+
+        private class FileUploadArgs
+        {
+            public string Title { get; set; }
+            public List<string> AcceptedMimeTypes { get; set; }
+            public double? MaxSizeMb { get; set; }
+        }
+
+        private class SystemStatusArgs
+        {
+            public string Severity { get; set; }
+            public string Text { get; set; }
+            public string LinkTo { get; set; }
+        }
+
+        private class ShowArtifactArgs
+        {
+            public string ArtifactType { get; set; }
+            public string Title { get; set; }
+            public string Summary { get; set; }
+            public JsonElement Data { get; set; }
         }
     }
 }

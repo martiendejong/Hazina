@@ -32,6 +32,12 @@ public interface IToolResult
     string Error { get; set; }
     int TokensUsed { get; set; }
     object? Result { get; set; }
+
+    // STAP 8: Support for async user response pattern (backwards compatible)
+    /// <summary>
+    /// Indicates if the tool execution requires user response before continuing
+    /// </summary>
+    bool AwaitingUserResponse { get; set; }
 }
 
 /// <summary>
@@ -71,4 +77,7 @@ public sealed class ToolResult : IToolResult
     public string Error { get; set; } = string.Empty;
     public int TokensUsed { get; set; }
     public object? Result { get; set; }
+
+    // STAP 8: Default to false for backward compatibility
+    public bool AwaitingUserResponse { get; set; } = false;
 }

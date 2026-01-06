@@ -10,6 +10,12 @@ namespace Hazina.LLMs.Tools
         object Result { get; }
         string Error { get; }
         int TokensUsed { get; }
+
+        // STAP 8: Support for async user response pattern (backwards compatible)
+        /// <summary>
+        /// Indicates if the tool execution requires user response before continuing
+        /// </summary>
+        bool AwaitingUserResponse { get; }
     }
 
     /// <summary>
@@ -22,5 +28,8 @@ namespace Hazina.LLMs.Tools
         public object Result { get; set; }
         public string Error { get; set; }
         public int TokensUsed { get; set; }
+
+        // STAP 8: Default to false for backward compatibility
+        public bool AwaitingUserResponse { get; set; } = false;
     }
 }
