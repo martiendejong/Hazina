@@ -133,6 +133,7 @@ CREATE TABLE IF NOT EXISTS reflection_reports (
     failure_patterns JSONB,  -- Array of { pattern, frequency, examples[], rootCause }
     success_patterns JSONB,  -- Array of { pattern, frequency, examples[], keyFactors[] }
     improvement_hypotheses JSONB,  -- Array of { hypothesis, expectedImpact, rationale, priority }
+    overall_assessment TEXT,  -- LLM-generated summary assessment
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     metadata JSONB
 );
