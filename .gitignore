@@ -96,3 +96,5 @@ nul
 build_errors.log
 *.tmp
 *.temp
+/Tests/Core/Hazina.LLMs.OpenAI.Tests
+/Tests/Core/Hazina.LLMs.OpenAI.Tests/appsettings.example.json
