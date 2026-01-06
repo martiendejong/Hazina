@@ -1,3 +1,4 @@
+namespace Hazina.LLMs;
 
 public interface IToolsContext
 {

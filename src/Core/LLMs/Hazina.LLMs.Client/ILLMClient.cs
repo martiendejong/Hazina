@@ -1,3 +1,5 @@
+namespace Hazina.LLMs;
+
 public interface ILLMClient
 {
     public Task<Embedding> GenerateEmbedding(string data);

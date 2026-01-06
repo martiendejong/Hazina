@@ -1,3 +1,4 @@
+using Hazina.LLMs;
 using Hazina.Observability.LLMLogs.Configuration;
 using Hazina.Observability.LLMLogs.Decorators;
 using Hazina.Observability.LLMLogs.Storage;
