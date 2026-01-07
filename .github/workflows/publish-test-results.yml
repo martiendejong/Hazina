@@ -1,0 +1,37 @@
+name: Publish Test Results
+
+on:
+  workflow_run:
+    workflows: ["Build, Test, and Security Scan"]
+    types:
+      - completed
+
+permissions:
+  checks: write
+  pull-requests: write
+
+jobs:
+  publish-test-results:
+    name: Publish Test Results
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion != 'skipped'
+
+    steps:
+    - name: Download test results artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: test-results
+        path: TestResults
+        run-id: ${{ github.event.workflow_run.id }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      with:
+        files: |
+          TestResults/**/*.trx
+        check_name: Test Results
+        comment_mode: off
+        commit: ${{ github.event.workflow_run.head_sha }}
+        event_file: ${{ github.event_path }}
+        event_name: ${{ github.event.workflow_run.event }}
