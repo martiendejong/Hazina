@@ -328,15 +328,7 @@ namespace Hazina.Tools.Services.Chat.Tests.Optimization
         public async Task ClassifyRequestAsync_ShouldReturnFullExploration_ForComplexRequest()
         {
             // Arrange
-            _mockCache.Setup(x => x.GetDataAsync(_testProjectId, It.IsAny<List<string>>()))
-                .ReturnsAsync(new DataRetrievalResult
-                {
-                    AllFound = false,
-                    FoundFields = new Dictionary<string, string>(),
-                    MissingFields = new List<string>()
-                });
-
-            var message = "Can you analyze our brand positioning and suggest improvements based on market trends?";
+            var message = "Can you analyze the overall positioning and suggest improvements based on industry trends?";
 
             // Act
             var result = await _classifier.ClassifyRequestAsync(message, new List<ConversationMessage>(), _testProjectId);
