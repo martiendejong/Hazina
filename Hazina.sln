@@ -269,6 +269,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Migration", "Migration", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Migration", "src\Tools\Migration\Hazina.Tools.Migration\Hazina.Tools.Migration.csproj", "{2682D572-CF6E-4630-BA52-20C6AFA787C3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.ToolAgent.Tests", "Tests\Tools\Hazina.Tools.Services.ToolAgent.Tests\Hazina.Tools.Services.ToolAgent.Tests.csproj", "{F1035CDA-812B-4DEF-8179-F9ECDA197E13}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1503,6 +1505,18 @@ Global
 		{2682D572-CF6E-4630-BA52-20C6AFA787C3}.Release|x64.Build.0 = Release|Any CPU
 		{2682D572-CF6E-4630-BA52-20C6AFA787C3}.Release|x86.ActiveCfg = Release|Any CPU
 		{2682D572-CF6E-4630-BA52-20C6AFA787C3}.Release|x86.Build.0 = Release|Any CPU
+		{F1035CDA-812B-4DEF-8179-F9ECDA197E13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1035CDA-812B-4DEF-8179-F9ECDA197E13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1035CDA-812B-4DEF-8179-F9ECDA197E13}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F1035CDA-812B-4DEF-8179-F9ECDA197E13}.Debug|x64.Build.0 = Debug|Any CPU
+		{F1035CDA-812B-4DEF-8179-F9ECDA197E13}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F1035CDA-812B-4DEF-8179-F9ECDA197E13}.Debug|x86.Build.0 = Debug|Any CPU
+		{F1035CDA-812B-4DEF-8179-F9ECDA197E13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1035CDA-812B-4DEF-8179-F9ECDA197E13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1035CDA-812B-4DEF-8179-F9ECDA197E13}.Release|x64.ActiveCfg = Release|Any CPU
+		{F1035CDA-812B-4DEF-8179-F9ECDA197E13}.Release|x64.Build.0 = Release|Any CPU
+		{F1035CDA-812B-4DEF-8179-F9ECDA197E13}.Release|x86.ActiveCfg = Release|Any CPU
+		{F1035CDA-812B-4DEF-8179-F9ECDA197E13}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1605,5 +1619,6 @@ Global
 		{29DFB8B7-DED2-4770-8ED7-1607162AAF8C} = {8B11B76D-5A20-764E-9E1E-046D610E904C}
 		{8CE3416F-8149-91E5-7003-70529B981347} = {DCB6FCB8-FF92-AC57-0842-1F72A354D6B1}
 		{2682D572-CF6E-4630-BA52-20C6AFA787C3} = {8CE3416F-8149-91E5-7003-70529B981347}
+		{F1035CDA-812B-4DEF-8179-F9ECDA197E13} = {3F86C8B1-9580-8D67-A31D-4233E94104AC}
 	EndGlobalSection
 EndGlobal
