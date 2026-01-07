@@ -25,8 +25,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "11. CLI & Web Apps", "11. C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "12. Demos", "12. Demos", "{CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.App.ClaudeCode", "apps\CLI\Hazina.App.ClaudeCode\Hazina.App.ClaudeCode.csproj", "{CDBFC62E-6D14-490E-B6AF-E18D7206D94F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Demo.Crosslink", "apps\Demos\Hazina.Demo.Crosslink\Hazina.Demo.Crosslink.csproj", "{7D26C007-616A-4287-BB89-2AB6BE66ED01}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Demo.FolderToPostgres", "apps\Demos\Hazina.Demo.FolderToPostgres\Hazina.Demo.FolderToPostgres.csproj", "{B44EF62A-7AC3-497B-8FA2-0133F1660A4D}"
@@ -261,18 +259,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{CDBFC62E-6D14-490E-B6AF-E18D7206D94F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CDBFC62E-6D14-490E-B6AF-E18D7206D94F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CDBFC62E-6D14-490E-B6AF-E18D7206D94F}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{CDBFC62E-6D14-490E-B6AF-E18D7206D94F}.Debug|x64.Build.0 = Debug|Any CPU
-		{CDBFC62E-6D14-490E-B6AF-E18D7206D94F}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{CDBFC62E-6D14-490E-B6AF-E18D7206D94F}.Debug|x86.Build.0 = Debug|Any CPU
-		{CDBFC62E-6D14-490E-B6AF-E18D7206D94F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CDBFC62E-6D14-490E-B6AF-E18D7206D94F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CDBFC62E-6D14-490E-B6AF-E18D7206D94F}.Release|x64.ActiveCfg = Release|Any CPU
-		{CDBFC62E-6D14-490E-B6AF-E18D7206D94F}.Release|x64.Build.0 = Release|Any CPU
-		{CDBFC62E-6D14-490E-B6AF-E18D7206D94F}.Release|x86.ActiveCfg = Release|Any CPU
-		{CDBFC62E-6D14-490E-B6AF-E18D7206D94F}.Release|x86.Build.0 = Release|Any CPU
 		{7D26C007-616A-4287-BB89-2AB6BE66ED01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7D26C007-616A-4287-BB89-2AB6BE66ED01}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7D26C007-616A-4287-BB89-2AB6BE66ED01}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -1418,7 +1404,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{CDBFC62E-6D14-490E-B6AF-E18D7206D94F} = {BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB}
 		{7D26C007-616A-4287-BB89-2AB6BE66ED01} = {CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC}
 		{B44EF62A-7AC3-497B-8FA2-0133F1660A4D} = {CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC}
 		{FF8C7568-8F96-407C-B165-F6AA69643837} = {CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC}
