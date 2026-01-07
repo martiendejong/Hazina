@@ -120,7 +120,7 @@ public static class FileHelper
     }
 
 
-    public static UploadedFile GetScrapedFileDetails(string path, string filename, int tokencount)
+    public static UploadedFile GetScrapedFileDetails(string path, string filename, int tokencount, List<string> tags = null)
     {
         var fi = new FileInfo(path);
         return new UploadedFile
@@ -129,12 +129,13 @@ public static class FileHelper
             Filename = filename,
             TextFilename = filename,
             TokenCount = tokencount,
-            Label = Path.GetFileNameWithoutExtension(filename)
+            Label = Path.GetFileNameWithoutExtension(filename),
+            Tags = tags ?? new List<string>()
         };
     }
 
 
-    public static UploadedFile GetUploadedFileDetails(string path, string filename, int tokencount)
+    public static UploadedFile GetUploadedFileDetails(string path, string filename, int tokencount, List<string> tags = null)
     {
         var fi = new FileInfo(path);
         return new UploadedFile
@@ -143,7 +144,8 @@ public static class FileHelper
             Filename = filename,
             TextFilename = filename + ".txt",
             TokenCount = tokencount,
-            Label = Path.GetFileNameWithoutExtension(filename)
+            Label = Path.GetFileNameWithoutExtension(filename),
+            Tags = tags ?? new List<string>()
         };
     }
     
