@@ -121,7 +121,7 @@ public class PostgresProposalStore : IProposalStore
 
         var results = await connection.QueryAsync<dynamic>(sql, parameters);
 
-        return results.Select(r => MapToProposal(r)).ToList();
+        return results.Select(r => MapToProposal((dynamic)r)).ToList();
     }
 
     public async Task<List<PromptProposal>> GetPendingProposalsAsync(
@@ -139,7 +139,7 @@ public class PostgresProposalStore : IProposalStore
 
         var results = await connection.QueryAsync<dynamic>(sql, new { Limit = limit });
 
-        return results.Select(r => MapToProposal(r)).ToList();
+        return results.Select(r => MapToProposal((dynamic)r)).ToList();
     }
 
     public async Task UpdateProposalStatusAsync(

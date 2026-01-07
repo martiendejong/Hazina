@@ -7,7 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Hazina.AI.PromptManagement.Dashboard;
 using Hazina.AI.PromptManagement.Core;
-using Hazina.LLMs.Client;
+using Hazina.AI.PromptManagement.Core.Models;
+using Hazina.LLMs;
 
 namespace Hazina.AI.PromptManagement.Reflection;
 
@@ -249,22 +250,13 @@ public class ReflectionEngine : IReflectionEngine
             metrics
         );
 
-        var request = new LLMRequest
+        var messages = new List<HazinaChatMessage>
         {
-            Messages = new[]
-            {
-                new LLMMessage
-                {
-                    Role = "user",
-                    Content = analysisPrompt
-                }
-            },
-            Temperature = 0.3,  // Low temperature for focused, consistent analysis
-            MaxTokens = 2000
+            new HazinaChatMessage(HazinaMessageRole.User, analysisPrompt)
         };
 
-        var response = await _llmClient.CompleteAsync(request, cancellationToken);
-        var analysisResult = response.Choices[0].Message.Content;
+        var response = await _llmClient.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, cancellationToken);
+        var analysisResult = response.Result;
 
         // Parse LLM response into structured hypotheses
         var hypotheses = ParseHypothesesFromLLMResponse(analysisResult, failurePatterns);
@@ -284,22 +276,13 @@ public class ReflectionEngine : IReflectionEngine
             targetPatterns
         );
 
-        var request = new LLMRequest
+        var messages = new List<HazinaChatMessage>
         {
-            Messages = new[]
-            {
-                new LLMMessage
-                {
-                    Role = "user",
-                    Content = analysisPrompt
-                }
-            },
-            Temperature = 0.3,
-            MaxTokens = 1500
+            new HazinaChatMessage(HazinaMessageRole.User, analysisPrompt)
         };
 
-        var response = await _llmClient.CompleteAsync(request, cancellationToken);
-        var analysisResult = response.Choices[0].Message.Content;
+        var response = await _llmClient.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, cancellationToken);
+        var analysisResult = response.Result;
 
         return ParseHypothesesFromLLMResponse(analysisResult, targetPatterns);
     }
@@ -320,22 +303,13 @@ public class ReflectionEngine : IReflectionEngine
             hypotheses
         );
 
-        var request = new LLMRequest
+        var messages = new List<HazinaChatMessage>
         {
-            Messages = new[]
-            {
-                new LLMMessage
-                {
-                    Role = "user",
-                    Content = assessmentPrompt
-                }
-            },
-            Temperature = 0.4,
-            MaxTokens = 800
+            new HazinaChatMessage(HazinaMessageRole.User, assessmentPrompt)
         };
 
-        var response = await _llmClient.CompleteAsync(request, cancellationToken);
-        return response.Choices[0].Message.Content;
+        var response = await _llmClient.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, cancellationToken);
+        return response.Result;
     }
 
     private string BuildHypothesisGenerationPrompt(
