@@ -160,7 +160,7 @@ public class PostgresApprovalStore : IApprovalStore
 
         var results = await connection.QueryAsync<dynamic>(sql, parameters);
 
-        return results.Select(r => MapToApprovalRequest(r)).ToList();
+        return results.Select(r => MapToApprovalRequest((dynamic)r)).ToList();
     }
 
     public async Task<List<ApprovalRequest>> GetRequestsForPromptAsync(
@@ -177,7 +177,7 @@ public class PostgresApprovalStore : IApprovalStore
 
         var results = await connection.QueryAsync<dynamic>(sql, new { PromptId = promptId });
 
-        return results.Select(r => MapToApprovalRequest(r)).ToList();
+        return results.Select(r => MapToApprovalRequest((dynamic)r)).ToList();
     }
 
     public async Task<int> DeleteOldRequestsAsync(

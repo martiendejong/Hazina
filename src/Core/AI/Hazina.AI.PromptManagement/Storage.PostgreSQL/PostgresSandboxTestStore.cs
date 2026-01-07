@@ -113,7 +113,7 @@ public class PostgresSandboxTestStore : ISandboxTestStore
 
         var results = await connection.QueryAsync<dynamic>(sql, new { ProposalId = proposalId });
 
-        return results.Select(r => MapToSandboxTestResult(r)).ToList();
+        return results.Select(r => MapToSandboxTestResult((dynamic)r)).ToList();
     }
 
     public async Task<int> DeleteOldTestResultsAsync(

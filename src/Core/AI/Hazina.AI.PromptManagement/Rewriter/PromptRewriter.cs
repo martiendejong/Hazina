@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Hazina.AI.PromptManagement.Core;
 using Hazina.AI.PromptManagement.Reflection;
-using Hazina.LLMs.Client;
+using Hazina.LLMs;
 
 namespace Hazina.AI.PromptManagement.Rewriter;
 
@@ -56,22 +56,13 @@ public class PromptRewriter : IPromptRewriter
         // Build rewriting prompt for LLM
         var rewritePrompt = BuildRewritePrompt(currentVersion.Template, hypothesis);
 
-        var request = new LLMRequest
+        var messages = new List<HazinaChatMessage>
         {
-            Messages = new[]
-            {
-                new LLMMessage
-                {
-                    Role = "user",
-                    Content = rewritePrompt
-                }
-            },
-            Temperature = 0.4,  // Slightly higher for creativity, but still focused
-            MaxTokens = 3000
+            new HazinaChatMessage(HazinaMessageRole.User, rewritePrompt)
         };
 
-        var response = await _llmClient.CompleteAsync(request, cancellationToken);
-        var llmOutput = response.Choices[0].Message.Content;
+        var response = await _llmClient.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, cancellationToken);
+        var llmOutput = response.Result;
 
         // Parse the rewritten template and changes
         var (proposedTemplate, changes) = ParseRewriteOutput(llmOutput, currentVersion.Template);
@@ -143,22 +134,13 @@ public class PromptRewriter : IPromptRewriter
         // Build combined rewriting prompt
         var rewritePrompt = BuildCombinedRewritePrompt(currentVersion.Template, hypotheses);
 
-        var request = new LLMRequest
+        var messages = new List<HazinaChatMessage>
         {
-            Messages = new[]
-            {
-                new LLMMessage
-                {
-                    Role = "user",
-                    Content = rewritePrompt
-                }
-            },
-            Temperature = 0.4,
-            MaxTokens = 4000
+            new HazinaChatMessage(HazinaMessageRole.User, rewritePrompt)
         };
 
-        var response = await _llmClient.CompleteAsync(request, cancellationToken);
-        var llmOutput = response.Choices[0].Message.Content;
+        var response = await _llmClient.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, cancellationToken);
+        var llmOutput = response.Result;
 
         var (proposedTemplate, changes) = ParseRewriteOutput(llmOutput, currentVersion.Template);
 
@@ -234,22 +216,13 @@ public class PromptRewriter : IPromptRewriter
         {
             var variantPrompt = BuildVariantPrompt(currentVersion.Template, hypothesis, i + 1);
 
-            var request = new LLMRequest
+            var messages = new List<HazinaChatMessage>
             {
-                Messages = new[]
-                {
-                    new LLMMessage
-                    {
-                        Role = "user",
-                        Content = variantPrompt
-                    }
-                },
-                Temperature = 0.6 + (i * 0.1),  // Increase temperature for diversity
-                MaxTokens = 3000
+                new HazinaChatMessage(HazinaMessageRole.User, variantPrompt)
             };
 
-            var response = await _llmClient.CompleteAsync(request, cancellationToken);
-            var llmOutput = response.Choices[0].Message.Content;
+            var response = await _llmClient.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, cancellationToken);
+            var llmOutput = response.Result;
 
             var (proposedTemplate, changes) = ParseRewriteOutput(llmOutput, currentVersion.Template);
 
@@ -514,17 +487,11 @@ public class PromptRewriter : IPromptRewriter
         // For now, this is a placeholder that would call the actual embedding API
         // In production, this would use OpenAI embeddings or similar
 
-        var request = new LLMRequest
-        {
-            Messages = new[]
-            {
-                new LLMMessage
-                {
-                    Role = "user",
-                    Content = text
-                }
-            }
-        };
+        // LLMRequest is no longer used - this is placeholder code
+        // var messages = new List<HazinaChatMessage>
+        // {
+        //     new HazinaChatMessage(HazinaMessageRole.User, text)
+        // };
 
         // This is a simplified placeholder
         // Real implementation would use dedicated embedding models

@@ -93,7 +93,7 @@ public class AlertingService : IAlertingService
         if (hasRegression)
         {
             var issues = JsonSerializer.Deserialize<List<RegressionIssue>>(report.issues.ToString()) ?? new List<RegressionIssue>();
-            var criticalIssues = issues.Where(i => i.Severity == "critical" || i.Severity == "high").ToList();
+            var criticalIssues = issues.Where((Func<RegressionIssue, bool>)(i => i.Severity == "critical" || i.Severity == "high")).ToList();
 
             if (criticalIssues.Any())
             {
