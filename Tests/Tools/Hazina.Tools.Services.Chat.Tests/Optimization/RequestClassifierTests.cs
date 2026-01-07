@@ -47,16 +47,6 @@ namespace Hazina.Tools.Services.Chat.Tests.Optimization
                 Options.Create(_options)
             );
 
-            // Set up default return value for GetDataAsync to avoid NullReferenceException
-            // Tests that need specific behavior can override this setup
-            _mockCache.Setup(x => x.GetDataAsync(It.IsAny<string>(), It.IsAny<List<string>>()))
-                .ReturnsAsync(new DataRetrievalResult
-                {
-                    AllFound = false,
-                    FoundFields = new Dictionary<string, string>(),
-                    MissingFields = new List<string>()
-                });
-
             _classifier = new RequestClassifier(_mockCache.Object, Options.Create(_options));
         }
 
@@ -277,6 +267,14 @@ namespace Hazina.Tools.Services.Chat.Tests.Optimization
         public async Task ClassifyRequestAsync_ShouldDetectSimpleQuestion_WithRecentContext(string message)
         {
             // Arrange
+            _mockCache.Setup(x => x.GetDataAsync(_testProjectId, It.IsAny<List<string>>()))
+                .ReturnsAsync(new DataRetrievalResult
+                {
+                    AllFound = false,
+                    FoundFields = new Dictionary<string, string>(),
+                    MissingFields = new List<string>()
+                });
+
             var recentHistory = new List<ConversationMessage>
             {
                 new ConversationMessage { Role = ChatMessageRole.User, Text = "Previous message 1" },
@@ -299,6 +297,14 @@ namespace Hazina.Tools.Services.Chat.Tests.Optimization
         public async Task ClassifyRequestAsync_ShouldUseTargetedRetrieval_ForSimpleQuestionWithContext(string message)
         {
             // Arrange
+            _mockCache.Setup(x => x.GetDataAsync(_testProjectId, It.IsAny<List<string>>()))
+                .ReturnsAsync(new DataRetrievalResult
+                {
+                    AllFound = false,
+                    FoundFields = new Dictionary<string, string>(),
+                    MissingFields = new List<string>()
+                });
+
             var recentHistory = new List<ConversationMessage>
             {
                 new ConversationMessage { Role = ChatMessageRole.User, Text = "Tell me about the brand" },
