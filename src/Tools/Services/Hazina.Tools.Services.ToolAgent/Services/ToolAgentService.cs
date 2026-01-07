@@ -102,7 +102,7 @@ Be specific - when triggering generation, provide clear instructions.";
             return new ToolAgentResult
             {
                 Success = true,
-                Summary = response.Content ?? "Action completed",
+                Summary = response.Result ?? "Action completed",
                 ExecutedTools = executedTools
             };
         }

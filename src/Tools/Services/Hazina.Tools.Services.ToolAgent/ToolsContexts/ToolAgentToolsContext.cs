@@ -39,13 +39,13 @@ public class ToolAgentToolsContext : ToolsContextBase
         // Tool 1: Get available analysis fields (metadata only, no content)
         Add("GetAnalysisFields",
             "Get list of available analysis fields with their keys and descriptions. Returns metadata only, not the actual content.",
-            Array.Empty<ChatToolParameter>(),
+            new List<ChatToolParameter>(),
             GetAnalysisFieldsAsync);
 
         // Tool 2: Trigger analysis field generation
         Add("TriggerAnalysisFieldGeneration",
             "Trigger generation of a specific analysis field. The actual generation happens in Layer 3 with full context.",
-            new[]
+            new List<ChatToolParameter>
             {
                 new ChatToolParameter
                 {
@@ -67,7 +67,7 @@ public class ToolAgentToolsContext : ToolsContextBase
         // Tool 3: Trigger image generation
         Add("TriggerImageGeneration",
             "Trigger logo or image generation. The actual generation happens in Layer 3.",
-            new[]
+            new List<ChatToolParameter>
             {
                 new ChatToolParameter
                 {
@@ -82,7 +82,7 @@ public class ToolAgentToolsContext : ToolsContextBase
         // Tool 4: Store gathered data
         Add("StoreGatheredData",
             "Store a piece of gathered data from the conversation.",
-            new[]
+            new List<ChatToolParameter>
             {
                 new ChatToolParameter
                 {
@@ -111,7 +111,7 @@ public class ToolAgentToolsContext : ToolsContextBase
         // Tool 5: Show guidance card
         Add("ShowGuidanceCard",
             "Show a guidance card to the user in the chat interface.",
-            new[]
+            new List<ChatToolParameter>
             {
                 new ChatToolParameter
                 {
