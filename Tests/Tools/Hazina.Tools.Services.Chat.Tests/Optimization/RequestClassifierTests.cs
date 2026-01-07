@@ -47,6 +47,16 @@ namespace Hazina.Tools.Services.Chat.Tests.Optimization
                 Options.Create(_options)
             );
 
+            // Set up default return value for GetDataAsync to avoid NullReferenceException
+            // Tests that need specific behavior can override this setup
+            _mockCache.Setup(x => x.GetDataAsync(It.IsAny<string>(), It.IsAny<List<string>>()))
+                .ReturnsAsync(new DataRetrievalResult
+                {
+                    AllFound = false,
+                    FoundFields = new Dictionary<string, string>(),
+                    MissingFields = new List<string>()
+                });
+
             _classifier = new RequestClassifier(_mockCache.Object, Options.Create(_options));
         }
 
