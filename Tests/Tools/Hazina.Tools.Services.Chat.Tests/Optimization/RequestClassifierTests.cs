@@ -114,13 +114,13 @@ namespace Hazina.Tools.Services.Chat.Tests.Optimization
         #region Local Data Detection
 
         [Theory]
-        [InlineData("what is my color scheme", "color-scheme")]
+        [InlineData("what is the color scheme", "color-scheme")]
         [InlineData("show me the colors", "color-scheme")]
-        [InlineData("what's my brand name", "brand-profile")]
-        [InlineData("tell me about my company name", "brand-profile")]
-        [InlineData("who is my target audience", "target-audience")]
-        [InlineData("what's my tagline", "tagline")]
-        [InlineData("show me my slogan", "tagline")]
+        [InlineData("what's the brand name", "brand-profile")]
+        [InlineData("tell me about the company name", "brand-profile")]
+        [InlineData("who is the target audience", "target-audience")]
+        [InlineData("what's the tagline", "tagline")]
+        [InlineData("show me the slogan", "tagline")]
         public async Task ClassifyRequestAsync_ShouldIdentifyLocalDataNeeds(string message, string expectedField)
         {
             // Arrange
@@ -328,6 +328,14 @@ namespace Hazina.Tools.Services.Chat.Tests.Optimization
         public async Task ClassifyRequestAsync_ShouldReturnFullExploration_ForComplexRequest()
         {
             // Arrange
+            _mockCache.Setup(x => x.GetDataAsync(_testProjectId, It.IsAny<List<string>>()))
+                .ReturnsAsync(new DataRetrievalResult
+                {
+                    AllFound = false,
+                    FoundFields = new Dictionary<string, string>(),
+                    MissingFields = new List<string>()
+                });
+
             var message = "Can you analyze our brand positioning and suggest improvements based on market trends?";
 
             // Act
@@ -343,6 +351,14 @@ namespace Hazina.Tools.Services.Chat.Tests.Optimization
         public async Task ClassifyRequestAsync_ShouldReturnFullExploration_ForUnclearRequest()
         {
             // Arrange
+            _mockCache.Setup(x => x.GetDataAsync(_testProjectId, It.IsAny<List<string>>()))
+                .ReturnsAsync(new DataRetrievalResult
+                {
+                    AllFound = false,
+                    FoundFields = new Dictionary<string, string>(),
+                    MissingFields = new List<string>()
+                });
+
             var message = "hmm, I'm not sure what I need exactly";
 
             // Act
