@@ -3,6 +3,8 @@ using Hazina.AI.Providers.Health;
 using Hazina.AI.Providers.Resilience;
 using Hazina.AI.Providers.Selection;
 using Hazina.LLMs;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Hazina.AI.Providers.Core;
 
@@ -19,12 +21,14 @@ public class ProviderOrchestrator : IProviderOrchestrator
     private readonly BudgetManager _budgetManager;
     private readonly FailoverHandler _failoverHandler;
     private readonly RetryPolicy _retryPolicy;
+    private readonly ILogger<ProviderOrchestrator> _logger;
 
     private SelectionStrategy _defaultStrategy = SelectionStrategy.Priority;
     private SelectionContext? _defaultContext;
 
-    public ProviderOrchestrator()
+    public ProviderOrchestrator(ILogger<ProviderOrchestrator>? logger = null)
     {
+        _logger = logger ?? NullLogger<ProviderOrchestrator>.Instance;
         _registry = new ProviderRegistry();
         _healthMonitor = new ProviderHealthMonitor(_registry);
         _selector = new ProviderSelector(_registry, _healthMonitor);
@@ -145,8 +149,9 @@ public class ProviderOrchestrator : IProviderOrchestrator
 
     private void OnBudgetAlertTriggered(object? sender, BudgetAlertEventArgs e)
     {
-        // Log or notify about budget alert
-        Console.WriteLine($"[Budget Alert] {e.Alert.Message} - Current: ${e.CurrentCost:F2} ({e.CurrentUtilization:F1}%)");
+        _logger.LogWarning(
+            "Budget Alert: {Message} - Provider: {Provider}, Current: ${CurrentCost:F2} ({Utilization:F1}%)",
+            e.Alert.Message, e.Alert.ProviderName, e.CurrentCost, e.CurrentUtilization);
     }
 
     #endregion

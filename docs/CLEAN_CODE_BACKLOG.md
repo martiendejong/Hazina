@@ -62,7 +62,7 @@
 | C27 | Extract Hazina.Resilience library | 6 | 5 | 4 | 0.67 | BACKLOG |
 | C28 | Extract ICostTracker interface | 5 | 4 | 3 | 0.71 | BACKLOG |
 | C29 | Separate Hazina.Health assembly | 5 | 4 | 3 | 0.71 | BACKLOG |
-| C30 | Unified ILogger<T> everywhere | 6 | 3 | 2 | 1.20 | BACKLOG |
+| C30 | Unified ILogger<T> everywhere | 6 | 3 | 2 | 1.20 | DONE |
 
 ---
 
@@ -72,7 +72,7 @@
 |----|------|-------|--------|------|-------|--------|
 | D31 | Behavior-focused test structure | 6 | 6 | 4 | 0.60 | BACKLOG |
 | D32 | Separate unit/integration tests | 6 | 4 | 3 | 0.86 | BACKLOG |
-| D33 | TestData folders | 5 | 3 | 1 | 1.25 | BACKLOG |
+| D33 | TestData folders | 5 | 3 | 1 | 1.25 | DONE |
 | D34 | Architectural tests (ArchUnit.NET) | 8 | 4 | 2 | 1.33 | BACKLOG |
 | D35 | Mutation testing (Stryker.NET) | 5 | 5 | 2 | 0.71 | BACKLOG |
 | D36 | Zero flaky tests policy | 7 | 6 | 3 | 0.78 | BACKLOG |
@@ -168,9 +168,9 @@
 
 | Status | Count | Percentage |
 |--------|-------|------------|
-| DONE | 10 | 20% |
+| DONE | 12 | 24% |
 | TODO | 0 | 0% |
-| BACKLOG | 40 | 80% |
+| BACKLOG | 38 | 76% |
 
 ---
 
@@ -190,11 +190,11 @@
 - [x] D37: TESTING.md
 - [x] B18: ILLMClient docs
 
-### Phase 2: Quick Code Wins
-- [ ] C30: Unified ILogger<T>
+### Phase 2: Quick Code Wins (IN PROGRESS)
+- [x] C30: Unified ILogger<T>
 - [ ] B14: Explicit partial naming
 - [ ] B16: Rename extension files
-- [ ] D33: TestData folders
+- [x] D33: TestData folders
 - [ ] D34: Architectural tests
 
 ### Phase 3: Testing Infrastructure
