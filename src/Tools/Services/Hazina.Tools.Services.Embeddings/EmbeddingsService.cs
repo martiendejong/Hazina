@@ -187,7 +187,7 @@ namespace Hazina.Tools.Services.Embeddings
                 // Embedding class inherits from List<double>, so cast directly
                 return embedding?.ToList() ?? new List<double>();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException)
             {
                 Console.WriteLine($"Error generating embedding: {ex.Message}");
                 return new List<double>();

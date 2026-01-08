@@ -67,14 +67,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             try
             {
-                if (File.Exists(configFilePath))
-                {
-                    appConfig = JsonSerializer.Deserialize<UserAppConfig>(File.ReadAllText(configFilePath));
-                }
-                else
-                {
-                    appConfig = new UserAppConfig();
-                }
+                appConfig = File.Exists(configFilePath)
+                    ? JsonSerializer.Deserialize<UserAppConfig>(File.ReadAllText(configFilePath))
+                    : new UserAppConfig();
             }
             catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
             {

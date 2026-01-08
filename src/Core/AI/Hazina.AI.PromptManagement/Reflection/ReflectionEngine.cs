@@ -548,7 +548,7 @@ public class ReflectionEngine : IReflectionEngine
                 Reason = c.ContainsKey("reason") ? c["reason"].GetString() ?? "" : ""
             }).ToList();
         }
-        catch
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException)
         {
             return new List<SuggestedChange>();
         }

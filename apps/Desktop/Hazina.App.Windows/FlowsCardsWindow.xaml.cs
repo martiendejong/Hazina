@@ -39,7 +39,7 @@ public partial class FlowsCardsWindow : System.Windows.Window
     private FlowCardModel _draggedCard = null;
 
     /// <summary>
-    /// Detecteert de start van een drag: bewaar initi+½le muispositie en listview. 
+    /// Detecteert de start van een drag: bewaar initi+ï¿½le muispositie en listview. 
     /// </summary>
     private void CallsAgentsListView_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
@@ -332,8 +332,7 @@ public partial class FlowsCardsWindow : System.Windows.Window
     {
         DependencyObject parentObject = VisualTreeHelper.GetParent(child);
         if (parentObject == null) return null;
-        if (parentObject is T parent) return parent;
-        else return FindParent<T>(parentObject);
+        return parentObject is T parent ? parent : FindParent<T>(parentObject);
     }
 }
 

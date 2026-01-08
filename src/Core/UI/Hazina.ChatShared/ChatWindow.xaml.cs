@@ -125,7 +125,7 @@ namespace Hazina.ChatShared
                     _messages.Add(new ChatDisplayMessage { Author = "Systeem", Text = "Versturen gestopt.", IsAsyncOnMessage = false });
                     ScrollToEnd();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException)
                 {
                     _messages.Add(new ChatDisplayMessage { Author = "Systeem", Text = $"Fout: {ex.Message}", IsAsyncOnMessage = false });
                     ScrollToEnd();

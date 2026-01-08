@@ -141,7 +141,7 @@ public abstract class HazinaServiceBase<TService> where TService : class
             {
                 return await operation();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 lastException = ex;
                 LogWarning("Attempt {Attempt}/{MaxRetries} failed for {Operation}: {Error}",

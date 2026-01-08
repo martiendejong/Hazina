@@ -43,7 +43,7 @@ public partial class SettingsWindow : Window
                 originalConfig = JsonSerializer.Deserialize<object>(json);
                 ErrorText.Text = "";
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
             {
                 ErrorText.Text = $"Fout bij laden: {ex.Message}";
             }
@@ -119,7 +119,7 @@ public partial class SettingsWindow : Window
                 DialogResult = true;
                 Close();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
             {
                 ErrorText.Text = "Fout bij opslaan: " + ex.Message;
             }

@@ -213,7 +213,7 @@ public class EvaluationPipeline : IEvaluationPipeline
                 }
             };
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException or OperationCanceledException)
         {
             sw.Stop();
 
@@ -399,7 +399,7 @@ public class EvaluationPipeline : IEvaluationPipeline
             var next = from.Date.AddDays(1).AddHours(hour).AddMinutes(minute);
             return next;
         }
-        catch
+        catch (Exception ex) when (ex is FormatException or IndexOutOfRangeException or OverflowException)
         {
             return null;
         }

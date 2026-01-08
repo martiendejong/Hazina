@@ -92,7 +92,7 @@ Output only the JSON, no additional text.";
                 };
             }
         }
-        catch
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException)
         {
             // Fallback if parsing fails
         }
@@ -186,7 +186,7 @@ Output JSON format:
                 };
             }
         }
-        catch { }
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException) { }
 
         return new RubricScore { Score = 0.5, Confidence = 0.0, Explanation = "Parse failed" };
     }
@@ -270,7 +270,7 @@ JSON format:
                 };
             }
         }
-        catch { }
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException) { }
 
         return new RubricScore { Score = 0.5, Confidence = 0.0, Explanation = "Parse failed" };
     }

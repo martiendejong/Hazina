@@ -39,13 +39,30 @@ public abstract class LLMProviderBase<TConfig> where TConfig : IProviderConfig
     protected LLMProviderBase(TConfig config)
     {
         Config = config ?? throw new ArgumentNullException(nameof(config));
-        Http = CreateHttpClient();
+        // Initialize HttpClient directly to avoid virtual method call in constructor
+        Http = CreateHttpClientInternal();
+    }
+
+    /// <summary>
+    /// Internal method to create HttpClient without virtual call in constructor.
+    /// </summary>
+    private HttpClient CreateHttpClientInternal()
+    {
+        var client = new HttpClient();
+
+        if (!string.IsNullOrEmpty(Config.Endpoint))
+            client.BaseAddress = new Uri(Config.Endpoint);
+
+        ConfigureHttpClient(client);
+        return client;
     }
 
     /// <summary>
     /// Creates and configures the HTTP client for this provider.
-    /// Override to customize headers, timeout, etc.
+    /// Note: Not used in constructor to avoid virtual method call.
+    /// Use CreateHttpClientInternal for initialization.
     /// </summary>
+    [Obsolete("Use CreateHttpClientInternal to avoid virtual call in constructor")]
     protected virtual HttpClient CreateHttpClient()
     {
         var client = new HttpClient();
@@ -76,7 +93,7 @@ public abstract class LLMProviderBase<TConfig> where TConfig : IProviderConfig
         CancellationToken cancellationToken = default)
     {
         var json = JsonSerializer.Serialize(request, JsonOptions);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         var response = await Http.PostAsync(endpoint, content, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -95,7 +112,7 @@ public abstract class LLMProviderBase<TConfig> where TConfig : IProviderConfig
         CancellationToken cancellationToken = default)
     {
         var json = JsonSerializer.Serialize(request, JsonOptions);
-        var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
@@ -164,9 +181,9 @@ public abstract class LLMProviderBase<TConfig> where TConfig : IProviderConfig
         {
             File.AppendAllText(Config.LogPath, $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} | {message}\n");
         }
-        catch
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            // Ignore logging errors
+            // Ignore logging errors (file access issues)
         }
     }
 
