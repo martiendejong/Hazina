@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Hazina.LLMs;
@@ -187,7 +189,7 @@ namespace Hazina.Tools.Services.Embeddings
                 // Embedding class inherits from List<double>, so cast directly
                 return embedding?.ToList() ?? new List<double>();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException)
             {
                 Console.WriteLine($"Error generating embedding: {ex.Message}");
                 return new List<double>();

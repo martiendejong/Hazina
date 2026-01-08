@@ -25,7 +25,7 @@ public class HandlebarsTemplateEngine : ITemplateEngine
             var result = compiledTemplate(variables);
             return Task.FromResult(result);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is HandlebarsException or ArgumentException or InvalidOperationException)
         {
             throw new InvalidOperationException($"Failed to render Handlebars template: {ex.Message}", ex);
         }
@@ -38,7 +38,7 @@ public class HandlebarsTemplateEngine : ITemplateEngine
             _handlebars.Compile(template);
             return Task.FromResult(true);
         }
-        catch
+        catch (Exception ex) when (ex is HandlebarsException or ArgumentException)
         {
             return Task.FromResult(false);
         }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -274,7 +275,7 @@ public class PromptRewriter : IPromptRewriter
             // Calculate cosine similarity
             return CosineSimilarity(originalEmbedding, proposedEmbedding);
         }
-        catch
+        catch (Exception ex) when (ex is HttpRequestException or InvalidOperationException or JsonException)
         {
             // Fallback to simple Jaccard similarity if embeddings fail
             return JaccardSimilarity(originalTemplate, proposedTemplate);
@@ -443,7 +444,7 @@ public class PromptRewriter : IPromptRewriter
                         }).ToList();
                     }
                 }
-                catch
+                catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException)
                 {
                     // Ignore change parsing errors
                 }

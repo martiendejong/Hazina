@@ -3,6 +3,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -125,7 +127,7 @@ namespace Hazina.ChatShared
                     _messages.Add(new ChatDisplayMessage { Author = "Systeem", Text = "Versturen gestopt.", IsAsyncOnMessage = false });
                     ScrollToEnd();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException)
                 {
                     _messages.Add(new ChatDisplayMessage { Author = "Systeem", Text = $"Fout: {ex.Message}", IsAsyncOnMessage = false });
                     ScrollToEnd();
