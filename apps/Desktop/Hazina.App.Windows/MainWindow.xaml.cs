@@ -1,4 +1,4 @@
-using Hazina.LLMs.OpenAI;
+﻿using Hazina.LLMs.OpenAI;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -76,7 +76,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     appConfig = new UserAppConfig();
                 }
             }
-            catch
+            catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
             {
                 appConfig = new UserAppConfig();
             }
@@ -104,7 +104,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             {
                 File.WriteAllText(configFilePath, JsonSerializer.Serialize(appConfig, new JsonSerializerOptions { WriteIndented = true }));
             }
-            catch { /* Fails silently */ }
+            catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException) { /* Fails silently */ }
         }
 
         private void LoadStoresButton_Click(object sender, RoutedEventArgs e)
@@ -134,7 +134,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 storesDevGPTRaw = rawTxt;
                 storesLoaded = true;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
             {
                 System.Windows.MessageBox.Show("Error reading stores file: " + ex.Message);
                 storesLoaded = false;
@@ -171,7 +171,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
                 agentsLoaded = true;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
             {
                 System.Windows.MessageBox.Show("Error reading agents file: " + ex.Message);
                 agentsLoaded = false;
@@ -213,7 +213,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 FillAgentsAndFlows();
                 flowsLoaded = true;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
             {
                 System.Windows.MessageBox.Show("Error reading flows file: " + ex.Message);
                 flowsLoaded = false;
@@ -244,7 +244,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     parsedStores = data;
                     System.Windows.MessageBox.Show($"stores configuration saved.\nPath and filename: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
                 {
                     System.Windows.MessageBox.Show($"Error saving: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
@@ -275,7 +275,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     parsedAgents = data;
                     System.Windows.MessageBox.Show($"Agent config saved.\nPath and filename: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
                 {
                     System.Windows.MessageBox.Show($"Error saving: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
@@ -306,7 +306,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     parsedFlows = data;
                     System.Windows.MessageBox.Show($"Flow config saved.\nPath and filename: {filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
                 {
                     System.Windows.MessageBox.Show($"Error saving: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
@@ -420,7 +420,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
                     System.Windows.MessageBox.Show($"All configurations saved to:\n{dir}", "Save All", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is InvalidOperationException or UnauthorizedAccessException)
                 {
                     System.Windows.MessageBox.Show($"Error during Save All: {ex.Message}", "Save All", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
@@ -463,11 +463,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             // Toon direct de laad-animatie zodat de gebruiker direct ziet dat er iets gebeurt (en niet pas na zware disk/config-io)
             IsOpeningChat = true;
-            await Task.Yield(); // Forceer UI render van animatie v+�+�r langzame disk-operaties (anders zien gebruikers soms de animatie te laat!)
+            await Task.Yield(); // Forceer UI render van animatie v+ï¿½+ï¿½r langzame disk-operaties (anders zien gebruikers soms de animatie te laat!)
 
             // Het inlezen van OpenAI/Google config kan op sommige systemen trage disk I/O veroorzaken (b.v. als netwerk-drive, USB, virusscanner, etc.)
             // - Dit blokkeerde in eerdere versies de zichtbaarheid van de laad-animatie: de animatie kwam pas na de disk-IO!
-            // - Daarom laden we deze configs nu asynchroon, v+�+�r de rest van de logica, ZODAT de animatie altijd zichtbaar is v+�+�rdat prijzige disk reads starten.
+            // - Daarom laden we deze configs nu asynchroon, v+ï¿½+ï¿½r de rest van de logica, ZODAT de animatie altijd zichtbaar is v+ï¿½+ï¿½rdat prijzige disk reads starten.
             GoogleConfig googleSettings = null;
             OpenAIConfig openAISettings = null;
             try
@@ -475,7 +475,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 googleSettings = await Task.Run(() => GoogleConfig.Load());
                 openAISettings = await Task.Run(() => OpenAIConfig.Load());
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException)
             {
                 IsOpeningChat = false;
                 IsOpenChatButtonEnabled = true;
@@ -511,7 +511,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 newChatWindow.Owner = this;
                 newChatWindow.Show();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
             {
                 System.Windows.MessageBox.Show("Failed to open chat window: " + ex.Message);
             }
@@ -691,11 +691,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     agent.Tools.Add(new DynamicAPIHazinaTool(apiClient));
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
             {
                 System.Windows.MessageBox.Show($"Warning: Could not add DynamicAPI tools: {ex.Message}", "DynamicAPI Tools", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
     }
+
+
 
