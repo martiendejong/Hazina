@@ -6,6 +6,19 @@
 
 ---
 
+## ⚠️ Version Notice
+
+This guide is updated for **Hazina v2.0**. If you're upgrading from v1.x, see the [Migration Guide](docs/MIGRATION_GUIDE.md).
+
+**New in v2.0:**
+- ✅ [Context Compression](docs/CONTEXT_COMPRESSION.md) - 87% token reduction
+- ✅ [3-Layer Tool Agent Architecture](docs/TOOL_AGENT_ARCHITECTURE.md) - 90% cost savings
+- ✅ [Google Drive Integration](docs/GOOGLE_DRIVE_INTEGRATION.md) - Cloud storage
+- ✅ Code deduplication - HazinaConfigBase pattern
+- ✅ [Complete API Changelog](docs/API_CHANGELOG.md)
+
+---
+
 ## Introduction
 
 This guide demonstrates how to rapidly deploy a production-ready RAG (Retrieval-Augmented Generation) platform using Hazina with .NET Core and Entity Framework Identity. You'll see real code examples showing how Hazina reduces months of infrastructure development to days.
