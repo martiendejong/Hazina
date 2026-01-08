@@ -1,34 +1,45 @@
+using Hazina.LLMs.Configuration;
 using Microsoft.Extensions.Configuration;
 
-public class OpenAIConfig
+namespace Hazina.LLMs.OpenAI;
+
+/// <summary>
+/// Configuration for OpenAI API.
+/// </summary>
+public class OpenAIConfig : HazinaConfigBase
 {
-    public OpenAIConfig(string apiKey = "", string embeddingModel = "text-embedding-3-small", string model = "gpt-4o-mini", string imageModel = "gpt-image-1", string logPath = "c:\\projects\\hazinalogs.txt", string ttsModel = "gpt-4o-mini-tts")
-    {
-        ApiKey = apiKey;
-        Model = model;
-        ImageModel = imageModel;
-        EmbeddingModel = embeddingModel;
-        LogPath = logPath;
-        TtsModel = ttsModel;
-    }
+    /// <summary>
+    /// Model for image generation (e.g., "gpt-image-1", "dall-e-3").
+    /// </summary>
+    public string ImageModel { get; set; } = "gpt-image-1";
 
-    public string ApiKey { get; set; }
-    public string Model { get; set; }
-    public string ImageModel { get; set; }
-    public string EmbeddingModel { get; set; }
-    public string LogPath { get; set; }
-    public string TtsModel { get; set; }
+    /// <summary>
+    /// Model for embeddings (e.g., "text-embedding-3-small").
+    /// </summary>
+    public string EmbeddingModel { get; set; } = "text-embedding-3-small";
 
-    public static OpenAIConfig Load()
-    {
-        var config = new ConfigurationBuilder()
-            .SetBasePath(AppContext.BaseDirectory) // current directory
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .Build();
+    /// <summary>
+    /// Model for text-to-speech (e.g., "gpt-4o-mini-tts", "tts-1").
+    /// </summary>
+    public string TtsModel { get; set; } = "gpt-4o-mini-tts";
 
-        // Bind the OpenAI section to a strongly-typed object
-        var openAISettings = new OpenAIConfig();
-        config.GetSection("OpenAI").Bind(openAISettings);
-        return openAISettings;
-    }
+    /// <inheritdoc />
+    protected override string ConfigurationSectionName => "OpenAI";
+
+    /// <inheritdoc />
+    protected override string? DefaultEndpoint => null; // OpenAI SDK handles this
+
+    /// <inheritdoc />
+    protected override string DefaultModel => "gpt-4o-mini";
+
+    /// <summary>
+    /// Loads configuration from appsettings.json.
+    /// </summary>
+    public static OpenAIConfig Load() => LoadFromConfiguration<OpenAIConfig>();
+
+    /// <summary>
+    /// Creates config from IConfiguration instance.
+    /// </summary>
+    public static OpenAIConfig FromConfiguration(IConfiguration configuration)
+        => LoadFromConfiguration<OpenAIConfig>(configuration);
 }

@@ -1,32 +1,23 @@
-using Microsoft.Extensions.Configuration;
+using Hazina.LLMs.Configuration;
 
 namespace Hazina.LLMs.Mistral;
 
-public class MistralConfig
+/// <summary>
+/// Configuration for Mistral AI API.
+/// </summary>
+public class MistralConfig : HazinaConfigBase
 {
-    public MistralConfig(string apiKey = "", string model = "mistral-large-latest", string endpoint = "https://api.mistral.ai/v1", string logPath = "c:\\projects\\hazinalogs.txt")
-    {
-        ApiKey = apiKey;
-        Model = model;
-        Endpoint = endpoint.TrimEnd('/');
-        LogPath = logPath;
-    }
+    /// <inheritdoc />
+    protected override string ConfigurationSectionName => "Mistral";
 
-    public string ApiKey { get; set; }
-    public string Model { get; set; }
-    public string Endpoint { get; set; }
-    public string LogPath { get; set; }
+    /// <inheritdoc />
+    protected override string? DefaultEndpoint => "https://api.mistral.ai/v1";
 
-    public static MistralConfig Load()
-    {
-        var config = new ConfigurationBuilder()
-            .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .Build();
+    /// <inheritdoc />
+    protected override string DefaultModel => "mistral-large-latest";
 
-        var settings = new MistralConfig();
-        config.GetSection("Mistral").Bind(settings);
-        return settings;
-    }
+    /// <summary>
+    /// Loads configuration from appsettings.json.
+    /// </summary>
+    public static MistralConfig Load() => LoadFromConfiguration<MistralConfig>();
 }
-

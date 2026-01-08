@@ -1,41 +1,55 @@
-using Microsoft.Extensions.Configuration;
+using Hazina.LLMs.Configuration;
 
 namespace Hazina.LLMs.Gemini;
 
-public class GeminiConfig
+/// <summary>
+/// Configuration for Google Gemini API.
+/// </summary>
+public class GeminiConfig : HazinaConfigBase
 {
-    public GeminiConfig(string apiKey = "", string model = "gemini-1.5-pro", string endpoint = "https://generativelanguage.googleapis.com/v1beta", string logPath = "c:\\projects\\hazinalogs.txt", string imageModel = "imagegeneration", string? ttsApiKey = null, string ttsLanguageCode = "en-US", string ttsVoiceName = "en-US-Neural2-C", string ttsAudioEncoding = "MP3")
-    {
-        ApiKey = apiKey;
-        Model = model;
-        Endpoint = endpoint.TrimEnd('/');
-        LogPath = logPath;
-        ImageModel = imageModel;
-        TtsApiKey = ttsApiKey ?? apiKey;
-        TtsLanguageCode = ttsLanguageCode;
-        TtsVoiceName = ttsVoiceName;
-        TtsAudioEncoding = ttsAudioEncoding;
-    }
+    /// <summary>
+    /// Model for image generation.
+    /// </summary>
+    public string ImageModel { get; set; } = "imagegeneration";
 
-    public string ApiKey { get; set; }
-    public string Model { get; set; }
-    public string Endpoint { get; set; }
-    public string LogPath { get; set; }
-    public string ImageModel { get; set; }
+    /// <summary>
+    /// API key for Text-to-Speech (defaults to main ApiKey if not set).
+    /// </summary>
     public string? TtsApiKey { get; set; }
-    public string TtsLanguageCode { get; set; }
-    public string TtsVoiceName { get; set; }
-    public string TtsAudioEncoding { get; set; }
 
-    public static GeminiConfig Load()
+    /// <summary>
+    /// Language code for TTS (e.g., "en-US").
+    /// </summary>
+    public string TtsLanguageCode { get; set; } = "en-US";
+
+    /// <summary>
+    /// Voice name for TTS (e.g., "en-US-Neural2-C").
+    /// </summary>
+    public string TtsVoiceName { get; set; } = "en-US-Neural2-C";
+
+    /// <summary>
+    /// Audio encoding for TTS output (e.g., "MP3").
+    /// </summary>
+    public string TtsAudioEncoding { get; set; } = "MP3";
+
+    /// <inheritdoc />
+    protected override string ConfigurationSectionName => "Gemini";
+
+    /// <inheritdoc />
+    protected override string? DefaultEndpoint => "https://generativelanguage.googleapis.com/v1beta";
+
+    /// <inheritdoc />
+    protected override string DefaultModel => "gemini-1.5-pro";
+
+    /// <inheritdoc />
+    protected override void ApplyDefaults()
     {
-        var config = new ConfigurationBuilder()
-            .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .Build();
-
-        var settings = new GeminiConfig();
-        config.GetSection("Gemini").Bind(settings);
-        return settings;
+        base.ApplyDefaults();
+        TtsApiKey ??= ApiKey;
     }
+
+    /// <summary>
+    /// Loads configuration from appsettings.json.
+    /// </summary>
+    public static GeminiConfig Load() => LoadFromConfiguration<GeminiConfig>();
 }
