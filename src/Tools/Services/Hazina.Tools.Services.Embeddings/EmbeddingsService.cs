@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Hazina.LLMs;
+using Hazina.LLMs.OpenAI;
 using Hazina.Tools.Data;
 using Hazina.Tools.Models;
 using Hazina.Tools.Services.Store;
@@ -169,6 +172,26 @@ namespace Hazina.Tools.Services.Embeddings
             var files = setup.Store.EmbeddingStore.Embeddings.Where(f => f.Key.StartsWith(filePrefix)).Select(f => f.Key).ToList();
             foreach (var f in files)
                 await setup.Store.Remove(f);
+        }
+
+        public async Task<List<double>> GenerateEmbeddingAsync(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return new List<double>();
+
+            try
+            {
+                var config = new OpenAIConfig(_config.ApiSettings.OpenApiKey);
+                var client = new OpenAIClientWrapper(config);
+                var embedding = await client.GenerateEmbedding(text);
+                // Embedding class inherits from List<double>, so cast directly
+                return embedding?.ToList() ?? new List<double>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating embedding: {ex.Message}");
+                return new List<double>();
+            }
         }
 
         public async Task ExtractAndEmbedChatUpload(string projectId, string chatId, string fileName, string userId = null)
