@@ -1,3 +1,4 @@
+using Hazina.LLMs.OpenAI;
 using System.Security.Cryptography;
 using Hazina.LLMs;
 
@@ -107,7 +108,7 @@ class Program
             var embedModel = Environment.GetEnvironmentVariable("OPENAI_EMBED_MODEL") ?? "text-embedding-3-small";
             var chatModel = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-4o-mini";
             var imageModel = Environment.GetEnvironmentVariable("OPENAI_IMAGE_MODEL") ?? "gpt-image-1";
-            var config = new OpenAIConfig(openAiKey ?? string.Empty, embedModel, chatModel, imageModel);
+            var config = new OpenAIConfig(openAiKey ?? string.Empty, embedModel, chatModel, imageModel, "", "gpt-4o-mini-tts");
             defaultDimension = GetOpenAiDefaultDim(embedModel);
             Console.WriteLine($"Provider: OpenAI ({embedModel}, dim {defaultDimension})");
             return new OpenAIClientWrapper(config);
