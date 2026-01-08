@@ -15,10 +15,20 @@
   <ItemGroup>
     <None Remove="googleaccount.json" />
   </ItemGroup>
-  <ItemGroup>
+  <!-- Use appsettings.json if it exists (local dev), otherwise use template (CI) -->
+  <ItemGroup Condition="Exists('appsettings.json')">
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup Condition="!Exists('appsettings.json') AND Exists('appsettings.template.json')">
+    <Content Include="appsettings.template.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <TargetPath>appsettings.json</TargetPath>
+    </Content>
+  </ItemGroup>
+  <!-- Use googleaccount.json if it exists (local dev with BigQuery), otherwise skip (CI) -->
+  <ItemGroup Condition="Exists('googleaccount.json')">
     <Content Include="googleaccount.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
