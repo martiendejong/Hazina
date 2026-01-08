@@ -11,6 +11,16 @@ namespace Hazina.Tools.Data
         /// </summary>
         public static StoreSetup GetStoreSetup(string folder, string apiKey)
         {
+            // Legacy overload for backwards compatibility - create basic OpenAIConfig with just API key
+            var config = new OpenAIConfig(apiKey);
+            return GetStoreSetup(folder, config);
+        }
+
+        /// <summary>
+        /// Gets store setup using file-based storage with full OpenAI configuration
+        /// </summary>
+        public static StoreSetup GetStoreSetup(string folder, OpenAIConfig openAIConfig)
+        {
             var embeddingsFolder = Path.Combine(folder, "embeddings");
             var embeddingsPath = Path.Combine(embeddingsFolder, "embeddings.json");
             var partsPath = Path.Combine(folder, "parts");
@@ -35,8 +45,7 @@ namespace Hazina.Tools.Data
                 }
             }
 
-            var config = new OpenAIConfig(apiKey);
-            var llmClient = new OpenAIClientWrapper(config);
+            var llmClient = new OpenAIClientWrapper(openAIConfig);
             var fileStore = new EmbeddingFileStore(embeddingsPath, llmClient);
             var textStore = new TextFileStore(folder);
             var partStore = new DocumentPartFileStore(partsPath);
@@ -83,9 +92,18 @@ namespace Hazina.Tools.Data
             string folder = null,
             int embeddingDimension = 1536)
         {
-            var apiKey = config.ApiSettings?.OpenApiKey
-                ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY")
-                ?? throw new InvalidOperationException("OpenAI API key is required");
+            // Use OpenAI config from HazinaStoreConfig if available, otherwise fallback to ApiSettings
+            var openAIConfig = config.OpenAI;
+            if (openAIConfig == null || string.IsNullOrEmpty(openAIConfig.ApiKey))
+            {
+                // Fallback: create OpenAI config from ApiSettings (legacy support)
+                var fallbackApiKey = config.ApiSettings?.OpenApiKey
+                    ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                    ?? throw new InvalidOperationException("OpenAI API key is required");
+                openAIConfig = new OpenAIConfig(fallbackApiKey);
+            }
+
+            var apiKey = openAIConfig.ApiKey;
 
             // Check if SQLite is enabled (new default)
             if (config.SqliteSettings?.Enabled == true)
@@ -143,7 +161,7 @@ namespace Hazina.Tools.Data
                 ?? throw new InvalidOperationException("Project folder is required for file-based storage");
 
             System.Console.WriteLine($"Using file-based storage in '{defaultProjectFolder}'");
-            return GetStoreSetup(defaultProjectFolder, apiKey);
+            return GetStoreSetup(defaultProjectFolder, openAIConfig);
         }
 
         /// <summary>
