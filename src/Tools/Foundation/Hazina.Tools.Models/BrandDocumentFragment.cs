@@ -311,5 +311,15 @@ namespace Hazina.Tools.Models
         /// Used to suggest regeneration when dependencies change
         /// </summary>
         public List<string> Dependencies { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Whether this fragment needs regeneration due to brand asset changes
+        /// </summary>
+        public bool NeedsRegeneration { get; set; } = false;
+
+        /// <summary>
+        /// Reason why regeneration is suggested
+        /// </summary>
+        public string RegenerationReason { get; set; } = "";
     }
 }

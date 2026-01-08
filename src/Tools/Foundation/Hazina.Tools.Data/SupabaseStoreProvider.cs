@@ -1,3 +1,4 @@
+using Hazina.LLMs.OpenAI;
 using Hazina.Store;
 using Hazina.Store.EmbeddingStore;
 using HazinaStore.Models;

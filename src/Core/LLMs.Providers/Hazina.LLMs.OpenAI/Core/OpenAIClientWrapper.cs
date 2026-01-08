@@ -10,6 +10,7 @@ using static System.Net.Mime.MediaTypeNames;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Hazina.LLMs;
+using Hazina.LLMs.OpenAI;
 
 public partial class OpenAIClientWrapper : ILLMClient
 {

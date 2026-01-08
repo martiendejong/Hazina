@@ -1,3 +1,4 @@
+using Hazina.LLMs.OpenAI;
 using Hazina.AI.FluentAPI.Configuration;
 using Hazina.AI.FluentAPI.Core;
 using Hazina.AI.Providers.Core;

@@ -1,3 +1,4 @@
+using Hazina.LLMs.OpenAI;
 using System.IO;
 using Hazina.Store;
 using Hazina.Store.EmbeddingStore;

@@ -1,81 +1,61 @@
+using Hazina.LLMs.Configuration;
 using Microsoft.Extensions.Configuration;
 
 namespace Hazina.LLMs;
 
 /// <summary>
-/// Configuration for Ollama local LLM API
+/// Configuration for Ollama local LLM API.
 /// </summary>
-public class OllamaConfig
+public class OllamaConfig : HazinaConfigBase
 {
-    public OllamaConfig(
-        string endpoint = "http://localhost:11434",
-        string model = "llama3.2",
-        string embeddingModel = "nomic-embed-text",
-        string logPath = "c:\\projects\\ollama-logs.txt")
-    {
-        Endpoint = endpoint;
-        Model = model;
-        EmbeddingModel = embeddingModel;
-        LogPath = logPath;
-    }
-
     /// <summary>
-    /// Ollama API endpoint (default: http://localhost:11434)
+    /// Model name for embeddings (e.g., nomic-embed-text, mxbai-embed-large).
     /// </summary>
-    public string Endpoint { get; set; }
+    public string EmbeddingModel { get; set; } = "nomic-embed-text";
 
     /// <summary>
-    /// Model name for chat completions (e.g., llama3.2, mistral, codellama)
-    /// </summary>
-    public string Model { get; set; }
-
-    /// <summary>
-    /// Model name for embeddings (e.g., nomic-embed-text, mxbai-embed-large)
-    /// </summary>
-    public string EmbeddingModel { get; set; }
-
-    /// <summary>
-    /// Path for logging API interactions
-    /// </summary>
-    public string LogPath { get; set; }
-
-    /// <summary>
-    /// Temperature for generation (0.0-2.0, default 0.7)
+    /// Temperature for generation (0.0-2.0, default 0.7).
     /// </summary>
     public double Temperature { get; set; } = 0.7;
 
     /// <summary>
-    /// Maximum tokens to generate
+    /// Maximum tokens to generate.
     /// </summary>
     public int MaxTokens { get; set; } = 4096;
 
     /// <summary>
-    /// Top-p sampling parameter
+    /// Top-p sampling parameter.
     /// </summary>
     public double TopP { get; set; } = 1.0;
 
-    /// <summary>
-    /// Load configuration from appsettings.json "Ollama" section
-    /// </summary>
-    public static OllamaConfig Load()
-    {
-        var config = new ConfigurationBuilder()
-            .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .Build();
+    /// <inheritdoc />
+    protected override string ConfigurationSectionName => "Ollama";
 
-        var ollamaSettings = new OllamaConfig();
-        config.GetSection("Ollama").Bind(ollamaSettings);
-        return ollamaSettings;
+    /// <inheritdoc />
+    protected override string? DefaultEndpoint => "http://localhost:11434";
+
+    /// <inheritdoc />
+    protected override string DefaultModel => "llama3.2";
+
+    /// <inheritdoc />
+    public override IEnumerable<string> Validate()
+    {
+        // Ollama doesn't require an API key (local)
+        if (string.IsNullOrWhiteSpace(Model))
+            yield return $"{GetType().Name}: Model is required";
+
+        if (string.IsNullOrWhiteSpace(Endpoint))
+            yield return $"{GetType().Name}: Endpoint is required";
     }
 
     /// <summary>
-    /// Create config from IConfiguration
+    /// Loads configuration from appsettings.json.
+    /// </summary>
+    public static OllamaConfig Load() => LoadFromConfiguration<OllamaConfig>();
+
+    /// <summary>
+    /// Creates config from IConfiguration instance.
     /// </summary>
     public static OllamaConfig FromConfiguration(IConfiguration configuration)
-    {
-        var ollamaSettings = new OllamaConfig();
-        configuration.GetSection("Ollama").Bind(ollamaSettings);
-        return ollamaSettings;
-    }
+        => LoadFromConfiguration<OllamaConfig>(configuration);
 }

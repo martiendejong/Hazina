@@ -11,6 +11,7 @@ using System.Xml.Linq;
 using Google.Apis.Auth.OAuth2.Responses;
 using Google.Cloud.BigQuery.V2;
 using Hazina.LLMs;
+using Hazina.LLMs.OpenAI;
 
 using MailKit;
 using MailKit.Net.Imap;
