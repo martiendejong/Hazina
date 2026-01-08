@@ -1,3 +1,5 @@
+using Hazina.LLMs.OpenAI;
+
 namespace HazinaStore.Models
 {
     public class HazinaStoreConfig
@@ -7,5 +9,6 @@ namespace HazinaStore.Models
         public GoogleOAuthSettings GoogleOAuthSettings;
         public SupabaseSettings SupabaseSettings;
         public SqliteSettings SqliteSettings;
+        public OpenAIConfig OpenAI;
     }
 }

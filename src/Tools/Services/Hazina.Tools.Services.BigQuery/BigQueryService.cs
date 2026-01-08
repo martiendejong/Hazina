@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Google.Cloud.BigQuery.V2;
 using Hazina.Tools.Data;
 using Hazina.Tools.Services.Store;
+using Hazina.Tools.Services.FileOps.Helpers;
 
 namespace Hazina.Tools.Services.BigQuery
 {
@@ -56,7 +57,8 @@ namespace Hazina.Tools.Services.BigQuery
             messages.Add(new HazinaChatMessage(HazinaMessageRole.System, BigQueries.BigQueryPrompt));
 
             var folder = _fileLocator.GetProjectFolder(projectId);
-            var bigQueryStoreSetup = StoreProvider.GetStoreSetup(folder, _apiKey);
+            var config = HazinaStoreConfigLoader.LoadHazinaStoreConfig();
+            var bigQueryStoreSetup = StoreProvider.GetStoreSetup(folder, config.OpenAI);
 
             var g = new DocumentGenerator(bigQueryStoreSetup.Store, messages, bigQueryStoreSetup.LLMClient, []);
 

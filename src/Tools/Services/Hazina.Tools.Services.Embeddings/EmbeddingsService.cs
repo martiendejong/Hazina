@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Hazina.LLMs;
@@ -47,7 +49,7 @@ namespace Hazina.Tools.Services.Embeddings
             try
             {
                 var project = _projects.Load(projectId);
-                var setup = StoreProvider.GetStoreSetup(_fileLocator.GetProjectFolder(project.Id), _config.ApiSettings.OpenApiKey);
+                var setup = StoreProvider.GetStoreSetup(_fileLocator.GetProjectFolder(project.Id), _config.OpenAI);
                 var store = setup.Store;
 
                 var files = await _embeddingService.GetEmbeddingsFileList(project);
@@ -81,7 +83,7 @@ namespace Hazina.Tools.Services.Embeddings
                 }
                 if (!Directory.Exists(globalChatsFolder)) Directory.CreateDirectory(globalChatsFolder);
 
-                var setup = StoreProvider.GetStoreSetup(globalChatsFolder, _config.ApiSettings.OpenApiKey);
+                var setup = StoreProvider.GetStoreSetup(globalChatsFolder, _config.OpenAI);
                 var store = setup.Store;
                 var embeddingsFolderPreferred = Path.Combine(globalChatsFolder, "embeddings");
                 var embeddingsFolder = embeddingsFolderPreferred;
@@ -131,7 +133,7 @@ namespace Hazina.Tools.Services.Embeddings
 
         public async Task EmbedProjectFile(string projectId, string relativeFilePath)
         {
-            var setup = StoreProvider.GetStoreSetup(_fileLocator.GetProjectFolder(projectId), _config.ApiSettings.OpenApiKey);
+            var setup = StoreProvider.GetStoreSetup(_fileLocator.GetProjectFolder(projectId), _config.OpenAI);
             await setup.Store.Embed(relativeFilePath);
         }
 
@@ -140,7 +142,7 @@ namespace Hazina.Tools.Services.Embeddings
             var folder = string.IsNullOrWhiteSpace(userId)
                 ? _fileLocator.GetChatUploadsFolder(projectId, chatId)
                 : _fileLocator.GetChatUploadsFolder(projectId, chatId, userId);
-            var setup = StoreProvider.GetStoreSetup(folder, _config.ApiSettings.OpenApiKey);
+            var setup = StoreProvider.GetStoreSetup(folder, _config.OpenAI);
             await setup.Store.Embed(relativeFileName);
         }
 
@@ -151,8 +153,8 @@ namespace Hazina.Tools.Services.Embeddings
                 ? _fileLocator.GetChatUploadsFolder(projectId, chatId)
                 : _fileLocator.GetChatUploadsFolder(projectId, chatId, userId);
 
-            var chatSetup = StoreProvider.GetStoreSetup(chatUploadsFolder, _config.ApiSettings.OpenApiKey);
-            var projectSetup = StoreProvider.GetStoreSetup(projectFolder, _config.ApiSettings.OpenApiKey);
+            var chatSetup = StoreProvider.GetStoreSetup(chatUploadsFolder, _config.OpenAI);
+            var projectSetup = StoreProvider.GetStoreSetup(projectFolder, _config.OpenAI);
 
             var matches = chatSetup.Store.EmbeddingStore.Embeddings.Where(f => f.Key.StartsWith(filePrefix)).ToList();
             foreach (var m in matches)
@@ -168,7 +170,7 @@ namespace Hazina.Tools.Services.Embeddings
         public async Task DemoteChatFileFromProject(string projectId, string chatId, string filePrefix)
         {
             var project = _projects.Load(projectId);
-            var setup = StoreProvider.GetStoreSetup(_fileLocator.GetProjectFolder(project.Id), _config.ApiSettings.OpenApiKey);
+            var setup = StoreProvider.GetStoreSetup(_fileLocator.GetProjectFolder(project.Id), _config.OpenAI);
             var files = setup.Store.EmbeddingStore.Embeddings.Where(f => f.Key.StartsWith(filePrefix)).Select(f => f.Key).ToList();
             foreach (var f in files)
                 await setup.Store.Remove(f);
@@ -187,7 +189,7 @@ namespace Hazina.Tools.Services.Embeddings
                 // Embedding class inherits from List<double>, so cast directly
                 return embedding?.ToList() ?? new List<double>();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException)
             {
                 Console.WriteLine($"Error generating embedding: {ex.Message}");
                 return new List<double>();
@@ -210,7 +212,7 @@ namespace Hazina.Tools.Services.Embeddings
             var extension = index >= 0 ? fileName.Substring(index + 1) : "txt";
             var textFilePath = Path.Combine(folder, Path.GetFileNameWithoutExtension(filePath) + "." + extension + ".txt");
 
-            var setup = StoreProvider.GetStoreSetup(folder, _config.ApiSettings.OpenApiKey);
+            var setup = StoreProvider.GetStoreSetup(folder, _config.OpenAI);
             // TODO: Fix ILLMClient interface mismatch between DevGPT.LLMs.Client and DevGPT.LLMClient
             // Temporarily disabled - requires package version alignment
             // var extractor = new TextFileExtractor(setup.LLMClient);
