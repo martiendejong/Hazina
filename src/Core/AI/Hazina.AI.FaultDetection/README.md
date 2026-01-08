@@ -1,5 +1,7 @@
 # Hazina.AI.FaultDetection
 
+![Criticality: IMPORTANT](https://img.shields.io/badge/criticality-IMPORTANT-orange) ![Type: Reliability](https://img.shields.io/badge/type-Reliability-blue)
+
 **Adaptive Fault Detection and Self-Correction for LLM Responses**
 
 Hazina.AI.FaultDetection automatically detects and corrects LLM errors, hallucinations, and inconsistencies in real-time. Get production-grade reliability from probabilistic language models.
