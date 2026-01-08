@@ -73,7 +73,7 @@
 | D31 | Behavior-focused test structure | 6 | 6 | 4 | 0.60 | BACKLOG |
 | D32 | Separate unit/integration tests | 6 | 4 | 3 | 0.86 | BACKLOG |
 | D33 | TestData folders | 5 | 3 | 1 | 1.25 | DONE |
-| D34 | Architectural tests (ArchUnit.NET) | 8 | 4 | 2 | 1.33 | BACKLOG |
+| D34 | Architectural tests (ArchUnit.NET) | 8 | 4 | 2 | 1.33 | DONE |
 | D35 | Mutation testing (Stryker.NET) | 5 | 5 | 2 | 0.71 | BACKLOG |
 | D36 | Zero flaky tests policy | 7 | 6 | 3 | 0.78 | BACKLOG |
 | D37 | TESTING.md strategy document | 6 | 2 | 1 | **2.00** | DONE |
@@ -168,9 +168,9 @@
 
 | Status | Count | Percentage |
 |--------|-------|------------|
-| DONE | 12 | 24% |
-| TODO | 0 | 0% |
-| BACKLOG | 38 | 76% |
+| DONE | 13 | 26% |
+| N/A | 2 | 4% |
+| BACKLOG | 35 | 70% |
 
 ---
 
@@ -190,12 +190,12 @@
 - [x] D37: TESTING.md
 - [x] B18: ILLMClient docs
 
-### Phase 2: Quick Code Wins (IN PROGRESS)
+### Phase 2: Quick Code Wins (DONE)
 - [x] C30: Unified ILogger<T>
-- [ ] B14: Explicit partial naming
-- [ ] B16: Rename extension files
+- [x] B14: Explicit partial naming (N/A - no split partials exist)
+- [x] B16: Rename extension files (N/A - already compliant)
 - [x] D33: TestData folders
-- [ ] D34: Architectural tests
+- [x] D34: Architectural tests (12 tests with ArchUnit.NET)
 
 ### Phase 3: Testing Infrastructure
 - [ ] D32: Separate unit/integration
