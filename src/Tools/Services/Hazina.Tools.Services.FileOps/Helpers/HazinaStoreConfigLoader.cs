@@ -28,11 +28,13 @@ namespace Hazina.Tools.Services.FileOps.Helpers
             var apiSettings = configuration.GetSection("ApiSettings").Get<ApiSettings>();
             var projectSettings = configuration.GetSection("ProjectSettings").Get<ProjectSettings>();
             var googleOAuthSettings = configuration.GetSection("GoogleOAuth").Get<GoogleOAuthSettings>();
+            var openAIConfig = configuration.GetSection("OpenAI").Get<Hazina.LLMs.OpenAI.OpenAIConfig>();
             var config = new HazinaStoreConfig
             {
                 ProjectSettings = projectSettings,
                 ApiSettings = apiSettings,
-                GoogleOAuthSettings = googleOAuthSettings
+                GoogleOAuthSettings = googleOAuthSettings,
+                OpenAI = openAIConfig
             };
             return config;
         }
