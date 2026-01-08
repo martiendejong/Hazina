@@ -7,6 +7,11 @@ on:
     branches: [ main, develop ]
   workflow_dispatch:
 
+# Required for uploading SARIF results to GitHub Security tab
+permissions:
+  contents: read
+  security-events: write
+
 env:
   DOTNET_VERSION: '9.0.x'
   SOLUTION_FILE: 'Hazina.sln'
