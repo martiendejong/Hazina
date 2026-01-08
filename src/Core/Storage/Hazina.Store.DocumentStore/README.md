@@ -1,5 +1,9 @@
 # Hazina.Store.DocumentStore
 
+![Criticality: CRITICAL](https://img.shields.io/badge/criticality-CRITICAL-red) ![Type: Data Layer](https://img.shields.io/badge/type-Data%20Layer-blue)
+
+> **WARNING**: All document storage flows through this component. Changes affect data integrity and RAG functionality.
+
 Document storage and retrieval system with automatic chunking, embedding, and semantic search capabilities.
 
 ## Overview

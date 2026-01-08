@@ -1,5 +1,9 @@
 # Hazina.AI.FluentAPI
 
+![Criticality: CRITICAL](https://img.shields.io/badge/criticality-CRITICAL-red) ![Type: Public API](https://img.shields.io/badge/type-Public%20API-blue)
+
+> **WARNING**: This is the public API surface. Breaking changes here affect all consumers. Maintain backward compatibility.
+
 **Developer-First Fluent API for Hazina AI**
 
 Provides an intuitive, chainable API that reduces AI integration complexity by 70%.
