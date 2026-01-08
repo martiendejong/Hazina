@@ -9,6 +9,32 @@ namespace Hazina.LLMs.OpenAI;
 public class OpenAIConfig : HazinaConfigBase
 {
     /// <summary>
+    /// Creates a default OpenAI configuration.
+    /// </summary>
+    public OpenAIConfig() { }
+
+    /// <summary>
+    /// Creates an OpenAI configuration with the specified API key.
+    /// </summary>
+    public OpenAIConfig(string apiKey)
+    {
+        ApiKey = apiKey;
+    }
+
+    /// <summary>
+    /// Creates an OpenAI configuration with full parameters (backwards compatibility).
+    /// </summary>
+    public OpenAIConfig(string apiKey, string embeddingModel, string model, string imageModel, string logPath, string ttsModel)
+    {
+        ApiKey = apiKey;
+        Model = model;
+        EmbeddingModel = embeddingModel;
+        ImageModel = imageModel;
+        LogPath = logPath;
+        TtsModel = ttsModel;
+    }
+
+    /// <summary>
     /// Model for image generation (e.g., "gpt-image-1", "dall-e-3").
     /// </summary>
     public string ImageModel { get; set; } = "gpt-image-1";
