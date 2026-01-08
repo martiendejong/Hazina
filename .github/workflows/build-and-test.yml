@@ -119,7 +119,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Restore dependencies
-      run: dotnet restore ${{ env.SOLUTION_FILE }}
+      run: dotnet restore ${{ env.SOLUTION_FILE }} /p:EnableWindowsTargeting=true
 
     # Run code formatting check
     - name: Check code formatting
@@ -133,7 +133,8 @@ jobs:
           --configuration Release \
           /p:TreatWarningsAsErrors=false \
           /p:WarningLevel=4 \
-          /p:EnableNETAnalyzers=true
+          /p:EnableNETAnalyzers=true \
+          /p:EnableWindowsTargeting=true
 
   publish-test-results:
     name: Publish Test Results
