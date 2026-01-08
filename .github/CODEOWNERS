@@ -1,0 +1,20 @@
+# CODEOWNERS - Define code owners for automatic review requests
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything
+* @martiendejong
+
+# LLM Provider implementations
+/src/Core/LLMs.Providers/ @martiendejong
+
+# AI/RAG core
+/src/Core/AI/ @martiendejong
+
+# Security-sensitive code
+/src/Core/Security/ @martiendejong
+
+# CI/CD and GitHub configuration
+/.github/ @martiendejong
+
+# Documentation
+/docs/ @martiendejong
