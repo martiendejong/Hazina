@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Hazina.Tools.Services.Embeddings
@@ -12,6 +13,11 @@ namespace Hazina.Tools.Services.Embeddings
         Task EmbedChatUpload(string projectId, string chatId, string relativeFileName, string userId = null);
         Task PromoteChatFileToProject(string projectId, string chatId, string filePrefix, string userId = null);
         Task DemoteChatFileFromProject(string projectId, string chatId, string filePrefix);
+
+        /// <summary>
+        /// Generate embedding for a single text string
+        /// </summary>
+        Task<List<double>> GenerateEmbeddingAsync(string text);
     }
 }
 
