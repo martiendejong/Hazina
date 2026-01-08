@@ -12,6 +12,9 @@
     <!-- Suppress package downgrade warnings (transitive dependency version conflicts) -->
     <NoWarn>$(NoWarn);NU1605</NoWarn>
 
+    <!-- Enable Windows targeting on Linux CI runners -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
     <!-- Build Performance Optimizations -->
     <IncrementalBuild>true</IncrementalBuild>
     <BuildInParallel>true</BuildInParallel>
