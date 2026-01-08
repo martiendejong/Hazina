@@ -20,11 +20,11 @@
 | ID | Item | Value | Effort | Risk | Score | Status |
 |----|------|-------|--------|------|-------|--------|
 | A1 | SYSTEM_SNAPSHOT.md - Single-screen system overview | 10 | 3 | 1 | **2.50** | DONE |
-| A2 | Visual system maps - ASCII diagrams per domain | 9 | 4 | 1 | **1.80** | TODO |
+| A2 | Visual system maps - ASCII diagrams per domain | 9 | 4 | 1 | **1.80** | DONE |
 | A3 | Unified folder structure - Domain-first organization | 8 | 7 | 6 | 0.62 | BACKLOG |
 | A4 | ENTRYPOINT.md per domain - 5-10 line entry points | 9 | 2 | 1 | **3.00** | DONE |
-| A5 | FLOW.md per service - Flow documentation | 8 | 3 | 1 | **2.00** | TODO |
-| A6 | FAILURE_MODES.md - Traffic light failure docs | 8 | 3 | 1 | **2.00** | TODO |
+| A5 | FLOW.md per service - Flow documentation | 8 | 3 | 1 | **2.00** | DONE |
+| A6 | FAILURE_MODES.md - Traffic light failure docs | 8 | 3 | 1 | **2.00** | DONE |
 | A7 | Critical path markers - README badges | 7 | 2 | 1 | **2.33** | DONE |
 | A8 | Project categorization - CORE/EXTENDED/DEMO/DEPRECATED | 8 | 3 | 2 | 1.60 | BACKLOG |
 | A9 | BOOTSTRAP.md - Zero-to-running guide | 9 | 2 | 1 | **3.00** | DONE |
@@ -43,7 +43,7 @@
 | B15 | Standardize namespace depth to 3-4 levels | 4 | 5 | 4 | 0.44 | BACKLOG |
 | B16 | Rename extension files (Extensions.cs → StringExtensions.cs) | 5 | 2 | 2 | 1.25 | BACKLOG |
 | B17 | Consolidate config classes by domain | 7 | 5 | 4 | 0.78 | BACKLOG |
-| B18 | Document ILLMClient interface thoroughly | 6 | 2 | 1 | **2.00** | TODO |
+| B18 | Document ILLMClient interface thoroughly | 6 | 2 | 1 | **2.00** | DONE |
 | B19 | Model/DTO/Entity suffix convention | 5 | 6 | 5 | 0.45 | BACKLOG |
 | B20 | Behavior-based test names | 7 | 4 | 2 | 1.17 | BACKLOG |
 
@@ -76,7 +76,7 @@
 | D34 | Architectural tests (ArchUnit.NET) | 8 | 4 | 2 | 1.33 | BACKLOG |
 | D35 | Mutation testing (Stryker.NET) | 5 | 5 | 2 | 0.71 | BACKLOG |
 | D36 | Zero flaky tests policy | 7 | 6 | 3 | 0.78 | BACKLOG |
-| D37 | TESTING.md strategy document | 6 | 2 | 1 | **2.00** | TODO |
+| D37 | TESTING.md strategy document | 6 | 2 | 1 | **2.00** | DONE |
 | D38 | Mock builder pattern | 5 | 4 | 2 | 0.83 | BACKLOG |
 | D39 | Contract tests (Pact) | 6 | 6 | 3 | 0.67 | BACKLOG |
 | D40 | Performance benchmarks (BenchmarkDotNet) | 6 | 5 | 2 | 0.86 | BACKLOG |
@@ -168,8 +168,8 @@
 
 | Status | Count | Percentage |
 |--------|-------|------------|
-| DONE | 5 | 10% |
-| TODO | 5 | 10% |
+| DONE | 10 | 20% |
+| TODO | 0 | 0% |
 | BACKLOG | 40 | 80% |
 
 ---
@@ -183,12 +183,12 @@
 - [x] A1: SYSTEM_SNAPSHOT.md
 - [x] A7: Critical path markers
 
-### Phase 1: Documentation Excellence (TODO)
-- [ ] A2: Visual system maps
-- [ ] A5: FLOW.md per service
-- [ ] A6: FAILURE_MODES.md
-- [ ] D37: TESTING.md
-- [ ] B18: ILLMClient docs
+### Phase 1: Documentation Excellence (DONE)
+- [x] A2: Visual system maps
+- [x] A5: FLOW.md per service
+- [x] A6: FAILURE_MODES.md
+- [x] D37: TESTING.md
+- [x] B18: ILLMClient docs
 
 ### Phase 2: Quick Code Wins
 - [ ] C30: Unified ILogger<T>
