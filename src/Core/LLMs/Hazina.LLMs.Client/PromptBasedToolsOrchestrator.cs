@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Hazina.LLMs;
 
@@ -20,14 +22,17 @@ namespace Hazina.LLMs;
 public class PromptBasedToolsOrchestrator
 {
     private readonly int _maxToolCalls;
+    private readonly ILogger<PromptBasedToolsOrchestrator> _logger;
 
     /// <summary>
     /// Creates a new instance of PromptBasedToolsOrchestrator
     /// </summary>
     /// <param name="maxToolCalls">Maximum number of tool calls allowed in a single conversation (default: 50)</param>
-    public PromptBasedToolsOrchestrator(int maxToolCalls = 50)
+    /// <param name="logger">Optional logger for diagnostic output</param>
+    public PromptBasedToolsOrchestrator(int maxToolCalls = 50, ILogger<PromptBasedToolsOrchestrator>? logger = null)
     {
         _maxToolCalls = maxToolCalls;
+        _logger = logger ?? NullLogger<PromptBasedToolsOrchestrator>.Instance;
     }
 
     /// <summary>
@@ -272,12 +277,13 @@ public class PromptBasedToolsOrchestrator
             );
 
             // Execute the tool
-            Console.WriteLine($"[PromptTools] Calling tool: {tool.FunctionName}");
-            Console.WriteLine($"[PromptTools] Arguments: {argsJson}");
+            _logger.LogDebug("Calling tool: {ToolName} with arguments: {Arguments}",
+                tool.FunctionName, argsJson);
 
             var result = await tool.Execute(messages, hazToolCall, cancel);
 
-            Console.WriteLine($"[PromptTools] Tool result: {(result.Length > 200 ? result.Substring(0, 200) + "..." : result)}");
+            _logger.LogDebug("Tool {ToolName} returned: {Result}",
+                tool.FunctionName, result.Length > 200 ? result[..200] + "..." : result);
 
             return result;
         }

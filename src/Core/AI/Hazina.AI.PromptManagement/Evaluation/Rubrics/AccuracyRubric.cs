@@ -2,7 +2,7 @@ using System;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Hazina.LLMs.Client;
+using Hazina.LLMs;
 
 namespace Hazina.AI.PromptManagement.Evaluation.Rubrics;
 
@@ -27,23 +27,14 @@ public class AccuracyRubric : IQualityRubric
     {
         var prompt = BuildEvaluationPrompt(context);
 
-        var request = new LLMRequest
+        var messages = new List<HazinaChatMessage>
         {
-            Messages = new[]
-            {
-                new LLMMessage
-                {
-                    Role = "user",
-                    Content = prompt
-                }
-            },
-            Temperature = 0.0,  // Deterministic for consistency
-            MaxTokens = 500
+            new HazinaChatMessage(HazinaMessageRole.User, prompt)
         };
 
-        var response = await _llmClient.CompleteAsync(request, cancellationToken);
+        var response = await _llmClient.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, cancellationToken);
 
-        return ParseEvaluationResponse(response.Choices[0].Message.Content);
+        return ParseEvaluationResponse(response.Result);
     }
 
     private static string BuildEvaluationPrompt(EvaluationContext context)
@@ -163,16 +154,14 @@ Output JSON format:
   ""explanation"": ""<brief explanation>""
 }}";
 
-        var request = new LLMRequest
+        var messages = new List<HazinaChatMessage>
         {
-            Messages = new[] { new LLMMessage { Role = "user", Content = prompt } },
-            Temperature = 0.0,
-            MaxTokens = 300
+            new HazinaChatMessage(HazinaMessageRole.User, prompt)
         };
 
-        var response = await _llmClient.CompleteAsync(request, cancellationToken);
+        var response = await _llmClient.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, cancellationToken);
 
-        return ParseResponse(response.Choices[0].Message.Content);
+        return ParseResponse(response.Result);
     }
 
     private static RubricScore ParseResponse(string response)
@@ -251,16 +240,14 @@ JSON format:
   ""explanation"": ""<brief explanation>""
 }}";
 
-        var request = new LLMRequest
+        var messages = new List<HazinaChatMessage>
         {
-            Messages = new[] { new LLMMessage { Role = "user", Content = prompt } },
-            Temperature = 0.0,
-            MaxTokens = 300
+            new HazinaChatMessage(HazinaMessageRole.User, prompt)
         };
 
-        var response = await _llmClient.CompleteAsync(request, cancellationToken);
+        var response = await _llmClient.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, cancellationToken);
 
-        return ParseResponse(response.Choices[0].Message.Content);
+        return ParseResponse(response.Result);
     }
 
     private static RubricScore ParseResponse(string response)

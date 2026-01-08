@@ -115,7 +115,7 @@ public class PostgresReflectionStore : IReflectionStore
             Limit = limit
         });
 
-        return results.Select(r => MapToReflectionReport(r)).ToList();
+        return results.Select(r => MapToReflectionReport((dynamic)r)).ToList();
     }
 
     public async Task<ReflectionReport?> GetLatestReportAsync(

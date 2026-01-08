@@ -1,5 +1,9 @@
 # Hazina.Store.EmbeddingStore
 
+![Criticality: CRITICAL](https://img.shields.io/badge/criticality-CRITICAL-red) ![Type: Data Layer](https://img.shields.io/badge/type-Data%20Layer-blue)
+
+> **WARNING**: All vector embeddings flow through this component. Changes affect semantic search and RAG functionality.
+
 A comprehensive embedding storage system with support for multiple backends including PostgreSQL with pgvector, SQLite, FAISS, in-memory, and file-based storage. Provides unified interfaces for embedding storage, vector similarity search, and batch operations.
 
 ## Overview

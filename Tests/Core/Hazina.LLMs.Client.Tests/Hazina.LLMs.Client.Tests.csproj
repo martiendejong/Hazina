@@ -19,7 +19,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="TestData\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
     <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />

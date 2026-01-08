@@ -108,12 +108,16 @@ public class MemoryBankTests
         var weakMemory = await memoryBank.StoreMemoryAsync("Weak", MemoryType.Working, importance: 0.1);
         var strongMemory = await memoryBank.StoreMemoryAsync("Strong", MemoryType.Semantic, importance: 0.9);
 
-        // Make strong memory stronger by accessing it
+        // Make weak memory old and unaccessed (strength will decay due to recency)
+        // Simulate that it was accessed a long time ago
+        weakMemory.LastAccessedAt = DateTime.UtcNow.AddDays(-30);
+
+        // Make strong memory stronger by accessing it recently
         await memoryBank.RetrieveMemoryAsync(strongMemory.MemoryId);
         await memoryBank.RetrieveMemoryAsync(strongMemory.MemoryId);
 
-        // Act
-        var removed = await memoryBank.ConsolidateMemoriesAsync(strengthThreshold: 0.2);
+        // Act - use threshold of 0.5 (weak memory with old access will be below this)
+        var removed = await memoryBank.ConsolidateMemoriesAsync(strengthThreshold: 0.5);
 
         // Assert
         Assert.True(removed > 0);

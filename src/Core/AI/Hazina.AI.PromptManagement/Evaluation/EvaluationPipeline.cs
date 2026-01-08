@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Hazina.AI.PromptManagement.Core;
-using Hazina.LLMs.Client;
+using Hazina.LLMs;
 
 namespace Hazina.AI.PromptManagement.Evaluation;
 
@@ -154,19 +154,14 @@ public class EvaluationPipeline : IEvaluationPipeline
                 cancellationToken);
 
             // Get LLM response
-            var request = new LLMRequest
+            var messages = new List<HazinaChatMessage>
             {
-                Messages = new[]
-                {
-                    new LLMMessage { Role = "system", Content = renderedPrompt },
-                    new LLMMessage { Role = "user", Content = testCase.Query }
-                },
-                Temperature = _config.Temperature,
-                MaxTokens = _config.MaxTokens
+                new HazinaChatMessage(HazinaMessageRole.System, renderedPrompt),
+                new HazinaChatMessage(HazinaMessageRole.User, testCase.Query)
             };
 
-            var response = await _llmClient.CompleteAsync(request, cancellationToken);
-            var responseText = response.Choices[0].Message.Content;
+            var response = await _llmClient.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, cancellationToken);
+            var responseText = response.Result;
 
             // Evaluate with rubrics
             var scores = new Dictionary<string, double>();
@@ -213,8 +208,8 @@ public class EvaluationPipeline : IEvaluationPipeline
                 Duration = sw.Elapsed,
                 Metadata = new Dictionary<string, object>
                 {
-                    { "tokens_used", response.Usage?.TotalTokens ?? 0 },
-                    { "model", response.Model ?? "unknown" }
+                    { "tokens_used", (response.TokenUsage?.InputTokens ?? 0) + (response.TokenUsage?.OutputTokens ?? 0) },
+                    { "model", "unknown" }
                 }
             };
         }
