@@ -117,7 +117,7 @@ public class ProviderOrchestratorTests
         );
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<Hazina.AI.Providers.Resilience.FailoverException>()
             .WithMessage("*no provider*");
     }
 
@@ -172,6 +172,6 @@ public class ProviderOrchestratorTests
 
         // Assert
         act.Should().Throw<ArgumentException>()
-            .WithParameterName("providerName");
+            .WithParameterName("name");
     }
 }
