@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Hazina.AI.Providers.Core;
+using Hazina.AI.Providers.Resilience;
 using Hazina.AI.Providers.Selection;
 using Hazina.LLMs;
 using Moq;
@@ -117,7 +118,7 @@ public class ProviderOrchestratorTests
         );
 
         // Assert
-        await act.Should().ThrowAsync<Hazina.AI.Providers.Resilience.FailoverException>()
+        await act.Should().ThrowAsync<FailoverException>()
             .WithMessage("*No providers available*");
     }
 
