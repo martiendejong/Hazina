@@ -140,6 +140,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-test
     if: always()
+    permissions:
+      checks: write
+      pull-requests: write
 
     steps:
     - name: Download test results
