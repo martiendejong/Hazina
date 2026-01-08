@@ -7,7 +7,7 @@
     <RootNamespace>DevGPT.App.ClaudeCode</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup Condition="Exists('appsettings.json')">
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
