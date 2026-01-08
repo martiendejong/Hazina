@@ -8,8 +8,12 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="appsettings.json">
+    <Content Include="appsettings.json" Condition="Exists('appsettings.json')">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="appsettings.template.json" Condition="!Exists('appsettings.json')">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <TargetPath>appsettings.json</TargetPath>
     </Content>
   </ItemGroup>
   <ItemGroup>
