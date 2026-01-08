@@ -9,6 +9,9 @@
   -->
 
   <PropertyGroup>
+    <!-- Suppress package downgrade warnings (transitive dependency version conflicts) -->
+    <NoWarn>$(NoWarn);NU1605</NoWarn>
+
     <!-- Build Performance Optimizations -->
     <IncrementalBuild>true</IncrementalBuild>
     <BuildInParallel>true</BuildInParallel>
