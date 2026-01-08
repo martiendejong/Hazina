@@ -28,7 +28,24 @@ namespace Hazina.Tools.Services.FileOps.Helpers
             var apiSettings = configuration.GetSection("ApiSettings").Get<ApiSettings>();
             var projectSettings = configuration.GetSection("ProjectSettings").Get<ProjectSettings>();
             var googleOAuthSettings = configuration.GetSection("GoogleOAuth").Get<GoogleOAuthSettings>();
-            var openAIConfig = configuration.GetSection("OpenAI").Get<Hazina.LLMs.OpenAI.OpenAIConfig>();
+            var openAIConfig = Hazina.LLMs.OpenAI.OpenAIConfig.FromConfiguration(configuration);
+
+            System.Console.WriteLine($"[HazinaStoreConfigLoader] OpenAI config loaded: Model='{openAIConfig.Model}', ApiKey={(string.IsNullOrEmpty(openAIConfig.ApiKey) ? "(empty)" : "(set)")}");
+
+            // Resolve "configuration:" references in OpenAI config
+            if (!string.IsNullOrEmpty(openAIConfig.ApiKey) && openAIConfig.ApiKey.StartsWith("configuration:"))
+            {
+                var configPath = openAIConfig.ApiKey.Substring("configuration:".Length);
+                var resolvedValue = configuration[configPath];
+                if (!string.IsNullOrEmpty(resolvedValue))
+                {
+                    openAIConfig.ApiKey = resolvedValue;
+                    System.Console.WriteLine($"[HazinaStoreConfigLoader] Resolved ApiKey from configuration path: {configPath}");
+                }
+            }
+
+            System.Console.WriteLine($"[HazinaStoreConfigLoader] Final OpenAI config: Model='{openAIConfig.Model}', ApiKey={(string.IsNullOrEmpty(openAIConfig.ApiKey) ? "(empty)" : "(set)")}");
+
             var config = new HazinaStoreConfig
             {
                 ProjectSettings = projectSettings,
