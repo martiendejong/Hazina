@@ -1,18 +1,38 @@
 # Hazina.AI.ContextEngineering
 
-Multi-retriever fusion layer for intelligent context assembly.
+**Language-independent, fully configurable context engineering layer for RAG systems.**
 
 ## Overview
 
-`Hazina.AI.ContextEngineering` provides a flexible retrieval and fusion system that combines results from multiple sources (semantic search, facts, metadata, direct lookup) to build optimal context for LLM queries.
+`Hazina.AI.ContextEngineering` is a complete end-to-end system for intelligent context assembly. It retrieves information from multiple sources, fuses results intelligently, and packs them into optimally formatted context within token budgets.
+
+### What is Context Engineering?
+
+Context engineering is the practice of systematically assembling the right information for LLM queries. Instead of simple semantic search, it combines:
+- **Facts**: Compact, symbolic knowledge (e.g., "building_X_sensors=24")
+- **Semantic chunks**: Full-text passages from document search
+- **Metadata**: Structured information about documents and entities
+- **Direct lookup**: Specific items by ID
+
+The system then fuses these results intelligently and packs them into a formatted context that fits within token budgets.
 
 ## Features
 
-- ✅ **Multiple Retrieval Strategies**: Semantic, facts, metadata, ID lookup
-- ✅ **Fusion Engine**: Combines results with configurable strategies (weighted sum, RRF, max score)
-- ✅ **Deduplication**: Merges results with same ID from different sources
-- ✅ **Extensible**: Easy to add custom retrievers
-- ✅ **Language-Agnostic**: Works with any content representation
+### Complete End-to-End System
+- ✅ **Storage Layer**: SQLite-based facts store with optional embeddings
+- ✅ **Retrieval Layer**: 4 retrievers (semantic, facts, metadata, ID lookup)
+- ✅ **Fusion Engine**: 3 strategies (WeightedSum, RRF, MaxScore) with deduplication
+- ✅ **Configuration System**: Fully policy-driven with JSON persistence and 7 built-in presets
+- ✅ **Packing Layer**: Section-based assembly with token budget management
+- ✅ **Orchestration**: Single entry point that coordinates all layers
+
+### Key Capabilities
+- ✅ **Language-Agnostic**: Works with any content representation or language
+- ✅ **Fully Configurable**: Every decision controlled by policies (retrieval, scoring, packing)
+- ✅ **Token Budget Management**: Automatic trimming with priority-based section preservation
+- ✅ **Tag & Recency Boosting**: Boost scores for tag matches and recent content
+- ✅ **Extensible**: Easy to add custom retrievers, fusion strategies, or section formatters
+- ✅ **Tested**: 33 unit tests with 100% pass rate
 
 ## Installation
 
@@ -24,13 +44,126 @@ Reference the project:
 
 ## Quick Start
 
-### 1. Register Services
+### The Simple Way (Recommended)
+
+Most users should use the **ContextEngineOrchestrator** - the complete end-to-end entry point:
 
 ```csharp
+// 1. Register services
 services.AddContextEngineering();
+
+// 2. Inject and use
+public class MyService
+{
+    private readonly IContextEngine _contextEngine;
+
+    public MyService(IContextEngine contextEngine)
+    {
+        _contextEngine = contextEngine;
+    }
+
+    public async Task<string> GetAnswerAsync(string question)
+    {
+        // Get enriched context (using default config)
+        var context = await _contextEngine.GetContextAsync(question);
+
+        // Use with your LLM
+        var answer = await llm.AskAsync(question, context);
+        return answer;
+    }
+}
 ```
 
-### 2. Use Individual Retrievers
+**Output Example:**
+```
+[FACTS]
+- Building X has 24 sensors (score: 0.95)
+- Sensor pipeline type is Modbus (score: 0.88)
+
+[METADATA]
+Tags: iot, sensors, building-x
+Documents: 3 relevant documents found
+
+[CHUNKS]
+[Source: semantic] [Score: 0.92] Building X contains 24 temperature sensors...
+[Source: semantic] [Score: 0.87] The Modbus protocol is used for communication...
+
+[QUERY]
+How many sensors are in Building X?
+```
+
+### Using Configuration Presets
+
+```csharp
+// Semantic-focused (80% semantic, 20% facts)
+var context = await _contextEngine.GetContextAsync(
+    "How do I configure sensor pipelines?",
+    ContextEngineConfig.SemanticFocused);
+
+// Facts-focused (100% facts, minimal context, 4000 tokens)
+var context = await _contextEngine.GetContextAsync(
+    "How many sensors?",
+    ContextEngineConfig.Compact);
+
+// Tag-focused (strong tag matching boost)
+var config = ContextEngineConfig.TagFocused;
+config.RetrievalPolicy.Tags = new() { "iot", "sensors" };
+var context = await _contextEngine.GetContextAsync(
+    "Show IoT documentation",
+    config);
+
+// All 7 presets: Default, SemanticFocused, FactsFocused, TagFocused, RecencyFocused, Compact, Comprehensive
+```
+
+### Custom Configuration
+
+```csharp
+var config = new ContextEngineConfig
+{
+    Name = "Production Config",
+    RetrievalPolicy = new RetrievalPolicy
+    {
+        SemanticEnabled = true,
+        SemanticTopK = 10,
+        SemanticWeight = 0.7,
+        FactsEnabled = true,
+        FactsTopK = 5,
+        FactsWeight = 0.3,
+        Tags = new() { "production", "api" }
+    },
+    ScoringPolicy = new ScoringPolicy
+    {
+        Strategy = FusionStrategy.WeightedSum,
+        UseTagBoost = true,
+        TagBoostPower = 1.5,
+        UseRecencyBoost = true,
+        RecencyMaxAgeDays = 7
+    },
+    PackingPolicy = new PackingPolicy
+    {
+        MaxTokens = 12000,
+        Sections = new() { "facts", "chunks", "query" },
+        TrimToFit = true,
+        TrimPriority = new() { "query", "facts", "chunks" }
+    },
+    FinalTopK = 10
+};
+
+// Validate before use
+var errors = config.Validate();
+if (!errors.Any())
+{
+    // Save for reuse
+    config.ToFile("production-config.json");
+
+    // Use it
+    var context = await _contextEngine.GetContextAsync(query, config);
+}
+```
+
+## Advanced Usage
+
+### Using Individual Retrievers
 
 ```csharp
 // Facts retriever
