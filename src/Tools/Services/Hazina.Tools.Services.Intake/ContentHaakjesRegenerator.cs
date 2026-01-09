@@ -143,16 +143,16 @@ Return ONLY JSON in this exact format (no markdown, no code blocks, no explanati
                     }
                 }
 
-                // Save to file (using Dutch property names)
+                // Save to file
                 var wrapper = new ContentHooksFinal
                 {
                     ContentHooks = result.ContentHooks.Select(h => new ContentHookFinal
                     {
                         Id = h.Id,
-                        Naam = h.Name ?? "Untitled",
-                        Omschrijving = h.Description ?? "",
-                        Waarom = h.Reason ?? "",
-                        Voorbeelden = h.Examples?.ToList()
+                        Name = h.Name ?? "Untitled",
+                        Description = h.Description ?? "",
+                        Reason = h.Reason ?? "",
+                        Examples = h.Examples?.ToList()
                     }).ToList()
                 };
 
