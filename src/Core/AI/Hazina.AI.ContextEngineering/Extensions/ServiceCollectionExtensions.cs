@@ -1,5 +1,7 @@
 using Hazina.AI.ContextEngineering.Fusion;
 using Hazina.AI.ContextEngineering.Interfaces;
+using Hazina.AI.ContextEngineering.Orchestration;
+using Hazina.AI.ContextEngineering.Packing;
 using Hazina.AI.ContextEngineering.Retrieval;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,6 +27,12 @@ public static class ServiceCollectionExtensions
 
         // Register fusion engine
         services.AddSingleton<FusionEngine>();
+
+        // Register packing
+        services.AddSingleton<IContextPacker, ContextPacker>();
+
+        // Register orchestrator
+        services.AddScoped<IContextEngine, ContextEngineOrchestrator>();
 
         return services;
     }
