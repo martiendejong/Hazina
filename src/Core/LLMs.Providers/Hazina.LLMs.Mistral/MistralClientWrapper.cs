@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Hazina.LLMs;
 using Hazina.LLMs.Mistral;
 
 public class MistralClientWrapper : ILLMClient

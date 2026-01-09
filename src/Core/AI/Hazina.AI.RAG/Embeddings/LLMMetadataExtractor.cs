@@ -1,4 +1,5 @@
 using Hazina.AI.RAG.Embeddings.Models;
+using Hazina.LLMs;
 using Microsoft.Extensions.Logging;
 
 namespace Hazina.AI.RAG.Embeddings;

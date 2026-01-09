@@ -1,8 +1,21 @@
 # Agentic Workflows Guide
 
+**Updated for Hazina v2.0**
+
+---
+
 ## Overview
 
 Hazina's agent system provides autonomous AI agents with tool-calling capabilities, workflow orchestration, and multi-agent coordination.
+
+### New in v2.0
+
+- ✅ **[3-Layer Tool Agent Architecture](TOOL_AGENT_ARCHITECTURE.md)** - 90% token cost reduction through intelligent layering
+- ✅ **[Context Compression](CONTEXT_COMPRESSION.md)** - Reduce agent context by 87%
+- ✅ Improved tool calling with async execution
+- ✅ Enhanced multi-agent coordination
+
+---
 
 ## Core Concepts
 

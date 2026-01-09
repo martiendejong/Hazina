@@ -1,3 +1,5 @@
+using Hazina.LLMs;
+
 namespace Hazina.AgentFactory.Tests;
 
 public class AgentFactoryBasicTests

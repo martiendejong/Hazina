@@ -1,3 +1,5 @@
+using Hazina.LLMs;
+
 namespace Hazina.Store.EmbeddingStore;
 
 /// <summary>

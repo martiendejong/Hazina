@@ -151,10 +151,15 @@ namespace Hazina.Tools.Services
                 // Create return object
                 var uploadsFolder = project.GetUploadsFolder();
                 var filePath = Path.Combine(uploadsFolder, actualFileName);
-                uploadedFile = FileHelper.GetUploadedFileDetails(filePath, actualFileName, 0);
+
+                // Determine tags based on file type
+                var tags = DetermineFileTags(actualFileName, fileContent);
+                tags.Add("uploaded"); // Mark as uploaded
+
+                uploadedFile = FileHelper.GetUploadedFileDetails(filePath, actualFileName, 0, tags);
 
                 // Initial sync to legacy system (without token count, will be updated later)
-                await _legacySync.SyncUploadedDocument(project, actualFileName, tokenCount: 0);
+                await _legacySync.SyncUploadedDocument(project, actualFileName, tokenCount: 0, tags: tags);
 
                 // Send update notification
                 _sendUpdate(projectId, actualFileName);
@@ -279,6 +284,64 @@ namespace Hazina.Tools.Services
             {
                 await file.CopyToAsync(stream);
             }
+        }
+
+        /// <summary>
+        /// Determine appropriate tags based on file name and content
+        /// </summary>
+        private static List<string> DetermineFileTags(string fileName, byte[] fileContent)
+        {
+            var tags = new List<string>();
+            var extension = Path.GetExtension(fileName)?.ToLowerInvariant() ?? "";
+
+            // Image types
+            if (extension == ".jpg" || extension == ".jpeg" || extension == ".png" ||
+                extension == ".gif" || extension == ".bmp" || extension == ".svg" ||
+                extension == ".webp" || extension == ".ico")
+            {
+                tags.Add("image");
+
+                // Check if it's a product image based on filename
+                var fileNameLower = fileName.ToLowerInvariant();
+                if (fileNameLower.Contains("product") || fileNameLower.Contains("prod_"))
+                {
+                    tags.Add("product");
+                }
+            }
+            // Document types
+            else if (extension == ".pdf" || extension == ".doc" || extension == ".docx" ||
+                     extension == ".txt" || extension == ".rtf")
+            {
+                tags.Add("document");
+            }
+            // Spreadsheet types
+            else if (extension == ".xls" || extension == ".xlsx" || extension == ".csv")
+            {
+                tags.Add("spreadsheet");
+            }
+            // Presentation types
+            else if (extension == ".ppt" || extension == ".pptx")
+            {
+                tags.Add("presentation");
+            }
+            // Video types
+            else if (extension == ".mp4" || extension == ".avi" || extension == ".mov" ||
+                     extension == ".wmv" || extension == ".flv" || extension == ".webm")
+            {
+                tags.Add("video");
+            }
+            // Audio types
+            else if (extension == ".mp3" || extension == ".wav" || extension == ".ogg" ||
+                     extension == ".m4a" || extension == ".flac")
+            {
+                tags.Add("audio");
+            }
+            else
+            {
+                tags.Add("file");
+            }
+
+            return tags;
         }
 
         #endregion

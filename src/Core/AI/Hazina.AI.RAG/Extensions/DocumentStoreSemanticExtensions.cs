@@ -1,4 +1,5 @@
 using Hazina.AI.RAG.Embeddings;
+using Hazina.LLMs;
 using Hazina.Store.EmbeddingStore;
 
 namespace Hazina.AI.RAG.Extensions;

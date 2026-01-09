@@ -9,6 +9,12 @@
   -->
 
   <PropertyGroup>
+    <!-- Suppress package downgrade warnings (transitive dependency version conflicts) -->
+    <NoWarn>$(NoWarn);NU1605</NoWarn>
+
+    <!-- Enable Windows targeting on Linux CI runners -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
     <!-- Build Performance Optimizations -->
     <IncrementalBuild>true</IncrementalBuild>
     <BuildInParallel>true</BuildInParallel>
@@ -57,6 +63,9 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Enable Windows targeting on non-Windows platforms for CI/CD -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">

@@ -1,3 +1,5 @@
+using Hazina.LLMs;
+
 namespace Hazina.Tools.Data
 {
     public class StoreSetup

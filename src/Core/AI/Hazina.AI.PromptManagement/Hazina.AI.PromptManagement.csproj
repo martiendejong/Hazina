@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Description>Hazina Prompt Management System - Template versioning, evaluation, and self-learning capabilities</Description>
+    <Authors>Hazina AI Team</Authors>
+    <PackageId>Hazina.AI.PromptManagement</PackageId>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Exclude problematic files with dynamic type issues -->
+    <Compile Remove="Storage.PostgreSQL\**" />
+    <Compile Remove="Dashboard\AlertingService.cs" />
+    <Compile Remove="Safety\SafetyCoordinator.cs" />
+    <Compile Remove="Approval\ApprovalWorkflow.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Handlebars template engine -->
+    <PackageReference Include="Handlebars.Net" Version="2.1.6" />
+
+    <!-- Database access -->
+    <PackageReference Include="Dapper" Version="2.1.35" />
+    <PackageReference Include="Npgsql" Version="8.0.5" />
+
+    <!-- JSON -->
+    <PackageReference Include="System.Text.Json" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Hazina dependencies -->
+    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
+  </ItemGroup>
+
+</Project>

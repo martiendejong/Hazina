@@ -442,7 +442,10 @@ namespace Hazina.Tools.Services.Chat
                                 CancellationToken.None);
                             succeeded = true;
                         }
-                        catch { /* Best effort */ }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[ChatService] Data gathering failed for project {projectId}, chat {chatId}: {ex.Message}");
+                        }
                         finally
                         {
                             await _notifier.NotifyOperationStatus(
@@ -499,7 +502,16 @@ namespace Hazina.Tools.Services.Chat
                             }
                             succeeded = true;
                         }
-                        catch { /* Best effort */ }
+                        catch (Exception ex)
+                        {
+                            // Log the error for debugging - critical for diagnosing analysis field generation issues
+                            Console.WriteLine($"[ChatService] Analysis field generation failed for project {projectId}, chat {chatId}: {ex.Message}");
+                            Console.WriteLine($"[ChatService] Exception type: {ex.GetType().Name}");
+                            if (ex.InnerException != null)
+                            {
+                                Console.WriteLine($"[ChatService] Inner exception: {ex.InnerException.Message}");
+                            }
+                        }
                         finally
                         {
                             await _notifier.NotifyOperationStatus(
@@ -520,7 +532,10 @@ namespace Hazina.Tools.Services.Chat
                         await Task.Delay(2000);
                         await SyncProjectDataToDocumentStoreAsync(projectId);
                     }
-                    catch { /* Best effort */ }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[ChatService] Project data sync failed for project {projectId}: {ex.Message}");
+                    }
                 });
             }
 
@@ -620,7 +635,10 @@ namespace Hazina.Tools.Services.Chat
                                 CancellationToken.None);
                             succeeded = true;
                         }
-                        catch { /* Best effort */ }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[ChatService] Data gathering failed for project {projectId}, chat {chatId}: {ex.Message}");
+                        }
                         finally
                         {
                             await _notifier.NotifyOperationStatus(
@@ -650,7 +668,11 @@ namespace Hazina.Tools.Services.Chat
                                 CancellationToken.None);
                             succeeded = true;
                         }
-                        catch { /* Best effort */ }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[ChatService] Analysis field generation failed for project {projectId}, chat {chatId}: {ex.Message}");
+                            Console.WriteLine($"[ChatService] Exception type: {ex.GetType().Name}");
+                        }
                         finally
                         {
                             await _notifier.NotifyOperationStatus(

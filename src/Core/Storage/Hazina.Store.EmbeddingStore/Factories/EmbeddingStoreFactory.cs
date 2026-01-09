@@ -1,4 +1,5 @@
 using Hazina.Store.EmbeddingStore;
+using Hazina.LLMs;
 
 public static class EmbeddingStoreFactory
 {

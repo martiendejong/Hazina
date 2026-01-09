@@ -9,6 +9,8 @@ using OpenAI.Images;
 using static System.Net.Mime.MediaTypeNames;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using Hazina.LLMs;
+using Hazina.LLMs.OpenAI;
 
 public partial class OpenAIClientWrapper : ILLMClient
 {
@@ -205,9 +207,28 @@ public partial class OpenAIClientWrapper : ILLMClient
 
     public void Log(string? data)
     {
+        // Skip logging if LogPath is not configured
+        if (string.IsNullOrWhiteSpace(Config?.LogPath))
+            return;
+
         const int maxRetries = 10;
         const int delayMs = 100;
         string message = $"{DateTime.Now:yy-MM-dd HH:mm:ss}\n{data ?? ""}";
+
+        // Ensure log directory exists
+        var logDir = Path.GetDirectoryName(Config.LogPath);
+        if (!string.IsNullOrEmpty(logDir) && !Directory.Exists(logDir))
+        {
+            try
+            {
+                Directory.CreateDirectory(logDir);
+            }
+            catch
+            {
+                // If we can't create the directory, skip logging
+                return;
+            }
+        }
 
         for (int i = 0; i < maxRetries; i++)
         {

@@ -1,6 +1,7 @@
 using Hazina.DynamicAPI.Core;
 using Hazina.DynamicAPI.Tools;
 using Hazina.DynamicAPI.Models;
+using Hazina.LLMs;
 
 namespace Hazina.DynamicAPI.Examples;
 

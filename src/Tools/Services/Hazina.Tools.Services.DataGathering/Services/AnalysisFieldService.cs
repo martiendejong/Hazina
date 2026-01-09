@@ -1,3 +1,4 @@
+using Hazina.LLMs;
 using Hazina.Tools.Extensions;
 using Hazina.Tools.AI.Agents;
 using Hazina.Tools.Data;
@@ -42,13 +43,36 @@ You have access to analysis fields that need to be populated. When you identify 
 
 {0}
 
-Guidelines:
-- Only generate content when you have SUFFICIENT context from the conversation
-- Be confident in your analysis before calling the tool
+## When to Generate New Fields (marked [NOT YET GENERATED])
+Generate a field when you have sufficient context. Ask yourself:
+- Does the conversation contain specific, relevant information for this field?
+- Is there enough detail to create meaningful, useful content?
+- Would the user benefit from having this field generated now?
+
+If YES to all, generate it. Don't wait for perfect information - generate when you have ENOUGH.
+
+## When to Update Existing Fields (marked [ALREADY GENERATED])
+Update an existing field when ANY of these apply:
+- The user explicitly asks to regenerate/update/improve a field
+- The conversation provides significant NEW information that contradicts or substantially improves the existing content
+- The user corrected information that was used to generate the field
+- The user provided much more detail about the topic
+
+Use the 'regenerate' parameter and explain your reasoning when updating existing fields.
+
+## Feasibility Assessment
+Before generating each field, quickly assess:
+1. RELEVANCE: Is this field type relevant to the conversation topic?
+2. DATA QUALITY: Is the information specific enough, not just vague mentions?
+3. COMPLETENESS: Do you have at least 60% of what you need for a useful result?
+
+If a field passes all three, generate it. Don't be overly conservative - it's better to generate something useful that can be refined than to wait indefinitely.
+
+## Guidelines
 - Generate comprehensive, well-structured content appropriate to each field type
 - The content format should match the field's purpose - use natural text for narrative fields, structured data for typed fields
-- If the conversation or gathered data doesn't provide enough information for a field, don't generate it
 - You can generate multiple fields if the conversation supports it
+- Always provide reasoning when generating or updating fields
 
 After analyzing, respond with a brief summary of what you generated (or 'No analysis fields could be generated yet' if insufficient context).";
 
@@ -148,6 +172,13 @@ After analyzing, respond with a brief summary of what you generated (or 'No anal
 
             var fieldsContext = BuildFieldsContext(availableFields, existingFields);
 
+            // Smart regeneration detection
+            var userRequestedRegeneration = DetectUserRegenerationIntent(userMessage, conversationHistory);
+            var fieldsWithNewContext = DetectFieldsWithNewContext(userMessage, conversationHistory, availableFields, existingFields);
+
+            _logger?.LogDebug("Analysis field generation context: userRequestedRegeneration={Regenerate}, fieldsWithNewContext={Fields}",
+                userRequestedRegeneration, string.Join(",", fieldsWithNewContext));
+
             var toolsContext = new AnalysisFieldToolsContext(
                 _fieldsProvider,
                 _notifier,
@@ -157,7 +188,10 @@ After analyzing, respond with a brief summary of what you generated (or 'No anal
                 userId,
                 availableFields,
                 _agentFactory,
-                _promptsRoot);
+                _promptsRoot,
+                userRequestedRegeneration,
+                fieldsWithNewContext,
+                userMessage);
 
             // Build messages for the analysis call
             var messages = BuildAnalysisMessages(userMessage, conversationHistory, fieldsContext, availableFields);
@@ -542,6 +576,164 @@ IMPORTANT: Some fields may already be generated (marked [ALREADY GENERATED]).
         catch { }
 
         return DefaultSystemPromptTemplate;
+    }
+
+    /// <summary>
+    /// Detects if the user is explicitly asking to regenerate or update analysis fields.
+    /// </summary>
+    private static bool DetectUserRegenerationIntent(string userMessage, IEnumerable<HazinaChatMessage> conversationHistory)
+    {
+        if (string.IsNullOrWhiteSpace(userMessage))
+            return false;
+
+        var lowerMessage = userMessage.ToLowerInvariant();
+
+        // Strong regeneration intent phrases - these are unambiguous
+        var strongIntentPhrases = new[]
+        {
+            "regenerate", "re-generate", "generate again", "create again",
+            "redo the analysis", "re-do the analysis", "remake", "re-make",
+            "update all fields", "refresh all", "recreate", "re-create",
+            "regenerate all", "redo all"
+        };
+
+        if (strongIntentPhrases.Any(phrase => lowerMessage.Contains(phrase)))
+        {
+            Console.WriteLine($"[AnalysisFieldService] Detected regeneration intent: strong phrase match");
+            return true;
+        }
+
+        // Field-specific update patterns - require "field" or "analysis" context
+        // Using pre-compiled-style patterns to be more specific
+        var fieldContextIndicators = new[] { "field", "analysis", "generated", "content" };
+        var updateVerbs = new[] { "regenerate", "update", "redo", "refresh", "recreate", "fix", "improve", "change" };
+
+        // Check if message has both a field context indicator AND an update verb
+        var hasFieldContext = fieldContextIndicators.Any(ind => lowerMessage.Contains(ind));
+        var hasUpdateVerb = updateVerbs.Any(verb => lowerMessage.Contains(verb));
+
+        if (hasFieldContext && hasUpdateVerb)
+        {
+            Console.WriteLine($"[AnalysisFieldService] Detected regeneration intent: field context + update verb");
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Detects which fields have significant new context in the conversation that would justify regeneration.
+    /// </summary>
+    private static HashSet<string> DetectFieldsWithNewContext(
+        string userMessage,
+        IEnumerable<HazinaChatMessage> conversationHistory,
+        IReadOnlyList<AnalysisFieldInfo> availableFields,
+        Dictionary<string, string> existingFields)
+    {
+        var fieldsWithNewContext = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (string.IsNullOrWhiteSpace(userMessage))
+            return fieldsWithNewContext;
+
+        var lowerMessage = userMessage.ToLowerInvariant();
+        var historyMessages = conversationHistory?.ToList() ?? new List<HazinaChatMessage>();
+
+        foreach (var field in availableFields)
+        {
+            // Skip fields that don't exist yet - they should always be generated if possible
+            if (!existingFields.ContainsKey(field.Key))
+                continue;
+
+            // Check if this message provides new context for this field
+            if (HasNewContextForField(lowerMessage, field, historyMessages))
+            {
+                fieldsWithNewContext.Add(field.Key);
+                Console.WriteLine($"[AnalysisFieldService] Field '{field.Key}' has new context from conversation");
+            }
+        }
+
+        return fieldsWithNewContext;
+    }
+
+    /// <summary>
+    /// Determines if the current message provides new/significant context for a specific field.
+    /// </summary>
+    private static bool HasNewContextForField(string lowerMessage, AnalysisFieldInfo field, List<HazinaChatMessage> history)
+    {
+        // Field name keywords to detect relevance
+        var fieldKeywords = GetFieldKeywords(field);
+
+        // Check if message is relevant to this field (require at least one keyword match)
+        var matchedKeywords = fieldKeywords.Count(kw => lowerMessage.Contains(kw));
+        if (matchedKeywords == 0)
+            return false;
+
+        // Check for explicit correction/clarification phrases (more specific than before)
+        var correctionPhrases = new[]
+        {
+            "actually it's", "actually its", "instead of", "rather than",
+            "i meant", "correction:", "let me clarify", "to clarify",
+            "more specifically", "to be more precise", "i should mention that",
+            "i forgot to mention", "i need to correct", "that's not right",
+            "the correct", "should be", "is actually"
+        };
+
+        if (correctionPhrases.Any(phrase => lowerMessage.Contains(phrase)))
+            return true;
+
+        // Check if this is substantial new information (message is long and highly relevant)
+        // Require at least 2 keyword matches for longer messages
+        if (lowerMessage.Length > 150 && matchedKeywords >= 2)
+            return true;
+
+        // Check if user is providing specific details that weren't in history
+        var userMessages = history.Where(m => m.Role == HazinaMessageRole.User).Select(m => m.Text?.ToLowerInvariant() ?? "").ToList();
+
+        // Skip this check if no history (first message shouldn't trigger regeneration)
+        if (userMessages.Count == 0)
+            return false;
+
+        var previousContent = string.Join(" ", userMessages);
+
+        // Simple heuristic: if this message has substantial NEW content not in previous messages
+        var words = lowerMessage.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Where(w => w.Length > 5) // Only consider words > 5 chars (more meaningful)
+            .ToList();
+
+        if (words.Count < 5) // Not enough substantial words to analyze
+            return false;
+
+        var newWords = words.Where(w => !previousContent.Contains(w)).ToList();
+
+        // If more than 40% of substantial words are new AND message is relevant, consider it new context
+        if (newWords.Count > words.Count * 0.4)
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// Gets relevant keywords for a field based on its key and display name.
+    /// </summary>
+    private static List<string> GetFieldKeywords(AnalysisFieldInfo field)
+    {
+        var keywords = new List<string>();
+
+        // Add key parts (split by - and _)
+        keywords.AddRange(field.Key.ToLowerInvariant().Split(new[] { '-', '_' }, StringSplitOptions.RemoveEmptyEntries));
+
+        // Add display name words
+        if (!string.IsNullOrWhiteSpace(field.DisplayName))
+        {
+            keywords.AddRange(field.DisplayName.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Where(w => w.Length > 3)); // Skip short words
+        }
+
+        // Remove common words
+        var stopWords = new[] { "the", "and", "for", "with", "your", "this", "that" };
+        keywords = keywords.Where(k => !stopWords.Contains(k)).Distinct().ToList();
+
+        return keywords;
     }
 }
 

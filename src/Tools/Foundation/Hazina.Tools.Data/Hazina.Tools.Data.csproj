@@ -17,6 +17,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Core\Storage\Hazina.Store.DocumentStore\Hazina.Store.DocumentStore.csproj" />
+    <ProjectReference Include="..\..\..\Core\Storage\Hazina.Store.Sqlite\Hazina.Store.Sqlite.csproj" />
     <ProjectReference Include="..\..\..\Core\LLMs\Hazina.LLMClientTools\Hazina.LLMClientTools.csproj" />
   </ItemGroup>
 </Project>

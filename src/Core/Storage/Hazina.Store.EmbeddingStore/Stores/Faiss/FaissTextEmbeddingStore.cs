@@ -1,3 +1,5 @@
+using Hazina.LLMs;
+
 /// <summary>
 /// Placeholder FAISS embedding store (never fully implemented).
 /// </summary>

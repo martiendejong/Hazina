@@ -30,6 +30,11 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
     private readonly List<GeneratedAnalysisField> _generatedFields = new();
     private readonly List<string> _imageSetFieldsToGenerate = new();
 
+    // Smart regeneration context
+    private readonly bool _userRequestedRegeneration;
+    private readonly HashSet<string> _fieldsWithNewContext;
+    private readonly string? _userMessage;
+
     /// <summary>
     /// Gets the fields that were generated during tool execution.
     /// </summary>
@@ -49,7 +54,10 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
         string? userId,
         IReadOnlyList<AnalysisFieldInfo> availableFields,
         Func<GeneratorAgentBase>? agentFactory = null,
-        string? promptsRoot = null)
+        string? promptsRoot = null,
+        bool userRequestedRegeneration = false,
+        HashSet<string>? fieldsWithNewContext = null,
+        string? userMessage = null)
     {
         _fieldsProvider = fieldsProvider ?? throw new ArgumentNullException(nameof(fieldsProvider));
         _notifier = notifier ?? throw new ArgumentNullException(nameof(notifier));
@@ -60,6 +68,9 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
         _availableFields = availableFields ?? Array.Empty<AnalysisFieldInfo>();
         _agentFactory = agentFactory;
         _promptsRoot = promptsRoot ?? AppContext.BaseDirectory;
+        _userRequestedRegeneration = userRequestedRegeneration;
+        _fieldsWithNewContext = fieldsWithNewContext ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        _userMessage = userMessage;
 
         RegisterTools();
     }
@@ -67,11 +78,12 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
     private void RegisterTools()
     {
         Add("UpdateAnalysisField",
-            "Generate and save content for an analysis field. Only call when you have enough context to generate meaningful content. IMPORTANT: If the field has a 'typeSignature' (check GetAvailableFields), the content MUST be valid JSON matching that signature.",
+            "Generate and save content for an analysis field. Call this when: (1) The field doesn't exist yet and you have enough context, (2) The user explicitly asks to regenerate/update a field, (3) The conversation provides significantly new information that would substantially improve an existing field. IMPORTANT: If the field has a 'typeSignature' (check GetAvailableFields), the content MUST be valid JSON matching that signature.",
             [
                 CreateParameter("key", "The analysis field key (e.g., 'topic-synopsis', 'central-thesis')", "string", required: true),
                 CreateParameter("content", "The generated content for this analysis field. For fields with typeSignature, this must be valid JSON matching the signature.", "string", required: true),
-                CreateParameter("reasoning", "Brief explanation of why you generated this content now", "string", required: false)
+                CreateParameter("reasoning", "Brief explanation of why you generated this content now - especially important when updating an existing field", "string", required: false),
+                CreateParameter("regenerate", "Set to true when intentionally updating/regenerating an existing field due to user request or significant new information", "boolean", required: false)
             ],
             UpdateAnalysisFieldAsync);
 
@@ -96,6 +108,7 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
         var key = GetStringParameter(toolCall, "key");
         var content = GetStringParameter(toolCall, "content");
         var reasoning = GetStringParameter(toolCall, "reasoning");
+        var regenerateParam = GetBoolParameter(toolCall, "regenerate");
 
         if (string.IsNullOrWhiteSpace(key))
             return JsonResult(false, "Parameter 'key' is required.");
@@ -111,18 +124,31 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
         if (field == null)
             return JsonResult(false, $"Unknown analysis field key: {key}");
 
-        // Check if field already exists on disk to prevent duplicates across sessions
+        // Smart regeneration logic - determine if we should proceed with generation
+        var shouldRegenerate = ShouldAllowRegeneration(key, regenerateParam, reasoning);
+
+        // Check if field already exists on disk
+        string? existingContent = null;
         if (_fileLocator is not null)
         {
             var filePath = _fileLocator.GetPath(_projectId, field.File);
             if (File.Exists(filePath))
             {
-                var existingContent = await File.ReadAllTextAsync(filePath, cancellationToken);
-                if (!string.IsNullOrWhiteSpace(existingContent))
-                {
-                    return JsonResult(true, $"Field {key} already exists with content. Skipping duplicate generation.");
-                }
+                existingContent = await File.ReadAllTextAsync(filePath, cancellationToken);
             }
+        }
+
+        // If field exists with content and regeneration is not allowed, skip
+        if (!string.IsNullOrWhiteSpace(existingContent) && !shouldRegenerate)
+        {
+            Console.WriteLine($"[AnalysisFieldToolsContext] Skipping {key}: exists with content and regeneration not triggered");
+            return JsonResult(true, $"Field {key} already exists. Use regenerate=true or provide new context to update.");
+        }
+
+        // Log regeneration intent
+        if (!string.IsNullOrWhiteSpace(existingContent) && shouldRegenerate)
+        {
+            Console.WriteLine($"[AnalysisFieldToolsContext] Regenerating {key}: regenerate={regenerateParam}, userRequested={_userRequestedRegeneration}, hasNewContext={_fieldsWithNewContext.Contains(key)}");
         }
 
         // ImageSet/logo requires special image generation pipeline (not text generation)
@@ -456,5 +482,118 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
         if (string.IsNullOrWhiteSpace(language))
             return string.Empty;
         return $"Please provide your output in {language}.";
+    }
+
+    private static bool GetBoolParameter(HazinaChatToolCall toolCall, string name)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(toolCall.FunctionArguments);
+            if (doc.RootElement.TryGetProperty(name, out var prop))
+            {
+                if (prop.ValueKind == JsonValueKind.True)
+                    return true;
+                if (prop.ValueKind == JsonValueKind.False)
+                    return false;
+                // Handle string "true"/"false" as well
+                var str = prop.GetString();
+                if (bool.TryParse(str, out var result))
+                    return result;
+            }
+        }
+        catch { }
+        return false;
+    }
+
+    /// <summary>
+    /// Determines if regeneration should be allowed for a field.
+    /// Uses smart logic to balance avoiding duplicates with allowing meaningful updates.
+    /// </summary>
+    private bool ShouldAllowRegeneration(string key, bool regenerateParam, string? reasoning)
+    {
+        // 1. LLM explicitly requested regeneration
+        if (regenerateParam)
+        {
+            Console.WriteLine($"[AnalysisFieldToolsContext] Regeneration allowed for {key}: LLM set regenerate=true");
+            return true;
+        }
+
+        // 2. This field was flagged as having significant new context
+        if (_fieldsWithNewContext.Contains(key))
+        {
+            Console.WriteLine($"[AnalysisFieldToolsContext] Regeneration allowed for {key}: field has new context");
+            return true;
+        }
+
+        // 3. User explicitly requested regeneration - but check if it's for ALL fields or this specific one
+        if (_userRequestedRegeneration)
+        {
+            // Check if user message mentions "all" fields or this specific field
+            if (!string.IsNullOrWhiteSpace(_userMessage))
+            {
+                var lowerMessage = _userMessage.ToLowerInvariant();
+                var fieldKeyLower = key.ToLowerInvariant().Replace("-", " ").Replace("_", " ");
+
+                // Allow if user said "all" or specifically mentioned this field
+                var isGlobalRequest = lowerMessage.Contains("all field") || lowerMessage.Contains("all analysis") ||
+                                      lowerMessage.Contains("regenerate all") || lowerMessage.Contains("redo all");
+                var mentionsThisField = lowerMessage.Contains(fieldKeyLower) || lowerMessage.Contains(key.ToLowerInvariant());
+
+                if (isGlobalRequest || mentionsThisField)
+                {
+                    Console.WriteLine($"[AnalysisFieldToolsContext] Regeneration allowed for {key}: user requested regeneration (global={isGlobalRequest}, specific={mentionsThisField})");
+                    return true;
+                }
+            }
+            else
+            {
+                // No message context, allow regeneration for all (fallback)
+                Console.WriteLine($"[AnalysisFieldToolsContext] Regeneration allowed for {key}: user requested regeneration (no message context)");
+                return true;
+            }
+        }
+
+        // 4. Check if reasoning indicates an update intent with specific justification
+        if (!string.IsNullOrWhiteSpace(reasoning))
+        {
+            var lowerReasoning = reasoning.ToLowerInvariant();
+            // More specific update indicators that show actual new information
+            var updateIndicators = new[]
+            {
+                "new information", "user corrected", "user clarified",
+                "based on new", "user provided", "user said",
+                "conversation revealed", "now we know", "updated to reflect"
+            };
+
+            if (updateIndicators.Any(indicator => lowerReasoning.Contains(indicator)))
+            {
+                Console.WriteLine($"[AnalysisFieldToolsContext] Regeneration allowed for {key}: reasoning indicates update intent");
+                return true;
+            }
+        }
+
+        // 5. Check user message for field-specific regeneration intent
+        if (!string.IsNullOrWhiteSpace(_userMessage))
+        {
+            var lowerMessage = _userMessage.ToLowerInvariant();
+            var fieldKeyLower = key.ToLowerInvariant().Replace("-", " ").Replace("_", " ");
+
+            // Only allow if user specifically mentions this field with an update verb
+            if (lowerMessage.Contains(fieldKeyLower) || lowerMessage.Contains(key.ToLowerInvariant()))
+            {
+                var updatePhrases = new[]
+                {
+                    "regenerate", "redo", "create again", "make new", "recreate"
+                };
+
+                if (updatePhrases.Any(phrase => lowerMessage.Contains(phrase)))
+                {
+                    Console.WriteLine($"[AnalysisFieldToolsContext] Regeneration allowed for {key}: user message indicates update for this field");
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

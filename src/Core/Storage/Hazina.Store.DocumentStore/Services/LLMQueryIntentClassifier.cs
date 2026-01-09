@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Hazina.LLMs;
 
 /// <summary>
 /// LLM-based query intent classifier for accurate classification.

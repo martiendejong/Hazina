@@ -1,3 +1,5 @@
+using Hazina.LLMs;
+
 /// <summary>
 /// Placeholder SQLite embedding store (never fully implemented).
 /// </summary>

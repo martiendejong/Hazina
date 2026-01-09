@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Hazina.LLMs;
 using Hazina.Store.EmbeddingStore;
 
 public class DocumentStore : IDocumentStore

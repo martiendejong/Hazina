@@ -1,5 +1,7 @@
 # Hazina.Neurochain.Core
 
+![Criticality: IMPORTANT](https://img.shields.io/badge/criticality-IMPORTANT-orange) ![Type: AI Core](https://img.shields.io/badge/type-AI%20Core-blue)
+
 **Multi-Layer Reasoning System (Neurochain/SCP Architecture)**
 
 Implements a sophisticated multi-layer reasoning system that validates results across independent AI layers, achieving production-grade reliability through consensus, cross-validation, and adaptive behavior.

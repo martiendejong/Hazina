@@ -1,0 +1,83 @@
+{
+  "description": "Sample chat messages for testing ILLMClient implementations",
+  "conversations": {
+    "simple_qa": {
+      "description": "Basic question-answer conversation",
+      "messages": [
+        { "role": "system", "text": "You are a helpful assistant." },
+        { "role": "user", "text": "What is 2+2?" }
+      ],
+      "expectedResponseContains": "4"
+    },
+    "multi_turn": {
+      "description": "Multi-turn conversation with context",
+      "messages": [
+        { "role": "system", "text": "You are a math tutor." },
+        { "role": "user", "text": "What is the square root of 16?" },
+        { "role": "assistant", "text": "The square root of 16 is 4." },
+        { "role": "user", "text": "And what about 256?" }
+      ],
+      "expectedResponseContains": "16"
+    },
+    "code_generation": {
+      "description": "Code generation request",
+      "messages": [
+        { "role": "system", "text": "You are a C# developer. Respond with code only." },
+        { "role": "user", "text": "Write a function that checks if a number is prime." }
+      ],
+      "expectedResponseContains": ["bool", "IsPrime", "return"]
+    },
+    "json_response": {
+      "description": "Request for JSON structured output",
+      "messages": [
+        { "role": "system", "text": "You are a data extractor. Output JSON only." },
+        { "role": "user", "text": "Extract: Name is John, age is 30, city is NYC" }
+      ],
+      "expectedFormat": "json",
+      "expectedSchema": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "age": { "type": "integer" },
+          "city": { "type": "string" }
+        }
+      }
+    },
+    "empty_context": {
+      "description": "User message without system prompt",
+      "messages": [
+        { "role": "user", "text": "Hello, how are you?" }
+      ]
+    },
+    "long_context": {
+      "description": "Message with substantial context",
+      "messages": [
+        { "role": "system", "text": "You are a technical writer." },
+        { "role": "user", "text": "Summarize this article about software architecture patterns including microservices, monoliths, event-driven architecture, and serverless computing. Focus on the trade-offs of each approach." }
+      ]
+    }
+  },
+  "toolCallScenarios": {
+    "calculator": {
+      "description": "Simple calculator tool call",
+      "messages": [
+        { "role": "system", "text": "Use the calculator tool when asked for math." },
+        { "role": "user", "text": "Calculate 15 * 7" }
+      ],
+      "expectedTool": "calculator",
+      "expectedArguments": { "operation": "multiply", "a": 15, "b": 7 }
+    }
+  },
+  "errorCases": {
+    "empty_messages": {
+      "description": "Empty message list - should throw",
+      "messages": []
+    },
+    "no_user_message": {
+      "description": "Only system message - should throw",
+      "messages": [
+        { "role": "system", "text": "You are helpful." }
+      ]
+    }
+  }
+}

@@ -1,15 +1,23 @@
+using Hazina.LLMs.Configuration;
+
 namespace Hazina.LLMs.HuggingFace;
 
-public class HuggingFaceConfig
+/// <summary>
+/// Configuration for HuggingFace Inference API.
+/// </summary>
+public class HuggingFaceConfig : HazinaConfigBase
 {
-    public string ApiKey { get; set; }
-    public string Endpoint { get; set; }
-    public string Model { get; set; }
+    /// <inheritdoc />
+    protected override string ConfigurationSectionName => "HuggingFace";
 
-    public static HuggingFaceConfig Load(string path = "huggingfaceconfig.json")
-    {
-        // Load from a config file (implementation depends on future requirements)
-        // For now, provide dummy loading
-        return new HuggingFaceConfig { ApiKey = "your_hf_key", Endpoint = "https://api-inference.huggingface.co", Model = "gpt2" };
-    }
+    /// <inheritdoc />
+    protected override string? DefaultEndpoint => "https://api-inference.huggingface.co";
+
+    /// <inheritdoc />
+    protected override string DefaultModel => "gpt2";
+
+    /// <summary>
+    /// Loads configuration from appsettings.json.
+    /// </summary>
+    public static HuggingFaceConfig Load() => LoadFromConfiguration<HuggingFaceConfig>();
 }

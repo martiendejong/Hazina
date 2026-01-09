@@ -1,6 +1,35 @@
 # Hazina Architecture
 
+**Updated for Hazina v2.0**
+
 This document provides a comprehensive overview of Hazina's architecture, design principles, and component interactions.
+
+---
+
+## ⚠️ What's New in v2.0
+
+### Architectural Improvements
+
+- ✅ **Clean Code Architecture (PR #5)** - "30-Second Comprehension" design
+  - Architectural tests (D34)
+  - ILogger standardization (C30)
+  - TestData patterns (D33)
+  - See [CLEAN_CODE_*.md](.) files
+
+- ✅ **Code Deduplication (PR #6)** - ~750 LOC eliminated
+  - `HazinaConfigBase` - Base for all provider configs (~400 LOC)
+  - `HazinaServiceBase` - Base for all services (~200 LOC)
+  - `LLMProviderBase` - Base for all providers (~150 LOC)
+
+### New Features
+
+- ✅ **[3-Layer Tool Agent Architecture](TOOL_AGENT_ARCHITECTURE.md)** - 90% cost savings
+- ✅ **[Context Compression Module](CONTEXT_COMPRESSION.md)** - 87% token reduction
+- ✅ **[Google Drive Integration](GOOGLE_DRIVE_INTEGRATION.md)** - Cloud storage
+
+See [IMPLEMENTATION-STATUS.md](../IMPLEMENTATION-STATUS.md) for complete feature list.
+
+---
 
 ## 🎯 Design Principles
 

@@ -1,5 +1,9 @@
 # Hazina.AI.Providers
 
+![Criticality: CRITICAL](https://img.shields.io/badge/criticality-CRITICAL-red) ![Type: Infrastructure](https://img.shields.io/badge/type-Infrastructure-blue)
+
+> **WARNING**: All LLM calls route through this component. Changes affect provider selection, failover, and cost tracking.
+
 **Multi-Provider LLM Orchestration with Automatic Failover, Health Monitoring, and Cost Tracking**
 
 Hazina.AI.Providers is a production-grade abstraction layer for managing multiple LLM providers (OpenAI, Anthropic, Google, etc.) with enterprise features like automatic failover, health monitoring, circuit breakers, and cost management.

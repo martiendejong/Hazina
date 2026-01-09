@@ -1,6 +1,8 @@
 using System.Text.Json;
 
 using Newtonsoft.Json.Serialization;
+using Hazina.LLMs;
+using Hazina.LLMs.OpenAI;
 
 using static Google.Apis.Requests.BatchRequest;
 

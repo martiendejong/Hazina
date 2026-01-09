@@ -1,7 +1,9 @@
 using Hazina.Tools.Services.DataGathering.Services;
 using Hazina.Tools.Services.DataGathering.Abstractions;
+using Hazina.Tools.Services.DataGathering.Models;
 using Hazina.Tools.AI.Agents;
 using Hazina.Tools.Data;
+using Hazina.Tools.Models;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -366,7 +368,10 @@ namespace Hazina.Tools.Services.Chat.Tools
             string context,
             CancellationToken cancellationToken)
         {
-            var args = JsonSerializer.Deserialize<GatherDataArgs>(argumentsJson);
+            var args = JsonSerializer.Deserialize<GatherDataArgs>(argumentsJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
             if (args == null)
             {
                 return new ToolResult { Success = false, Error = "Invalid arguments", TokensUsed = 0 };
@@ -374,13 +379,47 @@ namespace Hazina.Tools.Services.Chat.Tools
 
             try
             {
-                // TODO: Implement actual data gathering
                 _logger.LogInformation("Gathering data: {DataType} - {Key}", args.DataType, args.Key);
+
+                // Parse context to get project/chat IDs
+                var ctx = ToolExecutionContext.Parse(context);
+                if (string.IsNullOrEmpty(ctx.ProjectId))
+                {
+                    return new ToolResult { Success = false, Error = "Project ID is required in context", TokensUsed = 0 };
+                }
+
+                // Create the data item using the factory method
+                var dataItem = GatheredDataItem.Create(
+                    key: args.Key,
+                    title: FormatKeyAsTitle(args.Key),
+                    value: args.Value,
+                    source: $"chat:{ctx.ChatId}"
+                );
+
+                // Store using the data gathering service
+                var dataGatheringService = _dataGatheringServiceFactory();
+                var success = await dataGatheringService.StoreDataItemAsync(
+                    ctx.ProjectId,
+                    ctx.ChatId ?? string.Empty,
+                    dataItem,
+                    cancellationToken);
+
+                if (!success)
+                {
+                    return new ToolResult
+                    {
+                        Success = false,
+                        Error = "Failed to store data item",
+                        TokensUsed = EstimateTokens(argumentsJson)
+                    };
+                }
+
+                _logger.LogInformation("Data item stored successfully: {Key} in project {ProjectId}", args.Key, ctx.ProjectId);
 
                 return new ToolResult
                 {
                     Success = true,
-                    Result = new { message = "Data gathered successfully", key = args.Key },
+                    Result = new { message = "Data gathered successfully", key = args.Key, dataType = args.DataType },
                     TokensUsed = EstimateTokens(argumentsJson)
                 };
             }
@@ -391,12 +430,25 @@ namespace Hazina.Tools.Services.Chat.Tools
             }
         }
 
+        /// <summary>
+        /// Converts a key like "brand-name" to a title like "Brand Name".
+        /// </summary>
+        private static string FormatKeyAsTitle(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key)) return key;
+            return string.Join(" ", key.Split('-', '_')
+                .Select(word => char.ToUpper(word[0]) + word.Substring(1).ToLower()));
+        }
+
         private async Task<IToolResult> ExecuteAnalyzeFieldAsync(
             string argumentsJson,
             string context,
             CancellationToken cancellationToken)
         {
-            var args = JsonSerializer.Deserialize<AnalyzeFieldArgs>(argumentsJson);
+            var args = JsonSerializer.Deserialize<AnalyzeFieldArgs>(argumentsJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
             if (args == null)
             {
                 return new ToolResult { Success = false, Error = "Invalid arguments", TokensUsed = 0 };
@@ -404,13 +456,80 @@ namespace Hazina.Tools.Services.Chat.Tools
 
             try
             {
-                // TODO: Implement actual field analysis
                 _logger.LogInformation("Analyzing field: {FieldKey}", args.FieldKey);
+
+                // Parse context to get project/chat IDs
+                var ctx = ToolExecutionContext.Parse(context);
+                if (string.IsNullOrEmpty(ctx.ProjectId))
+                {
+                    return new ToolResult { Success = false, Error = "Project ID is required in context", TokensUsed = 0 };
+                }
+
+                // Get the analysis field service
+                var analysisFieldService = _analysisFieldServiceFactory();
+
+                // First check if the field configuration exists
+                var fieldConfigs = await analysisFieldService.LoadFieldConfigsAsync(ctx.ProjectId);
+                if (!fieldConfigs.ContainsKey(args.FieldKey))
+                {
+                    _logger.LogWarning("Analysis field not found: {FieldKey}", args.FieldKey);
+                    return new ToolResult
+                    {
+                        Success = false,
+                        Error = $"Analysis field '{args.FieldKey}' not found. Available fields: {string.Join(", ", fieldConfigs.Keys)}",
+                        TokensUsed = EstimateTokens(argumentsJson)
+                    };
+                }
+
+                // Generate the field content using the typed field generator
+                // This uses the configured GenericType and generation prompts
+                var result = await analysisFieldService.GenerateTypedFieldAsync(
+                    ctx.ProjectId,
+                    ctx.ChatId ?? string.Empty,
+                    args.FieldKey,
+                    args.ContentPrompt,
+                    ctx.UserId,
+                    cancellationToken);
+
+                if (result == null)
+                {
+                    // If typed generation fails, try saving direct content if provided
+                    if (!string.IsNullOrEmpty(args.ContentPrompt))
+                    {
+                        var saved = await analysisFieldService.SaveFieldAsync(
+                            ctx.ProjectId,
+                            ctx.ChatId ?? string.Empty,
+                            args.FieldKey,
+                            args.ContentPrompt,
+                            userId: ctx.UserId,
+                            cancellationToken: cancellationToken);
+
+                        if (saved)
+                        {
+                            _logger.LogInformation("Analysis field saved directly: {FieldKey}", args.FieldKey);
+                            return new ToolResult
+                            {
+                                Success = true,
+                                Result = new { message = "Field content saved", fieldKey = args.FieldKey },
+                                TokensUsed = EstimateTokens(argumentsJson)
+                            };
+                        }
+                    }
+
+                    return new ToolResult
+                    {
+                        Success = false,
+                        Error = "Failed to generate field content",
+                        TokensUsed = EstimateTokens(argumentsJson)
+                    };
+                }
+
+                _logger.LogInformation("Analysis field generated successfully: {FieldKey} in project {ProjectId}", args.FieldKey, ctx.ProjectId);
 
                 return new ToolResult
                 {
                     Success = true,
-                    Result = new { message = "Field analyzed successfully", fieldKey = args.FieldKey },
+                    Result = new { message = "Field analyzed successfully", fieldKey = args.FieldKey, hasContent = true },
                     TokensUsed = EstimateTokens(argumentsJson)
                 };
             }
@@ -426,7 +545,10 @@ namespace Hazina.Tools.Services.Chat.Tools
             string context,
             CancellationToken cancellationToken)
         {
-            var args = JsonSerializer.Deserialize<GenerateImageArgs>(argumentsJson);
+            var args = JsonSerializer.Deserialize<GenerateImageArgs>(argumentsJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
             if (args == null)
             {
                 return new ToolResult { Success = false, Error = "Invalid arguments", TokensUsed = 0 };
@@ -434,13 +556,85 @@ namespace Hazina.Tools.Services.Chat.Tools
 
             try
             {
-                // TODO: Implement actual image generation
-                _logger.LogInformation("Generating image: {ImageType}", args.ImageType);
+                _logger.LogInformation("Generating image: {ImageType} with prompt: {Prompt}", args.ImageType, args.Prompt);
+
+                // Parse context to get project/chat IDs
+                var ctx = ToolExecutionContext.Parse(context);
+                if (string.IsNullOrEmpty(ctx.ProjectId))
+                {
+                    return new ToolResult { Success = false, Error = "Project ID is required in context", TokensUsed = 0 };
+                }
+
+                // Get the chat service for image generation
+                var chatService = _chatServiceFactory();
+
+                // Get the project for context (needed by ChatService.GenerateImage)
+                Project project = null;
+                if (_projectsRepositoryFactory != null)
+                {
+                    var projectsRepo = _projectsRepositoryFactory();
+                    project = projectsRepo.Load(ctx.ProjectId);
+                }
+
+                if (project == null)
+                {
+                    return new ToolResult
+                    {
+                        Success = false,
+                        Error = "Project not found",
+                        TokensUsed = EstimateTokens(argumentsJson)
+                    };
+                }
+
+                // Build the full prompt with image type context
+                var fullPrompt = args.ImageType switch
+                {
+                    "logo" => $"Generate a professional logo design: {args.Prompt}",
+                    "hero" => $"Generate a hero/banner image: {args.Prompt}",
+                    "product" => $"Generate a product image: {args.Prompt}",
+                    "social" => $"Generate a social media image: {args.Prompt}",
+                    _ => args.Prompt
+                };
+
+                // Determine if this is part of an image set (e.g., multiple logo options)
+                var isImageSet = args.ImageType == "logo";
+
+                // Generate the image using ChatService
+                var result = await chatService.GenerateImage(
+                    ctx.ProjectId,
+                    ctx.ChatId ?? Guid.NewGuid().ToString(),
+                    ctx.UserId,
+                    project,
+                    fullPrompt,
+                    cancellationToken,
+                    isImageSet);
+
+                if (result == null)
+                {
+                    return new ToolResult
+                    {
+                        Success = false,
+                        Error = "Image generation failed",
+                        TokensUsed = EstimateTokens(argumentsJson)
+                    };
+                }
+
+                // Get the most recent generated image info
+                var generatedImages = chatService.GetGeneratedImages(ctx.ProjectId, ctx.UserId);
+                var latestImage = generatedImages?.OrderByDescending(i => i.CreatedAt).FirstOrDefault();
+
+                _logger.LogInformation("Image generated successfully: {ImageType} in project {ProjectId}", args.ImageType, ctx.ProjectId);
 
                 return new ToolResult
                 {
                     Success = true,
-                    Result = new { message = "Image generation started", imageType = args.ImageType },
+                    Result = new
+                    {
+                        message = "Image generated successfully",
+                        imageType = args.ImageType,
+                        imageUrl = latestImage?.SourceUrl,
+                        imageId = latestImage?.Id
+                    },
                     TokensUsed = EstimateTokens(argumentsJson)
                 };
             }

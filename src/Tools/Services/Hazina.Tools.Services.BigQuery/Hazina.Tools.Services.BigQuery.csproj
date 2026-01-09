@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Foundation\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
     <ProjectReference Include="..\..\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
+    <ProjectReference Include="..\Hazina.Tools.Services.FileOps\Hazina.Tools.Services.FileOps.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Google.Cloud.BigQuery.V2" Version="3.11.0" />

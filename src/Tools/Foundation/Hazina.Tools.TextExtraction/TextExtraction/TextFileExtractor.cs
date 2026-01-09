@@ -2,6 +2,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Text;
 using System;
+using Hazina.LLMs;
 using OpenAI.Chat;
 using PDFiumCore;
 using PDFiumCoreDemo;

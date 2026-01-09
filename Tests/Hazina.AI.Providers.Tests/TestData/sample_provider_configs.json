@@ -1,0 +1,66 @@
+{
+  "description": "Sample provider configurations for testing",
+  "providers": [
+    {
+      "name": "openai",
+      "priority": 1,
+      "enabled": true,
+      "costPerInputToken": 0.00001,
+      "costPerOutputToken": 0.00003,
+      "model": "gpt-4o",
+      "capabilities": ["chat", "embedding", "image"]
+    },
+    {
+      "name": "anthropic",
+      "priority": 2,
+      "enabled": true,
+      "costPerInputToken": 0.000008,
+      "costPerOutputToken": 0.000024,
+      "model": "claude-3-5-sonnet-20241022",
+      "capabilities": ["chat"]
+    },
+    {
+      "name": "fallback",
+      "priority": 3,
+      "enabled": true,
+      "costPerInputToken": 0.000001,
+      "costPerOutputToken": 0.000002,
+      "model": "gpt-4o-mini",
+      "capabilities": ["chat"]
+    }
+  ],
+  "budgets": [
+    {
+      "providerName": "openai",
+      "limit": 100.00,
+      "period": "Daily",
+      "alerts": [50, 75, 90]
+    }
+  ],
+  "scenarios": {
+    "healthy_providers": {
+      "description": "All providers healthy",
+      "providerStates": {
+        "openai": "Healthy",
+        "anthropic": "Healthy",
+        "fallback": "Healthy"
+      }
+    },
+    "primary_unhealthy": {
+      "description": "Primary provider down, failover to secondary",
+      "providerStates": {
+        "openai": "Unhealthy",
+        "anthropic": "Healthy",
+        "fallback": "Healthy"
+      }
+    },
+    "degraded_state": {
+      "description": "Primary degraded, should still use",
+      "providerStates": {
+        "openai": "Degraded",
+        "anthropic": "Healthy",
+        "fallback": "Healthy"
+      }
+    }
+  }
+}

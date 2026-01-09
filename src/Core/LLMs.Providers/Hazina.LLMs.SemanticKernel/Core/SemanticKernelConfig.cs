@@ -1,7 +1,11 @@
+using Hazina.LLMs.Configuration;
 using Microsoft.Extensions.Configuration;
 
 namespace Hazina.LLMs;
 
+/// <summary>
+/// Supported LLM providers for Semantic Kernel.
+/// </summary>
 public enum LLMProvider
 {
     OpenAI,
@@ -11,61 +15,86 @@ public enum LLMProvider
     Custom
 }
 
-public class SemanticKernelConfig
+/// <summary>
+/// Configuration for Microsoft Semantic Kernel LLM integration.
+/// Supports multiple providers with advanced settings.
+/// </summary>
+public class SemanticKernelConfig : HazinaConfigBase
 {
-    public SemanticKernelConfig(
-        LLMProvider provider = LLMProvider.OpenAI,
-        string apiKey = "",
-        string model = "gpt-4o",
-        string embeddingModel = "text-embedding-3-small",
-        string imageModel = "dall-e-3",
-        string ttsModel = "tts-1",
-        string logPath = "c:\\projects\\hazinalogs.txt",
-        string endpoint = "",
-        string deploymentName = "")
-    {
-        Provider = provider;
-        ApiKey = apiKey;
-        Model = model;
-        EmbeddingModel = embeddingModel;
-        ImageModel = imageModel;
-        TtsModel = ttsModel;
-        LogPath = logPath;
-        Endpoint = endpoint;
-        DeploymentName = deploymentName;
-    }
-
-    // Provider configuration
-    public LLMProvider Provider { get; set; }
-    public string ApiKey { get; set; }
-    public string Endpoint { get; set; } // For Azure OpenAI, Ollama, or custom endpoints
-    public string DeploymentName { get; set; } // For Azure OpenAI deployment names
-
-    // Model configuration
-    public string Model { get; set; }
-    public string ImageModel { get; set; }
-    public string EmbeddingModel { get; set; }
-    public string TtsModel { get; set; }
-
-    // Logging
-    public string LogPath { get; set; }
-
-    // Advanced settings (optional)
-    public double Temperature { get; set; } = 0.7;
-    public int MaxTokens { get; set; } = 4096;
-    public double TopP { get; set; } = 1.0;
-    public double FrequencyPenalty { get; set; } = 0.0;
-    public double PresencePenalty { get; set; } = 0.0;
-
-    // Structured output settings
-    public bool UseNativeStructuredOutput { get; set; } = true; // Auto-detect and prefer native when available
-    public bool FallbackToSchemaInjection { get; set; } = true; // Fall back if native fails
+    /// <summary>
+    /// The LLM provider to use.
+    /// </summary>
+    public LLMProvider Provider { get; set; } = LLMProvider.OpenAI;
 
     /// <summary>
-    /// Load configuration from appsettings.json under "SemanticKernel" section
-    /// Falls back to "OpenAI" section for backward compatibility
+    /// Azure OpenAI deployment name (only for AzureOpenAI provider).
     /// </summary>
-    public static SemanticKernelConfig Load()
+    public string DeploymentName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Model for image generation.
+    /// </summary>
+    public string ImageModel { get; set; } = "dall-e-3";
+
+    /// <summary>
+    /// Model for embeddings.
+    /// </summary>
+    public string EmbeddingModel { get; set; } = "text-embedding-3-small";
+
+    /// <summary>
+    /// Model for text-to-speech.
+    /// </summary>
+    public string TtsModel { get; set; } = "tts-1";
+
+    /// <summary>
+    /// Temperature for generation (0.0-2.0).
+    /// </summary>
+    public double Temperature { get; set; } = 0.7;
+
+    /// <summary>
+    /// Maximum tokens to generate.
+    /// </summary>
+    public int MaxTokens { get; set; } = 4096;
+
+    /// <summary>
+    /// Top-p sampling parameter.
+    /// </summary>
+    public double TopP { get; set; } = 1.0;
+
+    /// <summary>
+    /// Frequency penalty for generation.
+    /// </summary>
+    public double FrequencyPenalty { get; set; } = 0.0;
+
+    /// <summary>
+    /// Presence penalty for generation.
+    /// </summary>
+    public double PresencePenalty { get; set; } = 0.0;
+
+    /// <summary>
+    /// Whether to use native structured output when available.
+    /// </summary>
+    public bool UseNativeStructuredOutput { get; set; } = true;
+
+    /// <summary>
+    /// Whether to fall back to schema injection if native structured output fails.
+    /// </summary>
+    public bool FallbackToSchemaInjection { get; set; } = true;
+
+    /// <inheritdoc />
+    protected override string ConfigurationSectionName => "SemanticKernel";
+
+    /// <inheritdoc />
+    protected override string? DefaultEndpoint => null;
+
+    /// <inheritdoc />
+    protected override string DefaultModel => "gpt-4o";
+
+    /// <summary>
+    /// Loads configuration from appsettings.json.
+    /// Falls back to "OpenAI" section for backward compatibility.
+    /// </summary>
+    public static new SemanticKernelConfig Load()
     {
         var config = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
@@ -73,52 +102,61 @@ public class SemanticKernelConfig
             .AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true)
             .Build();
 
-        // Try SemanticKernel section first
-        var skSettings = new SemanticKernelConfig();
+        return LoadWithFallback(config);
+    }
+
+    /// <summary>
+    /// Loads configuration with fallback to OpenAI section for backward compatibility.
+    /// </summary>
+    private static SemanticKernelConfig LoadWithFallback(IConfiguration config)
+    {
         var skSection = config.GetSection("SemanticKernel");
 
         if (skSection.Exists())
         {
-            skSection.Bind(skSettings);
+            var settings = new SemanticKernelConfig();
+            skSection.Bind(settings);
 
-            // Parse provider enum
             if (skSection["Provider"] != null)
-            {
-                skSettings.Provider = Enum.Parse<LLMProvider>(skSection["Provider"]!);
-            }
-        }
-        else
-        {
-            // Fall back to OpenAI section for backward compatibility
-            var openAISection = config.GetSection("OpenAI");
-            if (openAISection.Exists())
-            {
-                skSettings.Provider = LLMProvider.OpenAI;
-                skSettings.ApiKey = openAISection["ApiKey"] ?? "";
-                skSettings.Model = openAISection["Model"] ?? "gpt-4o";
-                skSettings.EmbeddingModel = openAISection["EmbeddingModel"] ?? "text-embedding-3-small";
-                skSettings.ImageModel = openAISection["ImageModel"] ?? "dall-e-3";
-                skSettings.TtsModel = openAISection["TtsModel"] ?? "tts-1";
-                skSettings.LogPath = openAISection["LogPath"] ?? "c:\\projects\\hazinalogs.txt";
-            }
+                settings.Provider = Enum.Parse<LLMProvider>(skSection["Provider"]!);
+
+            settings.ApplyDefaults();
+            return settings;
         }
 
-        return skSettings;
+        // Fall back to OpenAI section for backward compatibility
+        var openAISection = config.GetSection("OpenAI");
+        if (openAISection.Exists())
+        {
+            return new SemanticKernelConfig
+            {
+                Provider = LLMProvider.OpenAI,
+                ApiKey = openAISection["ApiKey"] ?? string.Empty,
+                Model = openAISection["Model"] ?? "gpt-4o",
+                EmbeddingModel = openAISection["EmbeddingModel"] ?? "text-embedding-3-small",
+                ImageModel = openAISection["ImageModel"] ?? "dall-e-3",
+                TtsModel = openAISection["TtsModel"] ?? "tts-1",
+                LogPath = openAISection["LogPath"] ?? "c:\\projects\\hazinalogs.txt"
+            };
+        }
+
+        return new SemanticKernelConfig();
     }
 
     /// <summary>
-    /// Create config from existing OpenAI config for backward compatibility
+    /// Creates config from existing OpenAI config for backward compatibility.
     /// </summary>
     public static SemanticKernelConfig FromOpenAI(string apiKey, string model, string embeddingModel, string imageModel, string logPath, string ttsModel = "tts-1")
     {
-        return new SemanticKernelConfig(
-            provider: LLMProvider.OpenAI,
-            apiKey: apiKey,
-            model: model,
-            embeddingModel: embeddingModel,
-            imageModel: imageModel,
-            ttsModel: ttsModel,
-            logPath: logPath
-        );
+        return new SemanticKernelConfig
+        {
+            Provider = LLMProvider.OpenAI,
+            ApiKey = apiKey,
+            Model = model,
+            EmbeddingModel = embeddingModel,
+            ImageModel = imageModel,
+            TtsModel = ttsModel,
+            LogPath = logPath
+        };
     }
 }

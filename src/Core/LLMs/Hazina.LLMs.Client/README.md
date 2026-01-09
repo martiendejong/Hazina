@@ -1,5 +1,9 @@
 # Hazina.LLMs.Client
 
+![Criticality: CRITICAL](https://img.shields.io/badge/criticality-CRITICAL-red) ![Type: Core Interface](https://img.shields.io/badge/type-Core%20Interface-blue)
+
+> **WARNING**: This is the foundational interface. All LLM providers depend on it. Changes here affect the entire system.
+
 Core abstraction layer for interacting with Large Language Model providers. Defines the `ILLMClient` interface and tools context that all LLM providers (OpenAI, Anthropic, Gemini, etc.) must implement.
 
 ## Overview

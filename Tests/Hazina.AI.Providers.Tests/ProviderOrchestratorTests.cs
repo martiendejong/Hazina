@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Hazina.AI.Providers.Core;
+using Hazina.AI.Providers.Resilience;
 using Hazina.AI.Providers.Selection;
+using Hazina.LLMs;
 using Moq;
 using Xunit;
 
@@ -116,8 +118,8 @@ public class ProviderOrchestratorTests
         );
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*no provider*");
+        await act.Should().ThrowAsync<FailoverException>()
+            .WithMessage("*No providers available*");
     }
 
     [Fact]
@@ -171,6 +173,6 @@ public class ProviderOrchestratorTests
 
         // Assert
         act.Should().Throw<ArgumentException>()
-            .WithParameterName("providerName");
+            .WithParameterName("name");
     }
 }

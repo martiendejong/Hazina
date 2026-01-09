@@ -1,3 +1,5 @@
+using Hazina.LLMs;
+
 /// <summary>
 /// Legacy in-memory embedding store.
 /// </summary>

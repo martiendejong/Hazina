@@ -27,7 +27,12 @@ public class ILLMClientTests
         // Assert
         Assert.NotNull(getImageMethod);
         Assert.True(getImageMethod.ReturnType.IsGenericType);
-        Assert.Equal("LLMResponse`1", getImageMethod.ReturnType.GetGenericTypeDefinition().Name);
+
+        // GetImage returns Task<LLMResponse<T>>, check the Task's generic argument
+        var taskReturnType = getImageMethod.ReturnType.GetGenericArguments().FirstOrDefault();
+        Assert.NotNull(taskReturnType);
+        Assert.True(taskReturnType.IsGenericType);
+        Assert.Contains("LLMResponse", taskReturnType.Name);
 
         Assert.NotEmpty(getResponseMethods);
         foreach (var method in getResponseMethods)

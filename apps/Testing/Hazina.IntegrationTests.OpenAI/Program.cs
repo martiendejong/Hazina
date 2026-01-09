@@ -1,3 +1,4 @@
+using Hazina.LLMs.OpenAI;
 using System;
 using System.IO;
 using System.Threading;
@@ -33,7 +34,8 @@ async Task<int> Run()
         embeddingModel: loaded?.EmbeddingModel ?? "text-embedding-3-small",
         model: loaded?.Model ?? "gpt-4.1-mini",
         imageModel: loaded?.ImageModel ?? "gpt-image-1",
-        logPath: loaded?.LogPath ?? tmpLog
+        logPath: loaded?.LogPath ?? tmpLog,
+        ttsModel: loaded?.TtsModel ?? "gpt-4o-mini-tts"
     );
 
     var wrapper = new OpenAIClientWrapper(config);

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Hazina.LLMs;
 using Hazina.Observability.LLMLogs.Configuration;
 using Hazina.Observability.LLMLogs.Context;
 using Hazina.Observability.LLMLogs.Storage;

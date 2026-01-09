@@ -1,3 +1,4 @@
+using Hazina.LLMs.OpenAI;
 using Hazina.Tools.Models.WordPress.Blogs;
 using HazinaStore.Models;
 using Hazina.Tools.Data;
@@ -84,7 +85,7 @@ namespace Hazina.Tools.AI.Agents
                 if (!Directory.Exists(globalFolder))
                     Directory.CreateDirectory(globalFolder);
 
-                var setup = StoreProvider.GetStoreSetup(globalFolder, Config.ApiSettings.OpenApiKey);
+                var setup = StoreProvider.GetStoreSetup(globalFolder, Config.OpenAI);
                 if (updateEmbeddings)
                 {
                     await _embeddings.RefreshGlobalEmbeddings();
@@ -92,7 +93,7 @@ namespace Hazina.Tools.AI.Agents
                 return setup.Store;
             }
 
-            var setup2 = StoreProvider.GetStoreSetup(_fileLocator.GetProjectFolder(project.Id), Config.ApiSettings.OpenApiKey);
+            var setup2 = StoreProvider.GetStoreSetup(_fileLocator.GetProjectFolder(project.Id), Config.OpenAI);
             if(updateEmbeddings)
                 await _embeddings.RefreshProjectEmbeddings(project.Id, true);
             return setup2.Store;
@@ -197,7 +198,7 @@ namespace Hazina.Tools.AI.Agents
         {
             var store = await InitStore(project);
             var folder = _fileLocator.GetProjectFolder(project.Id);
-            var setup = StoreProvider.GetStoreSetup(folder, Config.ApiSettings.OpenApiKey);
+            var setup = StoreProvider.GetStoreSetup(folder, Config.OpenAI);
             
             // Wrap LLM client with logging decorator if available
             var llmClient = setup.LLMClient;
@@ -224,7 +225,7 @@ namespace Hazina.Tools.AI.Agents
 
             var store = await InitStore(project);
             var folder = _fileLocator.GetProjectFolder(project.Id);
-            var setup = StoreProvider.GetStoreSetup(folder, Config.ApiSettings.OpenApiKey);
+            var setup = StoreProvider.GetStoreSetup(folder, Config.OpenAI);
             
             // Wrap LLM client with logging decorator if available
             var llmClient = setup.LLMClient;
