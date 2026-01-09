@@ -7,10 +7,10 @@ namespace Hazina.Tools.Models
     public class ContentHookFinal : Serializer<ContentHookFinal>
     {
         public string Id { get; set; }
-        public string Naam { get; set; }
-        public string Omschrijving { get; set; }
-        public string Waarom { get; set; }
-        public List<string>? Voorbeelden { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string Reason { get; set; }
+        public List<string>? Examples { get; set; }
         public bool? Like { get; set; }
     }
 
