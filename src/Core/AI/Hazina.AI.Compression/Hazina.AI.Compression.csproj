@@ -8,11 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
-    <ProjectReference Include="..\Hazina.AI.Providers\Hazina.AI.Providers.csproj" />
-    <ProjectReference Include="..\Hazina.AI.FaultDetection\Hazina.AI.FaultDetection.csproj" />
-    <ProjectReference Include="..\Hazina.AI.Compression\Hazina.AI.Compression.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SharpToken" Version="2.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
   </ItemGroup>
 
 </Project>
