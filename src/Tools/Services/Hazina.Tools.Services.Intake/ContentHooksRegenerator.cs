@@ -13,6 +13,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Hazina.Tools.Services.Store;
 
 namespace HazinaStore.IntakeRegenerators
 {
@@ -22,13 +23,19 @@ namespace HazinaStore.IntakeRegenerators
         private readonly ProjectFileLocator _fileLocator;
         private readonly IConfiguration _appConfig;
         private readonly HazinaStoreConfig _storeConfig;
+        private readonly IAnalysisFieldsProvider _analysisFieldsProvider;
 
-        public ContentHooksRegenerator(ProjectsRepository projects, IConfiguration appConfig, HazinaStoreConfig storeConfig)
+        public ContentHooksRegenerator(
+            ProjectsRepository projects,
+            IConfiguration appConfig,
+            HazinaStoreConfig storeConfig,
+            IAnalysisFieldsProvider analysisFieldsProvider)
         {
             _projects = projects;
             _fileLocator = new ProjectFileLocator(projects.ProjectsFolder);
             _appConfig = appConfig;
             _storeConfig = storeConfig;
+            _analysisFieldsProvider = analysisFieldsProvider ?? throw new ArgumentNullException(nameof(analysisFieldsProvider));
         }
 
         public void CreateEmptyContentHooksFile(Project project)
@@ -174,6 +181,10 @@ Return ONLY JSON in this exact format (no markdown, no code blocks, no explanati
             }
         }
 
+        /// <summary>
+        /// Builds project context from analysis fields using IAnalysisFieldsProvider.
+        /// Loads all configured analysis fields (brand profile, tone of voice, etc.) and extracts their content.
+        /// </summary>
         private async Task<string> BuildProjectContextAsync(string projectId, Action<string> log)
         {
             var context = new StringBuilder();
@@ -197,30 +208,74 @@ Return ONLY JSON in this exact format (no markdown, no code blocks, no explanati
                     context.AppendLine();
                 }
 
-                // Load analysis fields (brand profile, tone of voice, etc.)
-                var analysisPath = Path.Combine(projectPath, "analysis");
-                if (Directory.Exists(analysisPath))
+                // Load all analysis fields for this project using IAnalysisFieldsProvider
+                var fields = await _analysisFieldsProvider.GetFieldsAsync(projectId);
+                if (fields != null && fields.Count > 0)
                 {
-                    var analysisFiles = Directory.GetFiles(analysisPath, "*.txt");
-                    if (analysisFiles.Length > 0)
+                    context.AppendLine("BRAND ANALYSIS:");
+
+                    var loadedCount = 0;
+                    foreach (var field in fields.Take(15)) // Limit to first 15 fields to avoid token overflow
                     {
-                        context.AppendLine("BRAND ANALYSIS:");
-                        foreach (var file in analysisFiles.Take(10))
+                        if (string.IsNullOrWhiteSpace(field.File))
+                            continue;
+
+                        try
                         {
-                            try
+                            var filePath = Path.Combine(projectPath, field.File);
+                            if (!File.Exists(filePath))
+                                continue;
+
+                            var content = await File.ReadAllTextAsync(filePath);
+                            if (string.IsNullOrWhiteSpace(content))
+                                continue;
+
+                            // Try to extract text from JSON if it's a JSON file
+                            string textContent = content;
+                            if (field.File.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
                             {
-                                var fieldName = Path.GetFileNameWithoutExtension(file);
-                                var content = await File.ReadAllTextAsync(file);
-                                if (!string.IsNullOrWhiteSpace(content))
+                                try
                                 {
-                                    var truncated = content.Length > 800 ? content.Substring(0, 800) + "..." : content;
-                                    context.AppendLine($"{fieldName.ToUpper().Replace('-', ' ')}: {truncated}");
-                                    context.AppendLine();
+                                    // Most analysis fields store their content as plain JSON string
+                                    // Example: "brand-profile.json" contains: "an ai branding tool biedt..."
+                                    using var doc = JsonDocument.Parse(content);
+                                    var root = doc.RootElement;
+
+                                    // If it's a simple string value, use it directly
+                                    if (root.ValueKind == JsonValueKind.String)
+                                    {
+                                        textContent = root.GetString() ?? content;
+                                    }
+                                    // For complex objects, use the raw JSON
+                                    else
+                                    {
+                                        textContent = content;
+                                    }
+                                }
+                                catch
+                                {
+                                    // If JSON parsing fails, just use the raw content
+                                    textContent = content;
                                 }
                             }
-                            catch { }
+
+                            if (!string.IsNullOrWhiteSpace(textContent))
+                            {
+                                var truncated = textContent.Length > 800 ? textContent.Substring(0, 800) + "..." : textContent;
+                                var displayName = field.DisplayName ?? field.Key.Replace("-", " ").Replace("_", " ");
+                                context.AppendLine($"{displayName.ToUpper()}: {truncated}");
+                                context.AppendLine();
+                                loadedCount++;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            log?.Invoke($"Warning: Could not load field '{field.Key}': {ex.Message}");
+                            continue;
                         }
                     }
+
+                    log?.Invoke($"Loaded {loadedCount} analysis fields");
                 }
 
                 log?.Invoke($"Loaded project context: {context.Length} chars");
@@ -249,6 +304,3 @@ Return ONLY JSON in this exact format (no markdown, no code blocks, no explanati
         }
     }
 }
-
-
-
