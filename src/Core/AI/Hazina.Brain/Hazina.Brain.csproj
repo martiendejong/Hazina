@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Description>Persistent episodic memory and fact distillation module for Hazina agents</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Core Hazina dependencies -->
+    <ProjectReference Include="..\..\Storage\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />
+    <ProjectReference Include="..\Hazina.AI.Memory\Hazina.AI.Memory.csproj" />
+    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- EF Core for persistence -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.0" />
+  </ItemGroup>
+
+</Project>
