@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Description>Recursive long-context orchestrator for handling queries over massive context through query decomposition and hierarchical retrieval</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Core Hazina dependencies -->
+    <ProjectReference Include="..\..\Storage\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />
+    <ProjectReference Include="..\Hazina.AI.RAG\Hazina.AI.RAG.csproj" />
+    <ProjectReference Include="..\Hazina.AI.ContextEngineering\Hazina.AI.ContextEngineering.csproj" />
+    <ProjectReference Include="..\Hazina.AI.Compression\Hazina.AI.Compression.csproj" />
+    <ProjectReference Include="..\Hazina.AI.Orchestration\Hazina.AI.Orchestration.csproj" />
+    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
+    <ProjectReference Include="..\Hazina.AI.Providers\Hazina.AI.Providers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- DI and configuration -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.0" />
+  </ItemGroup>
+
+</Project>
