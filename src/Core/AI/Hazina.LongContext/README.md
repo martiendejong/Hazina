@@ -41,12 +41,13 @@ The system is built on top of existing Hazina capabilities:
 - **ContextEngineeringShardProvider** - Bridges to existing ContextEngineering
 - **Configuration & DI** - `LongContextOptions` and service registration
 
-### Phase 3-5: Recursive Implementations ⏳
+### Phase 3-5: Recursive Implementations ✅
 
 - **RecursiveQueryPlanner** - LLM-driven query decomposition
 - **RecursiveLongContextStrategy** - Full recursive orchestration
-- **Budget Management** - Token tracking across recursive calls
+- **Configuration-based Strategy Selection** - Automatic planner and strategy selection
 - **Depth Control** - Limits on recursion depth and branching factor
+- **Fallback Logic** - Graceful degradation to single-shot when needed
 
 ## Installation
 
@@ -287,34 +288,58 @@ Context shards can come from:
 - End-to-end scenario tests
 - Performance benchmarks
 
-## Example: Multi-Level Query
-
-**(Coming in Phase 3-5)**
+## Example: Recursive Multi-Level Query
 
 ```csharp
+// Enable recursive mode
+services.AddLongContext(options =>
+{
+    options.EnableRecursiveQueries = true;
+    options.DefaultMaxDepth = 4;
+});
+
+// Complex query that benefits from decomposition
 var request = new LongContextRequest
 {
-    Query = "Analyze all Hazina documentation and create a comprehensive architecture guide",
+    Query = "Analyze the Hazina codebase and explain its architecture, main components, and how they work together",
     EnableRecursion = true,
-    MaxDepth = 5,
-    MaxTotalTokens = 200_000,
+    MaxDepth = 4,
+    MaxTotalTokens = 150_000,
     MaxBranchingFactor = 5
 };
 
 var result = await _strategy.ExecuteAsync(request);
 
-// Inspect query tree
-PrintQueryTree(result.QueryTree);
+Console.WriteLine($"Answer:\n{result.FinalAnswer}");
+Console.WriteLine($"\nTokens used: {result.TotalTokensUsed}");
+Console.WriteLine($"Execution time: {result.TotalExecutionTime}");
+Console.WriteLine($"\nQuery tree statistics:");
+Console.WriteLine($"  Total nodes: {result.Statistics.TotalNodes}");
+Console.WriteLine($"  Retrieval nodes: {result.Statistics.RetrievalNodes}");
+Console.WriteLine($"  Decomposition nodes: {result.Statistics.DecompositionNodes}");
+Console.WriteLine($"  Max depth: {result.Statistics.MaxDepth}");
 
-// Output:
-// Root: Analyze all Hazina documentation...
-//   Decomposition:
-//     Retrieval: What is the core architecture?
-//     Retrieval: What are the main components?
-//     Decomposition: Explain the storage layer
-//       Retrieval: How does document storage work?
-//       Retrieval: How does embedding storage work?
-//     Aggregation: Combine all findings
+// Inspect query tree structure
+void PrintTree(QueryNode node, int indent = 0)
+{
+    var prefix = new string(' ', indent * 2);
+    Console.WriteLine($"{prefix}{node.Type}: {node.Prompt.Substring(0, Math.Min(60, node.Prompt.Length))}...");
+    foreach (var child in node.Children)
+    {
+        PrintTree(child, indent + 1);
+    }
+}
+
+PrintTree(result.QueryTree);
+
+// Example output:
+// Root: Analyze the Hazina codebase and explain its architecture...
+//   Decomposition: Analyze the Hazina codebase...
+//     Aggregation: Combine answers to: Analyze the Hazina codebase...
+//       Retrieval: What is the overall architecture of Hazina?
+//       Retrieval: What are the main components of Hazina?
+//       Retrieval: How do the components work together?
+//       Retrieval: What are the key design patterns used?
 ```
 
 ## Performance Considerations

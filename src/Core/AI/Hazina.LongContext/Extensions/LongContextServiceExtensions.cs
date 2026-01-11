@@ -39,9 +39,30 @@ public static class LongContextServiceExtensions
 
         // Register core services
         services.AddSingleton<IContextShardProvider, ContextEngineeringShardProvider>();
-        services.AddSingleton<IQueryPlanner, SimpleQueryPlanner>();
         services.AddSingleton<IQueryNodeExecutor, QueryNodeExecutor>();
-        services.AddSingleton<ILongContextStrategy, SingleShotStrategy>();
+
+        // Register both planners
+        services.AddSingleton<SimpleQueryPlanner>();
+        services.AddSingleton<RecursiveQueryPlanner>();
+
+        // Register planner based on configuration
+        if (options.EnableRecursiveQueries)
+        {
+            // Recursive mode: use RecursiveQueryPlanner (with SimpleQueryPlanner as fallback)
+            services.AddSingleton<IQueryPlanner>(sp =>
+            {
+                var recursivePlanner = sp.GetRequiredService<RecursiveQueryPlanner>();
+                return recursivePlanner;
+            });
+
+            services.AddSingleton<ILongContextStrategy, RecursiveLongContextStrategy>();
+        }
+        else
+        {
+            // Single-shot mode (default)
+            services.AddSingleton<IQueryPlanner, SimpleQueryPlanner>();
+            services.AddSingleton<ILongContextStrategy, SingleShotStrategy>();
+        }
 
         return services;
     }
