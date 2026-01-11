@@ -26,6 +26,18 @@ public class LongContextOptions
     public int DefaultMaxBranchingFactor { get; set; } = 5;
 
     /// <summary>
+    /// Enable parallel execution of sibling nodes (default: true for performance)
+    /// Set to false for sequential execution (useful for debugging)
+    /// </summary>
+    public bool EnableParallelExecution { get; set; } = true;
+
+    /// <summary>
+    /// Maximum degree of parallelism for concurrent node execution
+    /// -1 = unlimited, 1 = sequential, >1 = limited parallelism
+    /// </summary>
+    public int MaxDegreeOfParallelism { get; set; } = -1;
+
+    /// <summary>
     /// Per-store configuration overrides
     /// </summary>
     public Dictionary<string, StoreRecursiveConfig> PerStoreConfig { get; set; } = new();

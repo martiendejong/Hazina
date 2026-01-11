@@ -51,6 +51,11 @@ public class LongContextResult
     public QueryStatistics Statistics { get; init; } = new();
 
     /// <summary>
+    /// Execution mode used (parallel or sequential)
+    /// </summary>
+    public ExecutionMode ExecutionMode { get; init; }
+
+    /// <summary>
     /// Create a result from a root node execution
     /// </summary>
     public static LongContextResult FromRootNode(QueryNodeResult rootResult, QueryNode tree)
@@ -74,6 +79,30 @@ public class LongContextResult
         CountNodesRecursive(tree, stats);
         stats.TotalShards = result.UsedShards.Count;
         return stats;
+    }
+
+    /// <summary>
+    /// Create result with execution mode specified
+    /// </summary>
+    public static LongContextResult FromRootNode(
+        QueryNodeResult rootResult,
+        QueryNode tree,
+        ExecutionMode executionMode)
+    {
+        var result = FromRootNode(rootResult, tree);
+        return new LongContextResult
+        {
+            FinalAnswer = result.FinalAnswer,
+            QueryTree = result.QueryTree,
+            UsedShards = result.UsedShards,
+            TotalTokensUsed = result.TotalTokensUsed,
+            TotalExecutionTime = result.TotalExecutionTime,
+            Success = result.Success,
+            Error = result.Error,
+            Statistics = result.Statistics,
+            SessionId = result.SessionId,
+            ExecutionMode = executionMode
+        };
     }
 
     private static void CountNodesRecursive(QueryNode node, QueryStatistics stats)
