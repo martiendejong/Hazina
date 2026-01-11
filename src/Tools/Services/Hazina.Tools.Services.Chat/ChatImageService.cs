@@ -280,6 +280,7 @@ namespace Hazina.Tools.Services.Chat
             }
 
             var config = new OpenAIConfig(_openAiApiKey);
+            config.Model = "gpt-4o-mini"; // Chat model for image generation interaction
             config.ImageModel = model switch
             {
                 ImageModel.GptImage => "gpt-image-1",

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Description>Context engineering layer with multi-retriever fusion for intelligent context assembly</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Storage\Hazina.Store.FactsStore\Hazina.Store.FactsStore.csproj" />
+    <ProjectReference Include="..\..\Storage\Hazina.Store.DocumentStore\Hazina.Store.DocumentStore.csproj" />
+    <ProjectReference Include="..\Hazina.AI.RAG\Hazina.AI.RAG.csproj" />
+  </ItemGroup>
+
+</Project>

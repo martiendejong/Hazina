@@ -35,10 +35,20 @@ namespace Common.Infrastructure.AspNetCore.Authentication
             {
                 // Migrate database
                 var dbContext = services.GetRequiredService<TContext>();
-                await dbContext.Database.MigrateAsync();
-
                 var logger = services.GetService<ILogger<UserSeeder>>();
-                logger?.LogInformation("Database migration completed");
+
+                // Check if this is a relational database (not in-memory for tests)
+                if (dbContext.Database.IsRelational())
+                {
+                    await dbContext.Database.MigrateAsync();
+                    logger?.LogInformation("Database migration completed");
+                }
+                else
+                {
+                    // For in-memory databases, just ensure the schema is created
+                    await dbContext.Database.EnsureCreatedAsync();
+                    logger?.LogInformation("In-memory database schema created");
+                }
 
                 // Get required services
                 var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
