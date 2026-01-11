@@ -1,3 +1,4 @@
+using Hazina.LongContext.Configuration;
 using Hazina.LongContext.Interfaces;
 using Hazina.LongContext.Models;
 using System.Diagnostics;
@@ -12,13 +13,16 @@ public class SingleShotStrategy : ILongContextStrategy
 {
     private readonly IQueryPlanner _planner;
     private readonly IQueryNodeExecutor _executor;
+    private readonly LongContextOptions _options;
 
     public SingleShotStrategy(
         IQueryPlanner planner,
-        IQueryNodeExecutor executor)
+        IQueryNodeExecutor executor,
+        LongContextOptions options)
     {
         _planner = planner ?? throw new ArgumentNullException(nameof(planner));
         _executor = executor ?? throw new ArgumentNullException(nameof(executor));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
     public async Task<LongContextResult> ExecuteAsync(
@@ -37,8 +41,13 @@ public class SingleShotStrategy : ILongContextStrategy
 
             sw.Stop();
 
+            // Determine execution mode
+            var executionMode = _options.EnableParallelExecution
+                ? ExecutionMode.Parallel
+                : ExecutionMode.Sequential;
+
             // Build result
-            var result = LongContextResult.FromRootNode(rootResult, queryTree);
+            var result = LongContextResult.FromRootNode(rootResult, queryTree, executionMode);
             return new LongContextResult
             {
                 FinalAnswer = result.FinalAnswer,
@@ -49,7 +58,8 @@ public class SingleShotStrategy : ILongContextStrategy
                 Error = result.Error,
                 Statistics = result.Statistics,
                 SessionId = request.SessionId,
-                TotalExecutionTime = sw.Elapsed
+                TotalExecutionTime = sw.Elapsed,
+                ExecutionMode = result.ExecutionMode
             };
         }
         catch (Exception ex)

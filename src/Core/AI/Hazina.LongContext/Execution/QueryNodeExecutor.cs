@@ -1,5 +1,6 @@
 using Hazina.AI.Providers.Core;
 using Hazina.LLMs;
+using Hazina.LongContext.Configuration;
 using Hazina.LongContext.Interfaces;
 using Hazina.LongContext.Models;
 using System.Diagnostics;
@@ -9,18 +10,22 @@ namespace Hazina.LongContext.Execution;
 /// <summary>
 /// Executes query nodes based on their type.
 /// Supports Retrieval, Summarization, and Aggregation nodes.
+/// Supports both parallel and sequential execution of sibling nodes.
 /// </summary>
 public class QueryNodeExecutor : IQueryNodeExecutor
 {
     private readonly IContextShardProvider _shardProvider;
     private readonly IProviderOrchestrator _llmOrchestrator;
+    private readonly LongContextOptions _options;
 
     public QueryNodeExecutor(
         IContextShardProvider shardProvider,
-        IProviderOrchestrator llmOrchestrator)
+        IProviderOrchestrator llmOrchestrator,
+        LongContextOptions options)
     {
         _shardProvider = shardProvider ?? throw new ArgumentNullException(nameof(shardProvider));
         _llmOrchestrator = llmOrchestrator ?? throw new ArgumentNullException(nameof(llmOrchestrator));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
     public async Task<QueryNodeResult> ExecuteNodeAsync(
@@ -97,13 +102,8 @@ public class QueryNodeExecutor : IQueryNodeExecutor
 
     private async Task<QueryNodeResult> ExecuteSummarizationNodeAsync(QueryNode node, CancellationToken ct)
     {
-        // Execute children first
-        var childResults = new List<QueryNodeResult>();
-        foreach (var child in node.Children)
-        {
-            var result = await ExecuteNodeAsync(child, ct);
-            childResults.Add(result);
-        }
+        // Execute children (parallel or sequential based on configuration)
+        var childResults = await ExecuteChildrenAsync(node.Children, ct);
 
         // Combine child answers
         var combinedContext = string.Join("\n\n---\n\n", childResults.Select(r => r.Answer));
@@ -127,13 +127,8 @@ public class QueryNodeExecutor : IQueryNodeExecutor
 
     private async Task<QueryNodeResult> ExecuteAggregationNodeAsync(QueryNode node, CancellationToken ct)
     {
-        // Similar to summarization but with different prompt
-        var childResults = new List<QueryNodeResult>();
-        foreach (var child in node.Children)
-        {
-            var result = await ExecuteNodeAsync(child, ct);
-            childResults.Add(result);
-        }
+        // Execute children (parallel or sequential based on configuration)
+        var childResults = await ExecuteChildrenAsync(node.Children, ct);
 
         var combinedAnswers = string.Join("\n\n", childResults.Select((r, i) => $"Sub-answer {i + 1}:\n{r.Answer}"));
 
@@ -214,6 +209,100 @@ public class QueryNodeExecutor : IQueryNodeExecutor
 
         var response = await _llmOrchestrator.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, ct);
         return response.Result;
+    }
+
+    /// <summary>
+    /// Execute children nodes either in parallel or sequentially based on configuration
+    /// </summary>
+    private async Task<List<QueryNodeResult>> ExecuteChildrenAsync(
+        IReadOnlyList<QueryNode> children,
+        CancellationToken ct)
+    {
+        if (!children.Any())
+            return new List<QueryNodeResult>();
+
+        // If parallel execution is disabled or only 1 child, execute sequentially
+        if (!_options.EnableParallelExecution || children.Count == 1)
+        {
+            return await ExecuteSequentiallyAsync(children, ct);
+        }
+
+        // Execute in parallel with optional degree of parallelism limit
+        return await ExecuteInParallelAsync(children, ct);
+    }
+
+    /// <summary>
+    /// Execute children sequentially (one after another)
+    /// </summary>
+    private async Task<List<QueryNodeResult>> ExecuteSequentiallyAsync(
+        IReadOnlyList<QueryNode> children,
+        CancellationToken ct)
+    {
+        var results = new List<QueryNodeResult>();
+        foreach (var child in children)
+        {
+            var result = await ExecuteNodeAsync(child, ct);
+            results.Add(result);
+        }
+        return results;
+    }
+
+    /// <summary>
+    /// Execute children in parallel with optional degree of parallelism limit
+    /// </summary>
+    private async Task<List<QueryNodeResult>> ExecuteInParallelAsync(
+        IReadOnlyList<QueryNode> children,
+        CancellationToken ct)
+    {
+        if (_options.MaxDegreeOfParallelism == 1)
+        {
+            // Degree of parallelism = 1 means sequential
+            return await ExecuteSequentiallyAsync(children, ct);
+        }
+
+        if (_options.MaxDegreeOfParallelism > 1)
+        {
+            // Limited parallelism using SemaphoreSlim
+            var semaphore = new SemaphoreSlim(_options.MaxDegreeOfParallelism);
+            var tasks = children.Select(async child =>
+            {
+                await semaphore.WaitAsync(ct);
+                try
+                {
+                    return await ExecuteNodeAsync(child, ct);
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            });
+
+            var results = await Task.WhenAll(tasks);
+            semaphore.Dispose();
+            return results.ToList();
+        }
+
+        // Unlimited parallelism (MaxDegreeOfParallelism = -1 or 0)
+        var unlimitedTasks = children.Select(child => ExecuteNodeAsync(child, ct));
+        var unlimitedResults = await Task.WhenAll(unlimitedTasks);
+        return unlimitedResults.ToList();
+    }
+
+    /// <summary>
+    /// Determine execution mode based on configuration and number of children
+    /// </summary>
+    private ExecutionMode GetExecutionMode(int childCount)
+    {
+        if (!_options.EnableParallelExecution || childCount <= 1)
+            return ExecutionMode.Sequential;
+
+        if (_options.MaxDegreeOfParallelism == 1)
+            return ExecutionMode.Sequential;
+
+        if (_options.MaxDegreeOfParallelism > 1)
+            return ExecutionMode.LimitedParallel;
+
+        return ExecutionMode.Parallel;
     }
 
     private static int EstimateTokens(string text)

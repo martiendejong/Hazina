@@ -1,3 +1,4 @@
+using Hazina.LongContext.Configuration;
 using Hazina.LongContext.Interfaces;
 using Hazina.LongContext.Models;
 using System.Diagnostics;
@@ -12,13 +13,16 @@ public class RecursiveLongContextStrategy : ILongContextStrategy
 {
     private readonly IQueryPlanner _planner;
     private readonly IQueryNodeExecutor _executor;
+    private readonly LongContextOptions _options;
 
     public RecursiveLongContextStrategy(
         IQueryPlanner planner,
-        IQueryNodeExecutor executor)
+        IQueryNodeExecutor executor,
+        LongContextOptions options)
     {
         _planner = planner ?? throw new ArgumentNullException(nameof(planner));
         _executor = executor ?? throw new ArgumentNullException(nameof(executor));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
     public async Task<LongContextResult> ExecuteAsync(
@@ -37,8 +41,11 @@ public class RecursiveLongContextStrategy : ILongContextStrategy
 
             sw.Stop();
 
+            // Determine execution mode
+            var executionMode = DetermineExecutionMode();
+
             // Build final result
-            var result = LongContextResult.FromRootNode(rootResult, queryTree);
+            var result = LongContextResult.FromRootNode(rootResult, queryTree, executionMode);
             return new LongContextResult
             {
                 FinalAnswer = result.FinalAnswer,
@@ -49,7 +56,8 @@ public class RecursiveLongContextStrategy : ILongContextStrategy
                 Error = result.Error,
                 Statistics = result.Statistics,
                 SessionId = request.SessionId,
-                TotalExecutionTime = sw.Elapsed
+                TotalExecutionTime = sw.Elapsed,
+                ExecutionMode = result.ExecutionMode
             };
         }
         catch (Exception ex)
@@ -61,8 +69,23 @@ public class RecursiveLongContextStrategy : ILongContextStrategy
                 Success = false,
                 Error = $"Recursive query execution failed: {ex.Message}",
                 TotalExecutionTime = sw.Elapsed,
-                SessionId = request.SessionId
+                SessionId = request.SessionId,
+                ExecutionMode = DetermineExecutionMode()
             };
         }
+    }
+
+    private ExecutionMode DetermineExecutionMode()
+    {
+        if (!_options.EnableParallelExecution)
+            return ExecutionMode.Sequential;
+
+        if (_options.MaxDegreeOfParallelism == 1)
+            return ExecutionMode.Sequential;
+
+        if (_options.MaxDegreeOfParallelism > 1)
+            return ExecutionMode.LimitedParallel;
+
+        return ExecutionMode.Parallel;
     }
 }
