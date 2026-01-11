@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
@@ -26,7 +27,58 @@ namespace HazinaStore.Models
         /// </summary>
         public List<string> Tags { get; set; } = new List<string>();
 
+        /// <summary>
+        /// LLM-generated description for images or summary for text documents
+        /// </summary>
+        public string? Description { get; set; }
+
+        /// <summary>
+        /// Processing status for automatic document processing workflow
+        /// </summary>
+        public ProcessingStatus Status { get; set; } = ProcessingStatus.NotProcessed;
+
+        /// <summary>
+        /// Timestamp when processing completed (description generated, embeddings created)
+        /// </summary>
+        public DateTime? ProcessedAt { get; set; }
+
+        /// <summary>
+        /// Error message if processing failed
+        /// </summary>
+        public string? ProcessingError { get; set; }
+
+        /// <summary>
+        /// Content type classification for semantic search filtering
+        /// </summary>
+        public ContentType Type { get; set; } = ContentType.Text;
+
+        /// <summary>
+        /// References to images extracted from this document (PDF/Office images)
+        /// </summary>
+        public List<string> ExtractedImages { get; set; } = new List<string>();
+
         public string ToDescriptiveString() => Content;
+    }
+
+    /// <summary>
+    /// Processing status for automatic document processing
+    /// </summary>
+    public enum ProcessingStatus
+    {
+        NotProcessed,
+        Processing,
+        Completed,
+        Failed
+    }
+
+    /// <summary>
+    /// Content type classification for filtering and search
+    /// </summary>
+    public enum ContentType
+    {
+        Image,
+        Text,
+        Mixed
     }
 }
 
