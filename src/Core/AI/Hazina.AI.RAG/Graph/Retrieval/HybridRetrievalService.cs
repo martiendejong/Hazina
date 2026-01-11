@@ -4,7 +4,6 @@ using Hazina.AI.RAG.Configuration;
 using Hazina.AI.RAG.Core;
 using Hazina.AI.RAG.Graph.Models;
 using Hazina.AI.RAG.Graph.Storage;
-using Hazina.Store.EmbeddingStore;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -12,18 +11,18 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 public class HybridRetrievalService
 {
-    private readonly IVectorSearchStore _vectorStore;
+    private readonly IDocumentStore _documentStore;
     private readonly IGraphStore _graphStore;
     private readonly ILogger<HybridRetrievalService> _logger;
     private readonly GraphRAGConfig _config;
 
     public HybridRetrievalService(
-        IVectorSearchStore vectorStore,
+        IDocumentStore documentStore,
         IGraphStore graphStore,
         ILogger<HybridRetrievalService> logger,
         GraphRAGConfig config)
     {
-        _vectorStore = vectorStore ?? throw new ArgumentNullException(nameof(vectorStore));
+        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
         _graphStore = graphStore ?? throw new ArgumentNullException(nameof(graphStore));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _config = config ?? throw new ArgumentNullException(nameof(config));
@@ -76,21 +75,99 @@ public class HybridRetrievalService
         int topK,
         CancellationToken cancellationToken)
     {
-        // Search in vector store
-        var results = await _vectorStore.SearchAsync(
-            queryEmbedding,
-            topK,
-            cancellationToken: cancellationToken);
+        // Note: IDocumentStore.RelevantItems() and Embeddings() take string queries,
+        // but we have a pre-computed embedding vector. For now, we'll search all chunks
+        // manually using the embedding store's search capability.
 
-        return results.Select(r => new HybridRetrievalResult
+        var results = new List<HybridRetrievalResult>();
+
+        try
         {
-            DocumentId = r.DocumentId,
-            ChunkId = r.ChunkId,
-            Text = r.Text,
-            Score = r.SimilarityScore,
-            Source = RetrievalSource.VectorSearch,
-            VectorScore = r.SimilarityScore
-        }).ToList();
+            // Get all document chunks from the document store
+            var allDocuments = await _documentStore.List("", recursive: true);
+
+            // For each document, get its chunks and calculate similarity
+            var scoredChunks = new List<(string docId, string chunkKey, double similarity, string text)>();
+
+            foreach (var docId in allDocuments.Take(1000)) // Limit for performance
+            {
+                try
+                {
+                    var docWithChunks = await _documentStore.GetDocumentWithChunks(docId);
+                    if (docWithChunks?.ChunkKeys == null) continue;
+
+                    foreach (var chunkKey in docWithChunks.ChunkKeys)
+                    {
+                        // Get chunk embedding and calculate similarity
+                        var chunkEmbedding = await _documentStore.EmbeddingStore.GetEmbedding(chunkKey);
+                        if (chunkEmbedding?.Data == null || chunkEmbedding.Data.Count == 0) continue;
+
+                        var similarity = CalculateCosineSimilarity(queryEmbedding, chunkEmbedding.Data.ToArray());
+                        var chunkText = await _documentStore.GetChunk(chunkKey) ?? "";
+
+                        scoredChunks.Add((docId, chunkKey, similarity, chunkText));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to process document {DocumentId}", docId);
+                }
+            }
+
+            // Sort by similarity and take top K
+            var topChunks = scoredChunks
+                .OrderByDescending(c => c.similarity)
+                .Take(topK);
+
+            foreach (var (docId, chunkKey, similarity, text) in topChunks)
+            {
+                results.Add(new HybridRetrievalResult
+                {
+                    DocumentId = docId,
+                    ChunkId = chunkKey,
+                    Text = text,
+                    Score = similarity,
+                    Source = RetrievalSource.VectorSearch,
+                    VectorScore = similarity
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Vector search failed");
+            throw;
+        }
+
+        return results;
+    }
+
+    private static double CalculateCosineSimilarity(float[] vector1, double[] vector2)
+    {
+        if (vector1.Length != vector2.Length)
+        {
+            throw new ArgumentException("Vectors must have the same dimension");
+        }
+
+        double dotProduct = 0;
+        double magnitude1 = 0;
+        double magnitude2 = 0;
+
+        for (int i = 0; i < vector1.Length; i++)
+        {
+            dotProduct += vector1[i] * vector2[i];
+            magnitude1 += vector1[i] * vector1[i];
+            magnitude2 += vector2[i] * vector2[i];
+        }
+
+        magnitude1 = Math.Sqrt(magnitude1);
+        magnitude2 = Math.Sqrt(magnitude2);
+
+        if (magnitude1 == 0 || magnitude2 == 0)
+        {
+            return 0;
+        }
+
+        return dotProduct / (magnitude1 * magnitude2);
     }
 
     private async Task<List<HybridRetrievalResult>> ExpandWithGraphAsync(
@@ -126,12 +203,25 @@ public class HybridRetrievalService
                     {
                         if (seenDocuments.Add(docId))
                         {
-                            // TODO: Fetch document text from document store
+                            // Fetch actual document text from document store
+                            string documentText;
+                            try
+                            {
+                                // Try to get the chunk first, fall back to full document
+                                documentText = await _documentStore.GetChunk(docId)
+                                    ?? await _documentStore.Get(docId);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogWarning(ex, "Failed to retrieve document {DocumentId} from document store. Using placeholder.", docId);
+                                documentText = $"[Document {docId} - related via entity {relatedEntity.Name}]";
+                            }
+
                             expandedResults.Add(new HybridRetrievalResult
                             {
                                 DocumentId = docId,
                                 ChunkId = docId, // Simplified
-                                Text = $"[Document {docId} - related via entity {relatedEntity.Name}]",
+                                Text = documentText,
                                 Score = 0.0, // Will be scored during fusion
                                 Source = RetrievalSource.GraphTraversal,
                                 GraphPath = new GraphPath
@@ -152,14 +242,9 @@ public class HybridRetrievalService
         string documentId,
         CancellationToken cancellationToken)
     {
-        // Search for entities that reference this document
-        var stats = await _graphStore.GetStatisticsAsync(cancellationToken);
-        var allEntities = new List<GraphEntity>();
-
-        // Note: This is a simplified implementation
-        // In production, maintain a reverse index: documentId -> entityIds
-        // For now, we use search which is less efficient but functional
-        return allEntities;
+        // Use the new GetEntitiesByDocumentAsync method to efficiently find entities
+        // associated with this document via the entity_source_documents table
+        return await _graphStore.GetEntitiesByDocumentAsync(documentId, cancellationToken);
     }
 
     private List<HybridRetrievalResult> FuseResults(

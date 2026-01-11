@@ -36,6 +36,13 @@ public interface IGraphStore
         string? typeFilter = null,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Finds all entities associated with a specific document.
+    /// </summary>
+    Task<List<GraphEntity>> GetEntitiesByDocumentAsync(
+        string documentId,
+        CancellationToken cancellationToken = default);
+
     // Relationship Operations
     /// <summary>
     /// Adds multiple relationships to the graph store.

@@ -325,6 +325,38 @@ public class SQLiteGraphStore : IGraphStore, IDisposable
         return results;
     }
 
+    public async Task<List<GraphEntity>> GetEntitiesByDocumentAsync(
+        string documentId,
+        CancellationToken cancellationToken = default)
+    {
+        using var connection = new SqliteConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        // Query the entity_source_documents table to find entities linked to this document
+        var query = @"
+            SELECT e.*
+            FROM graph_entities e
+            INNER JOIN entity_source_documents esd ON e.id = esd.entity_id
+            WHERE esd.document_id = @documentId
+            ORDER BY e.mention_count DESC, e.confidence DESC";
+
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = query;
+        cmd.Parameters.AddWithValue("@documentId", documentId);
+
+        var entities = new List<GraphEntity>();
+        using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var entity = ReadEntity(reader);
+            await LoadEntityRelations(connection, entity, cancellationToken);
+            entities.Add(entity);
+        }
+
+        _logger.LogDebug("Found {Count} entities for document {DocumentId}", entities.Count, documentId);
+        return entities;
+    }
+
     public async Task AddRelationshipsAsync(List<GraphRelationship> relationships, CancellationToken cancellationToken = default)
     {
         if (relationships == null || relationships.Count == 0)
