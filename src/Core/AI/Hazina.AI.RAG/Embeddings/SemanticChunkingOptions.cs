@@ -177,6 +177,27 @@ public class SemanticChunkingOptions
     /// </summary>
     public int HierarchicalSectionSize { get; set; } = 5000;
 
+    // === CHUNK SET GENERATION ===
+
+    /// <summary>
+    /// Generate chunk sets with summaries for hierarchically chunked documents
+    /// Chunk sets represent logical groupings of chunks (e.g., document sections)
+    /// with collective summaries describing the group's content
+    /// Only applies when UseHierarchicalChunking = true
+    /// Default: true (enabled if hierarchical chunking is used)
+    /// </summary>
+    public bool GenerateChunkSets { get; set; } = true;
+
+    /// <summary>
+    /// Metadata extraction tier for chunk set summaries
+    /// - Basic: Extractive summarization (first sentence from combined chunk text) - FREE
+    /// - LLM: AI-generated summary of the section content - ~$0.0005 per section
+    /// Default: Basic (free tier)
+    /// </summary>
+    public MetadataExtractionTier ChunkSetSummaryTier { get; set; } = MetadataExtractionTier.Basic;
+
+    // === FALLBACK AND CACHING ===
+
     /// <summary>
     /// Fallback strategy if semantic chunking fails (e.g., no embeddings available, error)
     /// Default: Paragraph
