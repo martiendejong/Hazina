@@ -28,40 +28,34 @@ namespace HazinaStore.Models
         public List<string> Tags { get; set; } = new List<string>();
 
         /// <summary>
-        /// LLM-generated description of the document (for document processing)
+        /// LLM-generated description for images or summary for text documents
         /// </summary>
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
-        /// Processing status for automatic document processing
+        /// Processing status for automatic document processing workflow
         /// </summary>
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public ProcessingStatus Status { get; set; }
+        public ProcessingStatus Status { get; set; } = ProcessingStatus.NotProcessed;
 
         /// <summary>
-        /// Content type classification
+        /// Timestamp when processing completed (description generated, embeddings created)
         /// </summary>
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public ContentType Type { get; set; }
-
-        /// <summary>
-        /// List of extracted images (for PDFs/Office docs)
-        /// </summary>
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public List<string> ExtractedImages { get; set; } = new List<string>();
-
-        /// <summary>
-        /// When processing was completed (null if not completed)
-        /// </summary>
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public DateTime? ProcessedAt { get; set; }
 
         /// <summary>
         /// Error message if processing failed
         /// </summary>
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public string ProcessingError { get; set; }
+        public string? ProcessingError { get; set; }
+
+        /// <summary>
+        /// Content type classification for semantic search filtering
+        /// </summary>
+        public ContentType Type { get; set; } = ContentType.Text;
+
+        /// <summary>
+        /// References to images extracted from this document (PDF/Office images)
+        /// </summary>
+        public List<string> ExtractedImages { get; set; } = new List<string>();
 
         /// <summary>
         /// File size in bytes
@@ -82,5 +76,29 @@ namespace HazinaStore.Models
         public DateTime UploadedAt { get; set; }
 
         public string ToDescriptiveString() => Content;
+    }
+
+    /// <summary>
+    /// Processing status for automatic document processing
+    /// </summary>
+    public enum ProcessingStatus
+    {
+        NotProcessed,
+        Processing,
+        Completed,
+        Failed
+    }
+
+    /// <summary>
+    /// Content type classification for filtering and search
+    /// </summary>
+    public enum ContentType
+    {
+        Unknown,
+        Image,
+        Text,
+        Mixed,
+        Pdf,
+        Office
     }
 }
