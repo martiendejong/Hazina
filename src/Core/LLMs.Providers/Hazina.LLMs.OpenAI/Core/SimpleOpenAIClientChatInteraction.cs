@@ -46,15 +46,34 @@ public partial class SimpleOpenAIClientChatInteraction
 
     public void Log(string? data)
     {
+        // Skip logging if LogPath is not configured
+        if (string.IsNullOrWhiteSpace(LogPath))
+            return;
+
         const int maxRetries = 10;
         const int delayMs = 100;
         string message = $"{DateTime.Now:yy-MM-dd HH:mm:ss}\n{data ?? ""}";
+
+        // Ensure log directory exists
+        var logDir = Path.GetDirectoryName(LogPath);
+        if (!string.IsNullOrEmpty(logDir) && !Directory.Exists(logDir))
+        {
+            try
+            {
+                Directory.CreateDirectory(logDir);
+            }
+            catch
+            {
+                // If we can't create the directory, skip logging
+                return;
+            }
+        }
 
         for (int i = 0; i < maxRetries; i++)
         {
             try
             {
-                using (FileStream stream = new FileStream(LogPath, FileMode.Append, FileAccess.Write, FileShare.None))
+                using (FileStream stream = new FileStream(LogPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
                 using (StreamWriter writer = new StreamWriter(stream))
                 {
                     writer.WriteLine(message);

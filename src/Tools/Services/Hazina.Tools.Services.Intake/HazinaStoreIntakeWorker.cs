@@ -8,7 +8,9 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using HazinaStore.ContentRetrieval;using HazinaStore.IntakeRegenerators;
+using HazinaStore.ContentRetrieval;
+using HazinaStore.IntakeRegenerators;
+using Hazina.Tools.Services.Store;
 
 namespace Hazina.Tools.Services.Intake
 {
@@ -28,11 +30,13 @@ namespace Hazina.Tools.Services.Intake
         
         private readonly ContentHooksRegenerator _ContentHooksRegenerator;
         public readonly ContentRetrievalService _contentRetrievalService;
+        private readonly IAnalysisFieldsProvider _analysisFieldsProvider;
 
         public HazinaStoreIntakeWorker(
             IntakeRepository intake,
             IConfiguration configuration,
-            HazinaStoreConfig storeConfig
+            HazinaStoreConfig storeConfig,
+            IAnalysisFieldsProvider analysisFieldsProvider
         )
         {
             Intake = intake;
@@ -41,7 +45,8 @@ namespace Hazina.Tools.Services.Intake
             _globalSettings = new ProjectGlobalSettingsRepository(Projects.ProjectsFolder);
             appConfig = configuration;
             config = storeConfig;
-            _ContentHooksRegenerator = new ContentHooksRegenerator(Projects, appConfig, config);
+            _analysisFieldsProvider = analysisFieldsProvider;
+            _ContentHooksRegenerator = new ContentHooksRegenerator(Projects, appConfig, config, analysisFieldsProvider);
             _contentRetrievalService = new ContentRetrievalService(_fileLocator, appConfig, config.ApiSettings.OpenApiKey);
         }
 

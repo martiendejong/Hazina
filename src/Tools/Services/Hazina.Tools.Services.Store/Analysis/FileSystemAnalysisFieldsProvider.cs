@@ -42,7 +42,32 @@ namespace Hazina.Tools.Services.Store
             var relFile = info.File;
             var abs = _fileLocator.GetPath(projectId, relFile);
             Directory.CreateDirectory(Path.GetDirectoryName(abs));
-            await File.WriteAllTextAsync(abs, content ?? string.Empty);
+
+            // Determine how to save based on file extension and genericType
+            string contentToSave = content ?? string.Empty;
+
+            // If it's a .txt file, unwrap JSON if content was serialized
+            if (relFile.EndsWith(".txt", System.StringComparison.OrdinalIgnoreCase))
+            {
+                // Try to parse as JSON and extract string value (for backwards compatibility)
+                if (!string.IsNullOrWhiteSpace(contentToSave) && contentToSave.TrimStart().StartsWith("\""))
+                {
+                    try
+                    {
+                        var parsed = JsonSerializer.Deserialize<JsonElement>(contentToSave);
+                        if (parsed.ValueKind == JsonValueKind.String)
+                        {
+                            contentToSave = parsed.GetString() ?? contentToSave;
+                        }
+                    }
+                    catch
+                    {
+                        // Not JSON or failed to parse - use as-is
+                    }
+                }
+            }
+
+            await File.WriteAllTextAsync(abs, contentToSave);
 
             // Persist to chat file if chatId is provided
             if (!string.IsNullOrWhiteSpace(chatId))
