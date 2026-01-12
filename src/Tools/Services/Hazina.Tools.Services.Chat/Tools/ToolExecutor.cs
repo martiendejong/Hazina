@@ -398,6 +398,16 @@ namespace Hazina.Tools.Services.Chat.Tools
 
                 // Store using the data gathering service
                 var dataGatheringService = _dataGatheringServiceFactory();
+                if (dataGatheringService == null)
+                {
+                    return new ToolResult
+                    {
+                        Success = false,
+                        Error = "Data gathering service not available",
+                        TokensUsed = EstimateTokens(argumentsJson)
+                    };
+                }
+
                 var success = await dataGatheringService.StoreDataItemAsync(
                     ctx.ProjectId,
                     ctx.ChatId ?? string.Empty,
@@ -435,8 +445,9 @@ namespace Hazina.Tools.Services.Chat.Tools
         /// </summary>
         private static string FormatKeyAsTitle(string key)
         {
-            if (string.IsNullOrWhiteSpace(key)) return key;
+            if (string.IsNullOrWhiteSpace(key)) return key ?? string.Empty;
             return string.Join(" ", key.Split('-', '_')
+                .Where(word => !string.IsNullOrEmpty(word))
                 .Select(word => char.ToUpper(word[0]) + word.Substring(1).ToLower()));
         }
 
@@ -467,6 +478,15 @@ namespace Hazina.Tools.Services.Chat.Tools
 
                 // Get the analysis field service
                 var analysisFieldService = _analysisFieldServiceFactory();
+                if (analysisFieldService == null)
+                {
+                    return new ToolResult
+                    {
+                        Success = false,
+                        Error = "Analysis field service not available",
+                        TokensUsed = EstimateTokens(argumentsJson)
+                    };
+                }
 
                 // First check if the field configuration exists
                 var fieldConfigs = await analysisFieldService.LoadFieldConfigsAsync(ctx.ProjectId);
@@ -567,6 +587,15 @@ namespace Hazina.Tools.Services.Chat.Tools
 
                 // Get the chat service for image generation
                 var chatService = _chatServiceFactory();
+                if (chatService == null)
+                {
+                    return new ToolResult
+                    {
+                        Success = false,
+                        Error = "Chat service not available",
+                        TokensUsed = EstimateTokens(argumentsJson)
+                    };
+                }
 
                 // Get the project for context (needed by ChatService.GenerateImage)
                 Project project = null;
