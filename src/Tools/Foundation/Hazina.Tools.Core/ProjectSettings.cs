@@ -270,16 +270,16 @@ namespace HazinaStore.Core
         #region Content Planning Files
 
         /// <summary>
-        /// Get content haakjes data
+        /// Get content hooks data
         /// </summary>
-        /// <returns>Content haakjes JSON or null if not found</returns>
+        /// <returns>Content hooks JSON or null if not found</returns>
         public string GetContentHooks()
         {
             return GetProjectFile("contenthooks.json");
         }
 
         /// <summary>
-        /// Save content haakjes data
+        /// Save content hooks data
         /// </summary>
         /// <param name="content">JSON content</param>
         public void SaveContentHooks(string content)

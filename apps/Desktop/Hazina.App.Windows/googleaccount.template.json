@@ -1,0 +1,24 @@
+{
+  "_comment": "Google Cloud Service Account Configuration Template for BigQuery",
+  "_instructions": [
+    "1. Go to https://console.cloud.google.com/iam-admin/serviceaccounts",
+    "2. Create a service account with BigQuery permissions",
+    "3. Create a JSON key for the service account and download it",
+    "4. Copy this file to googleaccount.json",
+    "5. Replace ALL placeholder values with your actual service account key values",
+    "6. NEVER commit googleaccount.json to git (it's in .gitignore)",
+    "7. Remove the _PLACEHOLDER suffix from the type field when pasting real credentials"
+  ],
+
+  "type": "service_account_PLACEHOLDER",
+  "project_id": "YOUR_PROJECT_ID_HERE",
+  "private_key_id": "YOUR_PRIVATE_KEY_ID_HERE",
+  "private_key": "PASTE_YOUR_PRIVATE_KEY_HERE_FROM_DOWNLOADED_JSON",
+  "client_email": "your-service-account@your-project-id.iam.gserviceaccount.com",
+  "client_id": "YOUR_CLIENT_ID_HERE",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/your-service-account%40your-project-id.iam.gserviceaccount.com",
+  "_note": "When you paste your downloaded service account key, remove all _PLACEHOLDER suffixes. The actual key from Google will have the correct field values without any placeholder markers."
+}

@@ -12,6 +12,7 @@
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
     <ProjectReference Include="..\Hazina.AI.Providers\Hazina.AI.Providers.csproj" />
     <ProjectReference Include="..\Hazina.AI.FaultDetection\Hazina.AI.FaultDetection.csproj" />
+    <ProjectReference Include="..\Hazina.AI.Compression\Hazina.AI.Compression.csproj" />
   </ItemGroup>
 
 </Project>

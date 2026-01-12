@@ -1,0 +1,70 @@
+name: Auto-Tag Stable Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  create-tag:
+    # Only run if PR was merged (not just closed)
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Generate tag name
+        id: tag
+        run: |
+          TAG_NAME="v$(date +'%Y.%m.%d')-stable"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "Generated tag: $TAG_NAME"
+
+      - name: Create and push tag
+        run: |
+          TAG_NAME="${{ steps.tag.outputs.tag_name }}"
+
+          # Check if tag already exists
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "⚠️ Tag $TAG_NAME already exists. Skipping tag creation."
+            exit 0
+          fi
+
+          # Create annotated tag with PR information
+          git tag -a "$TAG_NAME" -m "Stable release checkpoint - $(date +'%Y-%m-%d')
+
+          Merged PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
+
+          Source branch: ${{ github.event.pull_request.head.ref }}
+
+          Automatically tagged by GitHub Actions on PR merge to main.
+
+          Signed-off-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+
+          # Push tag to remote
+          git push origin "$TAG_NAME"
+
+          echo "✅ Successfully created and pushed tag: $TAG_NAME"
+
+      - name: Create release summary
+        run: |
+          echo "# 🏷️ Stable Tag Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag**: \`${{ steps.tag.outputs.tag_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**PR**: #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Source**: \`${{ github.event.pull_request.head.ref }}\` → \`main\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The tag has been automatically created and pushed to track this stable release." >> $GITHUB_STEP_SUMMARY
