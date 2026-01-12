@@ -292,6 +292,9 @@ namespace Hazina.Tools.AI.Agents
         public void Store(string id, string document, string file) 
         {
             var filePath = _fileLocator.GetPath(id, file);
+            var directory = Path.GetDirectoryName(filePath);
+            if (!Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
             _File.WriteAllText(filePath, document);
         }
 
@@ -301,6 +304,9 @@ namespace Hazina.Tools.AI.Agents
             if (typeof(T) == typeof(GeneratedTextResponse) && document is GeneratedTextResponse textResponse)
             {
                 var filePath = _fileLocator.GetPath(id, file);
+                var directory = Path.GetDirectoryName(filePath);
+                if (!Directory.Exists(directory))
+                    Directory.CreateDirectory(directory);
                 _File.WriteAllText(filePath, textResponse.GeneratedText ?? "");
                 return;
             }
@@ -308,12 +314,18 @@ namespace Hazina.Tools.AI.Agents
             // Serialize to JSON for all other types
             var json = System.Text.Json.JsonSerializer.Serialize(document);
             var filePath2 = _fileLocator.GetPath(id, file);
+            var directory2 = Path.GetDirectoryName(filePath2);
+            if (!Directory.Exists(directory2))
+                Directory.CreateDirectory(directory2);
             _File.WriteAllText(filePath2, json);
         }
 
         public void Store<T>(string id, GeneratedObject<T> document, string file) where T : Serializer<T>
         {
             var filePath = _fileLocator.GetPath(id, file);
+            var directory = Path.GetDirectoryName(filePath);
+            if (!Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
             document.Save(filePath);
         }
     }
