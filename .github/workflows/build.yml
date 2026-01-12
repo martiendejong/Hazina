@@ -30,7 +30,7 @@ jobs:
       run: dotnet test Hazina.sln --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
 
     - name: Upload coverage reports
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       if: success()
       with:
         files: '**/coverage.cobertura.xml'
