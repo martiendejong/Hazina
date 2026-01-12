@@ -606,6 +606,7 @@ namespace Hazina.Tools.Services.Chat.Tools
                     {
                         project = projectsRepo.Load(ctx.ProjectId);
                     }
+                    project = projectsRepo.Load(ctx.ProjectId);
                 }
 
                 if (project == null)

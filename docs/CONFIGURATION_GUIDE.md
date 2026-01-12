@@ -410,6 +410,153 @@ Hazina ondersteunt 8+ LLM providers met verschillende selectie strategieën.
 | **Mistral** | Mistral Large/Medium | European AI | GDPR compliance |
 | **Cohere** | Command, Embed | Production APIs | Enterprise |
 
+### Provider Configuration Classes (HazinaConfigBase)
+
+**⚠️ BREAKING CHANGE (v2.0):** All provider config classes now inherit from `HazinaConfigBase` and use object initializer pattern.
+
+All LLM provider configuration classes (`OpenAIConfig`, `AnthropicConfig`, `OllamaConfig`, etc.) now share common functionality through the `HazinaConfigBase` abstract base class. This reduces ~400 lines of duplicated code and provides consistent configuration loading.
+
+#### Common Properties (from HazinaConfigBase)
+
+```csharp
+public abstract class HazinaConfigBase
+{
+    public string ApiKey { get; set; }        // Required for cloud providers
+    public string Model { get; set; }         // Model name (e.g., "gpt-4o-mini")
+    public string? Endpoint { get; set; }     // Custom endpoint (optional)
+    public string? LogPath { get; set; }      // Request/response logging path
+}
+```
+
+#### Configuration Methods
+
+**Method 1: Object Initializer (Recommended)**
+```csharp
+using Hazina.LLMs.OpenAI;
+
+var config = new OpenAIConfig
+{
+    ApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")!,
+    Model = "gpt-4o-mini",
+    LogPath = "logs/openai-requests.log"  // Optional
+};
+```
+
+**Method 2: Simple Constructor**
+```csharp
+// Minimal setup (uses default model)
+var config = new OpenAIConfig(apiKey: "sk-...");
+
+// Or set properties after
+config.Model = "gpt-4o";
+config.LogPath = "logs/openai.log";
+```
+
+**Method 3: Load from appsettings.json**
+```csharp
+// appsettings.json:
+// {
+//   "OpenAI": {
+//     "ApiKey": "sk-...",
+//     "Model": "gpt-4o-mini",
+//     "LogPath": "logs/openai.log"
+//   }
+// }
+
+var config = OpenAIConfig.Load();  // Automatic loading
+
+// OR from IConfiguration instance
+var config = OpenAIConfig.FromConfiguration(configuration);
+```
+
+#### Provider-Specific Properties
+
+Each provider extends HazinaConfigBase with provider-specific properties:
+
+```csharp
+// OpenAI - Image and TTS models
+var openaiConfig = new OpenAIConfig
+{
+    ApiKey = "sk-...",
+    Model = "gpt-4o-mini",
+    EmbeddingModel = "text-embedding-3-small",
+    ImageModel = "dall-e-3",
+    TtsModel = "gpt-4o-mini-tts"
+};
+
+// Anthropic - Extended context
+var anthropicConfig = new AnthropicConfig
+{
+    ApiKey = "sk-ant-...",
+    Model = "claude-3-5-sonnet-20241022"
+    // Supports up to 200K context window
+};
+
+// Ollama - Local endpoint
+var ollamaConfig = new OllamaConfig
+{
+    Endpoint = "http://localhost:11434",
+    Model = "llama3:8b",
+    EmbeddingModel = "nomic-embed-text"
+};
+```
+
+#### Configuration Validation
+
+All configs have built-in validation:
+
+```csharp
+var config = new OpenAIConfig();  // Missing ApiKey
+
+var errors = config.Validate();
+if (errors.Any())
+{
+    foreach (var error in errors)
+    {
+        Console.WriteLine($"Config error: {error}");
+    }
+    // Output: "OpenAIConfig: ApiKey is required"
+}
+```
+
+#### ⚠️ Migration from v1.x
+
+If upgrading from Hazina v1.x, update your code:
+
+**OLD (v1.x - Constructor parameters):**
+```csharp
+// ❌ This no longer works
+var config = new OpenAIConfig(
+    apiKey: "sk-...",
+    model: "gpt-4o-mini",
+    endpoint: "https://api.openai.com/v1",
+    logPath: "logs/openai.log"
+);
+```
+
+**NEW (v2.0 - Object initializer):**
+```csharp
+// ✅ Use this instead
+var config = new OpenAIConfig
+{
+    ApiKey = "sk-...",
+    Model = "gpt-4o-mini",
+    Endpoint = "https://api.openai.com/v1",
+    LogPath = "logs/openai.log"
+};
+```
+
+**Or use simple constructor (backwards compatible):**
+```csharp
+// ✅ Also works
+var config = new OpenAIConfig("sk-...");
+config.Model = "gpt-4o-mini";
+```
+
+See [docs/API_CHANGELOG.md](API_CHANGELOG.md) for complete list of breaking changes.
+
+---
+
 ### Provider Selection Strategies
 
 #### 1. Priority-based (Aanbevolen voor Productie)
