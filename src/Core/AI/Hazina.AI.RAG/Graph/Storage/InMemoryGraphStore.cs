@@ -73,6 +73,20 @@ public class InMemoryGraphStore : IGraphStore
         return Task.FromResult(entitiesWithEmbeddings);
     }
 
+    public Task<List<GraphEntity>> GetEntitiesByDocumentAsync(
+        string documentId,
+        CancellationToken cancellationToken = default)
+    {
+        // Find all entities that have this documentId in their SourceDocuments
+        var results = _entities.Values
+            .Where(e => e.SourceDocuments.Contains(documentId))
+            .OrderByDescending(e => e.MentionCount)
+            .ThenByDescending(e => e.Confidence)
+            .ToList();
+
+        return Task.FromResult(results);
+    }
+
     public Task AddRelationshipsAsync(List<GraphRelationship> relationships, CancellationToken cancellationToken = default)
     {
         foreach (var relationship in relationships)
