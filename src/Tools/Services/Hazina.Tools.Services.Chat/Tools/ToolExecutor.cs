@@ -602,10 +602,6 @@ namespace Hazina.Tools.Services.Chat.Tools
                 if (_projectsRepositoryFactory != null)
                 {
                     var projectsRepo = _projectsRepositoryFactory();
-                    if (projectsRepo != null)
-                    {
-                        project = projectsRepo.Load(ctx.ProjectId);
-                    }
                     project = projectsRepo.Load(ctx.ProjectId);
                 }
 
