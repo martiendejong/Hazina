@@ -7,6 +7,18 @@
 
 **Production-ready AI infrastructure for .NET that scales from prototype to production without rewriting your code.**
 
+## ⚠️ Breaking Changes in v2.0
+
+If upgrading from v1.x, please note these important changes:
+
+- **Config classes:** Use object initializers instead of constructor parameters ([Migration Guide](docs/MIGRATION_GUIDE.md))
+- **Namespaces:** Add `using Hazina.LLMs.OpenAI;` for OpenAI-specific classes
+- **Method signatures:** `GenerateTextAsync` → `GenerateAsync` with updated parameters
+
+See the full [API Changelog](docs/API_CHANGELOG.md) for details and migration paths.
+
+---
+
 ## Why Hazina Instead of X?
 
 | | **Hazina** | **LangChain** | **Semantic Kernel** | **Roll Your Own** |
