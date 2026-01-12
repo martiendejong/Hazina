@@ -1,6 +1,13 @@
 # Hazina
 
-> **🚀 New to Hazina?** Start with the [QUICKSTART Guide](QUICKSTART.md) - build a production-ready RAG AI in 30 minutes!
+> [!TIP]
+> **🚀 New to Hazina?** Start with the [QUICKSTART Guide](QUICKSTART.md) for a comprehensive walkthrough.
+>
+> Learn how to:
+> - Build a RAG AI system with document indexing
+> - Swap LLM providers via configuration
+> - Connect to PostgreSQL/Supabase for production
+> - Add multi-layer reasoning with Neurochain
 
 Hazina is an agentic framework for .NET that lets you build, run, and orchestrate AI agents over your own documents and source code. It combines retrieval‑augmented generation (RAG), tool calling, and safe file modifications so agents can search, read, reason, and update your repositories with context.
 
