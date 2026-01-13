@@ -102,13 +102,17 @@ namespace Hazina.Tools.Services.Helpers
             var filePath = Path.Combine(uploadsFolder, fileName);
             var listFilePath = Path.Combine(project.ProjectPath, "uploadedFiles.json");
 
-            // Get existing file to preserve tags
+            // Get existing file to preserve tags and description
             var existingFiles = await FileHelper.GetUploadedFilesListAsync(listFilePath);
             var existingFile = existingFiles.FirstOrDefault(f => f.Filename == fileName);
             var existingTags = existingFile?.Tags ?? new List<string>();
+            var existingDescription = existingFile?.Description;
 
             // Create updated file details with token count
             var uploadedFile = FileHelper.GetUploadedFileDetails(filePath, fileName, tokenCount, existingTags);
+
+            // Preserve the description from existing file (set by AI analysis during upload)
+            uploadedFile.Description = existingDescription;
 
             // Add parts if file was split
             if (splitFilePaths != null && splitFilePaths.Count > 1)

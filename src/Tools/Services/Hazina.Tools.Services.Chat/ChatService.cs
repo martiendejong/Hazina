@@ -403,7 +403,14 @@ namespace Hazina.Tools.Services.Chat
 
             // Try to stream the final assistant message and persist it
             var reply = convo?.ChatMessages?.LastOrDefault()?.Text ?? string.Empty;
-            if (!string.IsNullOrWhiteSpace(reply))
+
+            // Filter out empty, trivial, or marker responses that shouldn't be saved
+            var shouldSaveReply = !string.IsNullOrWhiteSpace(reply)
+                && reply != "..."
+                && !reply.Contains("[IMAGE_DELIVERED_VIA_SIGNALR_DO_NOT_RESPOND_WITH_TEXT]")
+                && reply.Trim().Length > 3;  // Skip very short responses like "..." or "ok"
+
+            if (shouldSaveReply)
             {
                 // Persist assistant reply
                 var updated = _messageService.GetChatMessages(projectId, chatId, userId);
@@ -596,7 +603,14 @@ namespace Hazina.Tools.Services.Chat
 
             // Try to stream the final assistant message and persist it
             var reply = convo?.ChatMessages?.LastOrDefault()?.Text ?? string.Empty;
-            if (!string.IsNullOrWhiteSpace(reply))
+
+            // Filter out empty, trivial, or marker responses that shouldn't be saved
+            var shouldSaveReply = !string.IsNullOrWhiteSpace(reply)
+                && reply != "..."
+                && !reply.Contains("[IMAGE_DELIVERED_VIA_SIGNALR_DO_NOT_RESPOND_WITH_TEXT]")
+                && reply.Trim().Length > 3;  // Skip very short responses like "..." or "ok"
+
+            if (shouldSaveReply)
             {
                 // Persist assistant reply
                 var updated = _messageService.GetChatMessages(projectId, chatId);
