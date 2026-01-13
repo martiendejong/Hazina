@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hazina Declarative Assembly - Interactive Roadmap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 25px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 20px 40px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(17, 153, 142, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .tree {
+            list-style: none;
+        }
+
+        .tree-item {
+            margin-bottom: 8px;
+        }
+
+        .tree-node {
+            display: flex;
+            align-items: flex-start;
+            cursor: pointer;
+            padding: 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .tree-node:hover {
+            background: #f8f9fa;
+        }
+
+        .toggle {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            flex-shrink: 0;
+            color: #11998e;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .toggle.empty {
+            opacity: 0;
+        }
+
+        .tree-content {
+            flex: 1;
+        }
+
+        .tree-label {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tree-meta {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
+        .tree-children {
+            margin-left: 34px;
+            margin-top: 8px;
+            border-left: 2px solid #e9ecef;
+            padding-left: 20px;
+            display: none;
+        }
+
+        .tree-children.expanded {
+            display: block;
+        }
+
+        /* Phase styling */
+        .level-1 .tree-node {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 18px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(17, 153, 142, 0.3);
+        }
+
+        .level-1 .tree-node:hover {
+            background: linear-gradient(135deg, #0f8a80 0%, #2ed66c 100%);
+            transform: translateX(4px);
+        }
+
+        .level-1 .tree-label {
+            font-size: 1.3em;
+        }
+
+        .level-1 .tree-meta {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .level-1 .toggle {
+            color: white;
+        }
+
+        /* Task styling */
+        .level-2 .tree-node {
+            background: #e8f5e9;
+            border-left: 4px solid #11998e;
+        }
+
+        .level-2 .tree-node:hover {
+            background: #c8e6c9;
+        }
+
+        .level-2 .tree-label {
+            color: #1b5e20;
+            font-size: 1.1em;
+        }
+
+        /* Component styling */
+        .level-3 .tree-node {
+            background: #f3f4f6;
+        }
+
+        .level-3 .tree-label {
+            color: #374151;
+        }
+
+        /* Subtask styling */
+        .level-4 .tree-node {
+            padding: 8px 12px;
+        }
+
+        .level-4 .tree-label {
+            font-weight: 400;
+            font-size: 0.95em;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+
+        .level-1 .badge {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .level-2 .badge {
+            background: #11998e;
+            color: white;
+        }
+
+        .description {
+            margin-top: 10px;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: white;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-planning { background: #fef3c7; color: #92400e; }
+        .status-pending { background: #e5e7eb; color: #374151; }
+        .status-in-progress { background: #dbeafe; color: #1e40af; }
+        .status-complete { background: #d1fae5; color: #065f46; }
+
+        .component-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .component-tag {
+            background: #e0f2f1;
+            color: #00695c;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-family: monospace;
+        }
+
+        .file-list {
+            margin-top: 10px;
+            padding: 10px;
+            background: #1e293b;
+            border-radius: 6px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.85em;
+            color: #94a3b8;
+        }
+
+        .file-list .folder {
+            color: #38bdf8;
+        }
+
+        .file-list .file {
+            color: #a5f3fc;
+            margin-left: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .stats {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .tree-children {
+                margin-left: 20px;
+                padding-left: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Hazina Declarative Assembly System</h1>
+            <p>Build production-ready RAG applications from YAML specifications</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">16</div>
+                    <div class="stat-label">Weeks</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">4</div>
+                    <div class="stat-label">Phases</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">Core Components</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">23+</div>
+                    <div class="stat-label">Providers</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="expandAll()">Expand All</button>
+            <button class="btn btn-secondary" onclick="collapseAll()">Collapse All</button>
+            <button class="btn btn-secondary" onclick="expandLevel(1)">Phases Only</button>
+            <button class="btn btn-secondary" onclick="expandLevel(2)">Show Tasks</button>
+        </div>
+
+        <div class="content">
+            <ul class="tree" id="roadmap-tree">
+                <!-- Phase 1: Foundation -->
+                <li class="tree-item level-1">
+                    <div class="tree-node" onclick="toggleNode(this)">
+                        <span class="toggle">▶</span>
+                        <div class="tree-content">
+                            <div class="tree-label">
+                                Phase 1: Foundation
+                                <span class="badge">Weeks 1-4</span>
+                                <span class="status-badge status-planning">Planning</span>
+                            </div>
+                            <div class="tree-meta">Duration: 4 weeks • Goal: Core infrastructure for declarative assembly</div>
+                            <div class="description">
+                                <strong>Deliverables:</strong> Component Registry, Assembly Specification, Basic Generator
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <ul class="tree-children">
+                        <!-- Component Registry -->
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Component Registry
+                                        <span class="badge">Weeks 1-2</span>
+                                    </div>
+                                    <div class="tree-meta">Machine-readable catalog of all Hazina components</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Schema & Models</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Create component definition JSON schema</div></div></div></li>
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Implement ComponentDefinition model class</div></div></div></li>
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Implement ConfigSchema model</div></div></div></li>
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Add YAML/JSON parsing support</div></div></div></li>
+                                    </ul>
+                                </li>
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Catalog Implementation</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Implement ComponentCatalog class</div></div></div></li>
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Add embedded resource loading</div></div></div></li>
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Add directory-based loading</div></div></div></li>
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Implement IComponentRegistry interface</div></div></div></li>
+                                    </ul>
+                                </li>
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Initial Components (20)</div>
+                                            <div class="component-list">
+                                                <span class="component-tag">llm.openai</span>
+                                                <span class="component-tag">llm.anthropic</span>
+                                                <span class="component-tag">llm.ollama</span>
+                                                <span class="component-tag">embedding.openai</span>
+                                                <span class="component-tag">vector.memory</span>
+                                                <span class="component-tag">vector.supabase</span>
+                                                <span class="component-tag">...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="tree-item level-3">
+                                    <div class="tree-node">
+                                        <span class="toggle empty"></span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Files Created</div>
+                                            <div class="file-list">
+                                                <div class="folder">src/Core/AI/Hazina.AI.Assembly/</div>
+                                                <div class="file">├── Registry/IComponentRegistry.cs</div>
+                                                <div class="file">├── Registry/ComponentRegistry.cs</div>
+                                                <div class="file">├── Registry/ComponentCatalog.cs</div>
+                                                <div class="file">├── Schema/component-schema.json</div>
+                                                <div class="file">└── Components/providers/*.yaml</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Assembly Specification -->
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Assembly Specification
+                                        <span class="badge">Weeks 3-4</span>
+                                    </div>
+                                    <div class="tree-meta">YAML format for declarative app definitions</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Spec Models</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Create AssemblySpec root model</div></div></div></li>
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Create MetadataSpec, ProvidersSpec models</div></div></div></li>
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Create PipelinesSpec, ModulesSpec models</div></div></div></li>
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Implement VariableResolver (${VAR} support)</div></div></div></li>
+                                    </ul>
+                                </li>
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Validation</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Create JSON Schema for IDE support</div></div></div></li>
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Implement SchemaValidator</div></div></div></li>
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Implement ComponentReferenceValidator</div></div></div></li>
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Implement DependencyValidator</div></div></div></li>
+                                    </ul>
+                                </li>
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Basic Generator</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Create ScaffoldGenerator class</div></div></div></li>
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Generate project structure</div></div></div></li>
+                                        <li class="tree-item level-4"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Generate .csproj file</div></div></div></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Phase 2: Completeness -->
+                <li class="tree-item level-1">
+                    <div class="tree-node" onclick="toggleNode(this)">
+                        <span class="toggle">▶</span>
+                        <div class="tree-content">
+                            <div class="tree-label">
+                                Phase 2: Completeness
+                                <span class="badge">Weeks 5-8</span>
+                                <span class="status-badge status-pending">Pending</span>
+                            </div>
+                            <div class="tree-meta">Duration: 4 weeks • Goal: Full coverage of Hazina features</div>
+                            <div class="description">
+                                <strong>Deliverables:</strong> All providers, pipelines, modules, complete code generation
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <ul class="tree-children">
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Full Provider Coverage
+                                        <span class="badge">Weeks 5-6</span>
+                                    </div>
+                                    <div class="tree-meta">23+ component definitions</div>
+                                    <div class="component-list">
+                                        <span class="component-tag">7 LLM Providers</span>
+                                        <span class="component-tag">4 Embedding Providers</span>
+                                        <span class="component-tag">4 Document Stores</span>
+                                        <span class="component-tag">5 Vector Stores</span>
+                                        <span class="component-tag">3 Graph Stores</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Pipeline & Module Coverage
+                                        <span class="badge">Weeks 7-8</span>
+                                    </div>
+                                    <div class="tree-meta">Complete pipeline composition and module generation</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node">
+                                        <span class="toggle empty"></span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Pipeline Specifications</div>
+                                            <div class="component-list">
+                                                <span class="component-tag">ingestion</span>
+                                                <span class="component-tag">retrieval</span>
+                                                <span class="component-tag">graph</span>
+                                                <span class="component-tag">graph-rag</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="tree-item level-3">
+                                    <div class="tree-node">
+                                        <span class="toggle empty"></span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Module Components</div>
+                                            <div class="component-list">
+                                                <span class="component-tag">module.rag-query</span>
+                                                <span class="component-tag">module.document-ingest</span>
+                                                <span class="component-tag">module.search</span>
+                                                <span class="component-tag">module.chat</span>
+                                                <span class="component-tag">module.health</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="tree-item level-3">
+                                    <div class="tree-node">
+                                        <span class="toggle empty"></span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Feature Components</div>
+                                            <div class="component-list">
+                                                <span class="component-tag">auth.jwt</span>
+                                                <span class="component-tag">auth.apikey</span>
+                                                <span class="component-tag">observability</span>
+                                                <span class="component-tag">security</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Phase 3: Developer Experience -->
+                <li class="tree-item level-1">
+                    <div class="tree-node" onclick="toggleNode(this)">
+                        <span class="toggle">▶</span>
+                        <div class="tree-content">
+                            <div class="tree-label">
+                                Phase 3: Developer Experience
+                                <span class="badge">Weeks 9-12</span>
+                                <span class="status-badge status-pending">Pending</span>
+                            </div>
+                            <div class="tree-meta">Duration: 4 weeks • Goal: Polish, templates, CLI, documentation</div>
+                            <div class="description">
+                                <strong>Deliverables:</strong> dotnet new templates, CLI commands, comprehensive docs
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <ul class="tree-children">
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        dotnet new Templates
+                                        <span class="badge">Weeks 9-10</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label"><code>hazina-rag</code> - Full featured RAG application</div></div></div></li>
+                                <li class="tree-item level-3"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label"><code>hazina-rag-minimal</code> - Quick start template</div></div></div></li>
+                                <li class="tree-item level-3"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label"><code>hazina-worker</code> - Background processing</div></div></div></li>
+                                <li class="tree-item level-3"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label"><code>hazina-console</code> - CLI application</div></div></div></li>
+                            </ul>
+                        </li>
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        CLI Commands
+                                        <span class="badge">Weeks 11-12</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label"><code>hazina assemble &lt;spec&gt;</code> - Generate project from spec</div></div></div></li>
+                                <li class="tree-item level-3"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label"><code>hazina validate &lt;spec&gt;</code> - Validate specification</div></div></div></li>
+                                <li class="tree-item level-3"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label"><code>hazina components list</code> - List available components</div></div></div></li>
+                            </ul>
+                        </li>
+                        <li class="tree-item level-2">
+                            <div class="tree-node">
+                                <span class="toggle empty"></span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Documentation
+                                    </div>
+                                    <div class="tree-meta">Specification guide, component reference, tutorials, examples</div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Phase 4: AI Integration -->
+                <li class="tree-item level-1">
+                    <div class="tree-node" onclick="toggleNode(this)">
+                        <span class="toggle">▶</span>
+                        <div class="tree-content">
+                            <div class="tree-label">
+                                Phase 4: AI Integration
+                                <span class="badge">Weeks 13-16</span>
+                                <span class="status-badge status-pending">Pending</span>
+                            </div>
+                            <div class="tree-meta">Duration: 4 weeks • Goal: Claude Code integration for autonomous building</div>
+                            <div class="description">
+                                <strong>Deliverables:</strong> Agent instructions, NL-to-spec conversion, auto-fix patterns
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <ul class="tree-children">
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Agent Instructions
+                                        <span class="badge">Weeks 13-14</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Create hazina-builder.agent.md</div></div></div></li>
+                                <li class="tree-item level-3"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Create hazina-build skill (auto-discovered)</div></div></div></li>
+                                <li class="tree-item level-3"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Component quick reference for AI</div></div></div></li>
+                                <li class="tree-item level-3"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Decision rules and patterns</div></div></div></li>
+                            </ul>
+                        </li>
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Natural Language Building
+                                        <span class="badge">Weeks 15-16</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">NL-to-spec conversion prompts</div></div></div></li>
+                                <li class="tree-item level-3"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Interactive build mode</div></div></div></li>
+                                <li class="tree-item level-3"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Auto-fix patterns (build errors)</div></div></div></li>
+                                <li class="tree-item level-3"><div class="tree-node"><span class="toggle empty"></span><div class="tree-content"><div class="tree-label">Worktree integration for builds</div></div></div></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function toggleNode(element) {
+            const item = element.closest('.tree-item');
+            const children = item.querySelector('.tree-children');
+            const toggle = element.querySelector('.toggle');
+
+            if (children) {
+                children.classList.toggle('expanded');
+                toggle.textContent = children.classList.contains('expanded') ? '▼' : '▶';
+            }
+        }
+
+        function expandAll() {
+            document.querySelectorAll('.tree-children').forEach(el => {
+                el.classList.add('expanded');
+            });
+            document.querySelectorAll('.toggle:not(.empty)').forEach(el => {
+                el.textContent = '▼';
+            });
+        }
+
+        function collapseAll() {
+            document.querySelectorAll('.tree-children').forEach(el => {
+                el.classList.remove('expanded');
+            });
+            document.querySelectorAll('.toggle:not(.empty)').forEach(el => {
+                el.textContent = '▶';
+            });
+        }
+
+        function expandLevel(level) {
+            collapseAll();
+            for (let i = 1; i <= level; i++) {
+                document.querySelectorAll(`.level-${i} > .tree-node + .tree-children`).forEach(el => {
+                    el.classList.add('expanded');
+                });
+                document.querySelectorAll(`.level-${i} > .tree-node .toggle:not(.empty)`).forEach(el => {
+                    el.textContent = '▼';
+                });
+            }
+        }
+
+        // Expand phase level by default
+        expandLevel(1);
+    </script>
+</body>
+</html>
