@@ -68,6 +68,8 @@ namespace Hazina.Tools.Services.Chat.Tools
         private readonly Func<ProjectChatRepository> _chatRepositoryFactory;
         // STAP 28: Add notifier for component requests
         private readonly IProjectChatNotifier _notifier;
+        // Web scraping: FireCrawl service for autonomous branding extraction
+        private readonly Hazina.Tools.Services.Web.Abstractions.IFireCrawlService _fireCrawlService;
 
         public ToolExecutor(
             ILogger<ToolExecutor> logger,
@@ -76,7 +78,8 @@ namespace Hazina.Tools.Services.Chat.Tools
             Func<ChatService> chatServiceFactory,
             Func<ProjectsRepository> projectsRepositoryFactory = null,
             Func<ProjectChatRepository> chatRepositoryFactory = null,
-            IProjectChatNotifier notifier = null)
+            IProjectChatNotifier notifier = null,
+            Hazina.Tools.Services.Web.Abstractions.IFireCrawlService fireCrawlService = null)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _dataGatheringServiceFactory = dataGatheringServiceFactory ?? throw new ArgumentNullException(nameof(dataGatheringServiceFactory));
@@ -85,6 +88,7 @@ namespace Hazina.Tools.Services.Chat.Tools
             _projectsRepositoryFactory = projectsRepositoryFactory;
             _chatRepositoryFactory = chatRepositoryFactory;
             _notifier = notifier; // Can be null for unit testing
+            _fireCrawlService = fireCrawlService; // Can be null if FireCrawl not configured
         }
 
         public async Task<IToolResult> ExecuteAsync(
@@ -109,6 +113,8 @@ namespace Hazina.Tools.Services.Chat.Tools
                     "request_file_upload" => await ExecuteRequestFileUploadAsync(argumentsJson, context, cancellationToken),
                     "show_system_status" => await ExecuteShowSystemStatusAsync(argumentsJson, context, cancellationToken),
                     "show_artifact" => await ExecuteShowArtifactAsync(argumentsJson, context, cancellationToken),
+                    // Web scraping: Autonomous branding extraction
+                    "scrape_website_branding" => await ExecuteScrapeBrandingAsync(argumentsJson, context, cancellationToken),
                     _ => new ToolResult
                     {
                         Success = false,
@@ -358,6 +364,28 @@ namespace Hazina.Tools.Services.Chat.Tools
                             }
                         },
                         ""required"": [""artifact_type"", ""title"", ""data""]
+                    }")
+                },
+                // Web Scraping: Autonomous branding extraction from websites
+                new ToolDefinition
+                {
+                    Name = "scrape_website_branding",
+                    Description = "Extract branding elements (colors, fonts, logo, typography) from any website URL. Use this when the user asks about competitor branding, wants to analyze a website's design, needs to compare branding with competitors, or requests to import competitor brand data. This tool autonomously scrapes the website and returns structured branding information including color palette, font families, logo URL, and typography details.",
+                    Parameters = JsonSerializer.Deserialize<JsonElement>(@"{
+                        ""type"": ""object"",
+                        ""properties"": {
+                            ""url"": {
+                                ""type"": ""string"",
+                                ""format"": ""uri"",
+                                ""description"": ""The website URL to scrape (e.g., 'https://nike.com' or 'https://stripe.com')""
+                            },
+                            ""capture_screenshot"": {
+                                ""type"": ""boolean"",
+                                ""description"": ""Whether to capture a full-page screenshot (default: false to minimize token cost)"",
+                                ""default"": false
+                            }
+                        },
+                        ""required"": [""url""]
                     }")
                 }
             };
@@ -1104,6 +1132,153 @@ namespace Hazina.Tools.Services.Chat.Tools
             }
         }
 
+        /// <summary>
+        /// Execute web scraping to extract branding from a website.
+        /// Uses Hazina FireCrawl service to autonomously scrape and analyze.
+        /// </summary>
+        private async Task<IToolResult> ExecuteScrapeBrandingAsync(
+            string argumentsJson,
+            string context,
+            CancellationToken cancellationToken)
+        {
+            var args = JsonSerializer.Deserialize<ScrapeBrandingArgs>(argumentsJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (args == null || string.IsNullOrWhiteSpace(args.Url))
+            {
+                return new ToolResult
+                {
+                    Success = false,
+                    Error = "Invalid arguments: url is required",
+                    TokensUsed = 0
+                };
+            }
+
+            // Validate URL format
+            if (!Uri.TryCreate(args.Url, UriKind.Absolute, out var uri))
+            {
+                return new ToolResult
+                {
+                    Success = false,
+                    Error = $"Invalid URL format: {args.Url}",
+                    TokensUsed = 0
+                };
+            }
+
+            try
+            {
+                _logger.LogInformation("Scraping branding from: {Url}", args.Url);
+
+                // Check if FireCrawl service is available
+                if (_fireCrawlService == null)
+                {
+                    return new ToolResult
+                    {
+                        Success = false,
+                        Error = "FireCrawl service not available. Please configure FireCrawl API key in appsettings.json",
+                        TokensUsed = 0
+                    };
+                }
+
+                // Extract branding using FireCrawl
+                var extractResult = await _fireCrawlService.ExtractBrandingAsync(args.Url);
+
+                if (!extractResult.Success || extractResult.Branding == null)
+                {
+                    return new ToolResult
+                    {
+                        Success = false,
+                        Error = extractResult.Error ?? "Failed to extract branding from website",
+                        TokensUsed = EstimateTokens(argumentsJson)
+                    };
+                }
+
+                var branding = extractResult.Branding;
+
+                // Optionally capture screenshot
+                string? screenshotBase64 = null;
+                if (args.CaptureScreenshot)
+                {
+                    var screenshotResult = await _fireCrawlService.ScreenshotAsync(
+                        new Hazina.Tools.Services.Web.Models.FireCrawlScreenshotRequest
+                        {
+                            Url = args.Url,
+                            FullPage = true,
+                            Width = 1920,
+                            Height = 1080
+                        });
+
+                    if (screenshotResult.Success && !string.IsNullOrEmpty(screenshotResult.Screenshot))
+                    {
+                        screenshotBase64 = screenshotResult.Screenshot;
+                        _logger.LogInformation("Screenshot captured for {Url} ({Size} bytes)",
+                            args.Url, screenshotBase64.Length);
+                    }
+                }
+
+                _logger.LogInformation(
+                    "Successfully extracted branding from {Url}: {ColorCount} colors, {FontCount} fonts",
+                    args.Url, branding.Colors?.Count ?? 0, branding.Fonts?.Count ?? 0);
+
+                // Return structured branding data to LLM
+                var result = new Dictionary<string, object>
+                {
+                    ["url"] = args.Url,
+                    ["domain"] = uri.Host,
+                    ["branding"] = new Dictionary<string, object>
+                    {
+                        ["colors"] = branding.Colors ?? new List<string>(),
+                        ["primaryColor"] = branding.PrimaryColor ?? "",
+                        ["secondaryColor"] = branding.SecondaryColor ?? "",
+                        ["fonts"] = branding.Fonts ?? new List<string>(),
+                        ["logoUrl"] = branding.LogoUrl ?? "",
+                        ["typography"] = branding.Typography ?? new Dictionary<string, string>()
+                    },
+                    ["summary"] = $"Extracted {branding.Colors?.Count ?? 0} colors, " +
+                                 $"{branding.Fonts?.Count ?? 0} fonts from {uri.Host}"
+                };
+
+                // Add screenshot if captured
+                if (screenshotBase64 != null)
+                {
+                    result["screenshot"] = new Dictionary<string, object>
+                    {
+                        ["available"] = true,
+                        ["format"] = "base64_png",
+                        ["data"] = screenshotBase64,
+                        ["sizeBytes"] = screenshotBase64.Length
+                    };
+                }
+                else
+                {
+                    result["screenshot"] = new Dictionary<string, object>
+                    {
+                        ["available"] = false
+                    };
+                }
+
+                return new ToolResult
+                {
+                    Success = true,
+                    Result = result,
+                    TokensUsed = EstimateTokens(argumentsJson) +
+                                 (screenshotBase64 != null ? screenshotBase64.Length / 4 : 0)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error scraping branding from {Url}", args.Url);
+                return new ToolResult
+                {
+                    Success = false,
+                    Error = $"Scraping failed: {ex.Message}",
+                    TokensUsed = 0
+                };
+            }
+        }
+
         private int EstimateTokens(string text)
         {
             return (text?.Length ?? 0) / 4; // Rough estimation: ~4 characters per token
@@ -1179,6 +1354,12 @@ namespace Hazina.Tools.Services.Chat.Tools
             public string Title { get; set; }
             public string Summary { get; set; }
             public JsonElement Data { get; set; }
+        }
+
+        private class ScrapeBrandingArgs
+        {
+            public string Url { get; set; }
+            public bool CaptureScreenshot { get; set; } = false;
         }
     }
 }
