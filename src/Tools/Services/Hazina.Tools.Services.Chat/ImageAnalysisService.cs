@@ -134,22 +134,55 @@ Return ONLY the JSON object, no additional text.";
                     jsonResponse = string.Join('\n', lines.Skip(1).Take(lines.Length - 2));
                 }
 
-                // Parse JSON response
-                var analysis = JsonSerializer.Deserialize<AnalysisResponse>(jsonResponse, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                // Parse JSON response manually to handle flexible metadata structure
+                string description = string.Empty;
+                List<string> tags = new List<string>();
+                Dictionary<string, string> metadata = new Dictionary<string, string>();
 
-                if (analysis == null)
+                try
                 {
-                    throw new Exception("Failed to parse AI response");
+                    using var doc = JsonDocument.Parse(jsonResponse);
+                    var root = doc.RootElement;
+
+                    if (root.TryGetProperty("description", out var descProp))
+                        description = descProp.GetString() ?? string.Empty;
+
+                    if (root.TryGetProperty("tags", out var tagsProp) && tagsProp.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var tag in tagsProp.EnumerateArray())
+                        {
+                            if (tag.ValueKind == JsonValueKind.String)
+                                tags.Add(tag.GetString());
+                        }
+                    }
+
+                    // Metadata is optional and can have mixed types, just convert to strings
+                    if (root.TryGetProperty("metadata", out var metaProp) && metaProp.ValueKind == JsonValueKind.Object)
+                    {
+                        foreach (var prop in metaProp.EnumerateObject())
+                        {
+                            metadata[prop.Name] = prop.Value.ToString();
+                        }
+                    }
                 }
+                catch (JsonException jsonEx)
+                {
+                    Console.WriteLine($"[ImageAnalysisService] JSON parsing warning: {jsonEx.Message}");
+                    // Continue with whatever we extracted
+                }
+
+                if (string.IsNullOrEmpty(description) && tags.Count == 0)
+                {
+                    throw new Exception("Failed to extract description or tags from AI response");
+                }
+
+                Console.WriteLine($"[ImageAnalysisService] Successfully parsed: description={description.Length} chars, tags={tags.Count}");
 
                 return new ImageAnalysisResult
                 {
-                    Description = analysis.Description ?? string.Empty,
-                    Tags = analysis.Tags ?? new List<string>(),
-                    Metadata = analysis.Metadata ?? new Dictionary<string, string>(),
+                    Description = description,
+                    Tags = tags,
+                    Metadata = metadata,
                     Confidence = 0.9  // GPT-4 Vision generally high confidence
                 };
             }
