@@ -4,7 +4,6 @@ using Hazina.Tools.Data;
 using Hazina.Tools.Models;
 using Hazina.Tools.Services.FileOps.Helpers;
 using Mscc.GenerativeAI;
-using Hazina.Tools.Services.Chat.Interfaces;
 using System;
 using System.IO;
 using System.Net.Http;
@@ -23,7 +22,6 @@ namespace Hazina.Tools.Services.Chat
         private readonly IGeneratedImageRepository _generatedImageRepository;
         private readonly IChatMessageService _messageService;
         private readonly IChatMetadataService _metadataService;
-        private readonly IImageAnalysisService? _imageAnalysisService;
         private static readonly HttpClient HttpClient = new();
 
         public ChatImageService(
@@ -33,15 +31,13 @@ namespace Hazina.Tools.Services.Chat
             IntakeRepository intake,
             IGeneratedImageRepository generatedImageRepository,
             IChatMetadataService metadataService,
-            IChatMessageService messageService,
-            IImageAnalysisService? imageAnalysisService = null)
+            IChatMessageService messageService)
             : this(
                   projects,
                   fileLocator,
                   intake,
                   agent?.Config?.ApiSettings?.OpenApiKey,
                   agent?.Config?.ApiSettings?.GeminiApiKey,
-                  imageAnalysisService,
                   generatedImageRepository,
                   metadataService,
                   messageService)
@@ -54,7 +50,6 @@ namespace Hazina.Tools.Services.Chat
             IntakeRepository intake,
             string? openAiApiKey,
             string? geminiApiKey,
-            IImageAnalysisService? imageAnalysisService = null,
             IGeneratedImageRepository generatedImageRepository,
             IChatMetadataService metadataService,
             IChatMessageService messageService)
@@ -65,7 +60,6 @@ namespace Hazina.Tools.Services.Chat
             _generatedImageRepository = generatedImageRepository ?? throw new ArgumentNullException(nameof(generatedImageRepository));
             _metadataService = metadataService ?? throw new ArgumentNullException(nameof(metadataService));
             _messageService = messageService ?? throw new ArgumentNullException(nameof(messageService));
-            _imageAnalysisService = imageAnalysisService;
         }
 
         public Task<ChatConversation> GenerateImage(string projectId, string chatId, Project project, GeneratorMessage chatMessage, CancellationToken cancel, bool isImageSet)
@@ -141,54 +135,6 @@ namespace Hazina.Tools.Services.Chat
                     Console.WriteLine($"ChatImageService: Failed to sync generated image to uploads: {ex.Message}");
                 }
 
-
-                // AI Image Analysis: Analyze content and generate smart tags and description
-                string aiDescription = null;
-                List<string> aiTags = null;
-                if (_imageAnalysisService != null)
-                {
-                    try
-                    {
-                        Console.WriteLine($"[ChatImageService] Starting AI analysis for {fileName}...");
-                        var analysisResult = await _imageAnalysisService.AnalyzeImageAsync(
-                            imageBytes: resolved.Data,
-                            context: $"This image was generated with the prompt: {prompt}",
-                            cancel: cancel
-                        );
-                        aiDescription = analysisResult.Description;
-                        aiTags = analysisResult.Tags;
-                        Console.WriteLine($"[ChatImageService] AI Analysis complete. Description: {aiDescription}");
-                        Console.WriteLine($"[ChatImageService] AI Tags: {string.Join(", ", aiTags)}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[ChatImageService] AI analysis failed: {ex.Message}. Using prompt-based tags.");
-                    }
-                }
-
-                // Update uploadedFiles.json with AI analysis results
-                if (_imageAnalysisService != null && (aiDescription != null || aiTags != null))
-                {
-                    try
-                    {
-                        var listFilePath = Path.Combine(FileLocator.GetProjectFolder(projectId), "uploadedFiles.json");
-                        var uploadedFiles = await FileHelper.GetUploadedFilesListAsync(listFilePath);
-                        var uploadedFile = uploadedFiles.FirstOrDefault(f => f.Filename == fileName);
-                        if (uploadedFile != null)
-                        {
-                            uploadedFile.Description = aiDescription;
-                            uploadedFile.Tags = aiTags ?? uploadedFile.Tags;
-                            uploadedFile.Tags.Add("generated");  // Ensure "generated" tag is present
-                            uploadedFile.Tags = uploadedFile.Tags.Distinct().ToList();  // Remove duplicates
-                            await FileHelper.UpdateUploadedFilesListAsync(listFilePath, uploadedFile);
-                            Console.WriteLine($"[ChatImageService] Updated uploadedFiles.json with AI metadata");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[ChatImageService] Failed to update uploadedFiles with AI metadata: {ex.Message}");
-                    }
-                }
                 var metadata = new GeneratedImageInfo
                 {
                     ProjectId = projectId,
@@ -199,8 +145,7 @@ namespace Hazina.Tools.Services.Chat
                     SourceUrl = resolved.SourceUrl ?? string.Empty,
                     UserId = storedUserId ?? string.Empty,
                     CreatedAt = DateTime.UtcNow,
-                    Tags = aiTags ?? DetermineImageTags(prompt),
-                    Description = aiDescription
+                    Tags = DetermineImageTags(prompt)
                 };
                 _generatedImageRepository.Add(metadata, projectId, storedUserId);
 
