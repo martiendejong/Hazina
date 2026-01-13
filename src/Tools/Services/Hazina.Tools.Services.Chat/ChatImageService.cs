@@ -41,10 +41,10 @@ namespace Hazina.Tools.Services.Chat
                   intake,
                   agent?.Config?.ApiSettings?.OpenApiKey,
                   agent?.Config?.ApiSettings?.GeminiApiKey,
-                  imageAnalysisService,
                   generatedImageRepository,
                   metadataService,
-                  messageService)
+                  messageService,
+                  imageAnalysisService)
         {
         }
 
@@ -54,10 +54,10 @@ namespace Hazina.Tools.Services.Chat
             IntakeRepository intake,
             string? openAiApiKey,
             string? geminiApiKey,
-            IImageAnalysisService? imageAnalysisService = null,
             IGeneratedImageRepository generatedImageRepository,
             IChatMetadataService metadataService,
-            IChatMessageService messageService)
+            IChatMessageService messageService,
+            IImageAnalysisService? imageAnalysisService = null)
             : base(projects, fileLocator)
         {
             _openAiApiKey = openAiApiKey ?? string.Empty;

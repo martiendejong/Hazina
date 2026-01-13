@@ -1,10 +1,9 @@
 using Hazina.LLMs.OpenAI;
 using Hazina.Tools.Services.Chat.Interfaces;
-using OpenAI.Chat;
 using System;
+using System.ClientModel;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +13,6 @@ namespace Hazina.Tools.Services.Chat
     public class ImageAnalysisService : IImageAnalysisService
     {
         private readonly string _openAiApiKey;
-        private static readonly HttpClient HttpClient = new();
 
         public ImageAnalysisService(string openAiApiKey)
         {
@@ -34,14 +32,6 @@ namespace Hazina.Tools.Services.Chat
 
             try
             {
-                // Convert image to data URI if bytes provided
-                string imageSource = imageUrl;
-                if (imageBytes != null && imageBytes.Length > 0)
-                {
-                    var base64 = Convert.ToBase64String(imageBytes);
-                    imageSource = $"data:image/png;base64,{base64}";
-                }
-
                 var config = new OpenAIConfig(_openAiApiKey);
                 config.Model = "gpt-4o";  // GPT-4 Turbo with vision
                 
@@ -81,24 +71,53 @@ Return ONLY the JSON object, no additional text.";
                     : $"Analyze this image. Context: {context}\n\nProvide description, tags, and metadata.";
 
                 // Create messages with image
-                var messages = new List<ConversationMessage>
+                var messages = new List<HazinaChatMessage>
                 {
-                    new ConversationMessage
+                    new HazinaChatMessage
                     {
-                        Role = ChatMessageRole.System,
+                        Role = HazinaMessageRole.System,
                         Text = systemPrompt
                     },
-                    new ConversationMessage
+                    new HazinaChatMessage
                     {
-                        Role = ChatMessageRole.User,
-                        Text = userPrompt,
-                        ImageUrl = imageSource
+                        Role = HazinaMessageRole.User,
+                        Text = userPrompt
                     }
                 };
 
+                // Prepare image data
+                List<ImageData> images = null;
+                if (imageBytes != null && imageBytes.Length > 0)
+                {
+                    images = new List<ImageData>
+                    {
+                        new ImageData
+                        {
+                            Name = "image_to_analyze",
+                            BinaryData = BinaryData.FromBytes(imageBytes),
+                            MimeType = "image/png"
+                        }
+                    };
+                }
+                else if (!string.IsNullOrWhiteSpace(imageUrl))
+                {
+                    // For URL-based images, download and convert to bytes
+                    using var httpClient = new System.Net.Http.HttpClient();
+                    var imageData = await httpClient.GetByteArrayAsync(imageUrl, cancel);
+                    images = new List<ImageData>
+                    {
+                        new ImageData
+                        {
+                            Name = "image_to_analyze",
+                            BinaryData = BinaryData.FromBytes(imageData),
+                            MimeType = "image/png"
+                        }
+                    };
+                }
+
                 // Get analysis from GPT-4 Vision
-                var response = await client.GetChatResponseAsync(messages, null, cancel);
-                var jsonResponse = response?.Trim() ?? "{}";
+                var response = await client.GetResponse(messages, HazinaChatResponseFormat.Text, null, images, cancel);
+                var jsonResponse = response.Result?.Trim() ?? "{}";
 
                 // Try to extract JSON if wrapped in markdown code blocks
                 if (jsonResponse.StartsWith("```"))
