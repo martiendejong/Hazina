@@ -67,3 +67,16 @@ public class DocumentChunk
     public int ChunkIndex { get; set; }
     public string Text { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// Document info returned from store
+/// </summary>
+public class DocumentInfo
+{
+    public string DocumentId { get; set; } = string.Empty;
+    public Guid StoreId { get; set; }
+    public string? Content { get; set; }
+    public string Filename { get; set; } = string.Empty;
+    public string MimeType { get; set; } = string.Empty;
+    public Dictionary<string, string> Metadata { get; set; } = new();
+}

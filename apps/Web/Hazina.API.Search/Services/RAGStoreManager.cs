@@ -294,6 +294,132 @@ public class RAGStoreManager : IDisposable
     }
 
     /// <summary>
+    /// Get a document by ID from a RAG store
+    /// </summary>
+    public async Task<DocumentInfo?> GetDocumentAsync(Guid storeId, string documentId)
+    {
+        var store = await GetStoreAsync(storeId);
+        if (store == null)
+        {
+            return null;
+        }
+
+        var instance = await GetOrCreateStoreInstanceAsync(store);
+
+        try
+        {
+            var content = await instance.DocumentStore.Get(documentId);
+            var metadata = await instance.DocumentStore.GetMetadata(documentId);
+
+            return new DocumentInfo
+            {
+                DocumentId = documentId,
+                StoreId = storeId,
+                Content = content,
+                Filename = ExtractFilenameFromPath(metadata?.OriginalPath) ?? ExtractFilenameFromId(documentId),
+                MimeType = metadata?.MimeType ?? "application/octet-stream",
+                Metadata = metadata?.CustomMetadata ?? new Dictionary<string, string>()
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Document {DocumentId} not found in store {StoreId}", documentId, storeId);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// List all documents in a RAG store
+    /// </summary>
+    public async Task<List<DocumentInfo>> ListDocumentsAsync(Guid storeId, int skip = 0, int take = 20)
+    {
+        var store = await GetStoreAsync(storeId);
+        if (store == null)
+        {
+            throw new KeyNotFoundException($"RAG store {storeId} not found");
+        }
+
+        var instance = await GetOrCreateStoreInstanceAsync(store);
+        var documents = new List<DocumentInfo>();
+
+        try
+        {
+            var keys = await instance.DocumentStore.List("", recursive: true);
+
+            foreach (var key in keys.Skip(skip).Take(take))
+            {
+                try
+                {
+                    var metadata = await instance.DocumentStore.GetMetadata(key);
+                    documents.Add(new DocumentInfo
+                    {
+                        DocumentId = key,
+                        StoreId = storeId,
+                        Filename = ExtractFilenameFromPath(metadata?.OriginalPath) ?? ExtractFilenameFromId(key),
+                        MimeType = metadata?.MimeType ?? "application/octet-stream",
+                        Metadata = metadata?.CustomMetadata ?? new Dictionary<string, string>()
+                    });
+                }
+                catch
+                {
+                    // Skip documents that can't be read
+                    documents.Add(new DocumentInfo
+                    {
+                        DocumentId = key,
+                        StoreId = storeId,
+                        Filename = ExtractFilenameFromId(key),
+                        MimeType = "unknown"
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error listing documents in store {StoreId}", storeId);
+        }
+
+        return documents;
+    }
+
+    /// <summary>
+    /// Get total document count in a store
+    /// </summary>
+    public async Task<int> GetDocumentCountAsync(Guid storeId)
+    {
+        var store = await GetStoreAsync(storeId);
+        if (store == null)
+        {
+            return 0;
+        }
+
+        var instance = await GetOrCreateStoreInstanceAsync(store);
+
+        try
+        {
+            var keys = await instance.DocumentStore.List("", recursive: true);
+            return keys.Count;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private static string ExtractFilenameFromId(string documentId)
+    {
+        // Document IDs are in format: {storeId:N}/{docId:N}/{filename}
+        var parts = documentId.Split('/');
+        return parts.Length >= 3 ? parts[^1] : documentId;
+    }
+
+    private static string? ExtractFilenameFromPath(string? path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return null;
+        return Path.GetFileName(path);
+    }
+
+    /// <summary>
     /// Get or create a Hazina store instance
     /// </summary>
     private async Task<HazinaStoreInstance> GetOrCreateStoreInstanceAsync(RAGStore store)

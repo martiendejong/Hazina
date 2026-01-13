@@ -154,14 +154,14 @@ public class DocumentsController : ControllerBase
     }
 
     /// <summary>
-    /// Get document by ID (placeholder - implementation depends on DocumentStore API)
+    /// Get document by ID
     /// </summary>
-    [HttpGet("{documentId}")]
+    [HttpGet("{*documentId}")]
     [ProducesResponseType(typeof(DocumentResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<DocumentResponse>> GetDocument(
         Guid storeId,
-        Guid documentId)
+        string documentId)
     {
         try
         {
@@ -172,15 +172,20 @@ public class DocumentsController : ControllerBase
                 return NotFound(new { error = $"RAG store {storeId} not found" });
             }
 
-            // This would require the DocumentStore to expose a GetDocument method
-            // For now, return a basic response
+            var document = await _storeManager.GetDocumentAsync(storeId, documentId);
+            if (document == null)
+            {
+                return NotFound(new { error = $"Document {documentId} not found" });
+            }
+
             return Ok(new DocumentResponse
             {
-                DocumentId = documentId.ToString(),
+                DocumentId = document.DocumentId,
                 RAGStoreId = storeId,
-                Filename = "document",
-                MimeType = "unknown",
-                Status = "available"
+                Filename = document.Filename,
+                MimeType = document.MimeType,
+                Status = "available",
+                Metadata = document.Metadata.ToDictionary(k => k.Key, v => (object)v.Value)
             });
         }
         catch (Exception ex)
@@ -192,7 +197,7 @@ public class DocumentsController : ControllerBase
     }
 
     /// <summary>
-    /// List all documents in a RAG store (placeholder)
+    /// List all documents in a RAG store
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(PagedResponse<DocumentResponse>), StatusCodes.Status200OK)]
@@ -211,18 +216,32 @@ public class DocumentsController : ControllerBase
                 return NotFound(new { error = $"RAG store {storeId} not found" });
             }
 
-            // This would require the DocumentStore to expose a ListDocuments method
-            // For now, return an empty response
+            var skip = (page - 1) * pageSize;
+            var documents = await _storeManager.ListDocumentsAsync(storeId, skip, pageSize);
+            var totalCount = await _storeManager.GetDocumentCountAsync(storeId);
+
             var response = new PagedResponse<DocumentResponse>
             {
-                Items = new List<DocumentResponse>(),
+                Items = documents.Select(d => new DocumentResponse
+                {
+                    DocumentId = d.DocumentId,
+                    RAGStoreId = storeId,
+                    Filename = d.Filename,
+                    MimeType = d.MimeType,
+                    Status = "available",
+                    Metadata = d.Metadata.ToDictionary(k => k.Key, v => (object)v.Value)
+                }).ToList(),
                 Page = page,
                 PageSize = pageSize,
-                TotalCount = 0,
-                TotalPages = 0
+                TotalCount = totalCount,
+                TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
             };
 
             return Ok(response);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new { error = $"RAG store {storeId} not found" });
         }
         catch (Exception ex)
         {
@@ -232,14 +251,14 @@ public class DocumentsController : ControllerBase
     }
 
     /// <summary>
-    /// Delete a document from a RAG store (placeholder)
+    /// Delete a document from a RAG store
     /// </summary>
-    [HttpDelete("{documentId}")]
+    [HttpDelete("{*documentId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DeleteDocument(
         Guid storeId,
-        Guid documentId)
+        string documentId)
     {
         try
         {
@@ -250,8 +269,14 @@ public class DocumentsController : ControllerBase
                 return NotFound(new { error = $"RAG store {storeId} not found" });
             }
 
-            // This would require the DocumentStore to expose a DeleteDocument method
-            // For now, just return success
+            var instance = await _storeManager.GetStoreInstanceAsync(storeId);
+            var removed = await instance.DocumentStore.Remove(documentId);
+
+            if (!removed)
+            {
+                return NotFound(new { error = $"Document {documentId} not found" });
+            }
+
             _logger.LogInformation("Deleted document {DocumentId} from store {StoreId}",
                 documentId, storeId);
 

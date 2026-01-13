@@ -100,8 +100,8 @@ public class HazinaStoreFactory : IHazinaStoreFactory
         var embeddingMemoryStore = new EmbeddingMemoryStore();
         var embeddingService = new EmbeddingService(embeddingMemoryStore, embeddingGenerator);
 
-        // Create legacy text embedding store for backward compatibility with DocumentStore
-        var textEmbeddingStore = new TextEmbeddingMemoryStore(_llmClient);
+        // Create legacy adapter for backward compatibility with DocumentStore
+        var textEmbeddingStore = new LegacyTextEmbeddingStoreAdapter(embeddingService, embeddingMemoryStore);
 
         // Create DocumentStore
         var documentStore = new DocumentStore(
