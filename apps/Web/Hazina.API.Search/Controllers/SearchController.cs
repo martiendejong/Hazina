@@ -1,151 +1,104 @@
+using Hazina.API.Search.Models;
+using Hazina.API.Search.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
-using Hazina.API.Search.Models;
 
 namespace Hazina.API.Search.Controllers;
 
+/// <summary>
+/// Controller for performing RAG-powered searches
+/// </summary>
 [ApiController]
-[Route("api/v1/search")]
-[Authorize(Policy = "ReadAccess")]
+[Route("api/v1/stores/{storeId}/search")]
+[Authorize]
 public class SearchController : ControllerBase
 {
+    private readonly SearchService _searchService;
+    private readonly RAGStoreManager _storeManager;
     private readonly ILogger<SearchController> _logger;
 
-    public SearchController(ILogger<SearchController> logger)
+    public SearchController(
+        SearchService searchService,
+        RAGStoreManager storeManager,
+        ILogger<SearchController> logger)
     {
+        _searchService = searchService;
+        _storeManager = storeManager;
         _logger = logger;
     }
 
     /// <summary>
-    /// Perform natural language search query
+    /// Perform a RAG-powered search with optional answer generation
     /// </summary>
-    [HttpPost("query")]
-    [EnableRateLimiting("search_query")]
+    [HttpPost]
     [ProducesResponseType(typeof(SearchResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<SearchResponse>> QueryAsync([FromBody] SearchRequest request)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SearchResponse>> Search(
+        Guid storeId,
+        [FromBody] SearchRequest request)
     {
-        _logger.LogInformation("Search query: {Query}, TopK: {TopK}, MinSimilarity: {MinSimilarity}",
-            request.Query, request.TopK, request.MinSimilarity);
-
-        var startTime = DateTime.UtcNow;
-
-        // TODO: Integrate with actual RAGEngine when available
-        // For now, return a mock response
-        var response = new SearchResponse
+        try
         {
-            Answer = $"Mock answer for query: {request.Query}. This is Phase 1 implementation - actual RAG integration pending.",
-            Confidence = 0.85,
-            Sources = new List<SourceDocument>
+            // Verify store exists
+            var store = await _storeManager.GetStoreAsync(storeId);
+            if (store == null)
             {
-                new SourceDocument
-                {
-                    DocumentId = "doc_001",
-                    Title = "Sample Document 1",
-                    RelevanceScore = 0.92,
-                    Excerpt = "This is a sample excerpt from the document..."
-                },
-                new SourceDocument
-                {
-                    DocumentId = "doc_002",
-                    Title = "Sample Document 2",
-                    RelevanceScore = 0.88,
-                    Excerpt = "Another relevant excerpt from the second document..."
-                }
-            },
-            ReasoningPath = new List<string>
-            {
-                "Vector search completed",
-                "Found 2 relevant documents",
-                "Generated response using LLM"
-            },
-            Metadata = new SearchMetadata
-            {
-                TotalDocumentsSearched = 100,
-                SearchTimeMs = (long)(DateTime.UtcNow - startTime).TotalMilliseconds
+                return NotFound(new { error = $"RAG store {storeId} not found" });
             }
-        };
 
-        return Ok(response);
+            if (string.IsNullOrWhiteSpace(request.Query))
+            {
+                return BadRequest(new { error = "Query cannot be empty" });
+            }
+
+            var response = await _searchService.SearchAsync(storeId, request);
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error performing search in store {StoreId}", storeId);
+            return BadRequest(new { error = "Search failed", details = ex.Message });
+        }
     }
 
     /// <summary>
-    /// Perform semantic vector similarity search
+    /// Search for similar documents without answer generation
     /// </summary>
-    [HttpPost("semantic")]
-    [EnableRateLimiting("search_query")]
+    [HttpGet]
     [ProducesResponseType(typeof(List<SourceDocument>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<List<SourceDocument>>> SemanticSearchAsync([FromBody] SearchRequest request)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<SourceDocument>>> SearchDocuments(
+        Guid storeId,
+        [FromQuery] string query,
+        [FromQuery] int topK = 10,
+        [FromQuery] float minRelevanceScore = 0.7f)
     {
-        _logger.LogInformation("Semantic search: {Query}", request.Query);
-
-        // TODO: Integrate with actual EmbeddingStore
-        var results = new List<SourceDocument>
+        try
         {
-            new SourceDocument
+            // Verify store exists
+            var store = await _storeManager.GetStoreAsync(storeId);
+            if (store == null)
             {
-                DocumentId = "doc_003",
-                Title = "Semantically Similar Document",
-                RelevanceScore = 0.95,
-                Excerpt = "Content semantically similar to the query..."
+                return NotFound(new { error = $"RAG store {storeId} not found" });
             }
-        };
 
-        return Ok(results);
-    }
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return BadRequest(new { error = "Query cannot be empty" });
+            }
 
-    /// <summary>
-    /// Perform hybrid search (vector + graph)
-    /// </summary>
-    [HttpPost("hybrid")]
-    [EnableRateLimiting("search_query")]
-    [ProducesResponseType(typeof(SearchResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<SearchResponse>> HybridSearchAsync([FromBody] SearchRequest request)
-    {
-        _logger.LogInformation("Hybrid search: {Query}", request.Query);
+            var documents = await _searchService.SearchDocumentsAsync(
+                storeId, query, topK, minRelevanceScore);
 
-        var startTime = DateTime.UtcNow;
-
-        // TODO: Integrate with actual RAGEngine (vector + graph fusion)
-        var response = new SearchResponse
+            return Ok(documents);
+        }
+        catch (Exception ex)
         {
-            Answer = $"Hybrid search results combining vector and graph for: {request.Query}",
-            Confidence = 0.90,
-            Sources = new List<SourceDocument>
-            {
-                new SourceDocument
-                {
-                    DocumentId = "doc_004",
-                    Title = "Vector Match",
-                    RelevanceScore = 0.94,
-                    Excerpt = "Found via vector similarity..."
-                },
-                new SourceDocument
-                {
-                    DocumentId = "doc_005",
-                    Title = "Graph Match",
-                    RelevanceScore = 0.89,
-                    Excerpt = "Found via graph relationships..."
-                }
-            },
-            ReasoningPath = new List<string>
-            {
-                "Vector search: 10 results",
-                "Graph traversal: 8 related entities",
-                "Fusion: Combined and re-ranked results",
-                "LLM synthesis complete"
-            },
-            Metadata = new SearchMetadata
-            {
-                TotalDocumentsSearched = 250,
-                SearchTimeMs = (long)(DateTime.UtcNow - startTime).TotalMilliseconds
-            }
-        };
-
-        return Ok(response);
+            _logger.LogError(ex, "Error searching documents in store {StoreId}", storeId);
+            return BadRequest(new { error = "Document search failed", details = ex.Message });
+        }
     }
 }

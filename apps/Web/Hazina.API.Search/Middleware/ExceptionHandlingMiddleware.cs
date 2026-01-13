@@ -1,15 +1,19 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Hazina.API.Search.Middleware;
 
+/// <summary>
+/// Global exception handling middleware
+/// </summary>
 public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+    public ExceptionHandlingMiddleware(
+        RequestDelegate next,
+        ILogger<ExceptionHandlingMiddleware> logger)
     {
         _next = next;
         _logger = logger;
@@ -23,31 +27,38 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception occurred: {Message}", ex.Message);
+            _logger.LogError(ex, "Unhandled exception occurred");
             await HandleExceptionAsync(context, ex);
         }
     }
 
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        context.Response.ContentType = "application/problem+json";
-        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+        context.Response.ContentType = "application/json";
 
-        var problemDetails = new ProblemDetails
+        var (statusCode, message) = exception switch
         {
-            Status = (int)HttpStatusCode.InternalServerError,
-            Title = "Internal Server Error",
-            Detail = exception.Message,
-            Instance = context.Request.Path,
-            Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"
+            KeyNotFoundException => (HttpStatusCode.NotFound, exception.Message),
+            UnauthorizedAccessException => (HttpStatusCode.Unauthorized, "Unauthorized access"),
+            InvalidOperationException => (HttpStatusCode.BadRequest, exception.Message),
+            ArgumentException => (HttpStatusCode.BadRequest, exception.Message),
+            _ => (HttpStatusCode.InternalServerError, "An internal server error occurred")
         };
 
-        var options = new JsonSerializerOptions
+        context.Response.StatusCode = (int)statusCode;
+
+        var response = new
+        {
+            error = message,
+            statusCode = (int)statusCode,
+            timestamp = DateTime.UtcNow
+        };
+
+        var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
+        });
 
-        var json = JsonSerializer.Serialize(problemDetails, options);
         await context.Response.WriteAsync(json);
     }
 }

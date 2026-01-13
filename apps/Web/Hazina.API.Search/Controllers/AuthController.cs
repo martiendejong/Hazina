@@ -1,11 +1,14 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Hazina.API.Search.Controllers;
 
+/// <summary>
+/// Controller for authentication and token generation
+/// </summary>
 [ApiController]
 [Route("api/v1/auth")]
 public class AuthController : ControllerBase
@@ -13,105 +16,83 @@ public class AuthController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IConfiguration configuration, ILogger<AuthController> logger)
+    public AuthController(
+        IConfiguration configuration,
+        ILogger<AuthController> logger)
     {
         _configuration = configuration;
         _logger = logger;
     }
 
-    public class LoginRequest
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-    }
-
-    public class LoginResponse
-    {
-        public string Token { get; set; } = string.Empty;
-        public DateTime ExpiresAt { get; set; }
-        public string Username { get; set; } = string.Empty;
-        public List<string> Roles { get; set; } = new();
-    }
-
     /// <summary>
-    /// Authenticate and get JWT token
+    /// Generate JWT token for API access
     /// </summary>
-    [HttpPost("login")]
-    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-    public IActionResult Login([FromBody] LoginRequest request)
+    [HttpPost("token")]
+    [ProducesResponseType(typeof(TokenResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public ActionResult<TokenResponse> GenerateToken([FromBody] LoginRequest request)
     {
-        // TODO: Replace with actual user authentication
-        // This is a DEMO implementation - DO NOT use in production
-        if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))
+        // In a production system, validate credentials against a user store
+        // For now, use a simple API key validation
+        var apiKey = _configuration["Authentication:ApiKey"];
+        if (string.IsNullOrEmpty(apiKey) || request.ApiKey != apiKey)
         {
-            return Unauthorized(new ProblemDetails
-            {
-                Status = StatusCodes.Status401Unauthorized,
-                Title = "Authentication Failed",
-                Detail = "Invalid username or password"
-            });
+            _logger.LogWarning("Invalid API key attempt");
+            return Unauthorized(new { error = "Invalid API key" });
         }
 
-        // Mock authentication - replace with real authentication
-        var roles = new List<string>();
-        if (request.Username.Equals("admin", StringComparison.OrdinalIgnoreCase))
-        {
-            roles.Add("Admin");
-            roles.Add("User");
-        }
-        else
-        {
-            roles.Add("User");
-        }
+        var token = GenerateJwtToken(request.UserId ?? "api-user");
 
-        var token = GenerateJwtToken(request.Username, roles);
-        var expiryMinutes = _configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
+        _logger.LogInformation("Generated token for user {UserId}", request.UserId);
 
-        var response = new LoginResponse
+        return Ok(new TokenResponse
         {
             Token = token,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes),
-            Username = request.Username,
-            Roles = roles
-        };
-
-        _logger.LogInformation("User {Username} logged in successfully", request.Username);
-
-        return Ok(response);
+            ExpiresIn = 3600,
+            TokenType = "Bearer"
+        });
     }
 
-    private string GenerateJwtToken(string username, List<string> roles)
+    private string GenerateJwtToken(string userId)
     {
-        var jwtKey = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured");
-        var jwtIssuer = _configuration["Jwt:Issuer"] ?? "Hazina.API.Search";
-        var jwtAudience = _configuration["Jwt:Audience"] ?? "Hazina.API.Search";
-        var expiryMinutes = _configuration.GetValue<int>("Jwt:ExpiryMinutes", 60);
+        var jwtSettings = _configuration.GetSection("Authentication:Jwt");
+        var secretKey = jwtSettings["SecretKey"]
+            ?? throw new InvalidOperationException("JWT secret key not configured");
+        var issuer = jwtSettings["Issuer"] ?? "Hazina.API.Search";
+        var audience = jwtSettings["Audience"] ?? "Hazina.API.Search.Clients";
 
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-        var claims = new List<Claim>
+        var claims = new[]
         {
-            new Claim(ClaimTypes.Name, username),
-            new Claim(JwtRegisteredClaimNames.Sub, username),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new Claim(JwtRegisteredClaimNames.Sub, userId),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(ClaimTypes.Name, userId),
+            new Claim(ClaimTypes.Role, "User")
         };
 
-        // Add roles as claims
-        foreach (var role in roles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
-
         var token = new JwtSecurityToken(
-            issuer: jwtIssuer,
-            audience: jwtAudience,
+            issuer: issuer,
+            audience: audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
+            expires: DateTime.UtcNow.AddHours(1),
             signingCredentials: credentials
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+}
+
+public class LoginRequest
+{
+    public string ApiKey { get; set; } = string.Empty;
+    public string? UserId { get; set; }
+}
+
+public class TokenResponse
+{
+    public string Token { get; set; } = string.Empty;
+    public int ExpiresIn { get; set; }
+    public string TokenType { get; set; } = string.Empty;
 }

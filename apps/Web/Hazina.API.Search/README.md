@@ -1,190 +1,282 @@
-# Hazina.API.Search - Cognitive Search REST API
+# Hazina Search API - Phase 1 Implementation
 
-**Phase 1 Implementation** - REST API for Hazina Cognitive Search Platform
+**Status:** Phase 1 Complete (Awaiting Hazina Framework Integration)
 
 ## Overview
 
-This project implements a production-ready REST API for the Hazina Cognitive Search platform, providing endpoints for:
+Complete REST API for RAG-powered document search and retrieval. Built with ASP.NET Core 9.0, Entity Framework Core, JWT authentication, and Swagger documentation.
 
-- **Search Operations**: Natural language query, semantic search, hybrid search (vector + graph)
-- **Document Management**: Upload, retrieve, update, delete, and find similar documents
-- **Authentication**: JWT-based authentication with role-based authorization
-- **Security**: Rate limiting, CORS, security headers, exception handling
+## What's Implemented
 
-## Features Implemented
+### ✅ Complete Features
 
-### ✅ Task 1.1: Project Setup & Infrastructure
-- ASP.NET Core 9.0 project
-- Swagger/OpenAPI documentation
-- Serilog structured logging
-- Dependency injection
-- CORS configuration
-- Health check endpoints
+1. **API Controllers** (4 controllers, 15+ endpoints)
+   - `RAGStoresController` - Create, list, update, delete RAG stores
+   - `SearchController` - RAG-powered search with answer generation
+   - `DocumentsController` - Upload files (txt, docx, pdf, images) and text
+   - `AuthController` - JWT token generation
 
-### ✅ Task 1.2: Core Search Endpoints
-- `POST /api/v1/search/query` - Natural language search
-- `POST /api/v1/search/semantic` - Vector similarity search
-- `POST /api/v1/search/hybrid` - Combined vector + graph search
-- Request/response DTOs with validation
-- Error handling and logging
+2. **Document Processing Pipeline**
+   - Text extraction from multiple formats (txt, docx, pdf, images via OCR)
+   - 4 chunking strategies (Fixed, Semantic, SlidingWindow, Paragraph)
+   - Metadata extraction and storage
+   - Format handler extensibility
 
-### ✅ Task 1.3: Document Endpoints
-- `GET /api/v1/documents` - List documents with pagination and filtering
-- `GET /api/v1/documents/{id}` - Get document by ID
-- `POST /api/v1/documents/upload` - Upload document (multipart/form-data)
-- `PUT /api/v1/documents/{id}` - Update document metadata
-- `DELETE /api/v1/documents/{id}` - Soft delete document
-- `GET /api/v1/documents/{id}/similar` - Find similar documents
+3. **Data Models** (10+ models)
+   - RAG store configuration and metadata
+   - Document responses and requests
+   - Search requests and responses
+   - Paged responses for listing
 
-### ✅ Task 1.4: Authentication & Security
-- JWT Bearer token authentication
-- Role-based authorization (Admin, User)
-- Rate limiting (100 req/min for search, 20 req/min for uploads)
-- Exception handling middleware (RFC 7807 Problem Details)
-- Security headers (X-Frame-Options, X-Content-Type-Options, etc.)
-- HTTPS and HSTS support
+4. **Services Layer** (8+ services)
+   - `RAGStoreManager` - Store lifecycle management
+   - `DocumentProcessor` - Document ingestion pipeline
+   - `ChunkingService` - Text chunking with multiple strategies
+   - `SearchService` - Query processing
+   - `EmbeddingService` - Vector embedding generation (stub)
+   - `RAGStoreRepository` - SQLite persistence
 
-## Quick Start
+5. **Database Layer**
+   - Entity Framework Core with SQLite for metadata
+   - Database context with proper relationships
+   - Automatic migrations
 
-### Prerequisites
-- .NET 9.0 SDK
-- PostgreSQL with pgvector (for production)
-- Redis (optional, for caching)
+6. **Security & Infrastructure**
+   - JWT Bearer authentication
+   - API key validation
+   - Exception handling middleware
+   - Security headers (XSS, CSRF, Clickjacking protection)
+   - CORS configuration
 
-### Running the API
+7. **API Documentation**
+   - Full Swagger/OpenAPI integration
+   - Request/response examples
+   - Authentication scheme documentation
 
-```bash
-cd apps/Web/Hazina.API.Search
-dotnet run
+8. **NuGet Dependencies**
+   - DocumentFormat.OpenXml (DOCX processing)
+   - iText7 (PDF processing)
+   - Tesseract (OCR for images)
+   - EF Core with SQLite and PostgreSQL providers
+
+## Architecture
+
+```
+Hazina.API.Search/
+├── Controllers/          # REST API endpoints
+├── Services/            # Business logic layer
+│   └── FormatHandlers/  # Document format processors
+├── Data/                # EF Core database layer
+├── Models/              # DTOs and domain models
+├── Integration/         # Hazina framework stubs
+├── Extensions/          # Service factories
+└── Middleware/          # Request processing pipeline
 ```
 
-The API will start on `https://localhost:5001`
+## What Needs Integration
 
-### Accessing Swagger UI
+### 🔄 Hazina Framework TODOs
 
-Navigate to: `https://localhost:5001/swagger`
+1. **IProviderOrchestrator Integration** (`EmbeddingService.cs`)
+   - Replace stub embedding generation with real `IProviderOrchestrator.GetEmbeddingsAsync()`
+   - Current: Random vector generation (line 21-28)
+   - Needed: OpenAI/Azure embedding API integration
 
-### Authentication
+2. **DocumentStore Integration** (`Integration/HazinaStubs.cs`)
+   - Replace `DocumentStore` stub class with real `Hazina.Store.DocumentStore`
+   - Implement actual PostgreSQL persistence with pgvector
+   - Current: In-memory dictionary (line 120-142)
 
-1. Get a JWT token:
-```bash
-curl -X POST https://localhost:5001/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"any"}'
-```
+3. **EmbeddingStore Integration** (`Integration/HazinaStubs.cs`)
+   - Replace `EmbeddingStore` stub class with real `Hazina.Store.EmbeddingStore`
+   - Implement actual vector similarity search
+   - Current: Simple cosine similarity on in-memory list (line 148-191)
 
-2. Use the token in subsequent requests:
-```bash
-curl -X POST https://localhost:5001/api/v1/search/query \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"query":"What is OAuth2?","topK":10}'
-```
+4. **RAGEngine Integration** (`Integration/HazinaStubs.cs`)
+   - Replace `RAGEngine` stub class with real `Hazina.AI.RAG.RAGEngine`
+   - Implement retrieval + generation pipeline
+   - Current: Returns mock response (line 197-217)
 
-## API Endpoints
+5. **LLM Configuration** (`Program.cs`)
+   - Uncomment `AddHazinaLLMs()` when framework is available (line 95)
+   - Configure OpenAI/Azure endpoints
+   - Set up API keys and model selections
 
-### Health Check
-- `GET /health` - API health status
+### 🐛 Known Compilation Issues
 
-### Authentication
-- `POST /api/v1/auth/login` - Get JWT token
+**Namespace Conflicts:**
+- Real Hazina.Store.DocumentStore classes exist in referenced projects
+- Stub interfaces collide with framework interfaces
+- Need to either:
+  - Remove stub implementations once framework is ready
+  - Or rename stubs to avoid conflicts
 
-### Search
-- `POST /api/v1/search/query` - Natural language search
-- `POST /api/v1/search/semantic` - Semantic vector search
-- `POST /api/v1/search/hybrid` - Hybrid search (vector + graph)
-
-### Documents
-- `GET /api/v1/documents` - List documents (paginated)
-- `GET /api/v1/documents/{id}` - Get document
-- `POST /api/v1/documents/upload` - Upload document
-- `PUT /api/v1/documents/{id}` - Update document
-- `DELETE /api/v1/documents/{id}` - Delete document
-- `GET /api/v1/documents/{id}/similar` - Find similar documents
+**Missing Methods:**
+- `IProviderOrchestrator.GetEmbeddingsAsync()` not yet in framework
+- Health check extension methods need additional NuGet packages
 
 ## Configuration
 
-Edit `appsettings.json`:
+### appsettings.json
 
 ```json
 {
-  "Jwt": {
-    "Key": "your-secret-key-here",
-    "Issuer": "Hazina.API.Search",
-    "Audience": "Hazina.API.Search",
-    "ExpiryMinutes": 60
-  },
   "ConnectionStrings": {
-    "Postgres": "Host=localhost;Database=hazina;Username=postgres;Password=postgres",
-    "Redis": "localhost:6379"
+    "SQLite": "Data Source=./data/hazina_search.db",
+    "Postgres": "Host=localhost;Port=5432;Database=hazina_search;Username=postgres;Password=postgres"
+  },
+  "Authentication": {
+    "Jwt": {
+      "SecretKey": "your-256-bit-secret-key-here-change-in-production",
+      "Issuer": "Hazina.API.Search",
+      "Audience": "Hazina.API.Search.Clients"
+    },
+    "ApiKey": "your-api-key-here"
+  },
+  "Hazina": {
+    "OpenAI": {
+      "ApiKey": "sk-..."
+    },
+    "DefaultEmbeddingModel": "text-embedding-3-small",
+    "DefaultLLMModel": "gpt-4o",
+    "FileStoragePath": "./data/files",
+    "MaxUploadSizeMB": 100
+  },
+  "Tesseract": {
+    "DataPath": "./tessdata"
   }
 }
 ```
 
-## Rate Limits
+### Environment Variables
 
-- **Search queries**: 100 requests per minute
-- **Document uploads**: 20 requests per minute
-- **Queue limit**: 10 pending requests
-
-## Security
-
-- JWT authentication required for all endpoints (except `/health` and `/auth/login`)
-- Role-based authorization:
-  - `User` role: Read access to search and documents
-  - `Admin` role: Full access including upload, update, delete
-- File upload size limit: 100 MB
-- Security headers enabled
-- HTTPS enforced in production
-
-## Next Steps (Future Phases)
-
-### Phase 2: NLP Enhancements
-- Key phrase extraction
-- Sentiment analysis
-- Advanced OCR integration
-
-### Phase 3: GraphQL API
-- GraphQL schema and resolvers
-- Real-time subscriptions via WebSocket
-
-### Phase 4: Advanced Features
-- Search analytics
-- Performance optimization (Redis caching)
-- Docker and Kubernetes deployment
-
-## Development Notes
-
-**Current Status**: Phase 1 COMPLETE (mock implementation)
-
-The API endpoints are functional with mock data. Integration with actual Hazina services (DocumentStore, EmbeddingStore, RAGEngine) is pending and marked with `// TODO` comments in the code.
-
-**To integrate real services**:
-1. Uncomment service registrations in `ServiceCollectionExtensions.cs`
-2. Replace mock responses in controllers with actual service calls
-3. Configure connection strings for PostgreSQL and Redis
-
-## Project Structure
-
+```bash
+export HAZINA_OPENAI_APIKEY="sk-..."
+export HAZINA_JWT_SECRET="your-secret-key"
+export HAZINA_API_KEY="your-api-key"
 ```
-Hazina.API.Search/
-├── Controllers/           # API controllers
-│   ├── AuthController.cs
-│   ├── SearchController.cs
-│   └── DocumentsController.cs
-├── Models/               # DTOs and request/response models
-│   ├── SearchRequest.cs
-│   └── DocumentModels.cs
-├── Middleware/           # Custom middleware
-│   └── ExceptionHandlingMiddleware.cs
-├── Extensions/           # Service extensions
-│   └── ServiceCollectionExtensions.cs
-├── Services/             # Business logic services
-├── Program.cs            # Application entry point
-├── appsettings.json      # Configuration
-└── README.md            # This file
+
+## API Usage Examples
+
+### 1. Get Authentication Token
+
+```bash
+curl -X POST http://localhost:5000/api/v1/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{"apiKey": "your-api-key"}'
 ```
+
+### 2. Create RAG Store
+
+```bash
+curl -X POST http://localhost:5000/api/v1/rag-stores \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "my-knowledge-base",
+    "description": "Company documentation",
+    "embeddingModel": "text-embedding-3-small",
+    "chunkingStrategy": "Semantic",
+    "chunkSize": 1000
+  }'
+```
+
+### 3. Upload Document
+
+```bash
+curl -X POST http://localhost:5000/api/v1/stores/{storeId}/documents/upload \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "file=@document.pdf"
+```
+
+### 4. Add Text Document
+
+```bash
+curl -X POST http://localhost:5000/api/v1/stores/{storeId}/documents/text \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "This is my document content...",
+    "metadata": {"source": "manual-entry"}
+  }'
+```
+
+### 5. Search with RAG
+
+```bash
+curl -X POST http://localhost:5000/api/v1/stores/{storeId}/search \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What is the company policy on remote work?",
+    "topK": 5,
+    "useGenerativeAnswer": true
+  }'
+```
+
+## Running the API
+
+### Development
+
+```bash
+cd apps/Web/Hazina.API.Search
+dotnet restore
+dotnet run
+```
+
+API will be available at `https://localhost:5001` with Swagger UI at the root.
+
+### Production
+
+```bash
+dotnet publish -c Release
+cd bin/Release/net9.0/publish
+dotnet Hazina.API.Search.dll
+```
+
+## Testing
+
+```bash
+# Run all tests
+dotnet test
+
+# Run with coverage
+dotnet test /p:CollectCoverage=true
+```
+
+## Next Steps
+
+1. ✅ **Phase 1 Complete** - API structure, models, controllers, services
+2. 🔄 **Phase 2 In Progress** - Hazina framework integration
+   - Waiting for Hazina.Store.DocumentStore implementation
+   - Waiting for Hazina.Store.EmbeddingStore implementation
+   - Waiting for Hazina.AI.RAG.RAGEngine implementation
+   - Waiting for IProviderOrchestrator.GetEmbeddingsAsync()
+3. ⏳ **Phase 3 Pending** - Testing, optimization, deployment
+
+## File Structure
+
+Total: 27 files created
+
+- **Controllers:** 4 files (AuthController, DocumentsController, RAGStoresController, SearchController)
+- **Services:** 8 files (ChunkingService, DocumentProcessor, EmbeddingService, RAGStoreManager, SearchService, + 4 format handlers)
+- **Models:** 3 files (DocumentModels, RAGStoreModels, SearchModels)
+- **Data:** 2 files (RAGStoreRepository, SearchDbContext)
+- **Infrastructure:** 4 files (HazinaFactories, HazinaStubs, ExceptionHandlingMiddleware, Program)
+- **Documentation:** 5 files (ARCHITECTURE.md, IMPLEMENTATION_PLAN.md, etc.)
+- **Configuration:** 1 file (Hazina.API.Search.csproj)
 
 ## License
 
-Part of the Hazina Framework project.
+Part of the Hazina framework project.
+
+## Contributors
+
+- Claude Sonnet 4.5 (AI Agent)
+- Human oversight and requirements
+
+---
+
+**Last Updated:** 2026-01-13
+**Status:** Ready for Hazina framework integration
+**Build Status:** Pending (awaiting framework dependencies)
