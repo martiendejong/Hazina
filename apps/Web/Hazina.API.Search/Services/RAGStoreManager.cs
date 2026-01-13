@@ -1,48 +1,41 @@
 using Hazina.API.Search.Data;
-using Hazina.API.Search.Extensions;
 using Hazina.API.Search.Integration;
 using Hazina.API.Search.Models;
 
 namespace Hazina.API.Search.Services;
 
 /// <summary>
-/// Manages RAG store lifecycle and operations
+/// Manages RAG store lifecycle and operations using real Hazina framework
 /// </summary>
-public class RAGStoreManager
+public class RAGStoreManager : IDisposable
 {
     private readonly RAGStoreRepository _repository;
-    private readonly IDocumentStoreFactory _documentStoreFactory;
-    private readonly IEmbeddingStoreFactory _embeddingStoreFactory;
-    private readonly IRAGEngineFactory _ragEngineFactory;
+    private readonly IHazinaStoreFactory _storeFactory;
     private readonly DocumentProcessor _documentProcessor;
-    private readonly EmbeddingService _embeddingService;
     private readonly ILogger<RAGStoreManager> _logger;
     private readonly IConfiguration _configuration;
 
-    // Cache of active RAG engines per store
-    private readonly Dictionary<Guid, IRAGEngine> _ragEngines = new();
+    // Cache of active Hazina store instances
+    private readonly Dictionary<Guid, HazinaStoreInstance> _storeInstances = new();
     private readonly SemaphoreSlim _lock = new(1, 1);
 
     public RAGStoreManager(
         RAGStoreRepository repository,
-        IDocumentStoreFactory documentStoreFactory,
-        IEmbeddingStoreFactory embeddingStoreFactory,
-        IRAGEngineFactory ragEngineFactory,
+        IHazinaStoreFactory storeFactory,
         DocumentProcessor documentProcessor,
-        EmbeddingService embeddingService,
         ILogger<RAGStoreManager> logger,
         IConfiguration configuration)
     {
         _repository = repository;
-        _documentStoreFactory = documentStoreFactory;
-        _embeddingStoreFactory = embeddingStoreFactory;
-        _ragEngineFactory = ragEngineFactory;
+        _storeFactory = storeFactory;
         _documentProcessor = documentProcessor;
-        _embeddingService = embeddingService;
         _logger = logger;
         _configuration = configuration;
     }
 
+    /// <summary>
+    /// Create a new RAG store
+    /// </summary>
     public async Task<RAGStore> CreateStoreAsync(string name, string? description, RAGStoreConfig config)
     {
         // Check if store already exists
@@ -61,32 +54,44 @@ public class RAGStoreManager
 
         config.RAGStoreId = store.Id;
 
-        // Create the store in the repository
+        // Create the store in the repository (SQLite metadata)
         await _repository.CreateAsync(store);
 
-        // Initialize Hazina stores
-        await InitializeHazinaStoresAsync(store);
+        // Create and cache the Hazina store instance
+        await GetOrCreateStoreInstanceAsync(store);
 
         _logger.LogInformation("Created RAG store {StoreId} with name {Name}", store.Id, name);
 
         return store;
     }
 
+    /// <summary>
+    /// Get a RAG store by ID
+    /// </summary>
     public async Task<RAGStore?> GetStoreAsync(Guid storeId)
     {
         return await _repository.GetByIdAsync(storeId);
     }
 
+    /// <summary>
+    /// Get a RAG store by name
+    /// </summary>
     public async Task<RAGStore?> GetStoreByNameAsync(string name)
     {
         return await _repository.GetByNameAsync(name);
     }
 
+    /// <summary>
+    /// Get all RAG stores
+    /// </summary>
     public async Task<List<RAGStore>> GetAllStoresAsync()
     {
         return await _repository.GetAllAsync();
     }
 
+    /// <summary>
+    /// Update RAG store configuration
+    /// </summary>
     public async Task<RAGStore> UpdateConfigAsync(Guid storeId, RAGStoreConfig newConfig)
     {
         var store = await _repository.GetByIdAsync(storeId);
@@ -102,11 +107,15 @@ public class RAGStoreManager
 
         await _repository.UpdateAsync(store);
 
-        // Clear cached RAG engine to force recreation with new config
+        // Clear cached store instance to force recreation with new config
         await _lock.WaitAsync();
         try
         {
-            _ragEngines.Remove(storeId);
+            if (_storeInstances.TryGetValue(storeId, out var instance))
+            {
+                instance.Dispose();
+                _storeInstances.Remove(storeId);
+            }
         }
         finally
         {
@@ -118,6 +127,9 @@ public class RAGStoreManager
         return store;
     }
 
+    /// <summary>
+    /// Delete a RAG store
+    /// </summary>
     public async Task<bool> DeleteStoreAsync(Guid storeId)
     {
         var store = await _repository.GetByIdAsync(storeId);
@@ -126,29 +138,47 @@ public class RAGStoreManager
             return false;
         }
 
-        // Remove from cache
+        // Remove from cache and dispose
         await _lock.WaitAsync();
         try
         {
-            _ragEngines.Remove(storeId);
+            if (_storeInstances.TryGetValue(storeId, out var instance))
+            {
+                instance.Dispose();
+                _storeInstances.Remove(storeId);
+            }
         }
         finally
         {
             _lock.Release();
         }
 
-        // Delete from Hazina stores (document and embedding stores)
-        await DeleteHazinaStoresAsync(store);
-
         // Delete from repository
         await _repository.DeleteAsync(storeId);
+
+        // Clean up data directory
+        var dataPath = GetStoreDataPath(store);
+        if (Directory.Exists(dataPath))
+        {
+            try
+            {
+                Directory.Delete(dataPath, recursive: true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete data directory for store {StoreId}", storeId);
+            }
+        }
 
         _logger.LogInformation("Deleted RAG store {StoreId}", storeId);
 
         return true;
     }
 
-    public async Task<Guid> AddDocumentAsync(
+    /// <summary>
+    /// Add a document to a RAG store
+    /// </summary>
+    public async Task<string> AddDocumentAsync(
         Guid storeId,
         Stream stream,
         string filename,
@@ -160,43 +190,49 @@ public class RAGStoreManager
             throw new KeyNotFoundException($"RAG store {storeId} not found");
         }
 
-        // Process the document
+        var instance = await GetOrCreateStoreInstanceAsync(store);
+
+        // Process the document to extract text and chunks
         var (content, chunks) = await _documentProcessor.ProcessDocumentAsync(
             stream, filename, mimeType, store.Config);
 
-        // Generate embeddings for each chunk
-        var embeddings = await _embeddingService.GenerateBatchEmbeddingsAsync(
-            chunks, store.Config.EmbeddingModel);
+        // Generate document ID
+        var documentId = $"{storeId:N}/{Guid.NewGuid():N}/{filename}";
 
-        // Get the document store for this RAG store
-        var documentStore = _documentStoreFactory.CreateStore(GetStoreConnectionString(store));
-
-        // Store document with chunks and embeddings
-        var documentId = await documentStore.AddDocumentAsync(new Document
+        // Store the document using Hazina DocumentStore
+        var metadata = new Dictionary<string, string>
         {
-            Id = Guid.NewGuid(),
-            Filename = filename,
-            MimeType = mimeType,
-            Content = content.Text,
-            Metadata = content.Metadata,
-            Chunks = chunks.Select((chunk, index) => new Chunk
-            {
-                Text = chunk,
-                Index = index,
-                Embedding = embeddings[index]
-            }).ToList()
-        });
+            ["filename"] = filename,
+            ["mimeType"] = mimeType,
+            ["storeId"] = storeId.ToString(),
+            ["pageCount"] = content.PageCount.ToString(),
+            ["chunkCount"] = chunks.Count.ToString()
+        };
+
+        foreach (var kvp in content.Metadata)
+        {
+            metadata[kvp.Key] = kvp.Value?.ToString() ?? string.Empty;
+        }
+
+        var stored = await instance.DocumentStore.Store(documentId, content.Text, metadata, split: true);
+
+        if (!stored)
+        {
+            throw new Exception($"Failed to store document {filename}");
+        }
 
         // Update statistics
         await _repository.UpdateStatisticsAsync(storeId);
 
-        _logger.LogInformation("Added document {DocumentId} to RAG store {StoreId}",
-            documentId, storeId);
+        _logger.LogInformation("Added document {DocumentId} to RAG store {StoreId}", documentId, storeId);
 
         return documentId;
     }
 
-    public async Task<Guid> AddTextAsync(Guid storeId, string text, Dictionary<string, object>? metadata = null)
+    /// <summary>
+    /// Add plain text to a RAG store
+    /// </summary>
+    public async Task<string> AddTextAsync(Guid storeId, string text, Dictionary<string, object>? metadata = null)
     {
         var store = await GetStoreAsync(storeId);
         if (store == null)
@@ -204,78 +240,88 @@ public class RAGStoreManager
             throw new KeyNotFoundException($"RAG store {storeId} not found");
         }
 
+        var instance = await GetOrCreateStoreInstanceAsync(store);
+
         // Process the text
         var (content, chunks) = await _documentProcessor.ProcessTextAsync(text, store.Config);
 
-        // Merge metadata
+        // Generate document ID
+        var documentId = $"{storeId:N}/{Guid.NewGuid():N}/text-document";
+
+        // Prepare metadata
+        var docMetadata = new Dictionary<string, string>
+        {
+            ["type"] = "text",
+            ["storeId"] = storeId.ToString(),
+            ["chunkCount"] = chunks.Count.ToString()
+        };
+
         if (metadata != null)
         {
             foreach (var kvp in metadata)
             {
-                content.Metadata[kvp.Key] = kvp.Value;
+                docMetadata[kvp.Key] = kvp.Value?.ToString() ?? string.Empty;
             }
         }
 
-        // Generate embeddings
-        var embeddings = await _embeddingService.GenerateBatchEmbeddingsAsync(
-            chunks, store.Config.EmbeddingModel);
+        // Store using Hazina DocumentStore
+        var stored = await instance.DocumentStore.Store(documentId, text, docMetadata, split: true);
 
-        // Store document
-        var documentStore = _documentStoreFactory.CreateStore(GetStoreConnectionString(store));
-
-        var documentId = await documentStore.AddDocumentAsync(new Document
+        if (!stored)
         {
-            Id = Guid.NewGuid(),
-            Filename = "text-document",
-            MimeType = "text/plain",
-            Content = text,
-            Metadata = content.Metadata,
-            Chunks = chunks.Select((chunk, index) => new Chunk
-            {
-                Text = chunk,
-                Index = index,
-                Embedding = embeddings[index]
-            }).ToList()
-        });
+            throw new Exception("Failed to store text document");
+        }
 
         await _repository.UpdateStatisticsAsync(storeId);
+
+        _logger.LogInformation("Added text document {DocumentId} to RAG store {StoreId}", documentId, storeId);
 
         return documentId;
     }
 
-    public async Task<IRAGEngine> GetRAGEngineAsync(Guid storeId)
+    /// <summary>
+    /// Get the Hazina store instance for a RAG store
+    /// </summary>
+    public async Task<HazinaStoreInstance> GetStoreInstanceAsync(Guid storeId)
+    {
+        var store = await _repository.GetByIdAsync(storeId);
+        if (store == null)
+        {
+            throw new KeyNotFoundException($"RAG store {storeId} not found");
+        }
+
+        return await GetOrCreateStoreInstanceAsync(store);
+    }
+
+    /// <summary>
+    /// Get or create a Hazina store instance
+    /// </summary>
+    private async Task<HazinaStoreInstance> GetOrCreateStoreInstanceAsync(RAGStore store)
     {
         await _lock.WaitAsync();
         try
         {
-            if (_ragEngines.TryGetValue(storeId, out var cachedEngine))
+            if (_storeInstances.TryGetValue(store.Id, out var cachedInstance))
             {
-                return cachedEngine;
+                return cachedInstance;
             }
 
-            var store = await _repository.GetByIdAsync(storeId);
-            if (store == null)
+            // Create new Hazina store instance
+            var config = new HazinaStoreConfig
             {
-                throw new KeyNotFoundException($"RAG store {storeId} not found");
-            }
+                StoreName = $"store_{store.Id:N}",
+                BaseDataPath = _configuration["Hazina:FileStoragePath"] ?? "./data",
+                EmbeddingDimensions = 1536,
+                DefaultTopK = store.Config.TopK,
+                DefaultMinSimilarity = store.Config.MinRelevanceScore
+            };
 
-            // Create new RAG engine
-            var documentStore = _documentStoreFactory.CreateStore(GetStoreConnectionString(store));
-            var embeddingStore = _embeddingStoreFactory.CreateStore(GetStoreConnectionString(store));
+            var instance = _storeFactory.CreateStore(config);
+            _storeInstances[store.Id] = instance;
 
-            var ragEngine = _ragEngineFactory.CreateEngine(new RAGEngineConfig
-            {
-                DocumentStore = documentStore,
-                EmbeddingStore = embeddingStore,
-                EmbeddingModel = store.Config.EmbeddingModel,
-                LLMModel = store.Config.LLMModel,
-                TopK = store.Config.TopK,
-                MinRelevanceScore = store.Config.MinRelevanceScore
-            });
+            _logger.LogInformation("Created Hazina store instance for RAG store {StoreId}", store.Id);
 
-            _ragEngines[storeId] = ragEngine;
-
-            return ragEngine;
+            return instance;
         }
         finally
         {
@@ -283,47 +329,19 @@ public class RAGStoreManager
         }
     }
 
-    private async Task InitializeHazinaStoresAsync(RAGStore store)
+    private string GetStoreDataPath(RAGStore store)
     {
-        var connectionString = GetStoreConnectionString(store);
-
-        // Initialize document store
-        var documentStore = _documentStoreFactory.CreateStore(connectionString);
-        await documentStore.InitializeAsync();
-
-        // Initialize embedding store
-        var embeddingStore = _embeddingStoreFactory.CreateStore(connectionString);
-        await embeddingStore.InitializeAsync();
-
-        _logger.LogInformation("Initialized Hazina stores for RAG store {StoreId}", store.Id);
+        var basePath = _configuration["Hazina:FileStoragePath"] ?? "./data";
+        return Path.Combine(basePath, $"store_{store.Id:N}");
     }
 
-    private async Task DeleteHazinaStoresAsync(RAGStore store)
+    public void Dispose()
     {
-        try
+        foreach (var instance in _storeInstances.Values)
         {
-            var connectionString = GetStoreConnectionString(store);
-
-            var documentStore = _documentStoreFactory.CreateStore(connectionString);
-            await documentStore.DeleteAllAsync();
-
-            var embeddingStore = _embeddingStoreFactory.CreateStore(connectionString);
-            await embeddingStore.DeleteAllAsync();
-
-            _logger.LogInformation("Deleted Hazina stores for RAG store {StoreId}", store.Id);
+            instance.Dispose();
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting Hazina stores for RAG store {StoreId}", store.Id);
-        }
-    }
-
-    private string GetStoreConnectionString(RAGStore store)
-    {
-        // Each RAG store gets its own isolated database schema/table prefix
-        var baseConnectionString = _configuration.GetConnectionString("Postgres")
-            ?? throw new InvalidOperationException("Postgres connection string not configured");
-
-        return $"{baseConnectionString};SearchPath=ragstore_{store.Id:N}";
+        _storeInstances.Clear();
+        _lock.Dispose();
     }
 }

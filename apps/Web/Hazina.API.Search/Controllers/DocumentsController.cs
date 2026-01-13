@@ -176,7 +176,7 @@ public class DocumentsController : ControllerBase
             // For now, return a basic response
             return Ok(new DocumentResponse
             {
-                DocumentId = documentId,
+                DocumentId = documentId.ToString(),
                 RAGStoreId = storeId,
                 Filename = "document",
                 MimeType = "unknown",

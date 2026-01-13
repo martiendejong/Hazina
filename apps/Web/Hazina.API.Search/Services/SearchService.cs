@@ -1,10 +1,12 @@
 using Hazina.API.Search.Integration;
 using Hazina.API.Search.Models;
+using Hazina.AI.RAG;
+using Hazina.AI.RAG.Core;
 
 namespace Hazina.API.Search.Services;
 
 /// <summary>
-/// Service for performing RAG-powered searches
+/// Service for performing RAG-powered searches using real Hazina RAGEngine
 /// </summary>
 public class SearchService
 {
@@ -19,45 +21,46 @@ public class SearchService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Perform a RAG-powered search
+    /// </summary>
     public async Task<SearchResponse> SearchAsync(Guid storeId, SearchRequest request)
     {
         var startTime = DateTime.UtcNow;
 
-        // Get the RAG engine for this store
-        var ragEngine = await _storeManager.GetRAGEngineAsync(storeId);
+        // Get the Hazina store instance
+        var instance = await _storeManager.GetStoreInstanceAsync(storeId);
 
-        // Perform the search
-        var ragRequest = new RAGRequest
+        // Build RAG query options
+        var queryOptions = new RAGQueryOptions
         {
-            Query = request.Query,
             TopK = request.TopK ?? 10,
-            MinRelevanceScore = request.MinRelevanceScore ?? 0.7f,
-            IncludeSourceDocuments = request.IncludeSourceDocuments,
-            UseGenerativeAnswer = request.UseGenerativeAnswer,
-            SystemPrompt = request.SystemPrompt
+            MinSimilarity = request.MinRelevanceScore ?? 0.7,
+            UseEmbeddings = true
         };
 
-        var ragResponse = await ragEngine.QueryAsync(ragRequest);
+        // Perform RAG query
+        var ragResponse = await instance.RAGEngine.QueryAsync(request.Query, queryOptions);
 
         // Map to API response
         var response = new SearchResponse
         {
             Query = request.Query,
-            Answer = ragResponse.Answer,
-            SourceDocuments = ragResponse.SourceDocuments?.Select(doc => new SourceDocument
+            Answer = ragResponse.Answer ?? string.Empty,
+            SourceDocuments = ragResponse.RetrievedDocuments?.Select(doc => new SourceDocument
             {
-                DocumentId = doc.DocumentId,
-                ChunkIndex = doc.ChunkIndex,
-                Text = doc.Text,
-                RelevanceScore = doc.RelevanceScore,
-                Metadata = doc.Metadata
+                DocumentId = ParseDocumentGuid(doc.Id),
+                ChunkIndex = 0,
+                Text = doc.Content,
+                RelevanceScore = (float)doc.Similarity,
+                Metadata = doc.Metadata ?? new Dictionary<string, object>()
             }).ToList() ?? new List<SourceDocument>(),
             Metadata = new SearchMetadata
             {
-                TotalResults = ragResponse.SourceDocuments?.Count ?? 0,
+                TotalResults = ragResponse.RetrievedDocuments?.Count ?? 0,
                 ProcessingTimeMs = (int)(DateTime.UtcNow - startTime).TotalMilliseconds,
-                Model = ragResponse.ModelUsed ?? "unknown",
-                TokensUsed = ragResponse.TokensUsed
+                Model = "gpt-4o",
+                TokensUsed = 0
             }
         };
 
@@ -68,32 +71,74 @@ public class SearchService
         return response;
     }
 
+    /// <summary>
+    /// Search for similar documents without answer generation
+    /// </summary>
     public async Task<List<SourceDocument>> SearchDocumentsAsync(
         Guid storeId,
         string query,
         int topK = 10,
         float minRelevanceScore = 0.7f)
     {
-        var ragEngine = await _storeManager.GetRAGEngineAsync(storeId);
+        var instance = await _storeManager.GetStoreInstanceAsync(storeId);
 
-        var ragRequest = new RAGRequest
+        // Use RAGEngine search without answer generation
+        var results = await instance.RAGEngine.SearchAsync(query, topK, minRelevanceScore);
+
+        return results.Select(doc => new SourceDocument
         {
-            Query = query,
-            TopK = topK,
-            MinRelevanceScore = minRelevanceScore,
-            IncludeSourceDocuments = true,
-            UseGenerativeAnswer = false
-        };
+            DocumentId = ParseDocumentGuid(doc.Id),
+            ChunkIndex = 0,
+            Text = doc.Content,
+            RelevanceScore = (float)doc.Similarity,
+            Metadata = doc.Metadata ?? new Dictionary<string, object>()
+        }).ToList();
+    }
 
-        var ragResponse = await ragEngine.QueryAsync(ragRequest);
+    /// <summary>
+    /// Search using DocumentStore's embedding-based search
+    /// </summary>
+    public async Task<List<SourceDocument>> SearchByEmbeddingAsync(
+        Guid storeId,
+        string query,
+        int topK = 10)
+    {
+        var instance = await _storeManager.GetStoreInstanceAsync(storeId);
 
-        return ragResponse.SourceDocuments?.Select(doc => new SourceDocument
+        // Use DocumentStore's embedding search
+        var embeddings = await instance.DocumentStore.Embeddings(query);
+
+        return embeddings
+            .Take(topK)
+            .Select(e => new SourceDocument
+            {
+                DocumentId = ParseDocumentGuid(e.Document?.Key ?? string.Empty),
+                ChunkIndex = 0,
+                Text = e.Document?.Key ?? string.Empty,
+                RelevanceScore = (float)e.Similarity,
+                Metadata = new Dictionary<string, object>
+                {
+                    ["storeName"] = e.StoreName ?? string.Empty,
+                    ["parentDocument"] = e.ParentDocumentKey ?? string.Empty
+                }
+            }).ToList();
+    }
+
+    /// <summary>
+    /// Parse document ID from string key to Guid
+    /// </summary>
+    private static Guid ParseDocumentGuid(string key)
+    {
+        if (string.IsNullOrEmpty(key))
+            return Guid.Empty;
+
+        // Document IDs are in format: {storeId:N}/{docId:N}/{filename}
+        var parts = key.Split('/');
+        if (parts.Length >= 2 && Guid.TryParse(parts[1], out var docId))
         {
-            DocumentId = doc.DocumentId,
-            ChunkIndex = doc.ChunkIndex,
-            Text = doc.Text,
-            RelevanceScore = doc.RelevanceScore,
-            Metadata = doc.Metadata
-        }).ToList() ?? new List<SourceDocument>();
+            return docId;
+        }
+
+        return Guid.Empty;
     }
 }

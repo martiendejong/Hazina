@@ -1,11 +1,11 @@
 using Hazina.API.Search.Data;
-using Hazina.API.Search.Extensions;
 using Hazina.API.Search.Integration;
 using Hazina.API.Search.Middleware;
 using Hazina.API.Search.Services;
 using Hazina.API.Search.Services.FormatHandlers;
 using Hazina.AI.Providers.Core;
 using Hazina.LLMs;
+using Hazina.LLMs.OpenAI;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -92,13 +92,68 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// TODO: Add Hazina LLM Services when framework is available
-// builder.Services.AddHazinaLLMs(...);
+// Hazina LLM Services
+builder.Services.AddSingleton<OpenAIConfig>(sp =>
+{
+    var config = new OpenAIConfig();
+    var hazinaSection = builder.Configuration.GetSection("Hazina:OpenAI");
+    hazinaSection.Bind(config);
 
-// Hazina Store Factories
-builder.Services.AddSingleton<IDocumentStoreFactory, DocumentStoreFactory>();
-builder.Services.AddSingleton<IEmbeddingStoreFactory, EmbeddingStoreFactory>();
-builder.Services.AddSingleton<IRAGEngineFactory, RAGEngineFactory>();
+    // Fallback to environment variable if not in config
+    if (string.IsNullOrEmpty(config.ApiKey))
+    {
+        config.ApiKey = Environment.GetEnvironmentVariable("HAZINA_OPENAI_APIKEY") ?? string.Empty;
+    }
+
+    // Set default models if not configured
+    if (string.IsNullOrEmpty(config.Model))
+    {
+        config.Model = builder.Configuration["Hazina:DefaultLLMModel"] ?? "gpt-4o";
+    }
+    if (string.IsNullOrEmpty(config.EmbeddingModel))
+    {
+        config.EmbeddingModel = builder.Configuration["Hazina:DefaultEmbeddingModel"] ?? "text-embedding-3-small";
+    }
+
+    return config;
+});
+
+builder.Services.AddSingleton<ILLMClient>(sp =>
+{
+    var config = sp.GetRequiredService<OpenAIConfig>();
+    return new OpenAIClientWrapper(config);
+});
+
+builder.Services.AddSingleton<IProviderOrchestrator>(sp =>
+{
+    var logger = sp.GetService<ILogger<ProviderOrchestrator>>();
+    var orchestrator = new ProviderOrchestrator(logger);
+
+    // Register the OpenAI provider
+    var openAIClient = sp.GetRequiredService<ILLMClient>();
+    var metadata = new ProviderMetadata
+    {
+        Name = "openai",
+        DisplayName = "OpenAI",
+        Type = ProviderType.OpenAI,
+        Priority = 1,
+        IsEnabled = true,
+        Capabilities = new ProviderCapabilities
+        {
+            SupportsEmbeddings = true,
+            SupportsChat = true,
+            SupportsImages = true,
+            SupportsTTS = true,
+            SupportsStreaming = true
+        }
+    };
+    orchestrator.RegisterProvider("openai", openAIClient, metadata);
+
+    return orchestrator;
+});
+
+// Hazina Store Factory
+builder.Services.AddSingleton<IHazinaStoreFactory, HazinaStoreFactory>();
 
 // Format Handlers
 builder.Services.AddTransient<IFormatHandler, TextFormatHandler>();
@@ -110,7 +165,6 @@ builder.Services.AddTransient<IFormatHandler, ImageFormatHandler>();
 builder.Services.AddScoped<RAGStoreRepository>();
 builder.Services.AddScoped<ChunkingService>();
 builder.Services.AddScoped<DocumentProcessor>();
-builder.Services.AddScoped<EmbeddingService>();
 builder.Services.AddScoped<RAGStoreManager>();
 builder.Services.AddScoped<SearchService>();
 

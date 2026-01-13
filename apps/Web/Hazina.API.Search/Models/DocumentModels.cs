@@ -7,7 +7,7 @@ namespace Hazina.API.Search.Models;
 /// </summary>
 public class DocumentResponse
 {
-    public Guid DocumentId { get; set; }
+    public string DocumentId { get; set; } = string.Empty;
     public Guid RAGStoreId { get; set; }
     public string Filename { get; set; } = string.Empty;
     public string MimeType { get; set; } = string.Empty;
