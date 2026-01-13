@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Hazina.API.Search</RootNamespace>
+    <AssemblyName>Hazina.API.Search</AssemblyName>
+    <Version>1.0.0</Version>
+    <Authors>Hazina Framework</Authors>
+    <Description>REST API for Hazina Cognitive Search - Phase 1 Implementation</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Core\AI\Hazina.AI.RAG\Hazina.AI.RAG.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\Storage\Hazina.Store.DocumentStore\Hazina.Store.DocumentStore.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\Storage\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />
+  </ItemGroup>
+
+</Project>
