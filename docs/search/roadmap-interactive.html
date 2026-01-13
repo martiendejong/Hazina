@@ -1,0 +1,1943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hazina Cognitive Search - Interactive Roadmap</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 25px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .controls {
+            padding: 20px 40px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .tree {
+            list-style: none;
+        }
+
+        .tree-item {
+            margin-bottom: 8px;
+        }
+
+        .tree-node {
+            display: flex;
+            align-items: flex-start;
+            cursor: pointer;
+            padding: 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .tree-node:hover {
+            background: #f8f9fa;
+        }
+
+        .toggle {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            flex-shrink: 0;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .toggle.empty {
+            opacity: 0;
+        }
+
+        .tree-content {
+            flex: 1;
+        }
+
+        .tree-label {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tree-meta {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
+        .tree-children {
+            margin-left: 34px;
+            margin-top: 8px;
+            border-left: 2px solid #e9ecef;
+            padding-left: 20px;
+            display: none;
+        }
+
+        .tree-children.expanded {
+            display: block;
+        }
+
+        /* Level-specific styling */
+        .level-1 .tree-node {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .level-1 .tree-node:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #653a8b 100%);
+            transform: translateX(4px);
+        }
+
+        .level-1 .tree-label {
+            font-size: 1.3em;
+        }
+
+        .level-1 .tree-meta {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .level-2 .tree-node {
+            background: #e7f0ff;
+            border-left: 4px solid #667eea;
+        }
+
+        .level-2 .tree-node:hover {
+            background: #d0e3ff;
+        }
+
+        .level-2 .tree-label {
+            font-size: 1.1em;
+            color: #495057;
+        }
+
+        .level-3 .tree-node {
+            background: #f8f9fa;
+            border-left: 3px solid #adb5bd;
+        }
+
+        .level-3 .tree-label {
+            font-size: 1em;
+            color: #495057;
+        }
+
+        .level-4 .tree-node {
+            padding: 8px;
+        }
+
+        .level-4 .tree-label {
+            font-size: 0.95em;
+            font-weight: 500;
+            color: #6c757d;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .level-2 .badge,
+        .level-3 .badge,
+        .level-4 .badge {
+            background: #667eea;
+            color: white;
+        }
+
+        .description {
+            margin-top: 8px;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.9em;
+            line-height: 1.6;
+            color: #495057;
+        }
+
+        .level-1 .description {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        .deliverables, .acceptance-criteria {
+            margin-top: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+
+        .level-1 .deliverables,
+        .level-1 .acceptance-criteria {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        .deliverables h4,
+        .acceptance-criteria h4 {
+            margin-bottom: 8px;
+            font-size: 0.95em;
+            color: #667eea;
+        }
+
+        .level-1 .deliverables h4,
+        .level-1 .acceptance-criteria h4 {
+            color: white;
+            opacity: 0.95;
+        }
+
+        .deliverables ul,
+        .acceptance-criteria ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .deliverables li,
+        .acceptance-criteria li {
+            padding: 4px 0;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .deliverables li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .acceptance-criteria li:before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .level-1 .deliverables li:before,
+        .level-1 .acceptance-criteria li:before {
+            color: white;
+        }
+
+        .code-block {
+            margin-top: 12px;
+            padding: 12px;
+            background: #282c34;
+            color: #abb2bf;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .controls {
+                padding: 15px 20px;
+            }
+
+            .tree-children {
+                margin-left: 20px;
+                padding-left: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Hazina Cognitive Search Roadmap</h1>
+            <p>Interactive Implementation Plan - 4 Phases, 8 Weeks</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Total Duration</div>
+                    <div class="stat-value">8 Weeks</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Total Phases</div>
+                    <div class="stat-value">4 Phases</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Current Progress</div>
+                    <div class="stat-value">85%</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Team Size</div>
+                    <div class="stat-value">2-3 Engineers</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="expandAll()">Expand All</button>
+            <button class="btn btn-secondary" onclick="collapseAll()">Collapse All</button>
+            <button class="btn btn-secondary" onclick="expandLevel(1)">Phases Only</button>
+            <button class="btn btn-secondary" onclick="expandLevel(2)">Show Tasks</button>
+        </div>
+
+        <div class="content">
+            <ul class="tree" id="roadmap-tree">
+                <!-- Phase 1 -->
+                <li class="tree-item level-1">
+                    <div class="tree-node" onclick="toggleNode(this)">
+                        <span class="toggle">▶</span>
+                        <div class="tree-content">
+                            <div class="tree-label">
+                                Phase 1: REST API Foundation
+                                <span class="badge">Weeks 1-2</span>
+                            </div>
+                            <div class="tree-meta">Duration: 2 weeks (40 hours/engineer) • Team: 2 engineers</div>
+                            <div class="description">
+                                <strong>Goal:</strong> Build production-ready REST API to expose existing search capabilities via HTTP endpoints.
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <ul class="tree-children">
+                        <!-- Task 1.1 -->
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Task 1.1: Project Setup & Infrastructure
+                                        <span class="badge">Days 1-2</span>
+                                    </div>
+                                    <div class="tree-meta">Effort: 16 hours (2 days × 2 engineers)</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Subtasks</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Create new project Hazina.API.Search</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Set up ASP.NET Core 9.0 with minimal API or controllers</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Configure dependency injection</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add Swashbuckle for Swagger/OpenAPI</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Set up Serilog for structured logging</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Configure CORS policies</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add health check endpoints</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Deliverables</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Running API project with /health and /swagger endpoints</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Structured logging to console and file</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Dependency injection configured</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Acceptance Criteria</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">dotnet run starts API on https://localhost:5001</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">GET /health returns 200 OK with status</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">GET /swagger shows interactive API documentation</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Logs are written to console and logs/api-.log</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Task 1.2 -->
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Task 1.2: Core Search Endpoints
+                                        <span class="badge">Days 3-4</span>
+                                    </div>
+                                    <div class="tree-meta">Effort: 16 hours (2 days × 2 engineers)</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Subtasks</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Create SearchController</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement POST /api/v1/search/query (natural language)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement POST /api/v1/search/semantic (vector similarity)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement POST /api/v1/search/hybrid (vector + graph)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Create request/response DTOs</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add input validation</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Map RAGEngine results to API responses</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add error handling and logging</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Task 1.3 -->
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Task 1.3: Document Endpoints
+                                        <span class="badge">Days 5-6</span>
+                                    </div>
+                                    <div class="tree-meta">Effort: 16 hours (2 days × 2 engineers)</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Subtasks</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Create DocumentsController</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement GET /api/v1/documents (list with filtering)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement POST /api/v1/documents/upload (file upload)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement GET /api/v1/documents/{id} (retrieve by ID)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement PUT /api/v1/documents/{id} (update metadata)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement DELETE /api/v1/documents/{id} (soft delete)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement GET /api/v1/documents/{id}/similar (find similar)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add multipart form-data support for uploads</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add pagination for list endpoint</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Task 1.4 -->
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Task 1.4: Authentication & Security
+                                        <span class="badge">Days 7-10</span>
+                                    </div>
+                                    <div class="tree-meta">Effort: 32 hours (4 days × 2 engineers)</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Subtasks</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement JWT Bearer token authentication</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add API key authentication (for service-to-service)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Configure authorization policies</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add rate limiting (AspNetCoreRateLimit)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add request logging middleware</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add exception handling middleware</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Configure HTTPS and HSTS</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add CORS policies</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Security headers (X-Frame-Options, X-Content-Type-Options, etc.)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Write integration tests</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Phase 2 -->
+                <li class="tree-item level-1">
+                    <div class="tree-node" onclick="toggleNode(this)">
+                        <span class="toggle">▶</span>
+                        <div class="tree-content">
+                            <div class="tree-label">
+                                Phase 2: NLP Enhancements
+                                <span class="badge">Weeks 3-4</span>
+                            </div>
+                            <div class="tree-meta">Duration: 2 weeks (40 hours/engineer) • Team: 2 engineers</div>
+                            <div class="description">
+                                <strong>Goal:</strong> Add key phrase extraction, sentiment analysis, and advanced OCR to enrich document processing.
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <ul class="tree-children">
+                        <!-- Task 2.1 -->
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Task 2.1: Key Phrase Extraction
+                                        <span class="badge">Days 11-13</span>
+                                    </div>
+                                    <div class="tree-meta">Effort: 24 hours (3 days × 2 engineers)</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Subtasks</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Create Hazina.AI.KeyPhraseExtraction project</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement IKeyPhraseExtractor interface</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement LLMKeyPhraseExtractor (uses existing LLM providers)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement TfIdfKeyPhraseExtractor (statistical)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement HybridKeyPhraseExtractor (combines both)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add configuration options</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Write unit tests</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Integrate with DocumentStore</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add API endpoint: POST /api/v1/documents/{id}/keyphrases</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add automatic key phrase extraction to document upload</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Task 2.2 -->
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Task 2.2: Sentiment Analysis
+                                        <span class="badge">Days 14-16</span>
+                                    </div>
+                                    <div class="tree-meta">Effort: 24 hours (3 days × 2 engineers)</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Subtasks</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Create Hazina.AI.SentimentAnalysis project</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement ISentimentAnalyzer interface</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement LLMSentimentAnalyzer</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement VaderSentimentAnalyzer (lexicon-based)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement AspectBasedSentimentAnalyzer</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add emotion detection (joy, anger, sadness, fear, etc.)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Write unit tests</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Integrate with DocumentStore</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add API endpoint: POST /api/v1/documents/{id}/sentiment</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add sentiment as searchable metadata</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Task 2.3 -->
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Task 2.3: Advanced OCR Integration
+                                        <span class="badge">Days 17-20</span>
+                                    </div>
+                                    <div class="tree-meta">Effort: 32 hours (4 days × 2 engineers)</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Subtasks</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Create Hazina.AI.OCR project</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement IOCREngine interface</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement TesseractOCREngine (open-source)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement AzureComputerVisionOCR (cloud)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement HybridOCREngine (Tesseract first, cloud fallback)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add image preprocessing (grayscale, contrast, deskew)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add PDF page-to-image conversion</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Write unit tests</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Integrate with BinaryDocumentProcessor</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add API endpoint: POST /api/v1/ocr/extract</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Update document upload to use OCR for images/PDFs</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Phase 3 -->
+                <li class="tree-item level-1">
+                    <div class="tree-node" onclick="toggleNode(this)">
+                        <span class="toggle">▶</span>
+                        <div class="tree-content">
+                            <div class="tree-label">
+                                Phase 3: GraphQL API
+                                <span class="badge">Weeks 5-6</span>
+                            </div>
+                            <div class="tree-meta">Duration: 2 weeks (40 hours/engineer) • Team: 2 engineers</div>
+                            <div class="description">
+                                <strong>Goal:</strong> Add GraphQL API for flexible, client-driven queries and real-time subscriptions.
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <ul class="tree-children">
+                        <!-- Task 3.1 -->
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Task 3.1: Schema Design & Project Setup
+                                        <span class="badge">Days 21-22</span>
+                                    </div>
+                                    <div class="tree-meta">Effort: 16 hours (2 days × 2 engineers)</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Subtasks</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Create Hazina.API.GraphQL project</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add HotChocolate dependencies</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Design GraphQL schema (types, queries, mutations)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Define root Query type</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Define root Mutation type</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Define root Subscription type</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add GraphQL Playground</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Configure in-memory query cache</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Set up DataLoader for N+1 prevention</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Write schema documentation</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Task 3.2 -->
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Task 3.2: Query & Mutation Resolvers
+                                        <span class="badge">Days 23-25</span>
+                                    </div>
+                                    <div class="tree-meta">Effort: 24 hours (3 days × 2 engineers)</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Subtasks</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement Query.search resolver</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement Query.document and Query.documents resolvers</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement Query.entities and Query.entity resolvers</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement Mutation.uploadDocument resolver</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement Mutation.updateDocument resolver</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement Mutation.deleteDocument resolver</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add field resolvers for nested data (e.g., Document.similar)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement DataLoaders to prevent N+1 queries</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add error handling</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Write integration tests</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Task 3.3 -->
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Task 3.3: Real-Time Subscriptions
+                                        <span class="badge">Days 26-28</span>
+                                    </div>
+                                    <div class="tree-meta">Effort: 24 hours (3 days × 2 engineers)</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Subtasks</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Configure WebSocket support</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement Subscription.documentUploaded</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement Subscription.documentUpdated</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement Subscription.searchCompleted</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add event publishing from API</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add subscription filtering</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Write subscription integration tests</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add client example (JavaScript)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Phase 4 -->
+                <li class="tree-item level-1">
+                    <div class="tree-node" onclick="toggleNode(this)">
+                        <span class="toggle">▶</span>
+                        <div class="tree-content">
+                            <div class="tree-label">
+                                Phase 4: Advanced Features
+                                <span class="badge">Weeks 7-8</span>
+                            </div>
+                            <div class="tree-meta">Duration: 2 weeks (40 hours/engineer) • Team: 2 engineers</div>
+                            <div class="description">
+                                <strong>Goal:</strong> Add search analytics, performance optimization, and production readiness.
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <ul class="tree-children">
+                        <!-- Task 4.1 -->
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Task 4.1: Search Analytics
+                                        <span class="badge">Days 29-31</span>
+                                    </div>
+                                    <div class="tree-meta">Effort: 24 hours (3 days × 2 engineers)</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Subtasks</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Create analytics database schema (queries, clicks, results)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement query logging</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement click tracking</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add analytics API endpoints</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Build analytics dashboard (simple HTML/JS)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add popular queries report</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add zero-result queries report</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add search performance metrics</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Write tests</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Task 4.2 -->
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Task 4.2: Performance Optimization
+                                        <span class="badge">Days 32-35</span>
+                                    </div>
+                                    <div class="tree-meta">Effort: 32 hours (4 days × 2 engineers)</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Subtasks</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add Redis caching for hot queries</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Optimize database indexes</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add response compression (gzip, brotli)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Implement query result pagination</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add query complexity limits (GraphQL)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Profile and optimize slow queries</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add request batching</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Load testing with k6 or Locust</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Tune connection pooling</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Add CDN support for static responses</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Task 4.3 -->
+                        <li class="tree-item level-2">
+                            <div class="tree-node" onclick="toggleNode(this)">
+                                <span class="toggle">▶</span>
+                                <div class="tree-content">
+                                    <div class="tree-label">
+                                        Task 4.3: Documentation & Deployment
+                                        <span class="badge">Days 36-40</span>
+                                    </div>
+                                    <div class="tree-meta">Effort: 40 hours (5 days × 2 engineers)</div>
+                                </div>
+                            </div>
+                            <ul class="tree-children">
+                                <li class="tree-item level-3">
+                                    <div class="tree-node" onclick="toggleNode(this)">
+                                        <span class="toggle">▶</span>
+                                        <div class="tree-content">
+                                            <div class="tree-label">Subtasks</div>
+                                        </div>
+                                    </div>
+                                    <ul class="tree-children">
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Write API usage guide</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Write deployment guide (Docker, Kubernetes)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Create Dockerfile for API</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Create Docker Compose for full stack</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Create Kubernetes manifests</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Write environment configuration guide</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Create client SDK examples (C#, Python, JavaScript)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Set up CI/CD pipeline (GitHub Actions or Azure DevOps)</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Write troubleshooting guide</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                        <li class="tree-item level-4">
+                                            <div class="tree-node">
+                                                <span class="toggle empty"></span>
+                                                <div class="tree-content">
+                                                    <div class="tree-label">Conduct final review and testing</div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function toggleNode(node) {
+            const parent = node.parentElement;
+            const children = parent.querySelector('.tree-children');
+            const toggle = node.querySelector('.toggle');
+
+            if (children) {
+                const isExpanded = children.classList.contains('expanded');
+
+                if (isExpanded) {
+                    children.classList.remove('expanded');
+                    toggle.textContent = '▶';
+                } else {
+                    children.classList.add('expanded');
+                    toggle.textContent = '▼';
+                }
+            }
+        }
+
+        function expandAll() {
+            document.querySelectorAll('.tree-children').forEach(el => {
+                el.classList.add('expanded');
+            });
+            document.querySelectorAll('.toggle:not(.empty)').forEach(el => {
+                el.textContent = '▼';
+            });
+        }
+
+        function collapseAll() {
+            document.querySelectorAll('.tree-children').forEach(el => {
+                el.classList.remove('expanded');
+            });
+            document.querySelectorAll('.toggle:not(.empty)').forEach(el => {
+                el.textContent = '▶';
+            });
+        }
+
+        function expandLevel(level) {
+            collapseAll();
+
+            for (let i = 1; i <= level; i++) {
+                document.querySelectorAll(`.level-${i} > .tree-children`).forEach(el => {
+                    el.classList.add('expanded');
+                });
+                document.querySelectorAll(`.level-${i} .toggle:not(.empty)`).forEach(el => {
+                    el.textContent = '▼';
+                });
+            }
+        }
+
+        // Auto-expand to level 1 (phases) on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            expandLevel(1);
+        });
+    </script>
+</body>
+</html>

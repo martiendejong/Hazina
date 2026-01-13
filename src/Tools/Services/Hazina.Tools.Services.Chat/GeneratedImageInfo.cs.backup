@@ -19,15 +19,9 @@ namespace Hazina.Tools.Services.Chat
 
         /// <summary>
         /// Tags for categorizing and filtering generated images
-        /// Examples: "logo", "banner", "illustration", "photo", "generated"
-        /// Note: "image" is redundant (implicit from file type) and should not be included
+        /// Automatically includes: "image", "generated"
+        /// May also include: "logo", "banner", "illustration", etc.
         /// </summary>
-        public List<string> Tags { get; set; } = new List<string> { "generated" };
-
-        /// <summary>
-        /// AI-generated description of the image content
-        /// Analyzed using vision AI (GPT-4 Vision, Gemini Vision, etc.)
-        /// </summary>
-        public string? Description { get; set; }
+        public List<string> Tags { get; set; } = new List<string> { "image", "generated" };
     }
 }

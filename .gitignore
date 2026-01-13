@@ -98,3 +98,4 @@ build_errors.log
 *.temp
 /Tests/Core/Hazina.LLMs.OpenAI.Tests
 /Tests/Core/Hazina.LLMs.OpenAI.Tests/appsettings.example.json
+/**/tmpclaude**
