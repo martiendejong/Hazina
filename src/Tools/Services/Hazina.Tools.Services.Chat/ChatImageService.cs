@@ -541,7 +541,7 @@ namespace Hazina.Tools.Services.Chat
         /// </summary>
         private static List<string> DetermineImageTags(string prompt)
         {
-            var tags = new List<string> { "image", "generated" };
+            var tags = new List<string> { "generated" };
 
             if (string.IsNullOrWhiteSpace(prompt))
                 return tags;
