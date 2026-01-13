@@ -66,6 +66,7 @@ namespace Hazina.Tools.Services.Chat
             _metadataService = metadataService ?? throw new ArgumentNullException(nameof(metadataService));
             _messageService = messageService ?? throw new ArgumentNullException(nameof(messageService));
             _imageAnalysisService = imageAnalysisService;
+            Console.WriteLine($"[ChatImageService] Constructor: imageAnalysisService is {(imageAnalysisService != null ? "PROVIDED" : "NULL")}");
         }
 
         public Task<ChatConversation> GenerateImage(string projectId, string chatId, Project project, GeneratorMessage chatMessage, CancellationToken cancel, bool isImageSet)
@@ -143,6 +144,7 @@ namespace Hazina.Tools.Services.Chat
 
 
                 // AI Image Analysis: Analyze content and generate smart tags and description
+                Console.WriteLine($"[ChatImageService] _imageAnalysisService is {(_imageAnalysisService != null ? "AVAILABLE" : "NULL")}");
                 string aiDescription = null;
                 List<string> aiTags = null;
                 if (_imageAnalysisService != null)

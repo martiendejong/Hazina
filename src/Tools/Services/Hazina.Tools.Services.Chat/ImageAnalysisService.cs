@@ -32,10 +32,15 @@ namespace Hazina.Tools.Services.Chat
 
             try
             {
+                Console.WriteLine($"[ImageAnalysisService] Starting analysis...");
+                Console.WriteLine($"[ImageAnalysisService] OpenAI API Key present: {!string.IsNullOrEmpty(_openAiApiKey)} (length: {_openAiApiKey?.Length ?? 0})");
+
                 var config = new OpenAIConfig(_openAiApiKey);
                 config.Model = "gpt-4o";  // GPT-4 Turbo with vision
-                
+                Console.WriteLine($"[ImageAnalysisService] Using model: {config.Model}");
+
                 var client = new OpenAIClientWrapper(config);
+                Console.WriteLine($"[ImageAnalysisService] OpenAI client created successfully");
 
                 // Build analysis prompt
                 var systemPrompt = @"You are an expert image analyst. Analyze the provided image and return ONLY a valid JSON object with this exact structure:
@@ -116,8 +121,11 @@ Return ONLY the JSON object, no additional text.";
                 }
 
                 // Get analysis from GPT-4 Vision
+                Console.WriteLine($"[ImageAnalysisService] Calling GPT-4 Vision API with {images?.Count ?? 0} images...");
                 var response = await client.GetResponse(messages, HazinaChatResponseFormat.Text, null, images, cancel);
+                Console.WriteLine($"[ImageAnalysisService] API call complete. Response success: {response != null}");
                 var jsonResponse = response.Result?.Trim() ?? "{}";
+                Console.WriteLine($"[ImageAnalysisService] Raw response (first 500 chars): {jsonResponse?.Substring(0, Math.Min(500, jsonResponse?.Length ?? 0))}");
 
                 // Try to extract JSON if wrapped in markdown code blocks
                 if (jsonResponse.StartsWith("```"))
