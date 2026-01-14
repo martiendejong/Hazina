@@ -11,6 +11,7 @@ namespace Hazina.Tools.Models
         public string? Password { get; set; }
         public string FirstName { get; set; } = "";
         public string LastName { get; set; } = "";
+        public string? Phone { get; set; }
         public string Role { get; set; } = "Extern";
         public List<string> Projects { get; set; } = new List<string>();
         public HazinaStoreUserInfo GetUserInfo() => new HazinaStoreUserInfo
