@@ -290,9 +290,35 @@ dotnet build Hazina.QuickStart.sln
 dotnet run --project apps/Demos/Hazina.Demo.Supabase
 ```
 
+## Definition of Done (DoD)
+
+All contributions to Hazina must meet the complete Definition of Done before being merged.
+
+**See:** `C:\scripts\_machine\DEFINITION_OF_DONE.md` for the comprehensive checklist (Brand2Boost/client-manager project context).
+
+**Key Hazina-Specific DoD Requirements:**
+1. ✅ Branch created from `develop` (or `main`)
+2. ✅ Code implemented with tests (≥80% coverage for new code)
+3. ✅ Example code updated to reflect new features
+4. ✅ PR created, reviewed, and merged
+5. ✅ NuGet package versioned (if public release)
+6. ✅ Breaking changes documented in MIGRATION_GUIDE.md
+7. ✅ Client-manager compatibility verified (if applicable)
+8. ✅ Documentation updated (README, API docs, guides)
+
+**Key Principle:** A contribution is NOT done until it's merged, deployed (if applicable), and documented.
+
+---
+
 ## Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+**Before contributing:**
+- Read the Definition of Done (see above)
+- Ensure all DoD criteria can be met
+- Create feature branches from `develop` (or `main`)
+- Follow semantic versioning for breaking changes
 
 ## License
 
