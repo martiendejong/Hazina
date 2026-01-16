@@ -1,0 +1,374 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Semantic Kernel Integration Example | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Semantic Kernel Integration Example | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="semantic-kernel-integration-example">Semantic Kernel Integration Example</h1>
+
+<p>This document demonstrates how to use Semantic Kernel with Hazina agents.</p>
+<h2 id="configuration">Configuration</h2>
+<p>Add the following to your <code>appsettings.json</code>:</p>
+<pre><code class="lang-json">{
+  &quot;OpenAI&quot;: {
+    &quot;ApiKey&quot;: &quot;sk-...&quot;,
+    &quot;Model&quot;: &quot;gpt-4o&quot;,
+    &quot;ImageModel&quot;: &quot;dall-e-3&quot;,
+    &quot;EmbeddingModel&quot;: &quot;text-embedding-ada-002&quot;,
+    &quot;LogPath&quot;: &quot;C:\\projects\\devgptlogs.txt&quot;
+  },
+  &quot;SemanticKernel&quot;: {
+    &quot;Provider&quot;: &quot;OpenAI&quot;,
+    &quot;ApiKey&quot;: &quot;sk-...&quot;,
+    &quot;Model&quot;: &quot;gpt-4o&quot;,
+    &quot;EmbeddingModel&quot;: &quot;text-embedding-ada-002&quot;,
+    &quot;ImageModel&quot;: &quot;dall-e-3&quot;,
+    &quot;TtsModel&quot;: &quot;tts-1&quot;,
+    &quot;LogPath&quot;: &quot;C:\\projects\\devgptlogs.txt&quot;,
+    &quot;Temperature&quot;: 0.7,
+    &quot;MaxTokens&quot;: 4096
+  }
+}
+</code></pre>
+<h3 id="provider-options">Provider Options</h3>
+<ul>
+<li><strong>OpenAI</strong>: Standard OpenAI API</li>
+<li><strong>AzureOpenAI</strong>: Azure OpenAI Service (requires <code>Endpoint</code> and <code>DeploymentName</code>)</li>
+<li><strong>Anthropic</strong>: Claude API (coming soon)</li>
+<li><strong>Ollama</strong>: Local Ollama instance (coming soon)</li>
+</ul>
+<h3 id="azure-openai-example">Azure OpenAI Example</h3>
+<pre><code class="lang-json">{
+  &quot;SemanticKernel&quot;: {
+    &quot;Provider&quot;: &quot;AzureOpenAI&quot;,
+    &quot;ApiKey&quot;: &quot;your-azure-api-key&quot;,
+    &quot;Endpoint&quot;: &quot;https://your-resource.openai.azure.com/&quot;,
+    &quot;DeploymentName&quot;: &quot;gpt-4o&quot;,
+    &quot;Model&quot;: &quot;gpt-4o&quot;,
+    &quot;EmbeddingModel&quot;: &quot;text-embedding-ada-002&quot;
+  }
+}
+</code></pre>
+<h2 id="usage-examples">Usage Examples</h2>
+<h3 id="1-create-agent-with-semantic-kernel-code">1. Create Agent with Semantic Kernel (Code)</h3>
+<pre><code class="lang-csharp">using Hazina.LLMs;
+
+// Load config from appsettings.json
+var config = SemanticKernelConfig.Load();
+
+// Or create manually
+var config = new SemanticKernelConfig(
+    provider: LLMProvider.OpenAI,
+    apiKey: &quot;sk-...&quot;,
+    model: &quot;gpt-4o&quot;,
+    embeddingModel: &quot;text-embedding-ada-002&quot;
+);
+
+// Create agent factory
+var factory = new AgentFactory(&quot;sk-...&quot;, &quot;logs.txt&quot;);
+
+// Create document store
+var store = new DocumentStore(
+    new EmbeddingFileStore(@&quot;C:\myproject\repo.embed&quot;, new SemanticKernelClientWrapper(config)),
+    new TextFileStore(@&quot;C:\myproject&quot;),
+    new DocumentPartFileStore(@&quot;C:\myproject\repo.parts&quot;),
+    new SemanticKernelClientWrapper(config)
+);
+
+// Create agent with Semantic Kernel
+var agent = await factory.CreateAgentWithSemanticKernel(
+    name: &quot;my_agent&quot;,
+    systemPrompt: &quot;You are a helpful coding assistant.&quot;,
+    stores: new[] { (store, Write: true) },
+    functions: new[] { &quot;git&quot;, &quot;dotnet&quot;, &quot;npm&quot; },
+    agents: new string[] { },
+    flows: new string[] { },
+    config: config,
+    isCoder: false
+);
+
+// Use the agent
+var response = await agent.Generator.GetResponse(&quot;What files are in this project?&quot;, CancellationToken.None);
+Console.WriteLine(response.Result);
+</code></pre>
+<h3 id="2-using-agentmanager-with-semantic-kernel">2. Using AgentManager with Semantic Kernel</h3>
+<pre><code class="lang-csharp">using Hazina.LLMs;
+
+// Load Semantic Kernel config
+var skConfig = SemanticKernelConfig.Load();
+var llmClient = new SemanticKernelClientWrapper(skConfig);
+
+// Create AgentManager with custom LLM client
+var manager = new AgentManager(
+    storesJsonPath: &quot;stores.hazina&quot;,
+    agentsJsonPath: &quot;agents.hazina&quot;,
+    flowsJsonPath: &quot;flows.hazina&quot;,
+    llmClient: llmClient,
+    openAIApiKey: skConfig.ApiKey,
+    logFilePath: &quot;logs.txt&quot;
+);
+
+// Load stores and agents
+await manager.LoadStoresAndAgents();
+
+// Send message to agent
+var response = await manager.SendMessage(
+    &quot;Explain the project structure&quot;,
+    CancellationToken.None,
+    agentName: &quot;devgpt_agent&quot;
+);
+
+Console.WriteLine(response);
+</code></pre>
+<h3 id="3-multi-provider-support">3. Multi-Provider Support</h3>
+<pre><code class="lang-csharp">// Switch between providers easily
+var openAIConfig = new SemanticKernelConfig(
+    provider: LLMProvider.OpenAI,
+    apiKey: &quot;sk-...&quot;,
+    model: &quot;gpt-4o&quot;
+);
+
+var azureConfig = new SemanticKernelConfig(
+    provider: LLMProvider.AzureOpenAI,
+    apiKey: &quot;azure-key&quot;,
+    endpoint: &quot;https://your-resource.openai.azure.com/&quot;,
+    deploymentName: &quot;gpt-4o&quot;,
+    model: &quot;gpt-4o&quot;
+);
+
+// Use the same agent code with different providers
+var openAIClient = new SemanticKernelClientWrapper(openAIConfig);
+var azureClient = new SemanticKernelClientWrapper(azureConfig);
+</code></pre>
+<h3 id="4-custom-plugins-advanced">4. Custom Plugins (Advanced)</h3>
+<pre><code class="lang-csharp">using Hazina.LLMs.Plugins;
+using Microsoft.SemanticKernel;
+
+// Create a custom plugin
+public class MyCustomPlugin
+{
+    [KernelFunction(&quot;custom_function&quot;)]
+    [Description(&quot;Does something custom&quot;)]
+    public async Task&lt;string&gt; CustomFunction(
+        [Description(&quot;Input parameter&quot;)] string input,
+        CancellationToken cancellationToken = default)
+    {
+        // Your custom logic here
+        return $&quot;Processed: {input}&quot;;
+    }
+}
+
+// Register with Semantic Kernel client
+var config = SemanticKernelConfig.Load();
+var client = new SemanticKernelClientWrapper(config);
+
+// Plugins are automatically registered from IToolsContext
+// Or create Semantic Kernel plugins directly
+</code></pre>
+<h2 id="features">Features</h2>
+<h3 id="automatic-tool-registration">Automatic Tool Registration</h3>
+<p>Hazina tools are automatically converted to Semantic Kernel plugins:</p>
+<ul>
+<li><code>{store}_list</code> → DocumentStorePlugin.list</li>
+<li><code>{store}_read</code> → DocumentStorePlugin.read</li>
+<li><code>{store}_relevancy</code> → DocumentStorePlugin.relevancy</li>
+<li><code>{store}_write</code> → DocumentStorePlugin.write</li>
+<li><code>git</code> → DeveloperToolsPlugin.git</li>
+<li><code>dotnet</code> → DeveloperToolsPlugin.dotnet</li>
+<li><code>npm</code> → DeveloperToolsPlugin.npm</li>
+</ul>
+<h3 id="streaming-support">Streaming Support</h3>
+<pre><code class="lang-csharp">var response = await agent.Generator.StreamResponse(
+    message: &quot;Generate code for authentication&quot;,
+    cancel: CancellationToken.None,
+    onChunkReceived: chunk =&gt; Console.Write(chunk)
+);
+</code></pre>
+<h3 id="token-usage-tracking">Token Usage Tracking</h3>
+<pre><code class="lang-csharp">var response = await agent.Generator.GetResponse(&quot;Hello&quot;, CancellationToken.None);
+
+Console.WriteLine($&quot;Input tokens: {response.TokenUsage.InputTokens}&quot;);
+Console.WriteLine($&quot;Output tokens: {response.TokenUsage.OutputTokens}&quot;);
+Console.WriteLine($&quot;Total cost: ${response.TokenUsage.TotalCost}&quot;);
+</code></pre>
+<h3 id="typed-responses">Typed Responses</h3>
+<pre><code class="lang-csharp">// Use existing UpdateStoreResponse for safe code modifications
+var updateResponse = await agent.Generator.UpdateStore(
+    &quot;Add authentication to the API&quot;,
+    CancellationToken.None
+);
+
+// Or create custom response types
+public class MyResponse : ChatResponse&lt;MyResponse&gt;
+{
+    public string Summary { get; set; }
+    public List&lt;string&gt; Items { get; set; }
+
+    public override MyResponse _example =&gt; new MyResponse
+    {
+        Summary = &quot;Example summary&quot;,
+        Items = new List&lt;string&gt; { &quot;item1&quot;, &quot;item2&quot; }
+    };
+
+    public override string _signature =&gt; JsonSerializer.Serialize(this);
+}
+
+var typedResponse = await agent.Generator.GetResponse&lt;MyResponse&gt;(
+    &quot;Analyze this project&quot;,
+    CancellationToken.None
+);
+</code></pre>
+<h2 id="migration-from-openai-wrapper">Migration from OpenAI Wrapper</h2>
+<p>Existing code using <code>OpenAIClientWrapper</code> works without changes:</p>
+<pre><code class="lang-csharp">// Old code (still works)
+var openAIConfig = new OpenAIConfig(&quot;sk-...&quot;);
+var llmClient = new OpenAIClientWrapper(openAIConfig);
+
+// New code (multi-provider support)
+var skConfig = SemanticKernelConfig.FromOpenAI(
+    apiKey: &quot;sk-...&quot;,
+    model: &quot;gpt-4o&quot;,
+    embeddingModel: &quot;text-embedding-ada-002&quot;,
+    imageModel: &quot;dall-e-3&quot;,
+    logPath: &quot;logs.txt&quot;
+);
+var llmClient = new SemanticKernelClientWrapper(skConfig);
+
+// Both implement ILLMClient - same interface!
+</code></pre>
+<h2 id="benefits">Benefits</h2>
+<ol>
+<li><strong>Multi-Provider</strong>: Switch between OpenAI, Azure, Anthropic, Ollama without code changes</li>
+<li><strong>Enterprise Ready</strong>: Azure OpenAI support for compliance requirements</li>
+<li><strong>Plugin Ecosystem</strong>: Access to Semantic Kernel's plugin marketplace</li>
+<li><strong>Advanced Features</strong>: Planners, memory, orchestration coming in future phases</li>
+<li><strong>Backward Compatible</strong>: Existing Hazina code works unchanged</li>
+<li><strong>Local LLMs</strong>: Support for Ollama and local models (coming soon)</li>
+</ol>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="skexp0001-warnings">&quot;SKEXP0001&quot; Warnings</h3>
+<p>These are expected - experimental APIs are suppressed in the project file.</p>
+<h3 id="tool-calls-not-working">Tool Calls Not Working</h3>
+<p>Ensure <code>ToolCallBehavior</code> is set (automatic in SemanticKernelClientWrapper):</p>
+<pre><code class="lang-csharp">// This is handled automatically, but for reference:
+var settings = new OpenAIPromptExecutionSettings
+{
+    ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
+};
+</code></pre>
+<h3 id="token-usage-not-tracked">Token Usage Not Tracked</h3>
+<p>Verify your provider supports usage metadata. Some local models may not return token counts.</p>
+<h2 id="next-steps">Next Steps</h2>
+<ul>
+<li>Explore Phase 6 advanced features (planners, memory)</li>
+<li>Create custom plugins for domain-specific tools</li>
+<li>Integrate with Azure services via Azure OpenAI</li>
+<li>Set up multi-agent orchestration with SK agents</li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

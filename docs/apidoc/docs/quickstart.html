@@ -1,0 +1,528 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Build a Production-Ready RAG AI in C# in 30 Minutes (No Python) | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Build a Production-Ready RAG AI in C# in 30 Minutes (No Python) | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="build-a-production-ready-rag-ai-in-c-in-30-minutes-no-python">Build a Production-Ready RAG AI in C# in 30 Minutes (No Python)</h1>
+
+<p>Build a fully functional RAG (Retrieval-Augmented Generation) system that answers questions from your documents — and scales from demo to production without rewriting.</p>
+<p><strong>Time required:</strong> 30 minutes
+<strong>Prerequisites:</strong> .NET 9.0+, OpenAI API key</p>
+<h2 id="what-youll-build">What You'll Build</h2>
+<p>A RAG AI that:</p>
+<ul>
+<li>Loads and indexes your documents</li>
+<li>Answers questions using relevant context</li>
+<li>Swaps LLM providers via config (no code changes)</li>
+<li>Connects to PostgreSQL/Supabase for production</li>
+<li>Adds multi-layer reasoning for high-confidence answers</li>
+</ul>
+<h2 id="step-1-create-project-2-minutes">Step 1: Create Project (2 minutes)</h2>
+<pre><code class="lang-bash">dotnet new console -n MyRAGApp
+cd MyRAGApp
+dotnet add package Hazina.AI.FluentAPI
+dotnet add package Hazina.AI.RAG
+</code></pre>
+<p>Set your API key:</p>
+<p><strong>Windows:</strong></p>
+<pre><code class="lang-bash">set OPENAI_API_KEY=sk-your-key-here
+</code></pre>
+<p><strong>Linux/Mac:</strong></p>
+<pre><code class="lang-bash">export OPENAI_API_KEY=sk-your-key-here
+</code></pre>
+<h2 id="step-2-minimal-rag-5-minutes">Step 2: Minimal RAG (5 minutes)</h2>
+<p>Replace <code>Program.cs</code> with:</p>
+<pre><code class="lang-csharp">using Hazina.AI.FluentAPI.Configuration;
+using Hazina.AI.RAG.Core;
+
+// Setup AI provider
+var ai = QuickSetup.SetupOpenAI(Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!);
+
+// Create in-memory vector store (swap for PostgreSQL later)
+var vectorStore = new InMemoryVectorStore();
+
+// Create RAG engine
+var rag = new RAGEngine(ai, vectorStore);
+
+// Index some documents
+await rag.IndexDocumentsAsync(new List&lt;Document&gt;
+{
+    new()
+    {
+        Id = &quot;doc1&quot;,
+        Content = &quot;Hazina is a production-ready AI framework for .NET. It provides multi-provider orchestration, RAG, agents, and production monitoring out of the box.&quot;,
+        Metadata = new() { [&quot;source&quot;] = &quot;overview.md&quot; }
+    },
+    new()
+    {
+        Id = &quot;doc2&quot;,
+        Content = &quot;RAG (Retrieval-Augmented Generation) combines vector search with LLM generation. Documents are embedded, stored, and retrieved based on semantic similarity to answer questions accurately.&quot;,
+        Metadata = new() { [&quot;source&quot;] = &quot;rag-guide.md&quot; }
+    },
+    new()
+    {
+        Id = &quot;doc3&quot;,
+        Content = &quot;The FluentAPI provides a simple way to configure AI providers. Use QuickSetup.SetupOpenAI() for single provider, or SetupWithFailover() for automatic failover between providers.&quot;,
+        Metadata = new() { [&quot;source&quot;] = &quot;api-reference.md&quot; }
+    }
+});
+
+Console.WriteLine(&quot;Documents indexed!\n&quot;);
+
+// Query loop
+while (true)
+{
+    Console.Write(&quot;Ask a question (or 'quit'): &quot;);
+    var question = Console.ReadLine();
+
+    if (string.IsNullOrEmpty(question) || question.ToLower() == &quot;quit&quot;)
+        break;
+
+    var response = await rag.QueryAsync(question);
+
+    Console.WriteLine($&quot;\nAnswer: {response.Answer}&quot;);
+    Console.WriteLine($&quot;Sources: {response.RetrievedDocuments.Count} documents used&quot;);
+    Console.WriteLine($&quot;Top match: {response.RetrievedDocuments.FirstOrDefault()?.Similarity:P0} similarity\n&quot;);
+}
+</code></pre>
+<p>Run it:</p>
+<pre><code class="lang-bash">dotnet run
+</code></pre>
+<p><strong>Try these questions:</strong></p>
+<ul>
+<li>&quot;What is Hazina?&quot;</li>
+<li>&quot;How does RAG work?&quot;</li>
+<li>&quot;How do I set up failover?&quot;</li>
+</ul>
+<h2 id="step-3-load-real-documents-5-minutes">Step 3: Load Real Documents (5 minutes)</h2>
+<p>Create a <code>documents</code> folder and add some files, then update your code:</p>
+<pre><code class="lang-csharp">using Hazina.AI.FluentAPI.Configuration;
+using Hazina.AI.RAG.Core;
+using Hazina.AI.RAG.Embeddings;
+
+var ai = QuickSetup.SetupOpenAI(Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!);
+var vectorStore = new InMemoryVectorStore();
+var rag = new RAGEngine(ai, vectorStore);
+
+// Load documents from folder
+var documentsPath = Path.Combine(Directory.GetCurrentDirectory(), &quot;documents&quot;);
+var documents = new List&lt;Document&gt;();
+
+if (Directory.Exists(documentsPath))
+{
+    foreach (var file in Directory.GetFiles(documentsPath, &quot;*.txt&quot;))
+    {
+        var content = await File.ReadAllTextAsync(file);
+        var fileName = Path.GetFileName(file);
+
+        // Use chunker for long documents
+        var chunker = new TextChunker(new TextChunkingOptions
+        {
+            Strategy = ChunkingStrategy.Paragraph,
+            ChunkSize = 1000,
+            OverlapSize = 100
+        });
+
+        var chunks = chunker.ChunkText(content, new Dictionary&lt;string, object&gt;
+        {
+            [&quot;source&quot;] = fileName
+        });
+
+        // Add each chunk as a document
+        foreach (var chunk in chunks)
+        {
+            documents.Add(new Document
+            {
+                Id = $&quot;{fileName}_{chunk.Index}&quot;,
+                Content = chunk.Text,
+                Metadata = chunk.Metadata
+            });
+        }
+
+        Console.WriteLine($&quot;Loaded: {fileName} ({chunks.Count} chunks)&quot;);
+    }
+}
+
+// Index all documents
+var result = await rag.IndexDocumentsAsync(documents);
+Console.WriteLine($&quot;\nIndexed {result.IndexedDocuments} document chunks\n&quot;);
+
+// Query loop (same as before)
+while (true)
+{
+    Console.Write(&quot;Question: &quot;);
+    var question = Console.ReadLine();
+    if (string.IsNullOrEmpty(question) || question == &quot;quit&quot;) break;
+
+    var response = await rag.QueryAsync(question, new RAGQueryOptions
+    {
+        TopK = 3,
+        MinSimilarity = 0.6,
+        RequireCitation = true
+    });
+
+    Console.WriteLine($&quot;\n{response.Answer}\n&quot;);
+
+    foreach (var doc in response.RetrievedDocuments.Take(3))
+    {
+        Console.WriteLine($&quot;  [{doc.Similarity:P0}] {doc.Metadata.GetValueOrDefault(&quot;source&quot;)}&quot;);
+    }
+    Console.WriteLine();
+}
+</code></pre>
+<h2 id="step-4-swap-llm-provider-via-config-5-minutes">Step 4: Swap LLM Provider via Config (5 minutes)</h2>
+<p>No code changes needed — just switch the setup:</p>
+<pre><code class="lang-csharp">// Option 1: OpenAI only
+var ai = QuickSetup.SetupOpenAI(Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!);
+
+// Option 2: OpenAI with Anthropic failover
+var ai = QuickSetup.SetupWithFailover(
+    Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!,
+    Environment.GetEnvironmentVariable(&quot;ANTHROPIC_API_KEY&quot;)!
+);
+
+// Option 3: Cost-optimized (uses cheapest available)
+var ai = QuickSetup.SetupCostOptimized(
+    Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!,
+    Environment.GetEnvironmentVariable(&quot;ANTHROPIC_API_KEY&quot;)
+);
+
+// Option 4: Environment-based config
+var ai = Environment.GetEnvironmentVariable(&quot;USE_FAILOVER&quot;) == &quot;true&quot;
+    ? QuickSetup.SetupWithFailover(
+        Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!,
+        Environment.GetEnvironmentVariable(&quot;ANTHROPIC_API_KEY&quot;)!)
+    : QuickSetup.SetupOpenAI(Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!);
+</code></pre>
+<p><strong>The RAG code stays exactly the same.</strong> Provider switching happens at the infrastructure layer.</p>
+<h2 id="step-5-add-postgresqlsupabase-backend-10-minutes">Step 5: Add PostgreSQL/Supabase Backend (10 minutes)</h2>
+<p>For production, replace the in-memory store with PostgreSQL:</p>
+<pre><code class="lang-bash">dotnet add package Hazina.Tools.Data
+dotnet add package Npgsql
+</code></pre>
+<pre><code class="lang-csharp">using Hazina.AI.FluentAPI.Configuration;
+using Hazina.AI.RAG.Core;
+using Hazina.Tools.Data;
+
+var ai = QuickSetup.SetupOpenAI(Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!);
+
+// Switch to PostgreSQL with pgvector
+var connectionString = Environment.GetEnvironmentVariable(&quot;DATABASE_URL&quot;)
+    ?? &quot;Host=localhost;Database=myragapp;Username=postgres;Password=postgres&quot;;
+
+var vectorStore = new PgVectorStore(connectionString);
+
+// Initialize schema (creates table if not exists)
+await vectorStore.InitializeAsync();
+
+var rag = new RAGEngine(ai, vectorStore);
+
+// Rest of your code stays the same!
+</code></pre>
+<h3 id="supabase-setup">Supabase Setup</h3>
+<ol>
+<li>Create a Supabase project at <a href="https://supabase.com">supabase.com</a></li>
+<li>Enable the pgvector extension in SQL Editor:
+<pre><code class="lang-sql">create extension if not exists vector;
+</code></pre>
+</li>
+<li>Use your Supabase connection string:
+<pre><code class="lang-bash">set DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT].supabase.co:5432/postgres
+</code></pre>
+</li>
+</ol>
+<p><strong>Same code, production database.</strong> Documents persist across restarts.</p>
+<h2 id="step-6-enabledisable-embeddings-2-minutes">Step 6: Enable/Disable Embeddings (2 minutes)</h2>
+<p>Hazina uses a <strong>metadata-first</strong> architecture where embeddings are optional. The system functions correctly without embeddings, using metadata filtering and keyword search instead.</p>
+<pre><code class="lang-csharp">// With embeddings (default) - metadata + semantic search
+var rag = new RAGEngine(ai, vectorStore);
+
+// Without embeddings - metadata + keyword search
+var rag = new RAGEngine(ai, vectorStore, config: new RAGConfig
+{
+    UseEmbeddings = false  // Full functionality, no vector search
+});
+</code></pre>
+<p>Toggle via environment:</p>
+<pre><code class="lang-csharp">var config = new RAGConfig
+{
+    UseEmbeddings = Environment.GetEnvironmentVariable(&quot;USE_EMBEDDINGS&quot;) != &quot;false&quot;
+};
+</code></pre>
+<p><strong>Why disable embeddings?</strong></p>
+<ul>
+<li>Faster indexing (no API calls for embedding generation)</li>
+<li>Lower cost (no embedding API charges)</li>
+<li>Works offline (no external service dependency)</li>
+<li>Deterministic results (keyword matching is reproducible)</li>
+</ul>
+<p>See <a href="KNOWLEDGE_STORAGE.html">Knowledge Storage &amp; Search Model</a> for the full architecture.</p>
+<h2 id="step-7-add-multi-layer-reasoning-5-minutes">Step 7: Add Multi-Layer Reasoning (5 minutes)</h2>
+<p>For high-stakes questions requiring 95%+ confidence:</p>
+<pre><code class="lang-bash">dotnet add package Hazina.Neurochain.Core
+</code></pre>
+<pre><code class="lang-csharp">using Hazina.AI.FluentAPI.Configuration;
+using Hazina.AI.RAG.Core;
+using Hazina.Neurochain.Core;
+using Hazina.Neurochain.Core.Layers;
+
+var ai = QuickSetup.SetupOpenAI(Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!);
+var vectorStore = new InMemoryVectorStore();
+
+// Create Neurochain for high-confidence reasoning
+var neurochain = new NeuroChainOrchestrator();
+neurochain.AddLayer(new FastReasoningLayer(ai));    // Quick first pass
+neurochain.AddLayer(new DeepReasoningLayer(ai));    // Thorough analysis
+neurochain.AddLayer(new VerificationLayer(ai));     // Cross-validation
+
+// RAG with Neurochain
+var rag = new RAGEngine(ai, vectorStore, neurochain);
+
+// Index documents...
+await rag.IndexDocumentsAsync(documents);
+
+// Query with multi-layer reasoning
+var response = await rag.QueryAsync(&quot;What are the security implications?&quot;, new RAGQueryOptions
+{
+    UseNeurochain = true,    // Enable multi-layer reasoning
+    MinConfidence = 0.9,     // Require 90% confidence
+    RequireCitation = true
+});
+
+Console.WriteLine($&quot;Answer: {response.Answer}&quot;);
+Console.WriteLine($&quot;Confidence: {response.Confidence:P0}&quot;);  // 95-99% with Neurochain
+</code></pre>
+<h2 id="complete-production-example">Complete Production Example</h2>
+<p>Here's everything together:</p>
+<pre><code class="lang-csharp">using Hazina.AI.FluentAPI.Configuration;
+using Hazina.AI.RAG.Core;
+using Hazina.AI.RAG.Embeddings;
+using Hazina.Neurochain.Core;
+using Hazina.Neurochain.Core.Layers;
+
+// Configuration from environment
+var openAiKey = Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!;
+var anthropicKey = Environment.GetEnvironmentVariable(&quot;ANTHROPIC_API_KEY&quot;);
+var databaseUrl = Environment.GetEnvironmentVariable(&quot;DATABASE_URL&quot;);
+var useNeurochain = Environment.GetEnvironmentVariable(&quot;HIGH_CONFIDENCE&quot;) == &quot;true&quot;;
+
+// Setup AI with failover
+var ai = !string.IsNullOrEmpty(anthropicKey)
+    ? QuickSetup.SetupWithFailover(openAiKey, anthropicKey)
+    : QuickSetup.SetupOpenAI(openAiKey);
+
+// Setup vector store (PostgreSQL if configured, else in-memory)
+IVectorStore vectorStore = !string.IsNullOrEmpty(databaseUrl)
+    ? new PgVectorStore(databaseUrl)
+    : new InMemoryVectorStore();
+
+// Optional: Neurochain for high-confidence
+NeuroChainOrchestrator? neurochain = null;
+if (useNeurochain)
+{
+    neurochain = new NeuroChainOrchestrator();
+    neurochain.AddLayer(new FastReasoningLayer(ai));
+    neurochain.AddLayer(new DeepReasoningLayer(ai));
+    neurochain.AddLayer(new VerificationLayer(ai));
+}
+
+// Create RAG engine
+var rag = new RAGEngine(ai, vectorStore, neurochain);
+
+// Load and chunk documents
+var chunker = new TextChunker(new TextChunkingOptions
+{
+    Strategy = ChunkingStrategy.Paragraph,
+    ChunkSize = 1000,
+    OverlapSize = 100
+});
+
+var documents = new List&lt;Document&gt;();
+foreach (var file in Directory.GetFiles(&quot;documents&quot;, &quot;*.txt&quot;))
+{
+    var content = await File.ReadAllTextAsync(file);
+    var chunks = chunker.ChunkText(content, new() { [&quot;source&quot;] = Path.GetFileName(file) });
+
+    documents.AddRange(chunks.Select(c =&gt; new Document
+    {
+        Id = $&quot;{Path.GetFileName(file)}_{c.Index}&quot;,
+        Content = c.Text,
+        Metadata = c.Metadata
+    }));
+}
+
+// Index
+var indexResult = await rag.IndexDocumentsAsync(documents);
+Console.WriteLine($&quot;Indexed {indexResult.IndexedDocuments} chunks from {Directory.GetFiles(&quot;documents&quot;, &quot;*.txt&quot;).Length} files&quot;);
+
+// Query
+var response = await rag.QueryAsync(&quot;What is the main topic?&quot;, new RAGQueryOptions
+{
+    TopK = 5,
+    MinSimilarity = 0.7,
+    UseNeurochain = useNeurochain,
+    MinConfidence = 0.9,
+    RequireCitation = true
+});
+
+Console.WriteLine($&quot;\nAnswer: {response.Answer}&quot;);
+Console.WriteLine($&quot;Sources used: {response.RetrievedDocuments.Count}&quot;);
+</code></pre>
+<h2 id="configuration-cheat-sheet">Configuration Cheat Sheet</h2>
+<table>
+<thead>
+<tr>
+<th>Environment Variable</th>
+<th>Purpose</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OPENAI_API_KEY</code></td>
+<td>OpenAI API key</td>
+<td>Required</td>
+</tr>
+<tr>
+<td><code>ANTHROPIC_API_KEY</code></td>
+<td>Anthropic API key (enables failover)</td>
+<td>Optional</td>
+</tr>
+<tr>
+<td><code>DATABASE_URL</code></td>
+<td>PostgreSQL connection string</td>
+<td>In-memory</td>
+</tr>
+<tr>
+<td><code>USE_EMBEDDINGS</code></td>
+<td>Enable vector embeddings</td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>HIGH_CONFIDENCE</code></td>
+<td>Enable Neurochain reasoning</td>
+<td><code>false</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="whats-next">What's Next?</h2>
+<p>You now have a production-ready RAG system. To extend it:</p>
+<ol>
+<li><strong>Understand the architecture</strong>: See <a href="KNOWLEDGE_STORAGE.html">Knowledge Storage &amp; Search Model</a> for metadata-first design</li>
+<li><strong>Add more document types</strong>: See <a href="RAG_GUIDE.html">RAG Guide</a> for PDF, images</li>
+<li><strong>Add agent workflows</strong>: See <a href="AGENTS_GUIDE.html">Agents Guide</a> for tool calling</li>
+<li><strong>Add monitoring</strong>: See <a href="PRODUCTION_MONITORING_GUIDE.html">Production Monitoring Guide</a></li>
+<li><strong>Deploy to Supabase</strong>: See <a href="SUPABASE_SETUP.html">Supabase Setup</a></li>
+</ol>
+<hr>
+<p><strong>This scales from demo → production without rewriting.</strong></p>
+<p>The same code that runs on your laptop with in-memory storage runs in production with PostgreSQL. Swap providers, add failover, enable high-confidence reasoning — all through configuration.</p>
+<p>That's the Hazina promise: <strong>4 lines to production AI.</strong></p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

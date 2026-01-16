@@ -1,0 +1,387 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Supabase Integration Guide | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Supabase Integration Guide | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="supabase-integration-guide">Supabase Integration Guide</h1>
+
+<p>This guide explains how to integrate Supabase as an optional database backend for Hazina.</p>
+<h2 id="overview">Overview</h2>
+<p>Supabase is an open-source Firebase alternative built on PostgreSQL. Hazina can optionally use Supabase for:</p>
+<ul>
+<li>Vector embeddings storage (using pgvector)</li>
+<li>Document metadata and chunks</li>
+<li>Text storage</li>
+<li>Future: File storage via Supabase Storage</li>
+<li>Future: Authentication via Supabase Auth</li>
+</ul>
+<p><strong>Important</strong>: Supabase integration is <strong>completely optional</strong>. Existing file-based storage continues to work without any changes.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ol>
+<li><strong>Supabase Account</strong>: Sign up at <a href="https://supabase.com">https://supabase.com</a></li>
+<li><strong>Create a Project</strong>: Create a new project in the Supabase dashboard</li>
+<li><strong>OpenAI API Key</strong>: Still required for generating embeddings</li>
+</ol>
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="1-get-your-supabase-credentials">1. Get Your Supabase Credentials</h3>
+<p>From your Supabase project dashboard:</p>
+<ol>
+<li><p><strong>Project URL</strong>: Found under Settings → API</p>
+<ul>
+<li>Example: <code>https://abcdefghijk.supabase.co</code></li>
+</ul>
+</li>
+<li><p><strong>Anon Key</strong>: Found under Settings → API → Project API keys</p>
+<ul>
+<li>This is your public key (safe for client-side use)</li>
+</ul>
+</li>
+<li><p><strong>Service Role Key</strong>: Found under Settings → API → Project API keys</p>
+<ul>
+<li>This is your secret key (only use server-side)</li>
+</ul>
+</li>
+<li><p><strong>Database Connection String</strong>: Found under Settings → Database → Connection string → URI</p>
+<ul>
+<li>Example: <code>postgresql://postgres:[YOUR-PASSWORD]@db.abcdefghijk.supabase.co:5432/postgres</code></li>
+<li>You can also construct it manually:
+<pre><code>Host=db.your-project.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=your-password
+</code></pre>
+</li>
+</ul>
+</li>
+</ol>
+<h3 id="2-configure-hazina">2. Configure Hazina</h3>
+<h4 id="option-a-using-appsettingsjson">Option A: Using appsettings.json</h4>
+<p>Copy <code>appsettings.supabase.json</code> to your application folder and configure:</p>
+<pre><code class="lang-json">{
+  &quot;ApiSettings&quot;: {
+    &quot;OpenApiKey&quot;: &quot;sk-...&quot;
+  },
+  &quot;SupabaseSettings&quot;: {
+    &quot;Enabled&quot;: true,
+    &quot;Url&quot;: &quot;https://your-project.supabase.co&quot;,
+    &quot;AnonKey&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&quot;,
+    &quot;ServiceRoleKey&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&quot;,
+    &quot;ConnectionString&quot;: &quot;Host=db.your-project.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=your-password&quot;
+  }
+}
+</code></pre>
+<h4 id="option-b-using-environment-variables">Option B: Using Environment Variables</h4>
+<p>Set these environment variables:</p>
+<pre><code class="lang-bash"># Windows
+set OPENAI_API_KEY=sk-...
+set SUPABASE_CONNECTION_STRING=Host=db.your-project.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=your-password
+
+# Linux/Mac
+export OPENAI_API_KEY=sk-...
+export SUPABASE_CONNECTION_STRING=Host=db.your-project.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=your-password
+</code></pre>
+<h3 id="3-initialize-database-schema">3. Initialize Database Schema</h3>
+<p>Before first use, initialize the Supabase database schema:</p>
+<pre><code class="lang-csharp">using Hazina.Tools.Data;
+using HazinaStore.Models;
+
+var supabaseSettings = new SupabaseSettings
+{
+    Url = &quot;https://your-project.supabase.co&quot;,
+    AnonKey = &quot;your-anon-key&quot;,
+    ConnectionString = &quot;Host=db.your-project.supabase.co;...&quot;
+};
+
+// Initialize schema (creates tables and indexes)
+await SupabaseStoreProvider.InitializeSupabaseSchemaAsync(
+    supabaseSettings.GetConnectionString());
+</code></pre>
+<p>This creates the following tables:</p>
+<ul>
+<li><code>embeddings</code> - Vector embeddings with pgvector</li>
+<li><code>document_chunks</code> - Document chunk indexes</li>
+<li><code>document_metadata</code> - Document metadata</li>
+<li><code>texts</code> - Text storage</li>
+</ul>
+<h3 id="4-use-supabase-in-your-code">4. Use Supabase in Your Code</h3>
+<h4 id="full-supabase-mode-all-data-in-supabase">Full Supabase Mode (all data in Supabase)</h4>
+<pre><code class="lang-csharp">using Hazina.Tools.Data;
+using HazinaStore.Models;
+
+var config = new HazinaStoreConfig
+{
+    ApiSettings = new ApiSettings { OpenApiKey = &quot;sk-...&quot; },
+    SupabaseSettings = new SupabaseSettings
+    {
+        Enabled = true,
+        Url = &quot;https://your-project.supabase.co&quot;,
+        AnonKey = &quot;your-anon-key&quot;,
+        ConnectionString = &quot;Host=db.your-project.supabase.co;...&quot;
+    }
+};
+
+// Get store setup - automatically uses Supabase when enabled
+var storeSetup = StoreProvider.GetStoreSetup(config);
+</code></pre>
+<h4 id="hybrid-mode-files--supabase">Hybrid Mode (files + Supabase)</h4>
+<p>Store text files locally, but use Supabase for embeddings and search:</p>
+<pre><code class="lang-csharp">var config = new HazinaStoreConfig
+{
+    ApiSettings = new ApiSettings { OpenApiKey = &quot;sk-...&quot; },
+    ProjectSettings = new ProjectSettings
+    {
+        ProjectsFolder = @&quot;C:\Projects\hazina\data&quot;
+    },
+    SupabaseSettings = new SupabaseSettings
+    {
+        Enabled = true,
+        Url = &quot;https://your-project.supabase.co&quot;,
+        AnonKey = &quot;your-anon-key&quot;,
+        ConnectionString = &quot;Host=db.your-project.supabase.co;...&quot;
+    }
+};
+
+// When folder is provided, uses hybrid mode
+var storeSetup = StoreProvider.GetStoreSetup(config, folder: @&quot;C:\Projects\hazina\data&quot;);
+</code></pre>
+<h4 id="direct-supabase-provider">Direct Supabase Provider</h4>
+<pre><code class="lang-csharp">using Hazina.Tools.Data;
+
+var storeSetup = SupabaseStoreProvider.GetSupabaseStoreSetup(
+    supabaseSettings,
+    apiKey: &quot;sk-...&quot;,
+    embeddingDimension: 1536
+);
+</code></pre>
+<h2 id="storage-modes">Storage Modes</h2>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Configuration</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>File-based</strong></td>
+<td><code>Enabled: false</code> or omit SupabaseSettings</td>
+<td>Default mode, no database needed</td>
+</tr>
+<tr>
+<td><strong>Full Supabase</strong></td>
+<td><code>Enabled: true</code>, no ProjectsFolder</td>
+<td>All data in cloud, no local files</td>
+</tr>
+<tr>
+<td><strong>Hybrid</strong></td>
+<td><code>Enabled: true</code> + ProjectsFolder</td>
+<td>Local files, cloud embeddings (recommended)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="testing-your-connection">Testing Your Connection</h2>
+<pre><code class="lang-csharp">using Hazina.Tools.Data;
+
+var connectionString = &quot;Host=db.your-project.supabase.co;...&quot;;
+var connected = await SupabaseStoreProvider.TestConnectionAsync(connectionString);
+
+if (connected)
+{
+    Console.WriteLine(&quot;Successfully connected to Supabase!&quot;);
+}
+</code></pre>
+<h2 id="security-best-practices">Security Best Practices</h2>
+<ol>
+<li><strong>Never commit credentials</strong> to version control</li>
+<li><strong>Use environment variables</strong> for sensitive data in production</li>
+<li><strong>Use Service Role Key</strong> only in server-side code</li>
+<li><strong>Use Anon Key</strong> for client-side code (with Row Level Security enabled)</li>
+<li><strong>Enable Row Level Security (RLS)</strong> in Supabase for production</li>
+</ol>
+<h3 id="setting-up-rls-row-level-security">Setting up RLS (Row Level Security)</h3>
+<p>In Supabase SQL Editor, run:</p>
+<pre><code class="lang-sql">-- Enable RLS on all tables
+ALTER TABLE embeddings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE document_chunks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE document_metadata ENABLE ROW LEVEL SECURITY;
+ALTER TABLE texts ENABLE ROW LEVEL SECURITY;
+
+-- Create policies (example: allow authenticated users)
+CREATE POLICY &quot;Users can read own embeddings&quot;
+  ON embeddings FOR SELECT
+  USING (auth.uid()::text = split_part(key, '/', 1));
+
+-- Adjust policies based on your authentication needs
+</code></pre>
+<h2 id="migration-from-file-based-to-supabase">Migration from File-based to Supabase</h2>
+<p>To migrate existing file-based data to Supabase:</p>
+<ol>
+<li>Keep your existing files</li>
+<li>Enable Supabase in hybrid mode</li>
+<li>Run the demo application to re-process documents</li>
+<li>Embeddings will be stored in Supabase</li>
+<li>Original files remain accessible</li>
+</ol>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="connection-issues">Connection Issues</h3>
+<p><strong>Error: &quot;Connection refused&quot; or &quot;Timeout&quot;</strong></p>
+<ul>
+<li>Check your connection string format</li>
+<li>Verify database password</li>
+<li>Ensure your IP is allowed (Supabase → Settings → Database → Connection pooling)</li>
+</ul>
+<p><strong>Error: &quot;SSL connection required&quot;</strong></p>
+<ul>
+<li>Add <code>SslMode=Require</code> to connection string:
+<pre><code>Host=db.your-project.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=your-password;SslMode=Require
+</code></pre>
+</li>
+</ul>
+<h3 id="pgvector-issues">pgvector Issues</h3>
+<p><strong>Error: &quot;extension 'vector' does not exist&quot;</strong></p>
+<ul>
+<li>Supabase has pgvector pre-installed, but you need to enable it</li>
+<li>Run in Supabase SQL Editor:
+<pre><code class="lang-sql">CREATE EXTENSION IF NOT EXISTS vector;
+</code></pre>
+</li>
+</ul>
+<h3 id="performance-optimization">Performance Optimization</h3>
+<p>For large datasets, create indexes:</p>
+<pre><code class="lang-sql">-- Create IVFFlat index for faster similarity search
+CREATE INDEX embeddings_ivfflat_idx
+ON embeddings
+USING ivfflat (embedding vector_cosine_ops)
+WITH (lists = 100);
+
+-- For exact search, use:
+-- CREATE INDEX embeddings_hnsw_idx
+-- ON embeddings
+-- USING hnsw (embedding vector_cosine_ops);
+</code></pre>
+<h2 id="example-applications">Example Applications</h2>
+<p>See the demo application at:</p>
+<ul>
+<li><code>apps/Demos/Hazina.Demo.Supabase/</code></li>
+</ul>
+<h2 id="additional-resources">Additional Resources</h2>
+<ul>
+<li><a href="https://supabase.com/docs">Supabase Documentation</a></li>
+<li><a href="https://github.com/pgvector/pgvector">pgvector Documentation</a></li>
+<li><a href="https://supabase.com/docs/reference/csharp/introduction">Supabase C# Client</a></li>
+</ul>
+<h2 id="future-features">Future Features</h2>
+<p>Planned enhancements:</p>
+<ul>
+<li>[ ] Supabase Storage integration for file uploads</li>
+<li>[ ] Supabase Auth integration for user management</li>
+<li>[ ] Supabase Realtime for live collaboration</li>
+<li>[ ] Edge Functions for serverless processing</li>
+<li>[ ] Migration utilities for bulk data transfer</li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,425 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Hazina Release Notes | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Hazina Release Notes | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="hazina-release-notes">Hazina Release Notes</h1>
+
+<h2 id="unreleased---branch-return_tokens_used_after_request">[Unreleased] - Branch: return_tokens_used_after_request</h2>
+<h3 id="-nieuwe-features">🚀 Nieuwe Features</h3>
+<h4 id="1-token-usage-tracking--compleet">1. Token Usage Tracking (✅ Compleet)</h4>
+<p><strong>Alle AI calls retourneren nu token usage en costs</strong></p>
+<pre><code class="lang-csharp">var response = await agent.Generator.GetResponse(&quot;Hello&quot;, cancel);
+
+Console.WriteLine($&quot;Response: {response.Result}&quot;);
+Console.WriteLine($&quot;Tokens: {response.TokenUsage.TotalTokens}&quot;);
+Console.WriteLine($&quot;Cost: ${response.TokenUsage.TotalCost:F4}&quot;);
+Console.WriteLine($&quot;Model: {response.TokenUsage.ModelName}&quot;);
+</code></pre>
+<p><strong>Features:</strong></p>
+<ul>
+<li><code>TokenUsageInfo</code> model met input/output tokens + costs</li>
+<li><code>LLMResponse&lt;T&gt;</code> wrapper voor alle responses</li>
+<li>Automatische pricing voor OpenAI, Anthropic, HuggingFace</li>
+<li>Token aggregatie via <code>+</code> operator voor totale kosten</li>
+<li>Support in alle LLM clients (OpenAI, Anthropic, HuggingFace)</li>
+</ul>
+<p><strong>Commits:</strong></p>
+<ul>
+<li>7c9588b: TokenUsageInfo model</li>
+<li>d8eb4fc: LLMResponse wrapper class</li>
+<li>cc62c84: OpenAI client token tracking</li>
+<li>db359ec: Anthropic client token tracking</li>
+<li>cf8be38: HuggingFace client token tracking</li>
+<li>92821d9: DocumentGenerator met LLMResponse</li>
+<li>b7c8148: AgentManager updates</li>
+<li>f5aa360: Documentatie</li>
+</ul>
+<p><strong>Bestanden:</strong></p>
+<ul>
+<li><code>LLMs/Classes/Models/Chat/TokenUsageInfo.cs</code></li>
+<li><code>LLMs/Classes/Models/Chat/LLMResponse.cs</code></li>
+<li><code>TOKENUSAGE_EXAMPLE.md</code></li>
+</ul>
+<hr>
+<h4 id="2-hazinadynamicapi---call-any-api-without-pre-configuration--nieuw">2. Hazina.DynamicAPI - Call Any API Without Pre-Configuration (✅ Nieuw!)</h4>
+<p><strong>Geïnspireerd door data-analytics-agent - agents kunnen nu ELKE API aanroepen zonder pre-configuratie</strong></p>
+<pre><code class="lang-csharp">// Setup credentials
+var credStore = new CredentialStore(&quot;./credentials&quot;);
+await credStore.StoreCredential(&quot;stripe&quot;, &quot;api_key&quot;, &quot;sk_test_...&quot;);
+
+// Create tools
+var apiClient = new DynamicAPIClient(credStore);
+var searchTool = new WebSearchTool(credStore);
+
+var tools = new ToolsContext();
+tools.Add(new WebSearchHazinaTool(searchTool));   // Zoek API docs
+tools.Add(new DynamicAPIHazinaTool(apiClient));   // Roep APIs aan
+
+// Agent kan nu ELKE API bellen!
+var agent = new HazinaAgent(&quot;api_researcher&quot;, generator, tools);
+var response = await agent.Generator.GetResponse(
+    &quot;Find Stripe docs and create a payment intent for $20&quot;,
+    cancel
+);
+</code></pre>
+<p><strong>Components:</strong></p>
+<ol>
+<li><p><strong>CredentialStore</strong> - Centraal credential beheer</p>
+<ul>
+<li>Opslag in files (<code>./credentials/*.json</code>) of env vars</li>
+<li>Support voor Bearer, API Key, Basic, OAuth2</li>
+<li>Auto-loading en caching</li>
+</ul>
+</li>
+<li><p><strong>WebSearchTool</strong> - Zoek API documentatie</p>
+<ul>
+<li>Bing Search API integratie</li>
+<li>Zoek documentatie dynamisch</li>
+<li>Fetch volledige pagina content</li>
+</ul>
+</li>
+<li><p><strong>DynamicAPIClient</strong> - Generieke HTTP client</p>
+<ul>
+<li>Call ANY API endpoint</li>
+<li>Automatische authenticatie injectie</li>
+<li>Support voor alle HTTP methods</li>
+</ul>
+</li>
+<li><p><strong>Hazina Tools</strong> - Ready-to-use agent tools</p>
+<ul>
+<li><code>web_search</code> - Zoek informatie</li>
+<li><code>fetch_url</code> - Lees documentatie</li>
+<li><code>api_call</code> - Roep API aan</li>
+</ul>
+</li>
+</ol>
+<p><strong>Workflow:</strong></p>
+<pre><code>User: &quot;Get my Stripe transactions&quot;
+
+Agent:
+1. web_search(&quot;Stripe API transactions&quot;)
+2. fetch_url(documentation URL)
+3. api_call({url: &quot;...&quot;, service_name: &quot;stripe&quot;})
+   → Auto-injects Bearer token
+   → Returns transaction data
+</code></pre>
+<p><strong>Commits:</strong></p>
+<ul>
+<li>53bc58d: Hazina.DynamicAPI project</li>
+<li>32794a2: Security fix System.Text.Json</li>
+<li>a12a8a9: Nederlandse usage guide</li>
+</ul>
+<p><strong>Bestanden:</strong></p>
+<ul>
+<li><code>Hazina.DynamicAPI/Core/CredentialStore.cs</code></li>
+<li><code>Hazina.DynamicAPI/Core/DynamicAPIClient.cs</code></li>
+<li><code>Hazina.DynamicAPI/Tools/WebSearchTool.cs</code></li>
+<li><code>Hazina.DynamicAPI/Tools/DynamicAPIHazinaTool.cs</code></li>
+<li><code>Hazina.DynamicAPI/Tools/WebSearchHazinaTool.cs</code></li>
+<li><code>Hazina.DynamicAPI/Models/ApiRequest.cs</code></li>
+<li><code>Hazina.DynamicAPI/Examples/DynamicAPIExample.cs</code></li>
+<li><code>Hazina.DynamicAPI/README.md</code></li>
+<li><code>Hazina.DynamicAPI/USAGE_GUIDE.md</code></li>
+</ul>
+<hr>
+<h3 id="-analyse--documentatie">📊 Analyse &amp; Documentatie</h3>
+<h4 id="repository-analysis-data-analytics-agent">Repository Analysis: data-analytics-agent</h4>
+<p>Volledige analyse van agency-ai-solutions/data-analytics-agent met implementatie aanbevelingen.</p>
+<p><strong>Key Learnings:</strong></p>
+<ol>
+<li>Dynamic API integration zonder pre-connectors</li>
+<li>Multimodal analysis loop (generate → save → load → analyze)</li>
+<li>Templated agent instructions voor deployment flexibility</li>
+<li>Centralized credential management</li>
+<li>Data-first methodology</li>
+</ol>
+<p><strong>Bestanden:</strong></p>
+<ul>
+<li><code>ANALYSIS_data-analytics-agent.md</code> (1a82d21)</li>
+</ul>
+<hr>
+<h3 id="-bugfixes">🐛 Bugfixes</h3>
+<h4 id="postgreschunkstore-duplicate">PostgresChunkStore Duplicate</h4>
+<p>Verwijderd duplicate class definition die build errors veroorzaakte.</p>
+<p><strong>Commits:</strong></p>
+<ul>
+<li>d4f7761: Verwijder PostgresDocumentPartStore.cs (duplicate)</li>
+</ul>
+<hr>
+<h2 id="migratiehandleiding">Migratiehandleiding</h2>
+<h3 id="token-usage-tracking">Token Usage Tracking</h3>
+<p><strong>Voor:</strong></p>
+<pre><code class="lang-csharp">var response = await agent.Generator.GetResponse(&quot;Hello&quot;, cancel);
+// response is direct een IsReadyResult
+Console.WriteLine(response.Message);
+</code></pre>
+<p><strong>Na:</strong></p>
+<pre><code class="lang-csharp">var response = await agent.Generator.GetResponse(&quot;Hello&quot;, cancel);
+// response is LLMResponse&lt;IsReadyResult&gt;
+Console.WriteLine(response.Result.Message);
+Console.WriteLine($&quot;Cost: ${response.TokenUsage.TotalCost:F4}&quot;);
+</code></pre>
+<p><strong>Breaking Changes:</strong></p>
+<ul>
+<li>Alle <code>ILLMClient</code> methods retourneren nu <code>LLMResponse&lt;T&gt;</code></li>
+<li>DocumentGenerator methods retourneren <code>LLMResponse&lt;T&gt;</code></li>
+<li>AgentManager.SendMessage aangepast</li>
+</ul>
+<p><strong>Migration Steps:</strong></p>
+<ol>
+<li>Update calls: <code>response</code> → <code>response.Result</code></li>
+<li>Optioneel: Track token usage via <code>response.TokenUsage</code></li>
+</ol>
+<hr>
+<h3 id="dynamic-api-usage-nieuw-project">Dynamic API Usage (Nieuw Project)</h3>
+<p><strong>Setup:</strong></p>
+<pre><code class="lang-bash"># 1. Add project reference
+dotnet add reference ../Hazina.DynamicAPI/Hazina.DynamicAPI.csproj
+
+# 2. Install Bing API key (voor web search)
+# Get key from: https://www.microsoft.com/en-us/bing/apis/bing-web-search-api
+
+# 3. Store credentials
+mkdir credentials
+echo '{&quot;api_key&quot;:&quot;your_bing_key&quot;}' &gt; credentials/bing.json
+echo '{&quot;api_key&quot;:&quot;sk_test_...&quot;}' &gt; credentials/stripe.json
+</code></pre>
+<p><strong>Code:</strong></p>
+<pre><code class="lang-csharp">using Hazina.DynamicAPI.Core;
+using Hazina.DynamicAPI.Tools;
+
+var credStore = new CredentialStore(&quot;./credentials&quot;);
+var apiClient = new DynamicAPIClient(credStore);
+var searchTool = new WebSearchTool(credStore);
+
+var tools = new ToolsContext();
+tools.Add(new WebSearchHazinaTool(searchTool));
+tools.Add(new FetchUrlHazinaTool(searchTool));
+tools.Add(new DynamicAPIHazinaTool(apiClient));
+
+var agent = new HazinaAgent(&quot;api_researcher&quot;, generator, tools);
+</code></pre>
+<hr>
+<h2 id="testing">Testing</h2>
+<h3 id="token-usage-tests">Token Usage Tests</h3>
+<pre><code class="lang-bash"># Build LLMs solution
+dotnet build Hazina.LLMs.sln
+
+# Run integration tests
+cd App/OpenAI.IntegrationTests
+dotnet run
+</code></pre>
+<h3 id="dynamicapi-tests">DynamicAPI Tests</h3>
+<pre><code class="lang-bash"># Build project
+dotnet build Hazina.DynamicAPI/Hazina.DynamicAPI.csproj
+
+# Run examples (requires credentials)
+# See: Hazina.DynamicAPI/Examples/DynamicAPIExample.cs
+</code></pre>
+<hr>
+<h2 id="backwards-compatibility">Backwards Compatibility</h2>
+<h3 id="-compatible">✅ Compatible</h3>
+<ul>
+<li>Existing agents work zonder wijzigingen (gebruik <code>.Result</code>)</li>
+<li>Bestaande tools blijven werken</li>
+<li>Store implementations ongewijzigd</li>
+</ul>
+<h3 id="-breaking-fixable">⚠️ Breaking (Fixable)</h3>
+<ul>
+<li>LLM client calls: <code>string response</code> → <code>LLMResponse&lt;string&gt; response</code></li>
+<li>Generator calls: <code>T response</code> → <code>LLMResponse&lt;T&gt; response</code></li>
+<li>Fix: Overal <code>.Result</code> toevoegen</li>
+</ul>
+<hr>
+<h2 id="performance">Performance</h2>
+<h3 id="token-tracking">Token Tracking</h3>
+<ul>
+<li>✅ Minimale overhead (~0.1ms per call)</li>
+<li>✅ Geen extra LLM calls</li>
+<li>✅ Token data komt uit API responses</li>
+</ul>
+<h3 id="dynamic-api">Dynamic API</h3>
+<ul>
+<li>⚠️ Web search adds 1-2 seconden per search</li>
+<li>✅ Credential loading gecached</li>
+<li>✅ HTTP client reuse</li>
+</ul>
+<hr>
+<h2 id="security-notes">Security Notes</h2>
+<h3 id="token-costs">Token Costs</h3>
+<ul>
+<li>Alle costs gebaseerd op public pricing (Jan 2025)</li>
+<li>Update prices in <code>TokenUsageInfo</code> bij pricing changes</li>
+</ul>
+<h3 id="credentials">Credentials</h3>
+<ul>
+<li><strong>NEVER</strong> commit credentials to git</li>
+<li>Use <code>.gitignore</code> voor <code>credentials/</code> directory</li>
+<li>Separate keys voor dev/prod</li>
+<li>Prefer env vars in production</li>
+</ul>
+<hr>
+<h2 id="roadmap">Roadmap</h2>
+<h3 id="high-priority-next">High Priority (Next)</h3>
+<ol>
+<li>Python execution tool voor data analysis</li>
+<li>Multimodal loop (save → load → analyze charts)</li>
+<li>Templated agent instructions</li>
+<li>Tool bundles per domain</li>
+</ol>
+<h3 id="medium-priority">Medium Priority</h3>
+<ol start="5">
+<li>More authentication types (JWT, custom)</li>
+<li>API response caching</li>
+<li>Rate limiting per service</li>
+<li>Retry logic met exponential backoff</li>
+</ol>
+<h3 id="low-priority">Low Priority</h3>
+<ol start="9">
+<li>Docker deployment templates</li>
+<li>Marketplace integration</li>
+<li>Usage analytics dashboard</li>
+</ol>
+<hr>
+<h2 id="contributors">Contributors</h2>
+<p>Deze release bevat bijdragen aan:</p>
+<ul>
+<li>Token usage tracking systeem</li>
+<li>Dynamic API integration framework</li>
+<li>Repository analysis en documentatie</li>
+</ul>
+<hr>
+<h2 id="links">Links</h2>
+<ul>
+<li><a href="TOKENUSAGE_EXAMPLE.html">Token Usage Examples</a></li>
+<li><a href="Hazina.DynamicAPI/README.md">DynamicAPI README</a></li>
+<li><a href="Hazina.DynamicAPI/USAGE_GUIDE.md">DynamicAPI Usage Guide</a></li>
+<li><a href="ANALYSIS_data-analytics-agent.html">Data Analytics Agent Analysis</a></li>
+</ul>
+<hr>
+<h2 id="git-log-summary">Git Log Summary</h2>
+<pre><code>a12a8a9 add: Nederlandse usage guide voor Hazina.DynamicAPI
+32794a2 fix: upgrade System.Text.Json naar 8.0.5 voor security
+53bc58d add: Hazina.DynamicAPI project met credential store, web search en dynamic API client
+d4f7761 fix: verwijder duplicate PostgresChunkStore
+1a82d21 add: analyse van data-analytics-agent repository
+f5aa360 add: documentatie voor token usage tracking
+146ac26 fix: OpenAI integration tests voor LLMResponse
+2661ec2 fix: gebruik correcte property namen voor token usage
+b7c8148 update: AgentManager voor LLMResponse support
+92821d9 update: DocumentGenerator met LLMResponse wrapper
+cf8be38 update: HuggingFace client met token tracking
+db359ec update: Anthropic client met token tracking
+cc62c84 update: OpenAI client met token tracking
+d8eb4fc add: LLMResponse wrapper class
+7c9588b add: TokenUsageInfo model voor token tracking
+</code></pre>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

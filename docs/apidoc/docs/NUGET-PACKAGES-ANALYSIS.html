@@ -1,0 +1,528 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Hazina NuGet Packages Analysis | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Hazina NuGet Packages Analysis | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="hazina-nuget-packages-analysis">Hazina NuGet Packages Analysis</h1>
+
+<h2 id="executive-summary">Executive Summary</h2>
+<p>This document provides a comprehensive analysis of the Hazina project structure to identify all projects that are configured to build NuGet packages. The analysis is intended to support the creation of a dedicated <code>Hazina.NuGet.sln</code> solution file containing only the library projects that produce NuGet packages.</p>
+<p><strong>Analysis Date:</strong> 2025-11-10
+<strong>Current Version:</strong> 1.1.3
+<strong>Total Projects:</strong> 38
+<strong>NuGet Package Projects:</strong> 17</p>
+<hr>
+<h2 id="nuget-package-projects-identified-for-hazinanugetsln">NuGet Package Projects (Identified for Hazina.NuGet.sln)</h2>
+<h3 id="core-library-projects">Core Library Projects</h3>
+<h4 id="1-hazinallmsclasses">1. Hazina.LLMs.Classes</h4>
+<ul>
+<li><strong>Path:</strong> <code>LLMs\Classes\Hazina.LLMs.Classes.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Description:</strong> Core data models and contracts for the Hazina ecosystem. Provides chat message models, LLM response wrappers with token usage tracking, tool definitions, image generation models, and shared interfaces used across all Hazina packages.</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>System.Memory.Data (6.0.0)</li>
+</ul>
+</li>
+<li><strong>Tags:</strong> llm, ai, language-model, chat, openai, anthropic, claude, gpt, tokens, tool-calling</li>
+</ul>
+<h4 id="2-hazinallmshelpers">2. Hazina.LLMs.Helpers</h4>
+<ul>
+<li><strong>Path:</strong> <code>LLMs\Helpers\Hazina.LLMs.Helpers.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Description:</strong> Utility functions for document and token processing. Includes TokenCounter for GPT token counting, DocumentSplitter for chunking by token limits, PartialJsonParser for streaming JSON, and helpers for checksums, file trees, and embeddings.</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>MathNet.Numerics (5.0.0)</li>
+<li>SharpToken (2.0.3)</li>
+</ul>
+</li>
+<li><strong>Tags:</strong> llm, tokens, document-splitting, chunking, utilities, helpers, json-parser</li>
+</ul>
+<h4 id="3-hazinallmsclient">3. Hazina.LLMs.Client</h4>
+<ul>
+<li><strong>Path:</strong> <code>LLMs\Client\Hazina.LLMs.Client.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Description:</strong> Provider-agnostic interface for LLM interactions. Defines the ILLMClient interface with support for chat completions, streaming, structured JSON responses, image generation, text-to-speech, embeddings, and tool calling.</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>HtmlAgilityPack (1.12.0)</li>
+<li>OpenAI (2.1.0)</li>
+<li>Hazina.LLMs.Classes (project reference)</li>
+<li>Hazina.LLMs.Helpers (project reference)</li>
+</ul>
+</li>
+<li><strong>Tags:</strong> llm, ai, interface, abstraction, chat, streaming, embeddings, tool-calling, provider-agnostic</li>
+</ul>
+<h3 id="llm-provider-implementations">LLM Provider Implementations</h3>
+<h4 id="4-hazinallmsopenai">4. Hazina.LLMs.OpenAI</h4>
+<ul>
+<li><strong>Path:</strong> <code>LLMs\OpenAI\Hazina.LLMs.OpenAI.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Description:</strong> OpenAI implementation of ILLMClient for Hazina. Provides access to GPT models including chat completions, streaming, image generation (DALL-E), embeddings, and structured JSON outputs.</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>Microsoft.Extensions.Configuration (9.0.4)</li>
+<li>Microsoft.Extensions.Configuration.Abstractions (9.0.4)</li>
+<li>Microsoft.Extensions.Configuration.Binder (9.0.4)</li>
+<li>Microsoft.Extensions.Configuration.Json (9.0.4)</li>
+<li>Hazina.LLMs.Client (project reference)</li>
+</ul>
+</li>
+<li><strong>Tags:</strong> openai, gpt, chatgpt, dall-e, llm, ai, chat, embeddings, streaming, dalle</li>
+</ul>
+<h4 id="5-hazinallmsanthropic">5. Hazina.LLMs.Anthropic</h4>
+<ul>
+<li><strong>Path:</strong> <code>LLMs\Anthropic\Hazina.LLMs.Anthropic.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Description:</strong> Anthropic Claude implementation of ILLMClient for Hazina. Provides access to Claude models (Opus, Sonnet, Haiku) with chat completions, streaming, structured JSON outputs, and token usage tracking.</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>Hazina.LLMs.Client (project reference)</li>
+</ul>
+</li>
+<li><strong>Tags:</strong> anthropic, claude, llm, ai, chat, streaming, sonnet, opus, haiku, claude-3</li>
+</ul>
+<h4 id="6-hazinallmshuggingface">6. Hazina.LLMs.HuggingFace</h4>
+<ul>
+<li><strong>Path:</strong> <code>LLMs\HuggingFace\Hazina.LLMs.HuggingFace.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Description:</strong> HuggingFace implementation of ILLMClient for Hazina. Provides access to open-source models via HuggingFace Inference API including Llama, Mixtral, and others.</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>Hazina.LLMs.Client (project reference)</li>
+<li>Hazina.LLMs.Classes (project reference)</li>
+<li>Hazina.LLMs.Helpers (project reference)</li>
+</ul>
+</li>
+<li><strong>Tags:</strong> huggingface, llm, ai, open-source, llama, mixtral, stable-diffusion, embeddings, transformers</li>
+</ul>
+<h4 id="7-hazinallmsgemini">7. Hazina.LLMs.Gemini</h4>
+<ul>
+<li><strong>Path:</strong> <code>LLMs\Gemini\Hazina.LLMs.Gemini.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Description:</strong> Google Gemini implementation of ILLMClient for Hazina. Provides access to Gemini models with chat completions, streaming, system instructions, structured JSON outputs, and token usage tracking.</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>Microsoft.Extensions.Configuration (9.0.4)</li>
+<li>Microsoft.Extensions.Configuration.Binder (9.0.4)</li>
+<li>Microsoft.Extensions.Configuration.Json (9.0.4)</li>
+<li>Hazina.LLMs.Client (project reference)</li>
+<li>Hazina.LLMs.Classes (project reference)</li>
+<li>Hazina.LLMs.Helpers (project reference)</li>
+</ul>
+</li>
+<li><strong>Tags:</strong> google, gemini, llm, ai, chat, streaming, gemini-pro, google-ai</li>
+</ul>
+<h4 id="8-hazinallmsmistral">8. Hazina.LLMs.Mistral</h4>
+<ul>
+<li><strong>Path:</strong> <code>LLMs\Mistral\Hazina.LLMs.Mistral.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Description:</strong> Mistral AI implementation of ILLMClient for Hazina. Provides access to Mistral language models with chat completions, streaming, token usage tracking, and structured JSON outputs.</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>Microsoft.Extensions.Configuration (9.0.4)</li>
+<li>Microsoft.Extensions.Configuration.Binder (9.0.4)</li>
+<li>Microsoft.Extensions.Configuration.Json (9.0.4)</li>
+<li>Hazina.LLMs.Client (project reference)</li>
+<li>Hazina.LLMs.Classes (project reference)</li>
+<li>Hazina.LLMs.Helpers (project reference)</li>
+</ul>
+</li>
+<li><strong>Tags:</strong> mistral, llm, ai, chat, streaming, mistral-ai</li>
+</ul>
+<h4 id="9-hazinallmssemantickernel">9. Hazina.LLMs.SemanticKernel</h4>
+<ul>
+<li><strong>Path:</strong> <code>LLMs\SemanticKernel\Hazina.LLMs.SemanticKernel.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Description:</strong> Semantic Kernel implementation of ILLMClient for Hazina. Provides multi-provider LLM support (OpenAI, Azure OpenAI, Anthropic, Ollama) through Microsoft Semantic Kernel integration.</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>Microsoft.SemanticKernel (1.31.0)</li>
+<li>Newtonsoft.Json (13.0.3)</li>
+<li>Microsoft.Extensions.Configuration (9.0.4)</li>
+<li>Microsoft.Extensions.Configuration.Abstractions (9.0.4)</li>
+<li>Microsoft.Extensions.Configuration.Binder (9.0.4)</li>
+<li>Microsoft.Extensions.Configuration.Json (9.0.4)</li>
+<li>Hazina.LLMs.Client (project reference)</li>
+<li>Hazina.LLMs.Classes (project reference)</li>
+<li>Hazina.LLMs.Helpers (project reference)</li>
+<li>Hazina.Store.DocumentStore (project reference)</li>
+</ul>
+</li>
+<li><strong>Tags:</strong> semantic-kernel, llm, ai, chat, multi-provider, openai, azure, anthropic, ollama, plugins</li>
+</ul>
+<h3 id="tool-and-extension-libraries">Tool and Extension Libraries</h3>
+<h4 id="10-hazinallmstools">10. Hazina.LLMs.Tools</h4>
+<ul>
+<li><strong>Path:</strong> <code>LLMs\ClientTools\Hazina.LLMs.Tools.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Description:</strong> Tool calling extensions for Hazina LLM clients. Provides reusable tools that LLMs can invoke including Claude CLI execution, web page scraping, and tool context base classes.</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>HtmlAgilityPack (1.12.0)</li>
+<li>Hazina.LLMs.Classes (project reference)</li>
+<li>Hazina.LLMs.Client (project reference)</li>
+</ul>
+</li>
+<li><strong>Tags:</strong> llm, tools, function-calling, web-scraping, claude-cli, ai-agents</li>
+</ul>
+<h3 id="storage-and-rag-libraries">Storage and RAG Libraries</h3>
+<h4 id="11-hazinastoreembeddingstore">11. Hazina.Store.EmbeddingStore</h4>
+<ul>
+<li><strong>Path:</strong> <code>Store\EmbeddingStore\Hazina.Store.EmbeddingStore.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Description:</strong> Vector embedding storage for semantic search in Hazina. Provides IEmbeddingStore interface with PostgreSQL/pgvector backend, batch operations, similarity matching, and embedding generation service.</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>Npgsql (8.0.3)</li>
+<li>Pgvector (0.2.0)</li>
+<li>Hazina.LLMs.Helpers (project reference)</li>
+<li>Hazina.LLMs.Client (project reference)</li>
+</ul>
+</li>
+<li><strong>Tags:</strong> embeddings, vector-store, semantic-search, pgvector, postgresql, rag, similarity</li>
+</ul>
+<h4 id="12-hazinastoredocumentstore">12. Hazina.Store.DocumentStore</h4>
+<ul>
+<li><strong>Path:</strong> <code>Store\DocumentStore\Hazina.Store.DocumentStore.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Description:</strong> Document storage and retrieval system for RAG (Retrieval-Augmented Generation) in Hazina. Provides IDocumentStore interface with support for text/binary documents, chunking, metadata management, and relevancy matching.</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>Npgsql (8.0.3)</li>
+<li>Hazina.Store.EmbeddingStore (project reference)</li>
+<li>Hazina.LLMs.Helpers (project reference)</li>
+</ul>
+</li>
+<li><strong>Tags:</strong> rag, document-store, retrieval, storage, chunking, embeddings, semantic-search</li>
+</ul>
+<h3 id="high-level-orchestration-libraries">High-Level Orchestration Libraries</h3>
+<h4 id="13-hazinagenerator">13. Hazina.Generator</h4>
+<ul>
+<li><strong>Path:</strong> <code>Hazina.Generator\Hazina.Generator.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Description:</strong> Document-augmented LLM response orchestration for Hazina. Provides IDocumentGenerator for composing RAG context with prompts, streaming responses, and safe file modification handling.</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>Hazina.Store.DocumentStore (project reference)</li>
+<li>Hazina.LLMs.OpenAI (project reference)</li>
+</ul>
+</li>
+<li><strong>Tags:</strong> rag, document-generation, llm-orchestration, context-injection, streaming</li>
+</ul>
+<h4 id="14-hazinaagentfactory">14. Hazina.AgentFactory</h4>
+<ul>
+<li><strong>Path:</strong> <code>Hazina.AgentFactory\Hazina.AgentFactory.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Description:</strong> High-level agent factory for building autonomous AI agents in Hazina. Provides configuration parsing, built-in tool collections (file ops, git, dotnet, npm, BigQuery, email, WordPress), and multi-agent flow orchestration.</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>Google.Cloud.BigQuery.V2 (3.11.0)</li>
+<li>MailKit (4.13.0)</li>
+<li>Hazina.LLMs.Classes (project reference)</li>
+<li>Hazina.Store.DocumentStore (project reference)</li>
+<li>Hazina.Store.EmbeddingStore (project reference)</li>
+<li>Hazina.Generator (project reference)</li>
+<li>Hazina.LLMs.Helpers (project reference)</li>
+<li>Hazina.LLMs.Client (project reference)</li>
+<li>Hazina.LLMs.OpenAI (project reference)</li>
+<li>Hazina.LLMs.SemanticKernel (project reference)</li>
+</ul>
+</li>
+<li><strong>Tags:</strong> ai-agents, agent-factory, orchestration, tools, bigquery, email, wordpress, git, automation</li>
+</ul>
+<h3 id="api-and-integration-libraries">API and Integration Libraries</h3>
+<h4 id="15-hazinadynamicapi">15. Hazina.DynamicAPI</h4>
+<ul>
+<li><strong>Path:</strong> <code>Hazina.DynamicAPI\Hazina.DynamicAPI.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Description:</strong> Dynamic API client for Hazina that calls any HTTP API without pre-configuration. Includes credential management, automatic authentication injection, and LLM tool integration.</li>
+<li><strong>Dependencies:</strong>
+<ul>
+<li>Newtonsoft.Json (13.0.3)</li>
+<li>System.Text.Json (8.0.5)</li>
+<li>Hazina.LLMs.Classes (project reference)</li>
+<li>Hazina.LLMs.Client (project reference)</li>
+</ul>
+</li>
+<li><strong>Tags:</strong> api, http, dynamic, credentials, oauth, api-integration, rest-api, tool-calling</li>
+</ul>
+<h3 id="uishared-components">UI/Shared Components</h3>
+<h4 id="16-hazinachatshared">16. Hazina.ChatShared</h4>
+<ul>
+<li><strong>Path:</strong> <code>App\ChatShared\Hazina.ChatShared.csproj</code></li>
+<li><strong>Version:</strong> 1.1.3</li>
+<li><strong>Target Framework:</strong> net8.0-windows</li>
+<li><strong>Description:</strong> Shared WPF chat UI components for Hazina applications. Provides reusable ChatWindow XAML component, IChatController interface, and chat message display models.</li>
+<li><strong>Dependencies:</strong> (No external NuGet packages, WPF-based)</li>
+<li><strong>Tags:</strong> wpf, chat-ui, windows, xaml, ui-components, chat-interface</li>
+<li><strong>Note:</strong> This is a Windows-specific package (net8.0-windows)</li>
+</ul>
+<hr>
+<h2 id="dependency-hierarchy">Dependency Hierarchy</h2>
+<p>The projects have the following dependency hierarchy (from lowest to highest level):</p>
+<h3 id="layer-1-foundation">Layer 1: Foundation</h3>
+<ol>
+<li><strong>Hazina.LLMs.Classes</strong> - No project dependencies</li>
+<li><strong>Hazina.LLMs.Helpers</strong> - No project dependencies</li>
+</ol>
+<h3 id="layer-2-core-abstractions">Layer 2: Core Abstractions</h3>
+<ol start="3">
+<li><strong>Hazina.LLMs.Client</strong> → Classes, Helpers</li>
+</ol>
+<h3 id="layer-3-provider-implementations">Layer 3: Provider Implementations</h3>
+<ol start="4">
+<li><strong>Hazina.LLMs.OpenAI</strong> → Client</li>
+<li><strong>Hazina.LLMs.Anthropic</strong> → Client</li>
+<li><strong>Hazina.LLMs.HuggingFace</strong> → Client, Classes, Helpers</li>
+<li><strong>Hazina.LLMs.Gemini</strong> → Client, Classes, Helpers</li>
+<li><strong>Hazina.LLMs.Mistral</strong> → Client, Classes, Helpers</li>
+</ol>
+<h3 id="layer-4-tools-and-storage">Layer 4: Tools and Storage</h3>
+<ol start="9">
+<li><strong>Hazina.LLMs.Tools</strong> → Classes, Client</li>
+<li><strong>Hazina.Store.EmbeddingStore</strong> → Helpers, Client</li>
+<li><strong>Hazina.Store.DocumentStore</strong> → EmbeddingStore, Helpers</li>
+</ol>
+<h3 id="layer-5-orchestration">Layer 5: Orchestration</h3>
+<ol start="12">
+<li><strong>Hazina.Generator</strong> → DocumentStore, OpenAI</li>
+<li><strong>Hazina.DynamicAPI</strong> → Classes, Client</li>
+<li><strong>Hazina.LLMs.SemanticKernel</strong> → Client, Classes, Helpers, DocumentStore</li>
+</ol>
+<h3 id="layer-6-high-level-agents">Layer 6: High-Level Agents</h3>
+<ol start="15">
+<li><strong>Hazina.AgentFactory</strong> → Classes, DocumentStore, EmbeddingStore, Generator, Helpers, Client, OpenAI, SemanticKernel</li>
+</ol>
+<h3 id="layer-7-ui-components">Layer 7: UI Components</h3>
+<ol start="16">
+<li><strong>Hazina.ChatShared</strong> - Independent WPF component</li>
+</ol>
+<hr>
+<h2 id="projects-not-included-applicationtest-projects">Projects NOT Included (Application/Test Projects)</h2>
+<p>The following projects are NOT configured as NuGet packages and should NOT be included in Hazina.NuGet.sln:</p>
+<h3 id="application-projects-app-folder">Application Projects (App folder)</h3>
+<ul>
+<li><strong>AppBuilder</strong> - WPF application</li>
+<li><strong>ClaudeCode</strong> - WPF application</li>
+<li><strong>Crosslink</strong> - Console sample application</li>
+<li><strong>EmbeddingsViewer</strong> - WPF utility application</li>
+<li><strong>Hazina.App.ExplorerIntegration</strong> - WPF Explorer integration utility</li>
+<li><strong>FolderToPostgres</strong> - Console utility</li>
+<li><strong>HtmlMockupGenerator</strong> - Utility application</li>
+<li><strong>LlamaDemo</strong> - Demo application</li>
+<li><strong>PDFMaker</strong> - Utility application</li>
+<li><strong>PostgresDemo</strong> - Demo application</li>
+<li><strong>Windows</strong> - Main WPF desktop application</li>
+</ul>
+<h3 id="test-projects-tests-folder">Test Projects (Tests folder)</h3>
+<ul>
+<li><strong>Hazina.AgentFactory.Tests</strong></li>
+<li><strong>Hazina.DynamicAPI.Tests</strong></li>
+<li><strong>Hazina.Generator.Tests</strong></li>
+<li><strong>Hazina.LLMs.Anthropic.Tests</strong></li>
+<li><strong>Hazina.LLMs.Classes.Tests</strong></li>
+<li><strong>Hazina.LLMs.Client.Tests</strong></li>
+<li><strong>Hazina.LLMs.HuggingFace.Tests</strong></li>
+<li><strong>Hazina.LLMs.OpenAI.Tests</strong></li>
+<li><strong>Hazina.Store.DocumentStore.Tests</strong></li>
+<li><strong>Hazina.Store.EmbeddingStore.Tests</strong></li>
+<li><strong>Hazina.LLMs.OpenAI.IntegrationTests</strong></li>
+</ul>
+<hr>
+<h2 id="version-synchronization">Version Synchronization</h2>
+<p>All NuGet packages currently use <strong>synchronized versioning at 1.1.3</strong>. This is documented in the repository's NUGET-VERSIONING.md file and follows these principles:</p>
+<ul>
+<li>All Hazina.* packages share the same version number</li>
+<li>Version increments are synchronized across all packages</li>
+<li>Breaking changes trigger major version bumps across all packages</li>
+<li>Non-breaking feature additions trigger minor version bumps</li>
+<li>Bug fixes trigger patch version bumps</li>
+</ul>
+<hr>
+<h2 id="package-publication-status">Package Publication Status</h2>
+<p>Based on the <code>local_packages</code> directory:</p>
+<ul>
+<li>All 16 library packages have been built and packaged locally</li>
+<li>Package versions range from 1.0.0 to 1.1.3</li>
+<li>Latest version across all packages: <strong>1.1.3</strong></li>
+<li>Packages are stored in: <code>C:\Projects\devgpt\local_packages\</code></li>
+</ul>
+<hr>
+<h2 id="recommendations-for-hazinanugetsln">Recommendations for Hazina.NuGet.sln</h2>
+<ol>
+<li><p><strong>Include all 16 library projects</strong> listed above in the NuGet solution</p>
+</li>
+<li><p><strong>Exclude all application and test projects</strong> to keep the solution focused</p>
+</li>
+<li><p><strong>Organize projects in solution folders</strong> matching the dependency hierarchy:</p>
+<ul>
+<li>Foundation (Classes, Helpers)</li>
+<li>Core (Client)</li>
+<li>Providers (OpenAI, Anthropic, HuggingFace, Gemini, Mistral, SemanticKernel)</li>
+<li>Tools (ClientTools)</li>
+<li>Storage (EmbeddingStore, DocumentStore)</li>
+<li>Orchestration (Generator, DynamicAPI)</li>
+<li>Agents (AgentFactory)</li>
+<li>UI (ChatShared)</li>
+</ul>
+</li>
+<li><p><strong>Consider separate build configurations</strong> for different package subsets:</p>
+<ul>
+<li>Core packages only (Classes, Helpers, Client)</li>
+<li>With specific providers (e.g., OpenAI-only build)</li>
+<li>Full build (all packages)</li>
+</ul>
+</li>
+<li><p><strong>Maintain version synchronization</strong> across all packages as currently implemented</p>
+</li>
+</ol>
+<hr>
+<h2 id="technical-notes">Technical Notes</h2>
+<h3 id="target-framework">Target Framework</h3>
+<ul>
+<li>All packages target <strong>.NET 8.0</strong> (net8.0)</li>
+<li>Exception: Hazina.ChatShared targets <strong>net8.0-windows</strong> (WPF dependency)</li>
+</ul>
+<h3 id="license">License</h3>
+<ul>
+<li>All packages use <strong>MIT License</strong> (PackageLicenseExpression)</li>
+</ul>
+<h3 id="repository-information">Repository Information</h3>
+<ul>
+<li>Repository URL: <a href="https://github.com/prospergenics/devgpt">https://github.com/prospergenics/devgpt</a></li>
+<li>Repository Type: git</li>
+<li>Project URL: <a href="https://github.com/prospergenics/devgpt">https://github.com/prospergenics/devgpt</a></li>
+</ul>
+<h3 id="author">Author</h3>
+<ul>
+<li>Author: Prospergenics</li>
+</ul>
+<h3 id="build-configuration">Build Configuration</h3>
+<ul>
+<li>LanguageVersion: latest</li>
+<li>ImplicitUsings: enabled</li>
+<li>Nullable: enabled</li>
+</ul>
+<hr>
+<h2 id="next-steps">Next Steps</h2>
+<ol>
+<li>Create <code>Hazina.NuGet.sln</code> with the 16 identified library projects</li>
+<li>Organize projects into logical solution folders</li>
+<li>Verify all project references resolve correctly</li>
+<li>Test solution build in both Debug and Release configurations</li>
+<li>Consider creating automated build scripts for NuGet package generation</li>
+<li>Document the package publishing workflow</li>
+</ol>
+<hr>
+<p><strong>Document Version:</strong> 1.0
+<strong>Last Updated:</strong> 2025-11-10</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,1027 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Hazina Storage Architecture Analysis | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Hazina Storage Architecture Analysis | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="hazina-storage-architecture-analysis">Hazina Storage Architecture Analysis</h1>
+
+<p><strong>Date:</strong> 2026-01-06
+<strong>Purpose:</strong> Analysis and decision document for evolving Hazina's storage architecture from file-based to SQLite-based knowledge database</p>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>Hazina currently uses a <strong>multi-backend strategy pattern</strong> with file-based storage as the default. The intended evolution is toward a <strong>SQLite-based agent-first knowledge architecture</strong> where the database is the primary knowledge layer and embeddings are a secondary, optional search index.</p>
+<p><strong>Key Finding:</strong> The current architecture is highly flexible but lacks a single source of truth. Migrating to SQLite as the primary storage would require significant refactoring and data migration, but the abstractions are well-designed to support this transition.</p>
+<p><strong>Recommendation:</strong> Incremental migration strategy (see <a href="#recommended-path-forward">Recommended Path Forward</a> section).</p>
+<hr>
+<h2 id="1-current-architecture-analysis">1. Current Architecture Analysis</h2>
+<h3 id="11-storage-implementations">1.1 Storage Implementations</h3>
+<p>Hazina implements a <strong>Strategy Pattern</strong> for storage, supporting multiple backends:</p>
+<table>
+<thead>
+<tr>
+<th>Backend</th>
+<th>Status</th>
+<th>Primary Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>File-based</strong></td>
+<td>✅ Active, Default</td>
+<td>Production</td>
+</tr>
+<tr>
+<td><strong>Memory-based</strong></td>
+<td>✅ Active</td>
+<td>Testing, temporary</td>
+</tr>
+<tr>
+<td><strong>PostgreSQL</strong></td>
+<td>✅ Active</td>
+<td>Supabase integration</td>
+</tr>
+<tr>
+<td><strong>SQLite</strong></td>
+<td>❌ Obsolete placeholder</td>
+<td>Never implemented</td>
+</tr>
+</tbody>
+</table>
+<h4 id="file-based-storage-structure">File-Based Storage Structure</h4>
+<pre><code>project_folder/
+├── embeddings/
+│   └── embeddings.json          # All embeddings (vectors + keys)
+├── parts/
+│   ├── chunks.json              # Document → chunk keys mapping
+│   └── [chunk text files]       # Individual chunk content
+├── metadata/
+│   ├── doc1.metadata.json       # Per-document metadata
+│   ├── doc2.metadata.json
+│   └── ...
+├── tag_relevance/               # LLM-computed tag scores
+│   └── [tag score cache files]
+└── [text files]                 # Source documents
+</code></pre>
+<p><strong>Key Characteristics:</strong></p>
+<ul>
+<li>Embeddings stored in single JSON file (<code>embeddings.json</code>)</li>
+<li>Metadata distributed across many JSON files (one per document)</li>
+<li>In-memory index built on startup for fast metadata queries</li>
+<li>Chunks stored as separate text files + JSON index</li>
+<li>No checksums or versioning for rebuildability</li>
+</ul>
+<h3 id="12-core-components">1.2 Core Components</h3>
+<h4 id="embeddingstore-hazinastoreembeddingstore">EmbeddingStore (<code>Hazina.Store.EmbeddingStore</code>)</h4>
+<p><strong>File Implementations:</strong></p>
+<ul>
+<li><code>EmbeddingFileStore</code> (obsolete) - Legacy file store</li>
+<li><code>EmbeddingJsonFileStore</code> - Current file-based implementation</li>
+<li><code>EmbeddingMemoryStore</code> - In-memory store</li>
+<li><code>SqliteTextEmbeddingStore</code> (obsolete, never implemented)</li>
+</ul>
+<p><strong>Database Implementations:</strong></p>
+<ul>
+<li><code>PgVectorStore</code> - PostgreSQL with pgvector</li>
+<li><code>PgVectorTextEmbeddingStore</code> - PostgreSQL text + embeddings</li>
+</ul>
+<p><strong>Location:</strong> <code>src/Core/Storage/Hazina.Store.EmbeddingStore/</code></p>
+<p><strong>Key Findings:</strong></p>
+<ul>
+<li>❌ SQLite store marked obsolete (<code>SqliteTextEmbeddingStore.cs:9</code>)</li>
+<li>✅ Clean abstraction via <code>ITextEmbeddingStore</code> interface</li>
+<li>❌ File-based stores load entire embeddings into memory</li>
+<li>❌ No support for multiple embeddings per item</li>
+</ul>
+<h4 id="documentstore-hazinastoredocumentstore">DocumentStore (<code>Hazina.Store.DocumentStore</code>)</h4>
+<p><strong>Responsibilities:</strong></p>
+<ul>
+<li>Orchestrates EmbeddingStore, TextStore, ChunkStore, MetadataStore</li>
+<li>Document ingestion and chunking</li>
+<li>Semantic search via embeddings</li>
+<li>Metadata filtering via QueryableMetadataStore</li>
+</ul>
+<p><strong>File Implementations:</strong></p>
+<ul>
+<li><code>ChunkFileStore</code> - chunks.json (single file index)</li>
+<li><code>DocumentMetadataFileStore</code> - one .metadata.json per document</li>
+<li><code>QueryableMetadataFileStore</code> - file-based + in-memory index</li>
+<li><code>TagRelevanceFileStore</code> - cached tag scores</li>
+</ul>
+<p><strong>Location:</strong> <code>src/Core/Storage/Hazina.Store.DocumentStore/</code></p>
+<p><strong>Key Findings:</strong></p>
+<ul>
+<li>✅ Clean separation of concerns</li>
+<li>✅ Supports both embedding-based and metadata-only search</li>
+<li>❌ No concept of &quot;source file checksums&quot; for rebuildability</li>
+<li>❌ Dual truth: both files and stores contain information</li>
+</ul>
+<h4 id="queryablemetadatafilestore">QueryableMetadataFileStore</h4>
+<p><strong>Implementation Details:</strong></p>
+<ul>
+<li>Stores metadata in separate JSON files (<code>doc_id.metadata.json</code>)</li>
+<li>Maintains <strong>in-memory <code>ConcurrentDictionary&lt;string, DocumentMetadata&gt;</code></strong></li>
+<li>Index rebuilt on startup by scanning <code>_rootFolder</code></li>
+<li>Supports rich queries: tags, MIME types, dates, custom metadata, full-text search</li>
+</ul>
+<p><strong>Location:</strong> <code>src/Core/Storage/Hazina.Store.DocumentStore/Stores/File/QueryableMetadataFileStore.cs</code></p>
+<p><strong>Key Findings:</strong></p>
+<ul>
+<li>✅ Sophisticated querying capabilities</li>
+<li>✅ Fast in-memory queries after initial load</li>
+<li>❌ Not scalable to millions of documents (all in memory)</li>
+<li>❌ No SQL layer, all filtering in C#</li>
+<li>❌ Index rebuild required on every startup</li>
+</ul>
+<h3 id="13-rag-engine-hazinaairag">1.3 RAG Engine (<code>Hazina.AI.RAG</code>)</h3>
+<p><strong>Search Modes:</strong></p>
+<ol>
+<li><p><strong>Embedding-based search</strong> (default)</p>
+<ul>
+<li>Requires <code>IVectorStore</code></li>
+<li>Generates query embedding</li>
+<li>Performs vector similarity search</li>
+</ul>
+</li>
+<li><p><strong>Metadata-only search</strong> (new capability)</p>
+<ul>
+<li>Uses <code>IQueryableMetadataStore</code></li>
+<li>No embeddings required</li>
+<li>Keyword search + metadata filtering</li>
+</ul>
+</li>
+</ol>
+<p><strong>Location:</strong> <code>src/Core/AI/Hazina.AI.RAG/Core/RAGEngine.cs</code></p>
+<p><strong>Key Findings:</strong></p>
+<ul>
+<li>✅ <strong>Already supports metadata-first search!</strong> (lines 108-112)</li>
+<li>✅ Optional embeddings via <code>options.UseEmbeddings = false</code></li>
+<li>✅ Composite scoring with tag relevance, recency, position</li>
+<li>✅ Good alignment with intended architecture</li>
+</ul>
+<h3 id="14-agent-framework-hazinaaiagents">1.4 Agent Framework (<code>Hazina.AI.Agents</code>)</h3>
+<p><strong>Key Characteristics:</strong></p>
+<ul>
+<li>Uses <code>IProviderOrchestrator</code> for LLM calls</li>
+<li>Maintains conversation history in memory</li>
+<li><strong>Does not directly access files or databases</strong></li>
+<li>Interacts via abstractions (stores, tools, context)</li>
+</ul>
+<p><strong>Location:</strong> <code>src/Core/AI/Hazina.AI.Agents/Core/Agent.cs</code></p>
+<p><strong>Key Findings:</strong></p>
+<ul>
+<li>✅ Good abstraction - agents don't know about storage</li>
+<li>✅ Agent-first principle partially satisfied</li>
+<li>❌ Storage layer still file-based beneath abstractions</li>
+</ul>
+<hr>
+<h2 id="2-intended-architecture-target-state">2. Intended Architecture (Target State)</h2>
+<p>Based on the provided architectural vision:</p>
+<h3 id="21-core-principles">2.1 Core Principles</h3>
+<ol>
+<li><p><strong>SQLite as Primary Knowledge Layer</strong></p>
+<ul>
+<li>All metadata, tags, relationships, JSON objects, embeddings stored in SQLite</li>
+<li>One database per project (<code>project.hazina.db</code>)</li>
+<li>No standalone embeddings file</li>
+</ul>
+</li>
+<li><p><strong>Files as Source Material Only</strong></p>
+<ul>
+<li>Files are not authoritative</li>
+<li>Agents never query files directly</li>
+<li>Only interact via database query layer</li>
+</ul>
+</li>
+<li><p><strong>Search Flow</strong></p>
+<pre><code>Agent Query → SQL Metadata Filter → (Optional) Embedding Search → Agent Interpretation
+</code></pre>
+</li>
+<li><p><strong>Embeddings as Secondary Index</strong></p>
+<ul>
+<li>Optional, replaceable, degradable</li>
+<li>Multiple embedding models per item supported</li>
+<li>System must work without embeddings</li>
+</ul>
+</li>
+<li><p><strong>Full Rebuildability</strong></p>
+<ul>
+<li>Database reconstructed from source files</li>
+<li>File references, checksums, ingest versions tracked</li>
+<li>Deterministic rebuild</li>
+</ul>
+</li>
+</ol>
+<h3 id="22-proposed-database-schema-conceptual">2.2 Proposed Database Schema (Conceptual)</h3>
+<pre><code class="lang-sql">-- Core knowledge tables
+CREATE TABLE items (
+    id TEXT PRIMARY KEY,
+    source_file TEXT,           -- Reference to source file
+    file_checksum TEXT,         -- For rebuild validation
+    ingest_version INTEGER,     -- Schema version for migrations
+    mime_type TEXT,
+    content TEXT,               -- Text content or JSON
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE metadata (
+    item_id TEXT,
+    key TEXT,
+    value TEXT,                 -- JSON for complex values
+    FOREIGN KEY (item_id) REFERENCES items(id)
+);
+
+CREATE TABLE tags (
+    item_id TEXT,
+    tag TEXT,
+    FOREIGN KEY (item_id) REFERENCES items(id)
+);
+
+CREATE TABLE relationships (
+    source_id TEXT,
+    target_id TEXT,
+    relationship_type TEXT,
+    FOREIGN KEY (source_id) REFERENCES items(id),
+    FOREIGN KEY (target_id) REFERENCES items(id)
+);
+
+-- Embeddings (secondary index)
+CREATE TABLE embeddings (
+    item_id TEXT,
+    model TEXT,                 -- e.g., &quot;text-embedding-3-small&quot;
+    vector BLOB,                -- Raw embedding bytes
+    dimension INTEGER,
+    created_at TIMESTAMP,
+    FOREIGN KEY (item_id) REFERENCES items(id)
+);
+
+-- Full-text search (SQLite FTS5)
+CREATE VIRTUAL TABLE items_fts USING fts5(item_id, content);
+</code></pre>
+<hr>
+<h2 id="3-comparison-current-vs-intended">3. Comparison: Current vs Intended</h2>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Current (File-based)</th>
+<th>Intended (SQLite)</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Primary Storage</strong></td>
+<td><code>embeddings.json</code> + distributed <code>.metadata.json</code></td>
+<td>Single <code>project.hazina.db</code></td>
+<td>❌ Major gap</td>
+</tr>
+<tr>
+<td><strong>Embeddings Location</strong></td>
+<td>File (<code>embeddings.json</code>)</td>
+<td>Database table</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>Metadata Storage</strong></td>
+<td>Distributed JSON files + in-memory index</td>
+<td>Database table with SQL queries</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>Chunks</strong></td>
+<td><code>chunks.json</code> + text files</td>
+<td>Database table</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>Multiple Embeddings</strong></td>
+<td>Not supported</td>
+<td>Supported</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>Rebuildability</strong></td>
+<td>No checksums/versions</td>
+<td>Full tracking</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>Agent Abstraction</strong></td>
+<td>✅ Agents use stores, not files</td>
+<td>✅ Agents use DB</td>
+<td>✅ Good</td>
+</tr>
+<tr>
+<td><strong>Metadata-first Search</strong></td>
+<td>✅ Already supported in RAG</td>
+<td>✅ Required</td>
+<td>✅ Good</td>
+</tr>
+<tr>
+<td><strong>Optional Embeddings</strong></td>
+<td>Partial (RAG supports it)</td>
+<td>Required</td>
+<td>🟡 Partial</td>
+</tr>
+<tr>
+<td><strong>Source of Truth</strong></td>
+<td>Files are truth</td>
+<td>Database is truth</td>
+<td>❌ Major gap</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Legend:</strong></p>
+<ul>
+<li>✅ Compliant or already implemented</li>
+<li>🟡 Partially compliant</li>
+<li>❌ Non-compliant or missing</li>
+</ul>
+<hr>
+<h2 id="4-architectural-conflicts-and-risks">4. Architectural Conflicts and Risks</h2>
+<h3 id="41-design-conflicts">4.1 Design Conflicts</h3>
+<h4 id="conflict-1-strategy-pattern-vs-single-source-of-truth">Conflict 1: Strategy Pattern vs Single Source of Truth</h4>
+<ul>
+<li><strong>Current:</strong> Multi-backend strategy allows file, memory, or database</li>
+<li><strong>Intended:</strong> SQLite is the only backend (mono-backend)</li>
+<li><strong>Impact:</strong> Requires removing or deprecating file/memory backends</li>
+<li><strong>Risk:</strong> Breaking changes for all existing users</li>
+</ul>
+<h4 id="conflict-2-distributed-state">Conflict 2: Distributed State</h4>
+<ul>
+<li><strong>Current:</strong> State split across embeddings.json + chunks.json + many .metadata.json + text files</li>
+<li><strong>Intended:</strong> Single database file with all state</li>
+<li><strong>Impact:</strong> Complex data migration required</li>
+<li><strong>Risk:</strong> Data loss if migration fails</li>
+</ul>
+<h4 id="conflict-3-in-memory-index">Conflict 3: In-Memory Index</h4>
+<ul>
+<li><strong>Current:</strong> <code>QueryableMetadataFileStore</code> loads all metadata into memory for fast queries</li>
+<li><strong>Intended:</strong> SQL queries against database (SQLite is disk-based)</li>
+<li><strong>Impact:</strong> Potential performance regression for small datasets</li>
+<li><strong>Risk:</strong> User perception of &quot;slowdown&quot; even if imperceptible</li>
+</ul>
+<h4 id="conflict-4-embeddings-as-truth">Conflict 4: Embeddings as Truth</h4>
+<ul>
+<li><strong>Current:</strong> <code>embeddings.json</code> is loaded and directly used for search</li>
+<li><strong>Intended:</strong> Embeddings are secondary index, can be disabled</li>
+<li><strong>Impact:</strong> Search must work without embeddings</li>
+<li><strong>Risk:</strong> Current code assumes embeddings always exist</li>
+</ul>
+<h4 id="conflict-5-no-dual-truth-protection">Conflict 5: No Dual Truth Protection</h4>
+<ul>
+<li><strong>Current:</strong> Files and stores can diverge (no checksums)</li>
+<li><strong>Intended:</strong> Database tracks file checksums to detect drift</li>
+<li><strong>Impact:</strong> Need file monitoring or explicit refresh</li>
+<li><strong>Risk:</strong> Stale data in database</li>
+</ul>
+<h3 id="42-migration-risks">4.2 Migration Risks</h3>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Probability</th>
+<th>Impact</th>
+<th>Severity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Data loss during migration</td>
+<td>Medium</td>
+<td>High</td>
+<td>🔴 Critical</td>
+</tr>
+<tr>
+<td>Breaking existing integrations</td>
+<td>High</td>
+<td>High</td>
+<td>🔴 Critical</td>
+</tr>
+<tr>
+<td>Performance regression</td>
+<td>Low</td>
+<td>Medium</td>
+<td>🟡 Moderate</td>
+</tr>
+<tr>
+<td>User resistance to change</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>🟡 Moderate</td>
+</tr>
+<tr>
+<td>Incomplete migration code</td>
+<td>Medium</td>
+<td>High</td>
+<td>🟠 High</td>
+</tr>
+<tr>
+<td>SQLite corruption</td>
+<td>Low</td>
+<td>High</td>
+<td>🟠 High</td>
+</tr>
+<tr>
+<td>Scale issues (large projects)</td>
+<td>Low</td>
+<td>Medium</td>
+<td>🟡 Moderate</td>
+</tr>
+</tbody>
+</table>
+<h3 id="43-backward-compatibility">4.3 Backward Compatibility</h3>
+<p><strong>Breaking Changes Required:</strong></p>
+<ol>
+<li>❌ Default storage backend change (file → SQLite)</li>
+<li>❌ Storage path structure (folder → .db file)</li>
+<li>❌ No direct file access (apps relying on embeddings.json)</li>
+<li>❌ Configuration changes (StoreProvider API)</li>
+</ol>
+<p><strong>Mitigations:</strong></p>
+<ul>
+<li>Provide migration tool</li>
+<li>Keep file-based stores as &quot;legacy mode&quot; (deprecated)</li>
+<li>Version configuration files</li>
+<li>Extensive migration documentation</li>
+</ul>
+<hr>
+<h2 id="5-recommended-path-forward">5. Recommended Path Forward</h2>
+<h3 id="51-strategy-incremental-migration-with-hybrid-transition">5.1 Strategy: <strong>Incremental Migration with Hybrid Transition</strong></h3>
+<p><strong>Rationale:</strong></p>
+<ul>
+<li>Minimizes risk by implementing SQLite backend alongside existing file backend</li>
+<li>Allows gradual user migration</li>
+<li>Provides rollback path</li>
+<li>Enables A/B testing of performance</li>
+</ul>
+<h3 id="52-implementation-phases">5.2 Implementation Phases</h3>
+<h4 id="phase-1-sqlite-store-implementation-foundation">Phase 1: <strong>SQLite Store Implementation</strong> (Foundation)</h4>
+<p><strong>Duration:</strong> 2-3 weeks
+<strong>Effort:</strong> High</p>
+<p><strong>Tasks:</strong></p>
+<ol>
+<li>Implement <code>SqliteEmbeddingStore</code> with proper FTS5 support</li>
+<li>Implement <code>SqliteMetadataStore</code> with rich query capabilities</li>
+<li>Implement <code>SqliteChunkStore</code> for chunk management</li>
+<li>Implement <code>SqliteDocumentStore</code> orchestrator</li>
+<li>Add schema versioning (<code>ingest_version</code> field)</li>
+<li>Add file checksum tracking</li>
+</ol>
+<p><strong>Deliverables:</strong></p>
+<ul>
+<li><code>src/Core/Storage/Hazina.Store.Sqlite/</code> project</li>
+<li>Unit tests with 80%+ coverage</li>
+<li>Performance benchmarks vs file-based</li>
+</ul>
+<p><strong>Acceptance Criteria:</strong></p>
+<ul>
+<li>All <code>ITextEmbeddingStore</code>, <code>IDocumentMetadataStore</code>, <code>IChunkStore</code> interfaces implemented</li>
+<li>Passes all existing DocumentStore tests</li>
+<li>Performance within 20% of file-based for typical workloads</li>
+</ul>
+<hr>
+<h4 id="phase-2-migration-tooling-transition">Phase 2: <strong>Migration Tooling</strong> (Transition)</h4>
+<p><strong>Duration:</strong> 1-2 weeks
+<strong>Effort:</strong> Medium</p>
+<p><strong>Tasks:</strong></p>
+<ol>
+<li>Create <code>MigrationEngine</code> class
+<ul>
+<li>Reads embeddings.json, chunks.json, .metadata.json</li>
+<li>Writes to SQLite with checksums</li>
+<li>Validates data integrity</li>
+</ul>
+</li>
+<li>Create CLI migration tool (<code>hazina migrate file-to-sqlite</code>)</li>
+<li>Add rollback capability (<code>hazina migrate sqlite-to-file</code>)</li>
+<li>Create migration progress reporting</li>
+<li>Handle large datasets (streaming, batching)</li>
+</ol>
+<p><strong>Deliverables:</strong></p>
+<ul>
+<li><code>src/Tools/Migration/Hazina.Tools.Migration/</code> project</li>
+<li>CLI command <code>hazina migrate</code></li>
+<li>Migration verification tests</li>
+</ul>
+<p><strong>Acceptance Criteria:</strong></p>
+<ul>
+<li>Can migrate 10k+ documents without failures</li>
+<li>Idempotent (running twice = same result)</li>
+<li>Progress reporting and error handling</li>
+</ul>
+<hr>
+<h4 id="phase-3-hybrid-mode-coexistence">Phase 3: <strong>Hybrid Mode</strong> (Coexistence)</h4>
+<p><strong>Duration:</strong> 1 week
+<strong>Effort:</strong> Low</p>
+<p><strong>Tasks:</strong></p>
+<ol>
+<li>Update <code>StoreProvider.GetStoreSetup()</code> to support SQLite backend</li>
+<li>Add configuration option: <code>StorageBackend = &quot;file&quot; | &quot;sqlite&quot; | &quot;postgres&quot;</code></li>
+<li>Update documentation with migration guide</li>
+<li>Create sample apps using SQLite backend</li>
+</ol>
+<p><strong>Configuration Example:</strong></p>
+<pre><code class="lang-json">{
+  &quot;HazinaStore&quot;: {
+    &quot;StorageBackend&quot;: &quot;sqlite&quot;,
+    &quot;DatabasePath&quot;: &quot;./project.hazina.db&quot;,
+    &quot;EmbeddingsOptional&quot;: true
+  }
+}
+</code></pre>
+<p><strong>Deliverables:</strong></p>
+<ul>
+<li>Updated <code>StoreProvider</code> with SQLite support</li>
+<li>Configuration schema updates</li>
+<li>Migration guide documentation</li>
+</ul>
+<p><strong>Acceptance Criteria:</strong></p>
+<ul>
+<li>Users can opt-in to SQLite via config</li>
+<li>File-based remains default (no breaking changes yet)</li>
+<li>All demos work with both backends</li>
+</ul>
+<hr>
+<h4 id="phase-4-embeddings-optional-mode-graceful-degradation">Phase 4: <strong>Embeddings-Optional Mode</strong> (Graceful Degradation)</h4>
+<p><strong>Duration:</strong> 1 week
+<strong>Effort:</strong> Medium</p>
+<p><strong>Tasks:</strong></p>
+<ol>
+<li>Update <code>DocumentStore.RelevantItems()</code> to fall back to keyword search if no embeddings</li>
+<li>Add <code>EmbeddingsEnabled</code> flag to StoreSetup</li>
+<li>Update RAG engine to prefer metadata search when embeddings disabled</li>
+<li>Update UI/CLI to show &quot;embeddings disabled&quot; status</li>
+</ol>
+<p><strong>Behavior:</strong></p>
+<pre><code class="lang-csharp">// When embeddings disabled:
+var results = await store.RelevantItems(query);
+// Falls back to full-text search + metadata scoring
+// No embedding generation, no vector similarity
+</code></pre>
+<p><strong>Deliverables:</strong></p>
+<ul>
+<li>Updated <code>DocumentStore</code> with graceful degradation</li>
+<li>Tests for embeddings-disabled mode</li>
+<li>Documentation on performance implications</li>
+</ul>
+<p><strong>Acceptance Criteria:</strong></p>
+<ul>
+<li>System works without embeddings</li>
+<li>Graceful degradation with clear status messages</li>
+<li>Performance acceptable for text-only search</li>
+</ul>
+<hr>
+<h4 id="phase-5-rebuild--validation-determinism">Phase 5: <strong>Rebuild &amp; Validation</strong> (Determinism)</h4>
+<p><strong>Duration:</strong> 1 week
+<strong>Effort:</strong> Medium</p>
+<p><strong>Tasks:</strong></p>
+<ol>
+<li>Add <code>RebuildDatabaseFromSources()</code> method</li>
+<li>Track file checksums (SHA-256) in items table</li>
+<li>Detect when source files changed</li>
+<li>Implement incremental refresh (only changed files)</li>
+<li>Add validation: <code>hazina validate</code> command</li>
+</ol>
+<p><strong>Rebuild Flow:</strong></p>
+<pre><code>Source Files → Scan → Checksum Check → Update Only Changed → Rebuild Embeddings (optional)
+</code></pre>
+<p><strong>Deliverables:</strong></p>
+<ul>
+<li><code>RebuildEngine</code> class</li>
+<li>CLI command <code>hazina rebuild</code></li>
+<li>Incremental refresh logic</li>
+</ul>
+<p><strong>Acceptance Criteria:</strong></p>
+<ul>
+<li>Deterministic: same sources = same database</li>
+<li>Incremental: only re-process changed files</li>
+<li>Fast: &lt;1 min for 1000 unchanged files</li>
+</ul>
+<hr>
+<h4 id="phase-6-default-switch-breaking-change">Phase 6: <strong>Default Switch</strong> (Breaking Change)</h4>
+<p><strong>Duration:</strong> 1 week
+<strong>Effort:</strong> Low (coordination effort)</p>
+<p><strong>Tasks:</strong></p>
+<ol>
+<li>Change default <code>StorageBackend</code> to <code>&quot;sqlite&quot;</code></li>
+<li>File-based becomes <code>&quot;file-legacy&quot;</code> (deprecated)</li>
+<li>Update all sample apps and demos to SQLite</li>
+<li>Update README and getting-started guides</li>
+<li>Release as major version bump (v2.0)</li>
+</ol>
+<p><strong>Migration Path:</strong></p>
+<ul>
+<li>Users on file-based see deprecation warning</li>
+<li>Clear instructions to migrate or stay on legacy</li>
+<li>Legacy mode supported for 6 months</li>
+</ul>
+<p><strong>Deliverables:</strong></p>
+<ul>
+<li>Updated defaults in <code>StoreProvider</code></li>
+<li>Deprecation warnings</li>
+<li>v2.0 release notes</li>
+</ul>
+<p><strong>Acceptance Criteria:</strong></p>
+<ul>
+<li>All new projects use SQLite by default</li>
+<li>Clear migration path for existing projects</li>
+<li>No silent breaking changes</li>
+</ul>
+<hr>
+<h4 id="phase-7-documentation--education-continuous">Phase 7: <strong>Documentation &amp; Education</strong> (Continuous)</h4>
+<p><strong>Throughout all phases</strong></p>
+<p><strong>Tasks:</strong></p>
+<ol>
+<li>Update ARCHITECTURE.md with SQLite-first design</li>
+<li>Create migration FAQ</li>
+<li>Create video tutorial for migration</li>
+<li>Update CONTRIBUTING.md with new storage patterns</li>
+<li>Create &quot;Knowledge Storage &amp; Search Model&quot; documentation section (as specified in requirements)</li>
+</ol>
+<p><strong>Documentation Sections:</strong></p>
+<ol>
+<li><p><strong>Canonical Design Principle</strong></p>
+<ul>
+<li>SQLite as primary storage</li>
+<li>Files as source material</li>
+<li>Embeddings as secondary index</li>
+</ul>
+</li>
+<li><p><strong>Role of Metadata</strong> (first-class)</p>
+<ul>
+<li>Always in database, always queryable</li>
+<li>Agents search metadata first</li>
+<li>System works without embeddings</li>
+</ul>
+</li>
+<li><p><strong>Role of Embeddings</strong> (secondary)</p>
+<ul>
+<li>Optional, replaceable, degradable</li>
+<li>Multiple models per item</li>
+<li>Rebuildable from source</li>
+</ul>
+</li>
+<li><p><strong>Agent-First Search Flow</strong></p>
+<ul>
+<li>Metadata filtering (SQL)</li>
+<li>Optional embedding search</li>
+<li>Agent-side ranking</li>
+</ul>
+</li>
+<li><p><strong>SQLite Knowledge Database</strong> (conceptual)</p>
+<ul>
+<li>Schema overview</li>
+<li>Query patterns</li>
+<li>Indexing strategy</li>
+</ul>
+</li>
+<li><p><strong>Why This Matters</strong></p>
+<ul>
+<li>Scalability</li>
+<li>Reproducibility</li>
+<li>Agent-centric design</li>
+<li>Model independence</li>
+</ul>
+</li>
+</ol>
+<p><strong>Deliverables:</strong></p>
+<ul>
+<li>Updated documentation in <code>docs/</code></li>
+<li>Blog post: &quot;Why We Moved to SQLite&quot;</li>
+<li>Tutorial videos</li>
+<li>Migration guide with examples</li>
+</ul>
+<hr>
+<h3 id="53-alternative-strategies-not-recommended">5.3 Alternative Strategies (Not Recommended)</h3>
+<h4 id="alternative-1-clean-break-big-bang-migration">Alternative 1: <strong>Clean Break (Big Bang Migration)</strong></h4>
+<p>❌ <strong>Not Recommended</strong></p>
+<ul>
+<li>Implement SQLite, remove file backend in single release</li>
+<li><strong>Pros:</strong> Clean, no legacy code</li>
+<li><strong>Cons:</strong> High risk, alienates users, hard to rollback</li>
+</ul>
+<h4 id="alternative-2-keep-multi-backend-forever">Alternative 2: <strong>Keep Multi-Backend Forever</strong></h4>
+<p>❌ <strong>Not Recommended</strong></p>
+<ul>
+<li>Add SQLite as 4th backend option, keep all backends</li>
+<li><strong>Pros:</strong> No breaking changes, maximum flexibility</li>
+<li><strong>Cons:</strong> Maintenance burden, no single source of truth, architectural confusion</li>
+</ul>
+<h4 id="alternative-3-hybrid-forever-supabase-style">Alternative 3: <strong>Hybrid Forever (Supabase-style)</strong></h4>
+<p>🟡 <strong>Consider if...</strong></p>
+<ul>
+<li>File for source docs, SQLite for embeddings/metadata only</li>
+<li><strong>Pros:</strong> Leverages existing file scanning</li>
+<li><strong>Cons:</strong> Dual truth remains, complexity</li>
+</ul>
+<hr>
+<h2 id="6-impact-analysis">6. Impact Analysis</h2>
+<h3 id="61-performance-implications">6.1 Performance Implications</h3>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>File-based</th>
+<th>SQLite</th>
+<th>Expected Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Metadata query (small dataset)</strong></td>
+<td>Very fast (in-memory)</td>
+<td>Fast (indexed)</td>
+<td>-10% to +5%</td>
+</tr>
+<tr>
+<td><strong>Metadata query (large dataset)</strong></td>
+<td>Slow (load all into memory)</td>
+<td>Fast (SQL query)</td>
+<td>+500% to +2000%</td>
+</tr>
+<tr>
+<td><strong>Embedding search</strong></td>
+<td>Fast (in-memory)</td>
+<td>Fast (FTS5 + vector)</td>
+<td>±10%</td>
+</tr>
+<tr>
+<td><strong>Document ingest</strong></td>
+<td>Fast (JSON write)</td>
+<td>Medium (SQL insert)</td>
+<td>-20% to -30%</td>
+</tr>
+<tr>
+<td><strong>Startup time (small dataset)</strong></td>
+<td>Fast</td>
+<td>Very fast</td>
+<td>+50% (no index rebuild)</td>
+</tr>
+<tr>
+<td><strong>Startup time (large dataset)</strong></td>
+<td>Very slow (load all)</td>
+<td>Very fast</td>
+<td>+10x to +100x</td>
+</tr>
+<tr>
+<td><strong>Disk usage</strong></td>
+<td>Moderate</td>
+<td>Lower (compression)</td>
+<td>-20% to -40%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key Insights:</strong></p>
+<ul>
+<li>SQLite wins for large datasets (&gt;10k documents)</li>
+<li>File-based wins for small datasets (&lt;1k documents) on simple queries</li>
+<li>SQLite eliminates &quot;load all into memory&quot; bottleneck</li>
+</ul>
+<h3 id="62-developer-experience">6.2 Developer Experience</h3>
+<p><strong>Current (File-based):</strong></p>
+<pre><code class="lang-csharp">// Setup
+var setup = StoreProvider.GetStoreSetup(folder, apiKey);
+// Works, but folder structure hidden
+</code></pre>
+<p><strong>Intended (SQLite):</strong></p>
+<pre><code class="lang-csharp">// Setup
+var setup = StoreProvider.GetStoreSetup(config);
+// config.StorageBackend = &quot;sqlite&quot;
+// config.DatabasePath = &quot;./project.hazina.db&quot;
+// Single file, explicit, portable
+</code></pre>
+<p><strong>Improvements:</strong></p>
+<ul>
+<li>✅ Single database file = easy to backup, copy, share</li>
+<li>✅ SQL queries for advanced users</li>
+<li>✅ Standard tooling (DB Browser for SQLite)</li>
+<li>✅ Better for version control (single file vs folder)</li>
+</ul>
+<hr>
+<h2 id="7-open-questions-for-human-confirmation">7. Open Questions for Human Confirmation</h2>
+<p>Before proceeding with implementation, the following decisions require human input:</p>
+<h3 id="question-1-migration-timeline">Question 1: Migration Timeline</h3>
+<p><strong>Options:</strong></p>
+<ul>
+<li>A) Aggressive: Switch default in 3 months (risk: user disruption)</li>
+<li>B) Moderate: Switch default in 6 months (balanced)</li>
+<li>C) Conservative: Switch default in 12 months (safe)</li>
+</ul>
+<p><strong>Recommendation:</strong> B (6 months)</p>
+<h3 id="question-2-file-based-legacy-support">Question 2: File-based Legacy Support</h3>
+<p><strong>Options:</strong></p>
+<ul>
+<li>A) Deprecate immediately, remove in 6 months</li>
+<li>B) Deprecate immediately, keep indefinitely (maintenance burden)</li>
+<li>C) No deprecation, keep both forever (architectural confusion)</li>
+</ul>
+<p><strong>Recommendation:</strong> A (deprecate + remove)</p>
+<h3 id="question-3-breaking-changes-acceptable">Question 3: Breaking Changes Acceptable?</h3>
+<p><strong>Options:</strong></p>
+<ul>
+<li>A) Yes, bump to v2.0 and require migration</li>
+<li>B) No, maintain full backward compatibility forever</li>
+<li>C) Hybrid: Opt-in SQLite for now, force later</li>
+</ul>
+<p><strong>Recommendation:</strong> A (v2.0 with migration)</p>
+<h3 id="question-4-supabasepostgresql-integration">Question 4: Supabase/PostgreSQL Integration</h3>
+<p><strong>Options:</strong></p>
+<ul>
+<li>A) Keep Supabase backend as alternative to SQLite</li>
+<li>B) Deprecate Supabase, SQLite only</li>
+<li>C) Keep Supabase for cloud, SQLite for local</li>
+</ul>
+<p><strong>Recommendation:</strong> C (both, different use cases)</p>
+<h3 id="question-5-embedding-storage-strategy">Question 5: Embedding Storage Strategy</h3>
+<p><strong>Options:</strong></p>
+<ul>
+<li>A) Store embeddings as BLOB in SQLite</li>
+<li>B) Store embeddings in separate vector database (e.g., Qdrant)</li>
+<li>C) Hybrid: SQLite for metadata, Qdrant for vectors</li>
+</ul>
+<p><strong>Recommendation:</strong> A for simplicity, document option C for scale</p>
+<hr>
+<h2 id="8-next-steps-awaiting-approval">8. Next Steps (Awaiting Approval)</h2>
+<p><strong>Immediate actions required:</strong></p>
+<ol>
+<li>✅ Review this analysis document</li>
+<li>⏳ Answer open questions above</li>
+<li>⏳ Approve recommended strategy (incremental migration)</li>
+<li>⏳ Prioritize phases (which to start first)</li>
+</ol>
+<p><strong>Proposed next action after approval:</strong></p>
+<ul>
+<li>Begin <strong>Phase 1: SQLite Store Implementation</strong></li>
+<li>Create <code>src/Core/Storage/Hazina.Store.Sqlite/</code> project</li>
+<li>Implement core interfaces with FTS5 support</li>
+<li>Target completion: 2-3 weeks</li>
+</ul>
+<p><strong>Blocking issues:</strong></p>
+<ul>
+<li>None currently. Ready to proceed upon approval.</li>
+</ul>
+<hr>
+<h2 id="9-references">9. References</h2>
+<p><strong>Files Analyzed:</strong></p>
+<ul>
+<li><code>src/Core/Storage/Hazina.Store.EmbeddingStore/</code> (22 files)</li>
+<li><code>src/Core/Storage/Hazina.Store.DocumentStore/</code> (43 files)</li>
+<li><code>src/Core/AI/Hazina.AI.RAG/Core/RAGEngine.cs</code></li>
+<li><code>src/Core/AI/Hazina.AI.Agents/Core/Agent.cs</code></li>
+<li><code>src/Tools/Foundation/Hazina.Tools.Data/StoreProvider.cs</code></li>
+<li><code>docs/ARCHITECTURE.md</code></li>
+<li><code>CLAUDE.md</code></li>
+</ul>
+<p><strong>Key Code Locations:</strong></p>
+<ul>
+<li>Obsolete SQLite store: <code>Hazina.Store.EmbeddingStore/Stores/Database/SqliteTextEmbeddingStore.cs:9</code></li>
+<li>File-based default: <code>Hazina.Tools.Data/StoreProvider.cs:11</code></li>
+<li>Metadata-first search: <code>Hazina.AI.RAG/Core/RAGEngine.cs:108-112</code></li>
+<li>In-memory index: <code>Hazina.Store.DocumentStore/Stores/File/QueryableMetadataFileStore.cs:19</code></li>
+</ul>
+<p><strong>Architectural Principles:</strong></p>
+<ul>
+<li>Agent-first: Agents use abstractions, not direct file access</li>
+<li>Metadata-first: RAG already supports metadata-only search</li>
+<li>Optional embeddings: Partially implemented, needs extension</li>
+<li>Single source of truth: <strong>Primary gap to address</strong></li>
+</ul>
+<hr>
+<h2 id="10-conclusion">10. Conclusion</h2>
+<p>Hazina's current file-based architecture is flexible and well-abstracted, but lacks a single source of truth and rebuildability guarantees. The proposed migration to SQLite as the primary knowledge layer aligns with the agent-first vision and provides:</p>
+<ol>
+<li><strong>Scalability:</strong> Better performance for large datasets</li>
+<li><strong>Reproducibility:</strong> Checksums and versioning for deterministic rebuilds</li>
+<li><strong>Simplicity:</strong> Single database file vs distributed JSON files</li>
+<li><strong>Agent-centric:</strong> Metadata-first queries, optional embeddings</li>
+</ol>
+<p><strong>Recommended approach:</strong> Incremental migration over 6-12 months with hybrid mode, allowing users to opt-in to SQLite while maintaining file-based legacy support temporarily.</p>
+<p><strong>Critical success factors:</strong></p>
+<ul>
+<li>Robust migration tooling with validation</li>
+<li>Clear documentation and migration guides</li>
+<li>Performance parity or improvement for common use cases</li>
+<li>Zero data loss guarantee</li>
+</ul>
+<p><strong>Risk mitigation:</strong></p>
+<ul>
+<li>Phase 3 (Hybrid Mode) provides safety net</li>
+<li>Rollback capability in migration tooling</li>
+<li>Extensive testing before default switch</li>
+<li>User communication and education</li>
+</ul>
+<hr>
+<p><strong>Status:</strong> ✅ Analysis Complete - Awaiting Human Approval to Proceed</p>
+<p><strong>Next Review Date:</strong> Upon stakeholder feedback</p>
+<p><strong>Document Version:</strong> 1.0
+<strong>Last Updated:</strong> 2026-01-06</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

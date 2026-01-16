@@ -1,0 +1,1001 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Proactive Agent Implementation Plan | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Proactive Agent Implementation Plan | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="proactive-agent-implementation-plan">Proactive Agent Implementation Plan</h1>
+
+<p><strong>Date</strong>: 2026-01-13
+<strong>Companion to</strong>: PROACTIVE_AGENT_ANALYSIS.md
+<strong>Purpose</strong>: Concrete implementation guidance for each proactive function</p>
+<hr>
+<h2 id="quick-reference">Quick Reference</h2>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Priority</th>
+<th>Files to Create</th>
+<th>Est. Hours</th>
+<th>Prerequisites</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PermissionGuard</td>
+<td>P1-Critical</td>
+<td>12 files</td>
+<td>80h (2 weeks)</td>
+<td>None</td>
+</tr>
+<tr>
+<td>TaskScheduler</td>
+<td>P1-High</td>
+<td>10 files</td>
+<td>80h (2 weeks)</td>
+<td>None</td>
+</tr>
+<tr>
+<td>TriggerSystem</td>
+<td>P2-Medium</td>
+<td>6 files</td>
+<td>40h (1 week)</td>
+<td>EvaluationPipeline</td>
+</tr>
+<tr>
+<td>SuggestionBus</td>
+<td>P2-Medium</td>
+<td>8 files</td>
+<td>40h (1 week)</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Context Prediction</td>
+<td>P2-Medium</td>
+<td>4 files</td>
+<td>40h (1 week)</td>
+<td>SmartContextBuilder</td>
+</tr>
+<tr>
+<td>RAG Prefetching</td>
+<td>P2-Medium</td>
+<td>5 files</td>
+<td>40h (1 week)</td>
+<td>RAGEngine</td>
+</tr>
+<tr>
+<td>ObserverEngine</td>
+<td>P3-Low</td>
+<td>10 files</td>
+<td>80h (2 weeks)</td>
+<td>None</td>
+</tr>
+<tr>
+<td>PredictiveModel</td>
+<td>P3-Low</td>
+<td>8 files</td>
+<td>120h (3 weeks)</td>
+<td>ObserverEngine</td>
+</tr>
+<tr>
+<td>Task Generation</td>
+<td>P3-Low</td>
+<td>6 files</td>
+<td>80h (2 weeks)</td>
+<td>CodeGeneration</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="phase-1-safety--infrastructure">Phase 1: Safety &amp; Infrastructure</h2>
+<h3 id="1-permissionguard-p1-critical">1. PermissionGuard (P1-CRITICAL)</h3>
+<h4 id="file-structure">File Structure</h4>
+<pre><code>src/Core/Security/Hazina.Security.Permissions/
+├── Core/
+│   ├── IPermissionGuard.cs
+│   ├── PermissionGuard.cs
+│   └── PermissionLevel.cs
+├── Models/
+│   ├── PermissionRequest.cs
+│   ├── PermissionResult.cs
+│   ├── ActionContext.cs
+│   └── SafetyRules.cs
+├── Storage/
+│   ├── IPermissionStore.cs
+│   └── SQLitePermissionStore.cs
+├── Policies/
+│   ├── IPermissionPolicy.cs
+│   ├── DefaultPermissionPolicy.cs
+│   └── FileSystemPolicy.cs
+├── Audit/
+│   ├── IPermissionAuditor.cs
+│   └── PermissionAuditor.cs
+└── Hazina.Security.Permissions.csproj
+</code></pre>
+<h4 id="implementation-steps">Implementation Steps</h4>
+<p><strong>Step 1: Create Core Interface</strong> (<code>IPermissionGuard.cs</code>)</p>
+<pre><code class="lang-csharp">namespace Hazina.Security.Permissions.Core;
+
+public interface IPermissionGuard
+{
+    /// &lt;summary&gt;
+    /// Check if an action is permitted for the given user/agent
+    /// &lt;/summary&gt;
+    Task&lt;PermissionResult&gt; CheckPermissionAsync(
+        string userId,
+        PermissionRequest request,
+        CancellationToken ct = default);
+
+    /// &lt;summary&gt;
+    /// Validate action safety against configured rules
+    /// &lt;/summary&gt;
+    Task&lt;bool&gt; IsActionSafeAsync(
+        ActionContext action,
+        SafetyRules rules,
+        CancellationToken ct = default);
+
+    /// &lt;summary&gt;
+    /// Register a custom permission policy
+    /// &lt;/summary&gt;
+    void RegisterPolicy(IPermissionPolicy policy);
+}
+
+public enum PermissionLevel
+{
+    None = 0,
+    Read = 1,        // Read files, query data
+    Write = 2,       // Write files, modify data
+    Execute = 3,     // Run commands, call APIs
+    Admin = 4        // Delete, system changes
+}
+</code></pre>
+<p><strong>Step 2: Create Models</strong> (<code>PermissionRequest.cs</code>)</p>
+<pre><code class="lang-csharp">namespace Hazina.Security.Permissions.Models;
+
+public record PermissionRequest
+{
+    public required string Action { get; init; }
+    public required PermissionLevel RequiredLevel { get; init; }
+    public Dictionary&lt;string, object&gt; Parameters { get; init; } = new();
+    public string? ResourcePath { get; init; }
+}
+
+public record PermissionResult
+{
+    public bool Allowed { get; init; }
+    public string? Reason { get; init; }
+    public PermissionLevel GrantedLevel { get; init; }
+    public Dictionary&lt;string, object&gt; Metadata { get; init; } = new();
+}
+
+public record ActionContext
+{
+    public required string ActionName { get; init; }
+    public required string ToolName { get; init; }
+    public Dictionary&lt;string, object&gt; Parameters { get; init; } = new();
+    public string? UserId { get; init; }
+    public string? AgentId { get; init; }
+}
+
+public record SafetyRules
+{
+    public List&lt;string&gt; BlockedActions { get; init; } = new();
+    public List&lt;string&gt; AllowedPaths { get; init; } = new();
+    public bool RequireApprovalForDelete { get; init; } = true;
+    public bool AllowNetworkCalls { get; init; } = false;
+    public int MaxFileSize { get; init; } = 10_000_000; // 10MB
+}
+</code></pre>
+<p><strong>Step 3: Implement Permission Guard</strong> (<code>PermissionGuard.cs</code>)</p>
+<pre><code class="lang-csharp">namespace Hazina.Security.Permissions.Core;
+
+using Microsoft.Extensions.Logging;
+using Hazina.Security.Permissions.Models;
+using Hazina.Security.Permissions.Policies;
+using Hazina.Security.Permissions.Storage;
+using Hazina.Security.Permissions.Audit;
+
+public class PermissionGuard : IPermissionGuard
+{
+    private readonly IPermissionStore _store;
+    private readonly IPermissionAuditor _auditor;
+    private readonly ILogger&lt;PermissionGuard&gt; _logger;
+    private readonly List&lt;IPermissionPolicy&gt; _policies = new();
+
+    public PermissionGuard(
+        IPermissionStore store,
+        IPermissionAuditor auditor,
+        ILogger&lt;PermissionGuard&gt; logger)
+    {
+        _store = store;
+        _auditor = auditor;
+        _logger = logger;
+
+        // Register default policies
+        RegisterPolicy(new DefaultPermissionPolicy());
+        RegisterPolicy(new FileSystemPolicy());
+    }
+
+    public async Task&lt;PermissionResult&gt; CheckPermissionAsync(
+        string userId,
+        PermissionRequest request,
+        CancellationToken ct = default)
+    {
+        _logger.LogInformation(
+            &quot;Checking permission for user {UserId}, action {Action}&quot;,
+            userId, request.Action);
+
+        // 1. Check user's permission level
+        var userPermissions = await _store.GetUserPermissionsAsync(userId, ct);
+        if (userPermissions.Level &lt; request.RequiredLevel)
+        {
+            var result = new PermissionResult
+            {
+                Allowed = false,
+                Reason = $&quot;User level {userPermissions.Level} &lt; required {request.RequiredLevel}&quot;,
+                GrantedLevel = userPermissions.Level
+            };
+
+            await _auditor.LogDenialAsync(userId, request, result.Reason, ct);
+            return result;
+        }
+
+        // 2. Check policies
+        foreach (var policy in _policies)
+        {
+            if (!await policy.CheckAsync(userId, request, ct))
+            {
+                var result = new PermissionResult
+                {
+                    Allowed = false,
+                    Reason = $&quot;Blocked by policy: {policy.GetType().Name}&quot;,
+                    GrantedLevel = userPermissions.Level
+                };
+
+                await _auditor.LogDenialAsync(userId, request, result.Reason, ct);
+                return result;
+            }
+        }
+
+        // 3. Permission granted
+        await _auditor.LogApprovalAsync(userId, request, ct);
+        return new PermissionResult
+        {
+            Allowed = true,
+            GrantedLevel = userPermissions.Level
+        };
+    }
+
+    public async Task&lt;bool&gt; IsActionSafeAsync(
+        ActionContext action,
+        SafetyRules rules,
+        CancellationToken ct = default)
+    {
+        // Check if action is explicitly blocked
+        if (rules.BlockedActions.Contains(action.ActionName))
+        {
+            _logger.LogWarning(&quot;Action {Action} is blocked by safety rules&quot;, action.ActionName);
+            return false;
+        }
+
+        // Check file system access
+        if (action.Parameters.TryGetValue(&quot;path&quot;, out var pathObj) &amp;&amp; pathObj is string path)
+        {
+            if (!IsPathAllowed(path, rules.AllowedPaths))
+            {
+                _logger.LogWarning(&quot;Path {Path} is not in allowed paths&quot;, path);
+                return false;
+            }
+        }
+
+        // Check for delete operations
+        if (action.ActionName.Contains(&quot;delete&quot;, StringComparison.OrdinalIgnoreCase))
+        {
+            if (rules.RequireApprovalForDelete)
+            {
+                _logger.LogWarning(&quot;Delete action requires explicit approval&quot;);
+                return false;
+            }
+        }
+
+        // All checks passed
+        return true;
+    }
+
+    public void RegisterPolicy(IPermissionPolicy policy)
+    {
+        _policies.Add(policy);
+        _logger.LogInformation(&quot;Registered permission policy: {Policy}&quot;, policy.GetType().Name);
+    }
+
+    private bool IsPathAllowed(string path, List&lt;string&gt; allowedPaths)
+    {
+        if (allowedPaths.Count == 0)
+            return true; // No restrictions
+
+        var normalizedPath = Path.GetFullPath(path);
+        return allowedPaths.Any(allowed =&gt;
+            normalizedPath.StartsWith(Path.GetFullPath(allowed), StringComparison.OrdinalIgnoreCase));
+    }
+}
+</code></pre>
+<p><strong>Step 4: Create Storage</strong> (<code>SQLitePermissionStore.cs</code>)</p>
+<pre><code class="lang-csharp">namespace Hazina.Security.Permissions.Storage;
+
+using Microsoft.Data.Sqlite;
+using Hazina.Security.Permissions.Models;
+
+public interface IPermissionStore
+{
+    Task&lt;UserPermissions&gt; GetUserPermissionsAsync(string userId, CancellationToken ct = default);
+    Task SetUserPermissionsAsync(string userId, PermissionLevel level, CancellationToken ct = default);
+}
+
+public record UserPermissions(string UserId, PermissionLevel Level);
+
+public class SQLitePermissionStore : IPermissionStore
+{
+    private readonly string _connectionString;
+
+    public SQLitePermissionStore(string dbPath)
+    {
+        _connectionString = $&quot;Data Source={dbPath}&quot;;
+        InitializeDatabase();
+    }
+
+    private void InitializeDatabase()
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        var cmd = conn.CreateCommand();
+        cmd.CommandText = @&quot;
+            CREATE TABLE IF NOT EXISTS user_permissions (
+                user_id TEXT PRIMARY KEY,
+                permission_level INTEGER NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+        &quot;;
+        cmd.ExecuteNonQuery();
+    }
+
+    public async Task&lt;UserPermissions&gt; GetUserPermissionsAsync(string userId, CancellationToken ct = default)
+    {
+        await using var conn = new SqliteConnection(_connectionString);
+        await conn.OpenAsync(ct);
+
+        var cmd = conn.CreateCommand();
+        cmd.CommandText = &quot;SELECT permission_level FROM user_permissions WHERE user_id = @userId&quot;;
+        cmd.Parameters.AddWithValue(&quot;@userId&quot;, userId);
+
+        var level = await cmd.ExecuteScalarAsync(ct);
+        if (level == null)
+        {
+            // Default: Read-only for new users
+            return new UserPermissions(userId, PermissionLevel.Read);
+        }
+
+        return new UserPermissions(userId, (PermissionLevel)(long)level);
+    }
+
+    public async Task SetUserPermissionsAsync(string userId, PermissionLevel level, CancellationToken ct = default)
+    {
+        await using var conn = new SqliteConnection(_connectionString);
+        await conn.OpenAsync(ct);
+
+        var cmd = conn.CreateCommand();
+        cmd.CommandText = @&quot;
+            INSERT OR REPLACE INTO user_permissions (user_id, permission_level, created_at, updated_at)
+            VALUES (@userId, @level, @now, @now)
+        &quot;;
+        cmd.Parameters.AddWithValue(&quot;@userId&quot;, userId);
+        cmd.Parameters.AddWithValue(&quot;@level&quot;, (int)level);
+        cmd.Parameters.AddWithValue(&quot;@now&quot;, DateTime.UtcNow.ToString(&quot;O&quot;));
+
+        await cmd.ExecuteNonQueryAsync(ct);
+    }
+}
+</code></pre>
+<p><strong>Step 5: Integration with Tools</strong></p>
+<p>Update all existing tool contexts to check permissions:</p>
+<pre><code class="lang-csharp">// Example: In StoreToolsContext.cs or similar
+public abstract class SecureToolsContext : IToolsContext
+{
+    private readonly IPermissionGuard _permissionGuard;
+    private readonly string _userId;
+
+    protected SecureToolsContext(IPermissionGuard permissionGuard, string userId)
+    {
+        _permissionGuard = permissionGuard;
+        _userId = userId;
+    }
+
+    protected async Task&lt;bool&gt; CheckPermissionAsync(
+        string action,
+        PermissionLevel requiredLevel,
+        Dictionary&lt;string, object&gt;? parameters = null)
+    {
+        var request = new PermissionRequest
+        {
+            Action = action,
+            RequiredLevel = requiredLevel,
+            Parameters = parameters ?? new()
+        };
+
+        var result = await _permissionGuard.CheckPermissionAsync(_userId, request);
+
+        if (!result.Allowed)
+        {
+            throw new UnauthorizedAccessException($&quot;Permission denied: {result.Reason}&quot;);
+        }
+
+        return true;
+    }
+
+    // Example tool with permission check
+    public async Task&lt;string&gt; WriteFileAsync(string path, string content)
+    {
+        await CheckPermissionAsync(&quot;write_file&quot;, PermissionLevel.Write, new()
+        {
+            [&quot;path&quot;] = path
+        });
+
+        // Actual file write logic
+        await File.WriteAllTextAsync(path, content);
+        return $&quot;File written: {path}&quot;;
+    }
+}
+</code></pre>
+<h4 id="testing-strategy">Testing Strategy</h4>
+<pre><code class="lang-csharp">// tests/Hazina.Security.Permissions.Tests/PermissionGuardTests.cs
+public class PermissionGuardTests
+{
+    [Fact]
+    public async Task CheckPermission_UserHasRequiredLevel_ReturnsAllowed()
+    {
+        // Arrange
+        var store = new InMemoryPermissionStore();
+        await store.SetUserPermissionsAsync(&quot;user1&quot;, PermissionLevel.Write);
+
+        var guard = new PermissionGuard(store, new NullAuditor(), NullLogger&lt;PermissionGuard&gt;.Instance);
+
+        // Act
+        var result = await guard.CheckPermissionAsync(&quot;user1&quot;, new PermissionRequest
+        {
+            Action = &quot;write_file&quot;,
+            RequiredLevel = PermissionLevel.Write
+        });
+
+        // Assert
+        Assert.True(result.Allowed);
+    }
+
+    [Fact]
+    public async Task CheckPermission_UserLacksRequiredLevel_ReturnsDenied()
+    {
+        // Arrange
+        var store = new InMemoryPermissionStore();
+        await store.SetUserPermissionsAsync(&quot;user1&quot;, PermissionLevel.Read);
+
+        var guard = new PermissionGuard(store, new NullAuditor(), NullLogger&lt;PermissionGuard&gt;.Instance);
+
+        // Act
+        var result = await guard.CheckPermissionAsync(&quot;user1&quot;, new PermissionRequest
+        {
+            Action = &quot;execute_command&quot;,
+            RequiredLevel = PermissionLevel.Execute
+        });
+
+        // Assert
+        Assert.False(result.Allowed);
+        Assert.Contains(&quot;required Execute&quot;, result.Reason);
+    }
+
+    [Fact]
+    public async Task IsActionSafe_BlockedAction_ReturnsFalse()
+    {
+        // Arrange
+        var guard = new PermissionGuard(...);
+        var rules = new SafetyRules
+        {
+            BlockedActions = new() { &quot;delete_database&quot; }
+        };
+
+        // Act
+        var result = await guard.IsActionSafeAsync(new ActionContext
+        {
+            ActionName = &quot;delete_database&quot;,
+            ToolName = &quot;DatabaseTool&quot;
+        }, rules);
+
+        // Assert
+        Assert.False(result);
+    }
+}
+</code></pre>
+<hr>
+<h3 id="2-taskscheduler-p1-high">2. TaskScheduler (P1-High)</h3>
+<h4 id="file-structure-1">File Structure</h4>
+<pre><code>src/Core/Scheduling/Hazina.TaskScheduling/
+├── Core/
+│   ├── ITaskScheduler.cs
+│   ├── TaskScheduler.cs
+│   └── TaskStatus.cs
+├── Models/
+│   ├── ScheduledTask.cs
+│   ├── TaskResult.cs
+│   └── TaskOptions.cs
+├── Storage/
+│   ├── ITaskStore.cs
+│   └── SQLiteTaskStore.cs
+├── Workers/
+│   ├── BackgroundTaskWorker.cs
+│   └── TaskExecutor.cs
+└── Hazina.TaskScheduling.csproj
+</code></pre>
+<h4 id="implementation-steps-1">Implementation Steps</h4>
+<p><strong>Step 1: Create Interface</strong> (<code>ITaskScheduler.cs</code>)</p>
+<pre><code class="lang-csharp">namespace Hazina.TaskScheduling.Core;
+
+public interface ITaskScheduler
+{
+    /// &lt;summary&gt;
+    /// Schedule a task for execution
+    /// &lt;/summary&gt;
+    Task&lt;Guid&gt; ScheduleAsync(ScheduledTask task, CancellationToken ct = default);
+
+    /// &lt;summary&gt;
+    /// Get task status
+    /// &lt;/summary&gt;
+    Task&lt;TaskStatus&gt; GetStatusAsync(Guid taskId, CancellationToken ct = default);
+
+    /// &lt;summary&gt;
+    /// Cancel a pending task
+    /// &lt;/summary&gt;
+    Task CancelAsync(Guid taskId, CancellationToken ct = default);
+
+    /// &lt;summary&gt;
+    /// Get task result (waits if not complete)
+    /// &lt;/summary&gt;
+    Task&lt;TaskResult&gt; GetResultAsync(Guid taskId, TimeSpan? timeout = null, CancellationToken ct = default);
+}
+
+public enum TaskStatus
+{
+    Pending,
+    Running,
+    Completed,
+    Failed,
+    Cancelled
+}
+</code></pre>
+<p><strong>Step 2: Create Models</strong> (<code>ScheduledTask.cs</code>)</p>
+<pre><code class="lang-csharp">namespace Hazina.TaskScheduling.Models;
+
+public record ScheduledTask
+{
+    public required string Name { get; init; }
+    public required Func&lt;CancellationToken, Task&lt;object&gt;&gt; ExecuteAsync { get; init; }
+    public TaskOptions Options { get; init; } = new();
+}
+
+public record TaskOptions
+{
+    public TaskPriority Priority { get; init; } = TaskPriority.Normal;
+    public DateTime? ScheduledTime { get; init; }  // Null = immediate
+    public TimeSpan? Timeout { get; init; }
+    public int MaxRetries { get; init; } = 0;
+    public TimeSpan? RetryDelay { get; init; }
+}
+
+public enum TaskPriority
+{
+    Low = 0,
+    Normal = 1,
+    High = 2,
+    Critical = 3
+}
+
+public record TaskResult
+{
+    public Guid TaskId { get; init; }
+    public TaskStatus Status { get; init; }
+    public object? Result { get; init; }
+    public Exception? Error { get; init; }
+    public DateTime StartTime { get; init; }
+    public DateTime? EndTime { get; init; }
+}
+</code></pre>
+<p><strong>Step 3: Implement Scheduler</strong> (<code>TaskScheduler.cs</code>)</p>
+<pre><code class="lang-csharp">namespace Hazina.TaskScheduling.Core;
+
+using System.Collections.Concurrent;
+using Hazina.TaskScheduling.Models;
+using Hazina.TaskScheduling.Storage;
+
+public class TaskScheduler : ITaskScheduler
+{
+    private readonly ITaskStore _store;
+    private readonly ConcurrentDictionary&lt;Guid, TaskCompletionSource&lt;TaskResult&gt;&gt; _pendingTasks = new();
+
+    public TaskScheduler(ITaskStore store)
+    {
+        _store = store;
+    }
+
+    public async Task&lt;Guid&gt; ScheduleAsync(ScheduledTask task, CancellationToken ct = default)
+    {
+        var taskId = Guid.NewGuid();
+        var tcs = new TaskCompletionSource&lt;TaskResult&gt;();
+        _pendingTasks[taskId] = tcs;
+
+        // Store task metadata
+        await _store.CreateTaskAsync(taskId, task.Name, task.Options, ct);
+
+        // Queue for execution (BackgroundTaskWorker will pick it up)
+        _ = Task.Run(async () =&gt;
+        {
+            try
+            {
+                // Wait if scheduled for future
+                if (task.Options.ScheduledTime.HasValue)
+                {
+                    var delay = task.Options.ScheduledTime.Value - DateTime.UtcNow;
+                    if (delay &gt; TimeSpan.Zero)
+                    {
+                        await Task.Delay(delay, ct);
+                    }
+                }
+
+                await _store.UpdateStatusAsync(taskId, TaskStatus.Running, ct);
+
+                // Execute task
+                var result = await ExecuteWithRetryAsync(taskId, task, ct);
+
+                await _store.UpdateStatusAsync(taskId, TaskStatus.Completed, ct);
+                await _store.StoreResultAsync(taskId, result, ct);
+
+                tcs.SetResult(new TaskResult
+                {
+                    TaskId = taskId,
+                    Status = TaskStatus.Completed,
+                    Result = result,
+                    EndTime = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                await _store.UpdateStatusAsync(taskId, TaskStatus.Failed, ct);
+                await _store.StoreErrorAsync(taskId, ex, ct);
+
+                tcs.SetResult(new TaskResult
+                {
+                    TaskId = taskId,
+                    Status = TaskStatus.Failed,
+                    Error = ex,
+                    EndTime = DateTime.UtcNow
+                });
+            }
+            finally
+            {
+                _pendingTasks.TryRemove(taskId, out _);
+            }
+        }, ct);
+
+        return taskId;
+    }
+
+    private async Task&lt;object&gt; ExecuteWithRetryAsync(
+        Guid taskId,
+        ScheduledTask task,
+        CancellationToken ct)
+    {
+        var attempts = 0;
+        Exception? lastError = null;
+
+        while (attempts &lt;= task.Options.MaxRetries)
+        {
+            try
+            {
+                using var timeoutCts = task.Options.Timeout.HasValue
+                    ? new CancellationTokenSource(task.Options.Timeout.Value)
+                    : new CancellationTokenSource();
+
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+
+                return await task.ExecuteAsync(linkedCts.Token);
+            }
+            catch (Exception ex)
+            {
+                lastError = ex;
+                attempts++;
+
+                if (attempts &lt;= task.Options.MaxRetries &amp;&amp; task.Options.RetryDelay.HasValue)
+                {
+                    await Task.Delay(task.Options.RetryDelay.Value, ct);
+                }
+            }
+        }
+
+        throw lastError!;
+    }
+
+    public async Task&lt;TaskStatus&gt; GetStatusAsync(Guid taskId, CancellationToken ct = default)
+    {
+        return await _store.GetStatusAsync(taskId, ct);
+    }
+
+    public async Task CancelAsync(Guid taskId, CancellationToken ct = default)
+    {
+        await _store.UpdateStatusAsync(taskId, TaskStatus.Cancelled, ct);
+
+        if (_pendingTasks.TryRemove(taskId, out var tcs))
+        {
+            tcs.SetCanceled(ct);
+        }
+    }
+
+    public async Task&lt;TaskResult&gt; GetResultAsync(Guid taskId, TimeSpan? timeout = null, CancellationToken ct = default)
+    {
+        if (_pendingTasks.TryGetValue(taskId, out var tcs))
+        {
+            // Task is running, wait for completion
+            if (timeout.HasValue)
+            {
+                using var cts = new CancellationTokenSource(timeout.Value);
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, cts.Token);
+
+                return await tcs.Task.WaitAsync(linkedCts.Token);
+            }
+
+            return await tcs.Task;
+        }
+
+        // Task already complete, fetch from store
+        return await _store.GetResultAsync(taskId, ct);
+    }
+}
+</code></pre>
+<p><strong>Step 4: Integration Example - Brain Module</strong></p>
+<pre><code class="lang-csharp">// Update Brain/Services/MemoryModule.cs
+
+public class MemoryModule : IMemoryModule
+{
+    private readonly ITaskScheduler _taskScheduler;
+    // ... other fields
+
+    public async Task ObserveAsync(ObservationContext context, CancellationToken ct = default)
+    {
+        // ... store episode ...
+
+        // Schedule fact distillation as background task
+        if (_options.DistillOnObserve)
+        {
+            await _taskScheduler.ScheduleAsync(new ScheduledTask
+            {
+                Name = $&quot;DistillFacts_{episode.Id}&quot;,
+                ExecuteAsync = async (ct) =&gt;
+                {
+                    await _distiller.TryDistillFactsAsync(episode, ct);
+                    return episode.Id;
+                },
+                Options = new TaskOptions
+                {
+                    Priority = TaskPriority.Low,
+                    MaxRetries = 2,
+                    RetryDelay = TimeSpan.FromSeconds(5)
+                }
+            }, ct);
+        }
+    }
+}
+</code></pre>
+<hr>
+<h2 id="phase-2-proactive-engagement">Phase 2: Proactive Engagement</h2>
+<h3 id="3-triggersystem-enhancement-p2-medium">3. TriggerSystem Enhancement (P2-Medium)</h3>
+<h4 id="implementation">Implementation</h4>
+<p><strong>Extend existing:</strong> <code>src/Core/AI/Hazina.AI.PromptManagement/Triggers/</code></p>
+<pre><code class="lang-csharp">// New file: ITriggerSystem.cs
+namespace Hazina.AI.Triggers;
+
+public interface ITriggerSystem
+{
+    Task RegisterTriggerAsync(Trigger trigger);
+    Task RemoveTriggerAsync(string triggerId);
+    Task&lt;List&lt;TriggeredAction&gt;&gt; EvaluateAsync(TriggerContext context);
+}
+
+public record Trigger
+{
+    public required string Id { get; init; }
+    public required ITriggerPattern Pattern { get; init; }
+    public required ITriggeredAction Action { get; init; }
+    public TriggerConditions Conditions { get; init; } = new();
+}
+
+public interface ITriggerPattern
+{
+    Task&lt;bool&gt; MatchesAsync(TriggerContext context);
+}
+
+public interface ITriggeredAction
+{
+    Task&lt;ActionResult&gt; ExecuteAsync(TriggerContext context);
+}
+
+// Example patterns:
+public class KeywordPattern : ITriggerPattern
+{
+    private readonly string[] _keywords;
+
+    public KeywordPattern(params string[] keywords)
+    {
+        _keywords = keywords;
+    }
+
+    public Task&lt;bool&gt; MatchesAsync(TriggerContext context)
+    {
+        return Task.FromResult(_keywords.Any(k =&gt;
+            context.UserInput.Contains(k, StringComparison.OrdinalIgnoreCase)));
+    }
+}
+
+// Example actions:
+public class SuggestToolAction : ITriggeredAction
+{
+    private readonly string _toolName;
+    private readonly ISuggestionBus _suggestionBus;
+
+    public async Task&lt;ActionResult&gt; ExecuteAsync(TriggerContext context)
+    {
+        await _suggestionBus.PublishAsync(new Suggestion
+        {
+            Type = SuggestionType.Action,
+            Title = $&quot;Use {_toolName}?&quot;,
+            Content = $&quot;I noticed you mentioned ... Would you like me to use {_toolName}?&quot;,
+            Actions = new()
+            {
+                new() { Label = &quot;Yes&quot;, ActionId = $&quot;invoke_{_toolName}&quot; },
+                new() { Label = &quot;No thanks&quot;, ActionId = &quot;dismiss&quot; }
+            }
+        });
+
+        return new ActionResult { Success = true };
+    }
+}
+
+// Usage example:
+var triggerSystem = new TriggerSystem();
+
+await triggerSystem.RegisterTriggerAsync(new Trigger
+{
+    Id = &quot;suggest-report-generation&quot;,
+    Pattern = new KeywordPattern(&quot;report&quot;, &quot;generate report&quot;, &quot;create report&quot;),
+    Action = new SuggestToolAction(&quot;ReportGenerationTool&quot;, suggestionBus)
+});
+</code></pre>
+<hr>
+<h2 id="next-steps">Next Steps</h2>
+<ol>
+<li><strong>Review this plan</strong> with the development team</li>
+<li><strong>Set up project</strong> tracking (GitHub Projects or similar)</li>
+<li><strong>Begin Phase 1</strong> with PermissionGuard (highest priority)</li>
+<li><strong>Create test environments</strong> for each module</li>
+<li><strong>Follow phased approach</strong> - don't jump ahead</li>
+</ol>
+<p><strong>Estimated Total Effort:</strong> 600 hours (~4 months with 1 developer, ~2 months with 2 developers)</p>
+<p><strong>Critical Path:</strong> PermissionGuard → TaskScheduler → (Other modules in parallel)</p>
+<hr>
+<p><strong>Document Version:</strong> 1.0
+<strong>Last Updated:</strong> 2026-01-13
+<strong>Status:</strong> Ready for Implementation
+<strong>Next Review:</strong> After Phase 1 completion</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

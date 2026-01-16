@@ -1,0 +1,418 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Hazina API Changelog | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Hazina API Changelog | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="hazina-api-changelog">Hazina API Changelog</h1>
+
+<p>Complete record of API changes, breaking changes, and new features across Hazina versions.</p>
+<hr>
+<h2 id="v20-current---develop-branch">v2.0 (Current - develop branch)</h2>
+<p><strong>Release Date:</strong> TBD
+<strong>Status:</strong> In Development</p>
+<h3 id="-breaking-changes">🚨 Breaking Changes</h3>
+<h4 id="1-configuration-classes---hazinaconfigbase-refactor-pr-6">1. Configuration Classes - HazinaConfigBase Refactor (PR #6)</h4>
+<p><strong>What Changed:</strong>
+All provider configuration classes now inherit from <code>HazinaConfigBase</code> abstract base class. Constructor patterns changed to object initializers.</p>
+<p><strong>OLD (v1.x):</strong></p>
+<pre><code class="lang-csharp">// ❌ No longer supported
+var config = new OpenAIConfig(
+    apiKey: &quot;sk-...&quot;,
+    model: &quot;gpt-4o-mini&quot;,
+    endpoint: &quot;https://api.openai.com/v1&quot;,
+    logPath: &quot;logs/openai.log&quot;
+);
+</code></pre>
+<p><strong>NEW (v2.0):</strong></p>
+<pre><code class="lang-csharp">// ✅ Object initializer (recommended)
+var config = new OpenAIConfig
+{
+    ApiKey = &quot;sk-...&quot;,
+    Model = &quot;gpt-4o-mini&quot;,
+    Endpoint = &quot;https://api.openai.com/v1&quot;,
+    LogPath = &quot;logs/openai.log&quot;
+};
+
+// ✅ Or simple constructor
+var config = new OpenAIConfig(&quot;sk-...&quot;);
+config.Model = &quot;gpt-4o-mini&quot;;
+
+// ✅ Or load from appsettings.json
+var config = OpenAIConfig.Load();
+</code></pre>
+<p><strong>Benefits:</strong></p>
+<ul>
+<li>~400 LOC reduction through shared base class</li>
+<li>Consistent configuration loading across all providers</li>
+<li>Built-in validation via <code>Validate()</code> method</li>
+<li>Configuration binding from appsettings.json</li>
+</ul>
+<p><strong>Affected Classes:</strong></p>
+<ul>
+<li><code>OpenAIConfig</code></li>
+<li><code>AnthropicConfig</code></li>
+<li><code>OllamaConfig</code></li>
+<li><code>GeminiConfig</code></li>
+<li><code>MistralConfig</code></li>
+<li><code>HuggingFaceConfig</code></li>
+<li>All other provider configs</li>
+</ul>
+<p><strong>Migration Path:</strong>
+Replace constructor calls with object initializers or use <code>Config.Load()</code> for appsettings.json binding.</p>
+<hr>
+<h4 id="2-namespace-reorganization-pr-6">2. Namespace Reorganization (PR #6)</h4>
+<p><strong>What Changed:</strong>
+Provider-specific classes moved from general <code>Hazina.LLMs</code> namespace to provider-specific namespaces.</p>
+<p><strong>Examples:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Old Namespace</th>
+<th>New Namespace</th>
+<th>Classes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Hazina.LLMs</code></td>
+<td><code>Hazina.LLMs.OpenAI</code></td>
+<td><code>OpenAIConfig</code>, <code>OpenAIClientWrapper</code></td>
+</tr>
+<tr>
+<td><code>Hazina.LLMs</code></td>
+<td><code>Hazina.LLMs.Anthropic</code></td>
+<td><code>AnthropicConfig</code>, <code>ClaudeClientWrapper</code></td>
+</tr>
+<tr>
+<td><code>Hazina.LLMs</code></td>
+<td><code>Hazina.LLMs.Ollama</code></td>
+<td><code>OllamaConfig</code>, <code>OllamaClientWrapper</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Migration Path:</strong>
+Add provider-specific using statements:</p>
+<pre><code class="lang-csharp">// OLD
+using Hazina.LLMs;
+
+// NEW
+using Hazina.LLMs;
+using Hazina.LLMs.OpenAI;      // For OpenAI classes
+using Hazina.LLMs.Anthropic;   // For Anthropic classes
+using Hazina.LLMs.Ollama;      // For Ollama classes
+</code></pre>
+<hr>
+<h4 id="3-method-signature-changes-multiple-prs">3. Method Signature Changes (Multiple PRs)</h4>
+<p><strong>GenerateTextAsync → GenerateAsync</strong></p>
+<p><strong>OLD:</strong></p>
+<pre><code class="lang-csharp">await provider.GenerateTextAsync(
+    prompt: &quot;Hello&quot;,
+    model: &quot;gpt-4o-mini&quot;,
+    temperature: 0.7,
+    maxTokens: 1000
+);
+</code></pre>
+<p><strong>NEW:</strong></p>
+<pre><code class="lang-csharp">await provider.GenerateAsync(
+    model: &quot;gpt-4o-mini&quot;,        // Parameter order changed
+    prompt: &quot;Hello&quot;,
+    temperature: 0.7,
+    maxTokens: 1000,
+    cancellationToken: CancellationToken.None  // New required parameter
+);
+</code></pre>
+<p><strong>Changes:</strong></p>
+<ul>
+<li>Method renamed</li>
+<li>Parameter order changed (model first)</li>
+<li>Added <code>CancellationToken</code> parameter</li>
+</ul>
+<hr>
+<h3 id="-new-features">✨ New Features</h3>
+<h4 id="1-context-compression-module-pr-8">1. Context Compression Module (PR #8)</h4>
+<p>Reduces LLM request token counts by up to 87% while preserving important context.</p>
+<pre><code class="lang-csharp">using Hazina.AI.ContextCompression;
+
+var compressor = new ContextCompressionModule();
+var compressed = await compressor.CompressAsync(largeContext, options: new CompressionOptions
+{
+    TargetReduction = 0.7,  // 70% reduction
+    PreserveKeywords = true
+});
+</code></pre>
+<p><strong>See:</strong> <a href="CONTEXT_COMPRESSION.html">CONTEXT_COMPRESSION.md</a></p>
+<hr>
+<h4 id="2-google-drive-integration-pr-7">2. Google Drive Integration (PR #7)</h4>
+<p>Store and retrieve documents directly from Google Drive.</p>
+<pre><code class="lang-csharp">using Hazina.Storage.GoogleDrive;
+
+var credentials = GoogleDriveCredentials.FromJson(&quot;credentials.json&quot;);
+var store = new GoogleDriveDocumentStore(credentials);
+
+await store.SaveAsync(document, folderId: &quot;your-folder-id&quot;);
+var doc = await store.LoadAsync(documentId);
+</code></pre>
+<p><strong>See:</strong> <a href="GOOGLE_DRIVE_INTEGRATION.html">GOOGLE_DRIVE_INTEGRATION.md</a></p>
+<hr>
+<h4 id="3-3-layer-tool-agent-architecture-pr-1">3. 3-Layer Tool Agent Architecture (PR #1)</h4>
+<p>Token-optimized architecture for tool orchestration.</p>
+<pre><code class="lang-csharp">using Hazina.Tools.Services.ToolAgent;
+
+// Layer 1: Chat agent (minimal context)
+// Layer 2: Tool agent (orchestration - FREE with Ollama)
+// Layer 3: Generation services (full context)
+
+var toolAgent = new ToolAgentService(clientFactory, logger);
+var result = await toolAgent.ExecuteAsync(new ToolAgentRequest
+{
+    Action = &quot;generate_brand_profile&quot;,
+    ContextHint = &quot;user-123&quot;,
+    Wait = false  // Async execution
+});
+</code></pre>
+<p><strong>Benefits:</strong></p>
+<ul>
+<li>87% token cost reduction</li>
+<li>Free orchestration with Ollama</li>
+<li>Minimal context in chat layer</li>
+</ul>
+<p><strong>See:</strong> <a href="TOOL_AGENT_ARCHITECTURE.html">TOOL_AGENT_ARCHITECTURE.md</a></p>
+<hr>
+<h4 id="4-api-compatibility-properties-pr-10">4. API Compatibility Properties (PR #10)</h4>
+<p>Added properties to support cross-repo integration (Hazina ↔ client-manager).</p>
+<p><strong>BrandDocumentFragment:</strong></p>
+<pre><code class="lang-csharp">public class FragmentMetadata
+{
+    // New properties
+    public bool NeedsRegeneration { get; set; }
+    public string RegenerationReason { get; set; }
+}
+</code></pre>
+<hr>
+<h4 id="5-clean-code-architecture-pr-5">5. Clean Code Architecture (PR #5)</h4>
+<p>&quot;30-Second Comprehension Architecture&quot; - Phase 2 complete.</p>
+<p><strong>Features:</strong></p>
+<ul>
+<li>Architectural tests (D34)</li>
+<li>ILogger standardization (C30)</li>
+<li>TestData patterns (D33)</li>
+<li>Visual architecture maps</li>
+</ul>
+<p><strong>See:</strong></p>
+<ul>
+<li><code>docs/CLEAN_CODE_*.md</code> files</li>
+<li><code>docs/ARCHITECTURE.md</code></li>
+</ul>
+<hr>
+<h4 id="6-code-deduplication-pr-6">6. Code Deduplication (PR #6)</h4>
+<p><strong>HazinaServiceBase:</strong>
+Base class for all service implementations (~200 LOC reduction).</p>
+<p><strong>LLMProviderBase:</strong>
+Base class for all LLM provider wrappers (~150 LOC reduction).</p>
+<p><strong>HazinaConfigBase:</strong>
+Base class for all configuration classes (~400 LOC reduction).</p>
+<p><strong>Total:</strong> ~750 LOC eliminated through inheritance.</p>
+<hr>
+<h3 id="-bug-fixes">🐛 Bug Fixes</h3>
+<h4 id="pr-4---test-results-publishing">PR #4 - Test Results Publishing</h4>
+<p>Fixed test results publishing for fork PRs (GitHub Actions permissions).</p>
+<h4 id="pr-3---solution-structure">PR #3 - Solution Structure</h4>
+<p>Added missing projects to solution files and fixed PromptManagement build errors.</p>
+<h4 id="pr-2---branddocument-regeneration">PR #2 - BrandDocument Regeneration</h4>
+<p>Added regeneration metadata fields to track document update requirements.</p>
+<hr>
+<h3 id="-documentation-changes">📝 Documentation Changes</h3>
+<ul>
+<li>Added comprehensive guides for new features</li>
+<li>Updated configuration examples with v2.0 patterns</li>
+<li>Added migration guides for breaking changes</li>
+<li>Improved API reference documentation</li>
+</ul>
+<hr>
+<h2 id="v1x-legacy">v1.x (Legacy)</h2>
+<p><strong>Status:</strong> Legacy - No longer maintained
+<strong>Upgrade Path:</strong> See migration guides above</p>
+<h3 id="key-differences-from-v20">Key Differences from v2.0</h3>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>v1.x</th>
+<th>v2.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Config Pattern</td>
+<td>Constructor params</td>
+<td>Object initializers</td>
+</tr>
+<tr>
+<td>Config Base</td>
+<td>No base class</td>
+<td>HazinaConfigBase</td>
+</tr>
+<tr>
+<td>Namespaces</td>
+<td>Monolithic</td>
+<td>Provider-specific</td>
+</tr>
+<tr>
+<td>Method Names</td>
+<td>GenerateTextAsync</td>
+<td>GenerateAsync</td>
+</tr>
+<tr>
+<td>Code Deduplication</td>
+<td>None</td>
+<td>~750 LOC reduced</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="migration-checklists">Migration Checklists</h2>
+<h3 id="from-v1x-to-v20">From v1.x to v2.0</h3>
+<h4 id="step-1-update-dependencies">Step 1: Update Dependencies</h4>
+<pre><code class="lang-bash">dotnet add package Hazina.AI.FluentAPI --version 2.0.0
+dotnet add package Hazina.AI.RAG --version 2.0.0
+# Update all Hazina packages to 2.0.0
+</code></pre>
+<h4 id="step-2-fix-configuration-classes">Step 2: Fix Configuration Classes</h4>
+<p>Search for config constructor calls:</p>
+<pre><code class="lang-bash"># Find all instances
+grep -r &quot;new OpenAIConfig(&quot; .
+grep -r &quot;new AnthropicConfig(&quot; .
+</code></pre>
+<p>Replace with object initializers (see examples above).</p>
+<h4 id="step-3-fix-namespaces">Step 3: Fix Namespaces</h4>
+<p>Add provider-specific using statements:</p>
+<pre><code class="lang-csharp">using Hazina.LLMs.OpenAI;
+using Hazina.LLMs.Anthropic;
+</code></pre>
+<h4 id="step-4-update-method-calls">Step 4: Update Method Calls</h4>
+<p>Search for old method names:</p>
+<pre><code class="lang-bash">grep -r &quot;GenerateTextAsync&quot; .
+</code></pre>
+<p>Update to <code>GenerateAsync</code> with new signature.</p>
+<h4 id="step-5-test">Step 5: Test</h4>
+<pre><code class="lang-bash">dotnet test
+</code></pre>
+<p>Fix any remaining compilation errors.</p>
+<hr>
+<h2 id="support">Support</h2>
+<ul>
+<li><strong>Issues:</strong> <a href="https://github.com/martiendejong/Hazina/issues">https://github.com/martiendejong/Hazina/issues</a></li>
+<li><strong>Discussions:</strong> <a href="https://github.com/martiendejong/Hazina/discussions">https://github.com/martiendejong/Hazina/discussions</a></li>
+<li><strong>Documentation:</strong> <a href="https://github.com/martiendejong/Hazina/tree/main/docs">https://github.com/martiendejong/Hazina/tree/main/docs</a></li>
+</ul>
+<hr>
+<p><strong>Last Updated:</strong> 2026-01-08
+<strong>Maintained By:</strong> Hazina Core Team</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,243 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Automatic Stable Release Tagging | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Automatic Stable Release Tagging | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="automatic-stable-release-tagging">Automatic Stable Release Tagging</h1>
+
+<h2 id="overview">Overview</h2>
+<p>The Hazina framework repository uses an automated GitHub Actions workflow to create stable release tags whenever a PR is merged from <code>develop</code> to <code>main</code>.</p>
+<h2 id="how-it-works">How It Works</h2>
+<h3 id="trigger">Trigger</h3>
+<ul>
+<li><strong>Event</strong>: Pull Request closed</li>
+<li><strong>Branch</strong>: <code>main</code> (target branch)</li>
+<li><strong>Condition</strong>: PR must be merged (not just closed)</li>
+</ul>
+<h3 id="tag-format">Tag Format</h3>
+<p>Tags follow the pattern: <code>v{YYYY}.{MM}.{DD}-stable</code></p>
+<p><strong>Examples:</strong></p>
+<ul>
+<li><code>v2026.01.11-stable</code> (January 11, 2026)</li>
+<li><code>v2026.12.25-stable</code> (December 25, 2026)</li>
+</ul>
+<h3 id="workflow-steps">Workflow Steps</h3>
+<ol>
+<li><strong>PR Merged to Main</strong>: When a PR from <code>develop</code> (or any branch) is merged into <code>main</code></li>
+<li><strong>Workflow Triggers</strong>: The <code>auto-tag-stable.yml</code> workflow activates automatically</li>
+<li><strong>Tag Generation</strong>: Creates a tag with current date in format <code>vYYYY.MM.DD-stable</code></li>
+<li><strong>Duplicate Check</strong>: Skips if tag already exists (multiple PRs on same day)</li>
+<li><strong>Tag Creation</strong>: Creates annotated tag with PR information and metadata</li>
+<li><strong>Push to Remote</strong>: Pushes tag to GitHub</li>
+</ol>
+<h3 id="tag-content">Tag Content</h3>
+<p>Each tag includes:</p>
+<ul>
+<li><strong>Date</strong>: Stable release checkpoint date</li>
+<li><strong>PR Information</strong>: PR number and title</li>
+<li><strong>Source Branch</strong>: Which branch was merged</li>
+<li><strong>Signature</strong>: Automated tag attribution</li>
+</ul>
+<p><strong>Example Tag Message:</strong></p>
+<pre><code>Stable release checkpoint - 2026-01-11
+
+Merged PR #36: Add automatic stable tagging workflow
+
+Source branch: feature/auto-stable-tagging
+
+Automatically tagged by GitHub Actions on PR merge to main.
+
+Signed-off-by: github-actions[bot] &lt;github-actions[bot]@users.noreply.github.com&gt;
+</code></pre>
+<h2 id="benefits">Benefits</h2>
+<p>✅ <strong>Automatic</strong>: No manual intervention needed
+✅ <strong>Consistent</strong>: Same format across all releases
+✅ <strong>Traceable</strong>: Tags include PR information
+✅ <strong>Date-based</strong>: Easy to identify when release was created
+✅ <strong>Duplicate-safe</strong>: Won't create duplicate tags on same day</p>
+<h2 id="viewing-tags">Viewing Tags</h2>
+<h3 id="via-git-cli">Via Git CLI</h3>
+<pre><code class="lang-bash"># List all stable tags
+git tag -l &quot;v*-stable&quot;
+
+# List stable tags sorted by date (newest first)
+git tag -l &quot;v*-stable&quot; --sort=-creatordate
+
+# Show tag details
+git show v2026.01.11-stable
+</code></pre>
+<h3 id="via-github-ui">Via GitHub UI</h3>
+<ol>
+<li>Go to repository</li>
+<li>Click <strong>&quot;Releases&quot;</strong> or <strong>&quot;Tags&quot;</strong> tab</li>
+<li>Find tags matching <code>v*-stable</code> pattern</li>
+</ol>
+<h2 id="workflow-file-location">Workflow File Location</h2>
+<pre><code>.github/workflows/auto-tag-stable.yml
+</code></pre>
+<h2 id="permissions-required">Permissions Required</h2>
+<p>The workflow needs:</p>
+<ul>
+<li><code>contents: write</code> - To create and push tags</li>
+</ul>
+<h2 id="manual-override">Manual Override</h2>
+<p>If you need to create a tag manually:</p>
+<pre><code class="lang-bash">cd /c/Projects/hazina
+git checkout main &amp;&amp; git pull origin main
+git tag -a &quot;vYYYY.MM.DD-stable&quot; -m &quot;Stable release checkpoint - YYYY-MM-DD
+
+Manual tag description here.
+
+Signed-off-by: Your Name &lt;your.email@example.com&gt;&quot;
+git push origin vYYYY.MM.DD-stable
+</code></pre>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="tag-not-created">Tag Not Created</h3>
+<p><strong>Check:</strong></p>
+<ol>
+<li>Was the PR merged (not just closed)?</li>
+<li>Was the target branch <code>main</code>?</li>
+<li>Check Actions tab for workflow run status</li>
+<li>Check workflow logs for errors</li>
+</ol>
+<h3 id="duplicate-tag-warning">Duplicate Tag Warning</h3>
+<p>If multiple PRs are merged to <code>main</code> on the same day, only the first one will create the tag. Subsequent PRs will skip tag creation with a warning:</p>
+<pre><code>⚠️ Tag v2026.01.11-stable already exists. Skipping tag creation.
+</code></pre>
+<p>This is expected behavior - only one stable tag per day.</p>
+<h3 id="permissions-error">Permissions Error</h3>
+<p>If workflow fails with permissions error:</p>
+<ol>
+<li>Check repository settings → Actions → General</li>
+<li>Ensure &quot;Read and write permissions&quot; is enabled for workflows</li>
+<li>Verify workflow has <code>contents: write</code> permission</li>
+</ol>
+<h2 id="related-documentation">Related Documentation</h2>
+<ul>
+<li><strong>Manual Tagging Process</strong>: See <code>C:\scripts\claude.md</code> § &quot;Stable Release Tagging&quot;</li>
+<li><strong>Git-Flow Workflow</strong>: See <code>C:\scripts\claude.md</code> § &quot;GIT-FLOW WORKFLOW RULES&quot;</li>
+<li><strong>Client-Manager Tagging</strong>: Client-manager repository has identical auto-tagging workflow</li>
+</ul>
+<h2 id="coordination-with-client-manager">Coordination with Client-Manager</h2>
+<p>Both <code>hazina</code> and <code>client-manager</code> repositories have this workflow. When merging related PRs:</p>
+<ol>
+<li>Merge Hazina PR to <code>main</code> first → Creates tag <code>vYYYY.MM.DD-stable</code> in Hazina</li>
+<li>Merge client-manager PR to <code>main</code> → Creates tag <code>vYYYY.MM.DD-stable</code> in client-manager</li>
+</ol>
+<p>Both repositories will have the <strong>same tag name</strong> for releases on the same day, maintaining synchronization.</p>
+<h2 id="version-history">Version History</h2>
+<ul>
+<li><strong>2026-01-11</strong>: Automatic tagging workflow implemented</li>
+<li><strong>Previous</strong>: Manual tagging process (see claude.md line 860-900)</li>
+</ul>
+<hr>
+<p><strong>Workflow Status</strong>: ✅ Active
+<strong>Last Updated</strong>: 2026-01-11</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

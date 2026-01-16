@@ -1,0 +1,1530 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Hazina Configuration Guide | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Hazina Configuration Guide | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="hazina-configuration-guide">Hazina Configuration Guide</h1>
+
+<p>Complete gids voor het configureren van alle aspecten van Hazina: storage backends, LLM providers, AI componenten, en production monitoring.</p>
+<h2 id="inhoudsopgave">Inhoudsopgave</h2>
+<ol>
+<li><a href="#storage-backend-configuratie">Storage Backend Configuratie</a></li>
+<li><a href="#llm-provider-configuratie">LLM Provider Configuratie</a></li>
+<li><a href="#ai-componenten-setup">AI Componenten Setup</a></li>
+<li><a href="#production-monitoring">Production Monitoring</a></li>
+<li><a href="#environment-variables">Environment Variables</a></li>
+<li><a href="#best-practices">Best Practices</a></li>
+<li><a href="#deployment-scenarios">Deployment Scenarios</a></li>
+</ol>
+<hr>
+<h2 id="storage-backend-configuratie">Storage Backend Configuratie</h2>
+<p>Hazina ondersteunt 4 storage configuraties: File-based, Supabase, PostgreSQL, en Hybrid mode.</p>
+<h3 id="overzicht-storage-modes">Overzicht Storage Modes</h3>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Configuration</th>
+<th>Files</th>
+<th>Embeddings</th>
+<th>Database</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>File-based</strong></td>
+<td><code>ProjectsFolder</code> only</td>
+<td>Local</td>
+<td>Local (JSON)</td>
+<td>None</td>
+<td>Development, prototyping</td>
+</tr>
+<tr>
+<td><strong>Supabase</strong></td>
+<td><code>SupabaseSettings.Enabled=true</code></td>
+<td>Cloud</td>
+<td>Cloud (pgvector)</td>
+<td>Supabase</td>
+<td>Production, cloud</td>
+</tr>
+<tr>
+<td><strong>PostgreSQL</strong></td>
+<td><code>SupabaseSettings.Enabled=true</code></td>
+<td>Database</td>
+<td>Database (pgvector)</td>
+<td>Self-hosted</td>
+<td>Enterprise, on-premise</td>
+</tr>
+<tr>
+<td><strong>Hybrid</strong></td>
+<td>Both enabled</td>
+<td>Local</td>
+<td>Cloud (pgvector)</td>
+<td>Supabase/PG</td>
+<td>Best performance</td>
+</tr>
+</tbody>
+</table>
+<h3 id="1-file-based-storage-default">1. File-based Storage (Default)</h3>
+<p><strong>Wanneer gebruiken:</strong></p>
+<ul>
+<li>Lokale ontwikkeling en prototyping</li>
+<li>Single-user applicaties</li>
+<li>Geen database beschikbaar</li>
+<li>Portable data gewenst</li>
+</ul>
+<p><strong>Configuratie:</strong></p>
+<pre><code class="lang-csharp">using Hazina.Tools.Core.Config;
+using Hazina.Tools.Data;
+
+var config = new HazinaStoreConfig
+{
+    ApiSettings = new ApiSettings
+    {
+        OpenApiKey = Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!
+    },
+    ProjectSettings = new ProjectSettings
+    {
+        ProjectsFolder = @&quot;C:\HazinaData&quot;
+    }
+};
+
+// Store setup - automatically uses file-based
+var storeSetup = StoreProvider.GetStoreSetup(
+    config,
+    projectName: &quot;my-project&quot;,
+    embeddingDimension: 1536
+);
+
+// Use the stores
+var vectorStore = storeSetup.VectorStore;      // EmbeddingFileStore
+var documentStore = storeSetup.DocumentStore;  // TextFileStore
+var metadataStore = storeSetup.MetadataStore;  // QueryableMetadataFileStore
+</code></pre>
+<p><strong>Directory Structure:</strong></p>
+<pre><code>C:\HazinaData\
+├── my-project\
+│   ├── embeddings\
+│   │   └── embeddings.json
+│   ├── documents\
+│   │   └── document-text.json
+│   ├── chunks\
+│   │   └── chunks.json
+│   └── metadata\
+│       └── metadata.json
+</code></pre>
+<p><strong>Voor- en nadelen:</strong></p>
+<ul>
+<li>✅ Geen database configuratie</li>
+<li>✅ Eenvoudige setup</li>
+<li>✅ Portable data (backup = copy folder)</li>
+<li>✅ Geen network dependency</li>
+<li>❌ Beperkte schaalbaarheid</li>
+<li>❌ Geen concurrent access support</li>
+<li>❌ Lineaire search performance (geen vector indexes)</li>
+</ul>
+<hr>
+<h3 id="2-supabase-storage-aanbevolen-voor-productie">2. Supabase Storage (Aanbevolen voor Productie)</h3>
+<p><strong>Wanneer gebruiken:</strong></p>
+<ul>
+<li>Productie deployments</li>
+<li>Multi-user applicaties</li>
+<li>Cloud-native architectuur</li>
+<li>Schaalbaarheid vereist</li>
+<li>Managed service gewenst</li>
+</ul>
+<p><strong>Setup Supabase:</strong></p>
+<ol>
+<li><p><strong>Create Supabase project:</strong></p>
+<ul>
+<li>Ga naar <a href="https://supabase.com">https://supabase.com</a></li>
+<li>Create new project</li>
+<li>Noteer URL en keys</li>
+</ul>
+</li>
+<li><p><strong>Enable pgvector extension:</strong></p>
+<pre><code class="lang-sql">-- In Supabase SQL Editor
+CREATE EXTENSION IF NOT EXISTS vector;
+</code></pre>
+</li>
+<li><p><strong>Get connection details:</strong></p>
+<ul>
+<li>Project URL: <code>https://your-project.supabase.co</code></li>
+<li>Anon key: In Project Settings → API</li>
+<li>Connection string: In Project Settings → Database</li>
+</ul>
+</li>
+</ol>
+<p><strong>Configuratie:</strong></p>
+<pre><code class="lang-csharp">var config = new HazinaStoreConfig
+{
+    ApiSettings = new ApiSettings
+    {
+        OpenApiKey = Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!
+    },
+    SupabaseSettings = new SupabaseSettings
+    {
+        Enabled = true,
+        Url = &quot;https://your-project.supabase.co&quot;,
+        AnonKey = &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&quot;,
+        ConnectionString = &quot;Host=db.your-project.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=your-password&quot;
+    }
+};
+
+// Initialize schema (one-time)
+await SupabaseStoreProvider.InitializeSupabaseSchemaAsync(
+    config.SupabaseSettings.ConnectionString,
+    embeddingDimension: 1536
+);
+
+// Test connection
+var isConnected = await SupabaseStoreProvider.TestConnectionAsync(
+    config.SupabaseSettings.ConnectionString
+);
+
+// Get store setup - automatically uses Supabase
+var storeSetup = SupabaseStoreProvider.GetSupabaseStoreSetup(
+    config.SupabaseSettings.ConnectionString,
+    embeddingDimension: 1536
+);
+
+// Or use automatic detection
+var storeSetup = StoreProvider.GetStoreSetup(config);
+</code></pre>
+<p><strong>Database Schema:</strong></p>
+<pre><code class="lang-sql">-- Created automatically by InitializeSupabaseSchemaAsync()
+
+-- Vector embeddings with IVFFlat index
+CREATE TABLE embeddings (
+    id TEXT PRIMARY KEY,
+    embedding vector(1536),
+    metadata TEXT
+);
+CREATE INDEX idx_embeddings_ivfflat ON embeddings
+    USING ivfflat (embedding vector_cosine_ops)
+    WITH (lists = 100);
+
+-- Document chunks
+CREATE TABLE document_chunks (
+    id TEXT PRIMARY KEY,
+    document_id TEXT NOT NULL,
+    chunk_index INTEGER NOT NULL,
+    chunk_text TEXT NOT NULL,
+    metadata TEXT
+);
+
+-- Document metadata (JSONB for flexible queries)
+CREATE TABLE document_metadata (
+    id TEXT PRIMARY KEY,
+    metadata JSONB NOT NULL
+);
+CREATE INDEX idx_metadata_jsonb ON document_metadata USING gin(metadata);
+
+-- Text storage
+CREATE TABLE texts (
+    id TEXT PRIMARY KEY,
+    text TEXT NOT NULL
+);
+</code></pre>
+<p><strong>Environment Variables:</strong></p>
+<pre><code class="lang-bash"># Windows (cmd)
+set SUPABASE_URL=https://your-project.supabase.co
+set SUPABASE_ANON_KEY=eyJ...
+set SUPABASE_CONNECTION_STRING=Host=db.your-project.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=your-password
+
+# Linux/Mac (bash)
+export SUPABASE_URL=&quot;https://your-project.supabase.co&quot;
+export SUPABASE_ANON_KEY=&quot;eyJ...&quot;
+export SUPABASE_CONNECTION_STRING=&quot;Host=db.your-project.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=your-password&quot;
+</code></pre>
+<p><strong>Voor- en nadelen:</strong></p>
+<ul>
+<li>✅ Managed PostgreSQL + pgvector</li>
+<li>✅ Automatische backups</li>
+<li>✅ Schaalbaar (vertical + horizontal)</li>
+<li>✅ Built-in auth en realtime</li>
+<li>✅ Vector similarity search met indexes</li>
+<li>✅ JSONB voor metadata queries</li>
+<li>❌ Cloud account vereist</li>
+<li>❌ Network latency</li>
+<li>❌ Kosten bij high volume</li>
+</ul>
+<hr>
+<h3 id="3-postgresql-storage-self-hosted">3. PostgreSQL Storage (Self-hosted)</h3>
+<p><strong>Wanneer gebruiken:</strong></p>
+<ul>
+<li>Enterprise deployments</li>
+<li>On-premise vereisten</li>
+<li>Data sovereignty</li>
+<li>Volledige controle gewenst</li>
+<li>Custom optimalisatie nodig</li>
+</ul>
+<p><strong>Setup PostgreSQL:</strong></p>
+<ol>
+<li><p><strong>Install PostgreSQL 15+:</strong></p>
+<pre><code class="lang-bash"># Ubuntu/Debian
+sudo apt install postgresql-15 postgresql-contrib-15
+
+# Windows: Download from postgresql.org
+# Mac: brew install postgresql@15
+</code></pre>
+</li>
+<li><p><strong>Install pgvector extension:</strong></p>
+<pre><code class="lang-bash"># Ubuntu/Debian
+sudo apt install postgresql-15-pgvector
+
+# Or compile from source
+git clone https://github.com/pgvector/pgvector.git
+cd pgvector
+make
+sudo make install
+</code></pre>
+</li>
+<li><p><strong>Create database:</strong></p>
+<pre><code class="lang-sql">CREATE DATABASE hazina;
+CREATE USER hazina_user WITH PASSWORD 'secure_password';
+GRANT ALL PRIVILEGES ON DATABASE hazina TO hazina_user;
+
+\c hazina
+CREATE EXTENSION vector;
+</code></pre>
+</li>
+</ol>
+<p><strong>Configuratie:</strong></p>
+<pre><code class="lang-csharp">var config = new HazinaStoreConfig
+{
+    ApiSettings = new ApiSettings
+    {
+        OpenApiKey = Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!
+    },
+    SupabaseSettings = new SupabaseSettings
+    {
+        Enabled = true,
+        ConnectionString = &quot;Host=localhost;Port=5432;Database=hazina;Username=hazina_user;Password=secure_password&quot;
+    }
+};
+
+// Initialize schema
+await SupabaseStoreProvider.InitializeSupabaseSchemaAsync(
+    config.SupabaseSettings.ConnectionString,
+    embeddingDimension: 1536
+);
+
+// Get store setup
+var storeSetup = SupabaseStoreProvider.GetSupabaseStoreSetup(
+    config.SupabaseSettings.ConnectionString,
+    embeddingDimension: 1536
+);
+</code></pre>
+<p><strong>Performance Tuning:</strong></p>
+<pre><code class="lang-sql">-- Optimize for vector operations
+ALTER DATABASE hazina SET maintenance_work_mem = '1GB';
+ALTER DATABASE hazina SET max_parallel_workers_per_gather = 4;
+
+-- Adjust IVFFlat lists based on data size
+-- Rule of thumb: lists = sqrt(number_of_rows)
+DROP INDEX IF EXISTS idx_embeddings_ivfflat;
+CREATE INDEX idx_embeddings_ivfflat ON embeddings
+    USING ivfflat (embedding vector_cosine_ops)
+    WITH (lists = 1000);  -- For ~1M rows
+
+-- Or use HNSW for better accuracy (slower build, faster query)
+CREATE INDEX idx_embeddings_hnsw ON embeddings
+    USING hnsw (embedding vector_cosine_ops)
+    WITH (m = 16, ef_construction = 64);
+</code></pre>
+<p><strong>Voor- en nadelen:</strong></p>
+<ul>
+<li>✅ Volledige controle</li>
+<li>✅ Geen vendor lock-in</li>
+<li>✅ Custom performance tuning</li>
+<li>✅ On-premise deployment</li>
+<li>✅ Cost predictability</li>
+<li>❌ Self-managed (updates, backups, monitoring)</li>
+<li>❌ Infrastructure vereist</li>
+<li>❌ DBA expertise nodig</li>
+</ul>
+<hr>
+<h3 id="4-hybrid-mode-beste-performance">4. Hybrid Mode (Beste Performance)</h3>
+<p><strong>Wanneer gebruiken:</strong></p>
+<ul>
+<li>Snelle file access EN semantic search</li>
+<li>Large documents met frequent access</li>
+<li>Optimale performance vereist</li>
+<li>Flexibiliteit gewenst</li>
+</ul>
+<p><strong>Concept:</strong></p>
+<ul>
+<li><strong>Local files:</strong> Document text opgeslagen lokaal voor snelle toegang</li>
+<li><strong>Cloud embeddings:</strong> Vector embeddings in Supabase/PostgreSQL voor schaalbare semantic search</li>
+<li><strong>Best of both worlds:</strong> Fast file I/O + Powerful vector search</li>
+</ul>
+<p><strong>Configuratie:</strong></p>
+<pre><code class="lang-csharp">var config = new HazinaStoreConfig
+{
+    ApiSettings = new ApiSettings
+    {
+        OpenApiKey = Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!
+    },
+    ProjectSettings = new ProjectSettings
+    {
+        ProjectsFolder = @&quot;C:\HazinaData&quot;  // Local files
+    },
+    SupabaseSettings = new SupabaseSettings
+    {
+        Enabled = true,  // Cloud embeddings
+        ConnectionString = &quot;Host=db.your-project.supabase.co;...&quot;
+    }
+};
+
+// Automatic hybrid mode detection
+var storeSetup = StoreProvider.GetStoreSetup(
+    config,
+    projectName: &quot;my-project&quot;,
+    embeddingDimension: 1536
+);
+
+// Or explicit hybrid setup
+var hybridSetup = SupabaseStoreProvider.GetHybridStoreSetup(
+    config.SupabaseSettings.ConnectionString,
+    config.ProjectSettings.ProjectsFolder,
+    projectName: &quot;my-project&quot;,
+    embeddingDimension: 1536
+);
+</code></pre>
+<p><strong>Resultaat:</strong></p>
+<pre><code class="lang-csharp">// Vector store: PostgreSQL (cloud) - PgVectorStore
+storeSetup.VectorStore
+
+// Document store: File-based (local) - TextFileStore
+storeSetup.DocumentStore
+
+// Metadata store: PostgreSQL (cloud) - PostgresDocumentMetadataStore
+storeSetup.MetadataStore
+
+// Chunk store: File-based (local) - ChunkFileStore
+storeSetup.ChunkStore
+</code></pre>
+<p><strong>Voor- en nadelen:</strong></p>
+<ul>
+<li>✅ Snelle file toegang (local)</li>
+<li>✅ Schaalbare vector search (cloud)</li>
+<li>✅ Flexibel per component</li>
+<li>✅ Offline file access mogelijk</li>
+<li>❌ Complexere configuratie</li>
+<li>❌ Sync tussen local/cloud nodig</li>
+<li>❌ Backup strategie voor beide</li>
+</ul>
+<hr>
+<h2 id="llm-provider-configuratie">LLM Provider Configuratie</h2>
+<p>Hazina ondersteunt 8+ LLM providers met verschillende selectie strategieën.</p>
+<h3 id="supported-providers">Supported Providers</h3>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Models</th>
+<th>Features</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>OpenAI</strong></td>
+<td>GPT-4o, GPT-4o-mini, GPT-3.5</td>
+<td>Chat, embeddings, images</td>
+<td>Algemeen gebruik</td>
+</tr>
+<tr>
+<td><strong>Anthropic</strong></td>
+<td>Claude 3.5 Sonnet/Opus/Haiku</td>
+<td>Chat, 200K context</td>
+<td>Complex reasoning</td>
+</tr>
+<tr>
+<td><strong>Ollama</strong></td>
+<td>Llama, Mistral, Phi (local)</td>
+<td>Local inference</td>
+<td>Privacy, cost</td>
+</tr>
+<tr>
+<td><strong>Gemini</strong></td>
+<td>Gemini Pro/Flash</td>
+<td>Multimodal</td>
+<td>Google ecosystem</td>
+</tr>
+<tr>
+<td><strong>Azure OpenAI</strong></td>
+<td>GPT-4, GPT-3.5</td>
+<td>Enterprise features</td>
+<td>Corporate</td>
+</tr>
+<tr>
+<td><strong>HuggingFace</strong></td>
+<td>100K+ models</td>
+<td>Open source</td>
+<td>Research</td>
+</tr>
+<tr>
+<td><strong>Mistral</strong></td>
+<td>Mistral Large/Medium</td>
+<td>European AI</td>
+<td>GDPR compliance</td>
+</tr>
+<tr>
+<td><strong>Cohere</strong></td>
+<td>Command, Embed</td>
+<td>Production APIs</td>
+<td>Enterprise</td>
+</tr>
+</tbody>
+</table>
+<h3 id="provider-configuration-classes-hazinaconfigbase">Provider Configuration Classes (HazinaConfigBase)</h3>
+<p><strong>⚠️ BREAKING CHANGE (v2.0):</strong> All provider config classes now inherit from <code>HazinaConfigBase</code> and use object initializer pattern.</p>
+<p>All LLM provider configuration classes (<code>OpenAIConfig</code>, <code>AnthropicConfig</code>, <code>OllamaConfig</code>, etc.) now share common functionality through the <code>HazinaConfigBase</code> abstract base class. This reduces ~400 lines of duplicated code and provides consistent configuration loading.</p>
+<h4 id="common-properties-from-hazinaconfigbase">Common Properties (from HazinaConfigBase)</h4>
+<pre><code class="lang-csharp">public abstract class HazinaConfigBase
+{
+    public string ApiKey { get; set; }        // Required for cloud providers
+    public string Model { get; set; }         // Model name (e.g., &quot;gpt-4o-mini&quot;)
+    public string? Endpoint { get; set; }     // Custom endpoint (optional)
+    public string? LogPath { get; set; }      // Request/response logging path
+}
+</code></pre>
+<h4 id="configuration-methods">Configuration Methods</h4>
+<p><strong>Method 1: Object Initializer (Recommended)</strong></p>
+<pre><code class="lang-csharp">using Hazina.LLMs.OpenAI;
+
+var config = new OpenAIConfig
+{
+    ApiKey = Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!,
+    Model = &quot;gpt-4o-mini&quot;,
+    LogPath = &quot;logs/openai-requests.log&quot;  // Optional
+};
+</code></pre>
+<p><strong>Method 2: Simple Constructor</strong></p>
+<pre><code class="lang-csharp">// Minimal setup (uses default model)
+var config = new OpenAIConfig(apiKey: &quot;sk-...&quot;);
+
+// Or set properties after
+config.Model = &quot;gpt-4o&quot;;
+config.LogPath = &quot;logs/openai.log&quot;;
+</code></pre>
+<p><strong>Method 3: Load from appsettings.json</strong></p>
+<pre><code class="lang-csharp">// appsettings.json:
+// {
+//   &quot;OpenAI&quot;: {
+//     &quot;ApiKey&quot;: &quot;sk-...&quot;,
+//     &quot;Model&quot;: &quot;gpt-4o-mini&quot;,
+//     &quot;LogPath&quot;: &quot;logs/openai.log&quot;
+//   }
+// }
+
+var config = OpenAIConfig.Load();  // Automatic loading
+
+// OR from IConfiguration instance
+var config = OpenAIConfig.FromConfiguration(configuration);
+</code></pre>
+<h4 id="provider-specific-properties">Provider-Specific Properties</h4>
+<p>Each provider extends HazinaConfigBase with provider-specific properties:</p>
+<pre><code class="lang-csharp">// OpenAI - Image and TTS models
+var openaiConfig = new OpenAIConfig
+{
+    ApiKey = &quot;sk-...&quot;,
+    Model = &quot;gpt-4o-mini&quot;,
+    EmbeddingModel = &quot;text-embedding-3-small&quot;,
+    ImageModel = &quot;dall-e-3&quot;,
+    TtsModel = &quot;gpt-4o-mini-tts&quot;
+};
+
+// Anthropic - Extended context
+var anthropicConfig = new AnthropicConfig
+{
+    ApiKey = &quot;sk-ant-...&quot;,
+    Model = &quot;claude-3-5-sonnet-20241022&quot;
+    // Supports up to 200K context window
+};
+
+// Ollama - Local endpoint
+var ollamaConfig = new OllamaConfig
+{
+    Endpoint = &quot;http://localhost:11434&quot;,
+    Model = &quot;llama3:8b&quot;,
+    EmbeddingModel = &quot;nomic-embed-text&quot;
+};
+</code></pre>
+<h4 id="configuration-validation">Configuration Validation</h4>
+<p>All configs have built-in validation:</p>
+<pre><code class="lang-csharp">var config = new OpenAIConfig();  // Missing ApiKey
+
+var errors = config.Validate();
+if (errors.Any())
+{
+    foreach (var error in errors)
+    {
+        Console.WriteLine($&quot;Config error: {error}&quot;);
+    }
+    // Output: &quot;OpenAIConfig: ApiKey is required&quot;
+}
+</code></pre>
+<h4 id="-migration-from-v1x">⚠️ Migration from v1.x</h4>
+<p>If upgrading from Hazina v1.x, update your code:</p>
+<p><strong>OLD (v1.x - Constructor parameters):</strong></p>
+<pre><code class="lang-csharp">// ❌ This no longer works
+var config = new OpenAIConfig(
+    apiKey: &quot;sk-...&quot;,
+    model: &quot;gpt-4o-mini&quot;,
+    endpoint: &quot;https://api.openai.com/v1&quot;,
+    logPath: &quot;logs/openai.log&quot;
+);
+</code></pre>
+<p><strong>NEW (v2.0 - Object initializer):</strong></p>
+<pre><code class="lang-csharp">// ✅ Use this instead
+var config = new OpenAIConfig
+{
+    ApiKey = &quot;sk-...&quot;,
+    Model = &quot;gpt-4o-mini&quot;,
+    Endpoint = &quot;https://api.openai.com/v1&quot;,
+    LogPath = &quot;logs/openai.log&quot;
+};
+</code></pre>
+<p><strong>Or use simple constructor (backwards compatible):</strong></p>
+<pre><code class="lang-csharp">// ✅ Also works
+var config = new OpenAIConfig(&quot;sk-...&quot;);
+config.Model = &quot;gpt-4o-mini&quot;;
+</code></pre>
+<p>See <a href="API_CHANGELOG.html">docs/API_CHANGELOG.md</a> for complete list of breaking changes.</p>
+<hr>
+<h3 id="provider-selection-strategies">Provider Selection Strategies</h3>
+<h4 id="1-priority-based-aanbevolen-voor-productie">1. Priority-based (Aanbevolen voor Productie)</h4>
+<p>Gebruikt altijd de hoogste priority provider die healthy is.</p>
+<p><strong>Configuratie:</strong></p>
+<pre><code class="lang-csharp">using Hazina.AI.Providers.Core;
+using Hazina.AI.Providers.Configuration;
+using Hazina.AI.Providers.Selection;
+using Hazina.LLMs.OpenAI;
+using Hazina.LLMs.Anthropic;
+
+var orchestrator = new ProviderOrchestrator(new ProviderOrchestratorConfig
+{
+    SelectionStrategy = SelectionStrategy.Priority,
+    EnableHealthMonitoring = true,
+    HealthCheckIntervalSeconds = 60,
+    CircuitBreakerThreshold = 5,
+    CircuitBreakerTimeoutSeconds = 300
+});
+
+// Register providers (lagere priority number = hogere prioriteit)
+orchestrator.RegisterProvider(
+    name: &quot;openai&quot;,
+    client: new OpenAIClientWrapper(Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!),
+    priority: 1,  // Hoogste prioriteit
+    costPer1KTokens: 0.002
+);
+
+orchestrator.RegisterProvider(
+    name: &quot;anthropic&quot;,
+    client: new ClaudeClientWrapper(Environment.GetEnvironmentVariable(&quot;ANTHROPIC_API_KEY&quot;)!),
+    priority: 2,  // Fallback
+    costPer1KTokens: 0.003
+);
+
+orchestrator.RegisterProvider(
+    name: &quot;ollama&quot;,
+    client: new OllamaClientWrapper(&quot;http://localhost:11434&quot;),
+    priority: 3,  // Last resort (local)
+    costPer1KTokens: 0.0  // Free (local)
+);
+
+// Use
+var response = await orchestrator.GetResponse(&quot;Hello!&quot;, &quot;gpt-4o-mini&quot;, 0.7);
+Console.WriteLine($&quot;Used: {orchestrator.GetLastUsedProvider()}&quot;);  // &quot;openai&quot;
+
+// Health status
+var health = orchestrator.GetHealthStatus();
+foreach (var (provider, status) in health)
+{
+    Console.WriteLine($&quot;{provider}: {status}&quot;);  // Healthy/Degraded/Unhealthy
+}
+</code></pre>
+<p><strong>Use cases:</strong></p>
+<ul>
+<li>Productie met primary + fallback</li>
+<li>SLA-kritische applicaties</li>
+<li>Predictable behavior</li>
+</ul>
+<hr>
+<h4 id="2-cost-optimized">2. Cost-optimized</h4>
+<p>Selecteert altijd de goedkoopste beschikbare provider.</p>
+<p><strong>Configuratie:</strong></p>
+<pre><code class="lang-csharp">var orchestrator = new ProviderOrchestrator(new ProviderOrchestratorConfig
+{
+    SelectionStrategy = SelectionStrategy.LeastCost,
+    EnableCostTracking = true,
+    BudgetLimitUSD = 100.0
+});
+
+// Register providers with costs
+orchestrator.RegisterProvider(&quot;openai&quot;, new OpenAIClientWrapper(key), costPer1KTokens: 0.002);
+orchestrator.RegisterProvider(&quot;anthropic&quot;, new ClaudeClientWrapper(key), costPer1KTokens: 0.003);
+orchestrator.RegisterProvider(&quot;ollama&quot;, new OllamaClientWrapper(url), costPer1KTokens: 0.0);
+
+// Automatic cost tracking
+var response = await orchestrator.GetResponse(&quot;Generate code&quot;, model, 0.7);
+
+// Check cost
+var totalCost = orchestrator.GetTotalCost();
+var budget = orchestrator.GetRemainingBudget();
+Console.WriteLine($&quot;Spent: ${totalCost:F6}, Remaining: ${budget:F6}&quot;);
+
+// Budget alerts (automatic at 50%, 75%, 90%, 95%)
+orchestrator.BudgetAlertTriggered += (sender, alert) =&gt;
+{
+    Console.WriteLine($&quot;⚠ Budget alert: {alert.PercentageUsed:F1}% used!&quot;);
+
+    if (alert.PercentageUsed &gt;= 95)
+    {
+        // Take action: switch to cheaper model, notify admin, etc.
+    }
+};
+</code></pre>
+<p><strong>Use cases:</strong></p>
+<ul>
+<li>Budget-constrained applicaties</li>
+<li>Batch processing waar speed niet kritisch is</li>
+<li>Development/testing</li>
+</ul>
+<hr>
+<h4 id="3-speed-optimized">3. Speed-optimized</h4>
+<p>Kiest provider met snelste response time (op basis van historische data).</p>
+<p><strong>Configuratie:</strong></p>
+<pre><code class="lang-csharp">var orchestrator = new ProviderOrchestrator(new ProviderOrchestratorConfig
+{
+    SelectionStrategy = SelectionStrategy.FastestResponse,
+    EnablePerformanceTracking = true
+});
+
+orchestrator.RegisterProvider(&quot;openai&quot;, new OpenAIClientWrapper(key));
+orchestrator.RegisterProvider(&quot;anthropic&quot;, new ClaudeClientWrapper(key));
+
+// First request: random selection (no history yet)
+var response1 = await orchestrator.GetResponse(&quot;Quick question&quot;, model, 0.7);
+
+// Subsequent requests: uses fastest based on history
+var response2 = await orchestrator.GetResponse(&quot;Another question&quot;, model, 0.7);
+
+// Performance stats
+var stats = orchestrator.GetPerformanceStats();
+foreach (var (provider, avgMs) in stats)
+{
+    Console.WriteLine($&quot;{provider}: {avgMs:F0}ms average&quot;);
+}
+</code></pre>
+<p><strong>Use cases:</strong></p>
+<ul>
+<li>Low-latency vereisten</li>
+<li>Real-time chat</li>
+<li>Interactive assistants</li>
+</ul>
+<hr>
+<h4 id="4-failover-high-availability">4. Failover (High Availability)</h4>
+<p>Quick setup met automatic failover.</p>
+<p><strong>Configuratie:</strong></p>
+<pre><code class="lang-csharp">using Hazina.AI.FluentAPI.Configuration;
+
+// Quick setup met failover
+var orchestrator = QuickSetup.SetupWithFailover(
+    openAIKey: Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!,
+    anthropicKey: Environment.GetEnvironmentVariable(&quot;ANTHROPIC_API_KEY&quot;)!
+);
+
+// Configure as default for Fluent API
+Hazina.ConfigureDefaultOrchestrator(orchestrator);
+
+// Use anywhere
+var answer = await Hazina.AskAsync(&quot;What is the capital of France?&quot;);
+</code></pre>
+<p><strong>Behavior:</strong></p>
+<ul>
+<li>Primary: OpenAI (priority 1)</li>
+<li>Fallback: Anthropic (priority 2)</li>
+<li>Circuit breaker: 5 failures → switch</li>
+<li>Retry: Exponential backoff (1s, 2s, 4s, 8s)</li>
+<li>Health monitoring: Every 60 seconds</li>
+</ul>
+<p><strong>Use cases:</strong></p>
+<ul>
+<li>High availability vereist</li>
+<li>24/7 beschikbaarheid</li>
+<li>Mission-critical applicaties</li>
+</ul>
+<hr>
+<h4 id="5-round-robin-load-balancing">5. Round-robin (Load Balancing)</h4>
+<p>Distribueert requests gelijkmatig over alle providers.</p>
+<p><strong>Configuratie:</strong></p>
+<pre><code class="lang-csharp">var orchestrator = new ProviderOrchestrator(new ProviderOrchestratorConfig
+{
+    SelectionStrategy = SelectionStrategy.RoundRobin
+});
+
+orchestrator.RegisterProvider(&quot;openai&quot;, new OpenAIClientWrapper(key));
+orchestrator.RegisterProvider(&quot;anthropic&quot;, new ClaudeClientWrapper(key));
+
+// Requests rotate: openai → anthropic → openai → anthropic → ...
+for (int i = 0; i &lt; 4; i++)
+{
+    await orchestrator.GetResponse($&quot;Request {i}&quot;, model, 0.7);
+    Console.WriteLine($&quot;Request {i} → {orchestrator.GetLastUsedProvider()}&quot;);
+}
+</code></pre>
+<p><strong>Use cases:</strong></p>
+<ul>
+<li>Load distribution</li>
+<li>Rate limit avoidance</li>
+<li>Testing meerdere providers</li>
+</ul>
+<hr>
+<h4 id="6-random">6. Random</h4>
+<p>Random provider selectie.</p>
+<p><strong>Configuratie:</strong></p>
+<pre><code class="lang-csharp">var orchestrator = new ProviderOrchestrator(new ProviderOrchestratorConfig
+{
+    SelectionStrategy = SelectionStrategy.Random
+});
+</code></pre>
+<p><strong>Use cases:</strong></p>
+<ul>
+<li>Testing</li>
+<li>Unpredictable load balancing</li>
+</ul>
+<hr>
+<h3 id="quick-setup-helpers">Quick Setup Helpers</h3>
+<h4 id="single-provider">Single Provider</h4>
+<pre><code class="lang-csharp">using Hazina.AI.FluentAPI.Configuration;
+
+var orchestrator = QuickSetup.SetupOpenAI(
+    apiKey: &quot;sk-...&quot;,
+    defaultModel: &quot;gpt-4o-mini&quot;
+);
+</code></pre>
+<h4 id="with-failover">With Failover</h4>
+<pre><code class="lang-csharp">var orchestrator = QuickSetup.SetupWithFailover(
+    openAIKey: &quot;sk-...&quot;,
+    anthropicKey: &quot;sk-ant-...&quot;
+);
+</code></pre>
+<h4 id="cost-optimized">Cost-optimized</h4>
+<pre><code class="lang-csharp">var orchestrator = QuickSetup.SetupCostOptimized(
+    openAIKey: &quot;sk-...&quot;,
+    anthropicKey: &quot;sk-ant-...&quot;,
+    ollamaUrl: &quot;http://localhost:11434&quot;
+);
+</code></pre>
+<h4 id="complete-configuration">Complete Configuration</h4>
+<pre><code class="lang-csharp">var orchestrator = QuickSetup.SetupAndConfigure(
+    openAIKey: &quot;sk-...&quot;,
+    anthropicKey: &quot;sk-ant-...&quot;
+);
+
+// Sets as default orchestrator
+Hazina.ConfigureDefaultOrchestrator(orchestrator);
+</code></pre>
+<hr>
+<h2 id="ai-componenten-setup">AI Componenten Setup</h2>
+<h3 id="rag-retrieval-augmented-generation">RAG (Retrieval-Augmented Generation)</h3>
+<p><strong>Configuratie:</strong></p>
+<pre><code class="lang-csharp">using Hazina.AI.RAG.Core;
+using Hazina.AI.RAG.Embeddings;
+using Hazina.AI.RAG.Retrieval;
+
+// Setup storage
+var storeSetup = StoreProvider.GetStoreSetup(config, &quot;my-project&quot;, 1536);
+
+// Create RAG engine
+var ragEngine = new RAGEngine(
+    llmClient: orchestrator,
+    vectorStore: storeSetup.VectorStore!,
+    config: new RAGConfig
+    {
+        TopK = 5,
+        MinimumSimilarity = 0.7,
+        RerankerStrategy = RerankerStrategy.Hybrid,
+        ChunkingStrategy = ChunkingStrategy.Semantic,
+        ChunkSize = 512,
+        ChunkOverlap = 50
+    }
+);
+
+// Index documents
+await ragEngine.IndexDocumentAsync(
+    documentId: &quot;doc1&quot;,
+    content: &quot;Document content here...&quot;,
+    metadata: new Dictionary&lt;string, string&gt;
+    {
+        [&quot;author&quot;] = &quot;John Doe&quot;,
+        [&quot;category&quot;] = &quot;technical&quot;,
+        [&quot;date&quot;] = &quot;2025-01-05&quot;
+    }
+);
+
+// Query
+var response = await ragEngine.QueryAsync(
+    query: &quot;What is the main topic?&quot;,
+    filters: new Dictionary&lt;string, string&gt;
+    {
+        [&quot;category&quot;] = &quot;technical&quot;
+    }
+);
+
+Console.WriteLine($&quot;Answer: {response.Answer}&quot;);
+Console.WriteLine($&quot;Confidence: {response.Confidence:P0}&quot;);
+Console.WriteLine($&quot;Sources: {response.RetrievedChunks.Count}&quot;);
+
+foreach (var chunk in response.RetrievedChunks)
+{
+    Console.WriteLine($&quot;  - {chunk.DocumentId} (similarity: {chunk.Similarity:F2})&quot;);
+}
+</code></pre>
+<hr>
+<h3 id="neurochain-multi-layer-reasoning">Neurochain (Multi-layer Reasoning)</h3>
+<p><strong>Configuratie:</strong></p>
+<pre><code class="lang-csharp">using Hazina.Neurochain.Core.Core;
+using Hazina.Neurochain.Core.Layers;
+
+// Create Neurochain
+var neurochain = new NeuroChainOrchestrator(new NeuroChainConfig
+{
+    ParallelExecution = true,
+    EnableCrossValidation = true,
+    EnableEarlyStopping = true,
+    EarlyStoppingConfidence = 0.95
+});
+
+// Add layers
+neurochain.AddLayer(new FastReasoningLayer(orchestrator));
+neurochain.AddLayer(new DeepReasoningLayer(orchestrator));
+neurochain.AddLayer(new VerificationLayer(orchestrator));
+
+// Reason
+var result = await neurochain.ReasonAsync(
+    question: &quot;What is the square root of 256?&quot;,
+    context: new ReasoningContext
+    {
+        MinConfidence = 0.9,
+        Domain = &quot;mathematics&quot;,
+        GroundTruth = new Dictionary&lt;string, string&gt;
+        {
+            [&quot;sqrt_256&quot;] = &quot;16&quot;
+        }
+    }
+);
+
+Console.WriteLine($&quot;Answer: {result.FinalAnswer}&quot;);
+Console.WriteLine($&quot;Confidence: {result.FinalConfidence:P0}&quot;);
+Console.WriteLine($&quot;Consensus: {result.CrossValidation?.ConsensusReached}&quot;);
+Console.WriteLine($&quot;Cost: ${result.TotalCost:F6}&quot;);
+Console.WriteLine($&quot;Time: {result.TotalDurationMs}ms&quot;);
+
+// Detailed breakdown
+Console.WriteLine(result.GetDetailedBreakdown());
+</code></pre>
+<hr>
+<h3 id="agents-autonomous-workflows">Agents (Autonomous Workflows)</h3>
+<p><strong>Configuratie:</strong></p>
+<pre><code class="lang-csharp">using Hazina.AI.Agents.Core;
+using Hazina.AI.Agents.Tools;
+using Hazina.AI.Agents.Workflows;
+
+// Create agent
+var agent = new Agent(
+    name: &quot;Assistant&quot;,
+    role: &quot;Helpful AI assistant&quot;,
+    llmClient: orchestrator
+);
+
+// Register tools
+agent.RegisterTool(new CalculatorTool());
+
+// Execute task
+var response = await agent.ExecuteAsync(&quot;Calculate 123 * 456&quot;);
+Console.WriteLine(response);
+
+// Workflow
+var workflow = new WorkflowEngine(orchestrator);
+
+workflow.AddStep(new AgentTaskStep
+{
+    AgentName = &quot;Researcher&quot;,
+    Task = &quot;Research the topic&quot;,
+    OutputVariable = &quot;research_result&quot;
+});
+
+workflow.AddStep(new AgentTaskStep
+{
+    AgentName = &quot;Writer&quot;,
+    Task = &quot;Write article based on: {{research_result}}&quot;,
+    OutputVariable = &quot;article&quot;
+});
+
+var result = await workflow.ExecuteAsync(new WorkflowContext
+{
+    Variables = new Dictionary&lt;string, string&gt;
+    {
+        [&quot;topic&quot;] = &quot;AI in healthcare&quot;
+    }
+});
+</code></pre>
+<hr>
+<h2 id="production-monitoring">Production Monitoring</h2>
+<p><strong>Complete monitoring setup:</strong></p>
+<pre><code class="lang-csharp">using Hazina.Production.Monitoring.Metrics;
+using Hazina.Production.Monitoring.Performance;
+using Hazina.Production.Monitoring.Diagnostics;
+
+// 1. Metrics collector
+var metrics = new MetricsCollector();
+
+// 2. Performance profiler
+var profiler = new PerformanceProfiler();
+
+// 3. Diagnostics
+var diagnostics = new DiagnosticsCollector(new DiagnosticsConfig
+{
+    EnableMemoryMonitoring = true,
+    EnableCpuMonitoring = true,
+    MemoryThresholdMB = 1000,
+    CpuThresholdPercent = 80
+});
+
+// 4. Use in request handling
+async Task&lt;string&gt; HandleRequest(string prompt)
+{
+    using (metrics.TimeOperation(&quot;llm_request&quot;))
+    using (profiler.Profile(&quot;request_handling&quot;))
+    {
+        try
+        {
+            var result = await orchestrator.GetResponse(prompt, &quot;gpt-4o-mini&quot;, 0.7);
+
+            metrics.IncrementCounter(&quot;requests_total&quot;, new Dictionary&lt;string, string&gt;
+            {
+                [&quot;status&quot;] = &quot;success&quot;
+            });
+
+            metrics.RecordValue(&quot;request_tokens&quot;, result.TokensUsed);
+
+            return result.Text;
+        }
+        catch (Exception ex)
+        {
+            metrics.IncrementCounter(&quot;requests_total&quot;, new Dictionary&lt;string, string&gt;
+            {
+                [&quot;status&quot;] = &quot;error&quot;
+            });
+
+            throw;
+        }
+    }
+}
+
+// 5. Health checks
+var health = diagnostics.RunHealthCheck();
+if (health.Status == HealthStatus.Unhealthy)
+{
+    Console.WriteLine($&quot;⚠ System unhealthy: {health.Message}&quot;);
+}
+
+// 6. Export metrics (Prometheus)
+var prometheusMetrics = metrics.ExportPrometheus();
+// Expose on /metrics endpoint
+
+// 7. Generate performance report
+var report = profiler.GenerateMarkdownReport();
+Console.WriteLine(report);
+</code></pre>
+<hr>
+<h2 id="environment-variables">Environment Variables</h2>
+<h3 id="complete-list">Complete List</h3>
+<pre><code class="lang-bash"># ==========================================
+# LLM PROVIDERS
+# ==========================================
+
+# OpenAI (Required for most features)
+OPENAI_API_KEY=sk-...
+
+# Anthropic (Optional, recommended for failover)
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Ollama (Optional, for local inference)
+OLLAMA_URL=http://localhost:11434
+
+# Google Gemini (Optional)
+GEMINI_API_KEY=...
+
+# Azure OpenAI (Optional)
+AZURE_OPENAI_KEY=...
+AZURE_OPENAI_ENDPOINT=https://...
+AZURE_OPENAI_DEPLOYMENT=...
+
+# ==========================================
+# STORAGE: SUPABASE
+# ==========================================
+
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...  # Server-side only!
+SUPABASE_CONNECTION_STRING=Host=db.your-project.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=...
+
+# Or shorthand:
+SUPABASE_DB_URL=postgresql://postgres:password@db.your-project.supabase.co:5432/postgres
+
+# ==========================================
+# STORAGE: POSTGRESQL
+# ==========================================
+
+POSTGRES_CONNECTION_STRING=Host=localhost;Port=5432;Database=hazina;Username=hazina_user;Password=...
+
+# Or shorthand:
+DATABASE_URL=postgresql://hazina_user:password@localhost:5432/hazina
+
+# ==========================================
+# STORAGE: FILE-BASED
+# ==========================================
+
+HAZINA_PROJECTS_FOLDER=C:\HazinaData
+# Or
+HAZINA_DATA_DIR=/var/lib/hazina
+
+# ==========================================
+# PRODUCTION SETTINGS
+# ==========================================
+
+# Budget limits
+HAZINA_BUDGET_USD=100.0
+
+# Health monitoring
+HAZINA_HEALTH_CHECK_INTERVAL=60
+
+# Performance
+HAZINA_MAX_PARALLEL_REQUESTS=10
+HAZINA_REQUEST_TIMEOUT_SECONDS=30
+
+# Logging
+HAZINA_LOG_LEVEL=Information  # Trace, Debug, Information, Warning, Error, Critical
+HAZINA_LOG_FILE=hazina.log
+
+# ==========================================
+# SECURITY
+# ==========================================
+
+# JWT for API authentication (if building API)
+JWT_SECRET=...
+JWT_ISSUER=...
+JWT_AUDIENCE=...
+
+# CORS (if building web API)
+CORS_ORIGINS=https://yourdomain.com,https://api.yourdomain.com
+
+# ==========================================
+# OPTIONAL: ADVANCED FEATURES
+# ==========================================
+
+# Neurochain
+NEUROCHAIN_PARALLEL_EXECUTION=true
+NEUROCHAIN_ENABLE_CROSS_VALIDATION=true
+
+# RAG
+RAG_CHUNK_SIZE=512
+RAG_CHUNK_OVERLAP=50
+RAG_TOP_K=5
+RAG_MIN_SIMILARITY=0.7
+
+# Agents
+AGENTS_MAX_ITERATIONS=10
+AGENTS_ENABLE_TOOL_CALLING=true
+</code></pre>
+<hr>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="1-security">1. Security</h3>
+<p><strong>DO:</strong></p>
+<ul>
+<li>✅ Gebruik environment variables voor API keys</li>
+<li>✅ Roteer API keys elke 90 dagen</li>
+<li>✅ Gebruik service role keys alleen server-side</li>
+<li>✅ Enable SSL/TLS voor alle database connecties</li>
+<li>✅ Implementeer rate limiting</li>
+<li>✅ Log security events</li>
+<li>✅ Gebruik least-privilege database credentials</li>
+</ul>
+<p><strong>DON'T:</strong></p>
+<ul>
+<li>❌ Hardcode API keys in source code</li>
+<li>❌ Commit .env files to git</li>
+<li>❌ Expose service role keys client-side</li>
+<li>❌ Gebruik default passwords</li>
+<li>❌ Skip input validation</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><code class="lang-csharp">// BAD
+var apiKey = &quot;sk-proj-abc123...&quot;;  // Hardcoded!
+
+// GOOD
+var apiKey = Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)
+    ?? throw new InvalidOperationException(&quot;OPENAI_API_KEY not configured&quot;);
+</code></pre>
+<hr>
+<h3 id="2-cost-management">2. Cost Management</h3>
+<p><strong>Strategies:</strong></p>
+<pre><code class="lang-csharp">// 1. Set budget limits
+var orchestrator = new ProviderOrchestrator(new ProviderOrchestratorConfig
+{
+    EnableCostTracking = true,
+    BudgetLimitUSD = 100.0
+});
+
+// 2. Use cost-optimized strategy for batch work
+if (isBatchJob)
+{
+    config.SelectionStrategy = SelectionStrategy.LeastCost;
+}
+
+// 3. Enable early stopping in Neurochain
+var neurochain = new NeuroChainOrchestrator(new NeuroChainConfig
+{
+    EnableEarlyStopping = true,
+    EarlyStoppingConfidence = 0.90  // Skip expensive layers if confidence is high
+});
+
+// 4. Monitor costs
+orchestrator.BudgetAlertTriggered += (sender, alert) =&gt;
+{
+    if (alert.PercentageUsed &gt;= 90)
+    {
+        // Switch to cheaper models
+        // Notify admin
+        // Throttle requests
+    }
+};
+
+// 5. Use local models for simple tasks
+orchestrator.RegisterProvider(&quot;ollama&quot;, ollamaClient, priority: 10, costPer1KTokens: 0.0);
+</code></pre>
+<hr>
+<h3 id="3-performance">3. Performance</h3>
+<p><strong>Optimization checklist:</strong></p>
+<ul>
+<li>✅ Use hybrid storage for best performance</li>
+<li>✅ Enable parallel execution in Neurochain</li>
+<li>✅ Implement caching for frequent queries</li>
+<li>✅ Use connection pooling for database</li>
+<li>✅ Monitor and tune vector index parameters</li>
+<li>✅ Use streaming for long responses</li>
+<li>✅ Implement retry with exponential backoff</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><code class="lang-csharp">// 1. Parallel execution
+var neurochain = new NeuroChainOrchestrator(new NeuroChainConfig
+{
+    ParallelExecution = true  // 60% faster!
+});
+
+// 2. Connection pooling (automatic in Npgsql)
+var connectionString = &quot;Host=...;Maximum Pool Size=100;Minimum Pool Size=10&quot;;
+
+// 3. Vector index tuning
+// For ~1M rows: lists = sqrt(1000000) = 1000
+CREATE INDEX idx ON embeddings USING ivfflat (embedding vector_cosine_ops) WITH (lists = 1000);
+
+// 4. Streaming for long responses
+await foreach (var chunk in orchestrator.GetResponseStream(prompt, model, 0.7))
+{
+    Console.Write(chunk);
+}
+</code></pre>
+<hr>
+<h3 id="4-reliability">4. Reliability</h3>
+<p><strong>Checklist:</strong></p>
+<ul>
+<li>✅ Use priority-based strategy with failover</li>
+<li>✅ Enable health monitoring</li>
+<li>✅ Implement circuit breaker</li>
+<li>✅ Set reasonable timeouts</li>
+<li>✅ Log all errors</li>
+<li>✅ Monitor system metrics</li>
+<li>✅ Have backup providers</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><code class="lang-csharp">var orchestrator = new ProviderOrchestrator(new ProviderOrchestratorConfig
+{
+    SelectionStrategy = SelectionStrategy.Priority,
+    EnableHealthMonitoring = true,
+    HealthCheckIntervalSeconds = 60,
+    CircuitBreakerThreshold = 5,
+    CircuitBreakerTimeoutSeconds = 300,
+    RequestTimeoutSeconds = 30
+});
+
+// At least 2 providers
+orchestrator.RegisterProvider(&quot;openai&quot;, openaiClient, priority: 1);
+orchestrator.RegisterProvider(&quot;anthropic&quot;, anthropicClient, priority: 2);
+
+// Health check endpoint
+app.MapGet(&quot;/health&quot;, () =&gt;
+{
+    var health = orchestrator.GetHealthStatus();
+    var allHealthy = health.All(h =&gt; h.Value == ProviderHealth.Healthy);
+
+    return allHealthy ? Results.Ok(health) : Results.StatusCode(503);
+});
+</code></pre>
+<hr>
+<h2 id="deployment-scenarios">Deployment Scenarios</h2>
+<h3 id="scenario-1-startupmvp">Scenario 1: Startup/MVP</h3>
+<p><strong>Requirements:</strong></p>
+<ul>
+<li>Minimale kosten</li>
+<li>Snelle setup</li>
+<li>Single-user of low traffic</li>
+</ul>
+<p><strong>Configuration:</strong></p>
+<pre><code class="lang-csharp">// Storage: File-based
+var config = new HazinaStoreConfig
+{
+    ApiSettings = new ApiSettings { OpenApiKey = openAIKey },
+    ProjectSettings = new ProjectSettings
+    {
+        ProjectsFolder = @&quot;C:\HazinaData&quot;
+    }
+};
+
+// Provider: OpenAI alleen
+var orchestrator = QuickSetup.SetupOpenAI(openAIKey, &quot;gpt-4o-mini&quot;);
+
+// Features: Basic RAG
+var ragEngine = new RAGEngine(orchestrator, storeSetup.VectorStore!);
+
+// Monitoring: Cost tracking
+orchestrator.GetTotalCost();  // Check periodically
+</code></pre>
+<p><strong>Cost:</strong> ~$5-20/month</p>
+<hr>
+<h3 id="scenario-2-growing-saas">Scenario 2: Growing SaaS</h3>
+<p><strong>Requirements:</strong></p>
+<ul>
+<li>Multi-user</li>
+<li>Schaalbaarheid</li>
+<li>Betrouwbaarheid</li>
+<li>Cost-aware</li>
+</ul>
+<p><strong>Configuration:</strong></p>
+<pre><code class="lang-csharp">// Storage: Hybrid
+var config = new HazinaStoreConfig
+{
+    ProjectSettings = new ProjectSettings { ProjectsFolder = &quot;/data/hazina&quot; },
+    SupabaseSettings = new SupabaseSettings
+    {
+        Enabled = true,
+        ConnectionString = supabaseConnStr
+    }
+};
+
+// Providers: OpenAI + Anthropic (failover)
+var orchestrator = QuickSetup.SetupWithFailover(openAIKey, anthropicKey);
+
+// Features: RAG + Neurochain (fast + deep)
+var neurochain = new NeuroChainOrchestrator(new NeuroChainConfig
+{
+    ParallelExecution = true
+});
+neurochain.AddLayer(new FastReasoningLayer(orchestrator));
+neurochain.AddLayer(new DeepReasoningLayer(orchestrator));
+
+// Monitoring: Full stack
+metrics.EnableAll();
+orchestrator.EnableHealthMonitoring();
+</code></pre>
+<p><strong>Cost:</strong> ~$50-500/month</p>
+<hr>
+<h3 id="scenario-3-enterprise">Scenario 3: Enterprise</h3>
+<p><strong>Requirements:</strong></p>
+<ul>
+<li>High availability</li>
+<li>Data sovereignty</li>
+<li>SLA vereisten</li>
+<li>Full control</li>
+<li>Compliance</li>
+</ul>
+<p><strong>Configuration:</strong></p>
+<pre><code class="lang-csharp">// Storage: Self-hosted PostgreSQL
+var config = new HazinaStoreConfig
+{
+    SupabaseSettings = new SupabaseSettings
+    {
+        Enabled = true,
+        ConnectionString = &quot;Host=pgcluster.internal;...&quot;  // HA cluster
+    }
+};
+
+// Providers: Multiple with priority
+var orchestrator = new ProviderOrchestrator(new ProviderOrchestratorConfig
+{
+    SelectionStrategy = SelectionStrategy.Priority,
+    EnableHealthMonitoring = true,
+    BudgetLimitUSD = 10000.0
+});
+
+orchestrator.RegisterProvider(&quot;azure-openai&quot;, azureClient, priority: 1);
+orchestrator.RegisterProvider(&quot;anthropic&quot;, anthropicClient, priority: 2);
+orchestrator.RegisterProvider(&quot;openai&quot;, openaiClient, priority: 3);
+
+// Features: Full stack
+var neurochain = new NeuroChainOrchestrator(new NeuroChainConfig
+{
+    ParallelExecution = true,
+    EnableCrossValidation = true
+});
+neurochain.AddLayer(new FastReasoningLayer(orchestrator));
+neurochain.AddLayer(new DeepReasoningLayer(orchestrator));
+neurochain.AddLayer(new VerificationLayer(orchestrator));
+
+// Monitoring: Enterprise-grade
+app.MapGet(&quot;/metrics&quot;, () =&gt; metrics.ExportPrometheus());
+app.MapGet(&quot;/health&quot;, () =&gt; diagnostics.RunHealthCheck());
+</code></pre>
+<p><strong>Cost:</strong> $1000+/month</p>
+<hr>
+<h2 id="resources">Resources</h2>
+<ul>
+<li><p><strong>Guides:</strong></p>
+<ul>
+<li><a href="SUPABASE_SETUP.html">Supabase Setup</a></li>
+<li><a href="NEUROCHAIN_GUIDE.html">Neurochain Guide</a></li>
+<li><a href="RAG_GUIDE.html">RAG Guide</a></li>
+<li><a href="AGENTS_GUIDE.html">Agents Guide</a></li>
+<li><a href="PRODUCTION_MONITORING_GUIDE.html">Production Monitoring</a></li>
+</ul>
+</li>
+<li><p><strong>Demos:</strong></p>
+<ul>
+<li><a href="../apps/Demos/Hazina.Demo.ConfigurationShowcase/">Configuration Showcase</a></li>
+<li><a href="../apps/Demos/Hazina.Demo.Supabase/">Supabase Demo</a></li>
+</ul>
+</li>
+<li><p><strong>External:</strong></p>
+<ul>
+<li><a href="https://platform.openai.com/docs">OpenAI Documentation</a></li>
+<li><a href="https://docs.anthropic.com">Anthropic Documentation</a></li>
+<li><a href="https://supabase.com/docs">Supabase Documentation</a></li>
+<li><a href="https://github.com/pgvector/pgvector">pgvector Documentation</a></li>
+</ul>
+</li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
