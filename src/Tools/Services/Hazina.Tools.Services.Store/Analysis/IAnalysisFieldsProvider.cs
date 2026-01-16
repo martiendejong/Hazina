@@ -9,8 +9,19 @@ namespace Hazina.Tools.Services.Store
         public string File { get; set; }
         public string DisplayName { get; set; }
         public string ConfigFileName { get; set; }
+        /// <summary>
+        /// Component name for base/analysis view rendering (e.g., "ItemsList", "ColorScheme")
+        /// </summary>
         public string ComponentName { get; set; }
+        /// <summary>
+        /// Component name for row/activity list rendering (e.g., "ItemsListRow", "ColorSchemeRow")
+        /// </summary>
         public string RowComponentName { get; set; }
+        /// <summary>
+        /// Component name for chat message rendering (e.g., "ItemsListChat", "ColorSchemeChat")
+        /// If not specified, convention is {ComponentName}Chat
+        /// </summary>
+        public string ChatComponentName { get; set; }
         /// <summary>
         /// Optional generic type name for structured output (e.g., "ToneOfVoice").
         /// When set, the content must be valid JSON matching this type's structure.

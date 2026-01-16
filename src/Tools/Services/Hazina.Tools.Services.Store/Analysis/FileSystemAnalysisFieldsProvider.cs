@@ -98,11 +98,16 @@ namespace Hazina.Tools.Services.Store
                     messages = new SerializableList<ConversationMessage>();
                 }
 
+                // Get the field configuration to determine the correct component name
+                var fields = await GetFieldsAsync(projectId);
+                var fieldInfo = fields.FirstOrDefault(f => f.Key.Equals(key, System.StringComparison.OrdinalIgnoreCase));
+                var componentName = fieldInfo?.ChatComponentName ?? "AnalysisData";
+
                 // Create analysis data payload
                 var payload = new
                 {
                     type = "analysis-data",
-                    componentName = "view/analysis/AnalysisData",
+                    componentName = componentName, // Component name from config
                     key,
                     title,
                     content,
