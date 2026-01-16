@@ -1,0 +1,422 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Interview Agent - Structured Conversation Framework | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Interview Agent - Structured Conversation Framework | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="interview-agent---structured-conversation-framework">Interview Agent - Structured Conversation Framework</h1>
+
+<h2 id="overview">Overview</h2>
+<p>The Interview Agent is a formalized component in the Hazina framework that conducts structured conversations to gather information from users through adaptive questioning. It implements explicit question strategies, progress tracking, and configuration-driven question banks.</p>
+<h2 id="architecture">Architecture</h2>
+<h3 id="components">Components</h3>
+<ol>
+<li><p><strong>IInterviewAgent Interface</strong> (<code>Hazina.Tools.Services.Chat</code>)</p>
+<ul>
+<li>Defines the contract for interview agent implementations</li>
+<li>Manages interview lifecycle: start, process responses, resume, complete</li>
+<li>Provides interview state management and progress tracking</li>
+</ul>
+</li>
+<li><p><strong>InterviewAgent Service</strong> (<code>Hazina.Tools.Services.Chat.Services</code>)</p>
+<ul>
+<li>Default implementation of IInterviewAgent</li>
+<li>Configuration-driven question banks</li>
+<li>Adaptive questioning logic based on responses</li>
+<li>Persistent state storage in project folders</li>
+</ul>
+</li>
+<li><p><strong>Data Models</strong></p>
+<ul>
+<li><code>InterviewState</code>: Current state of an interview session</li>
+<li><code>InterviewQuestion</code>: Individual question with metadata</li>
+<li><code>QuestionResponse</code>: Question-response pair with confidence scoring</li>
+<li><code>InterviewSummary</code>: Final summary of completed interview</li>
+<li><code>InterviewConfiguration</code>: Question bank configuration</li>
+</ul>
+</li>
+</ol>
+<h2 id="features">Features</h2>
+<h3 id="1-configuration-driven-question-banks">1. Configuration-Driven Question Banks</h3>
+<p>Define interview types in <code>appsettings.json</code> or configuration files:</p>
+<pre><code class="lang-json">{
+  &quot;InterviewAgent&quot;: {
+    &quot;Interviews&quot;: [
+      {
+        &quot;InterviewType&quot;: &quot;onboarding&quot;,
+        &quot;Name&quot;: &quot;Brand Onboarding Interview&quot;,
+        &quot;Description&quot;: &quot;Initial interview to gather brand information&quot;,
+        &quot;Questions&quot;: [
+          {
+            &quot;QuestionId&quot;: &quot;brand_name&quot;,
+            &quot;QuestionText&quot;: &quot;What is your brand or business name?&quot;,
+            &quot;Category&quot;: &quot;basic_info&quot;,
+            &quot;ResponseType&quot;: &quot;text&quot;,
+            &quot;IsRequired&quot;: true
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+<p>See <code>interview-agent-config-example.json</code> for complete examples.</p>
+<h3 id="2-adaptive-questioning">2. Adaptive Questioning</h3>
+<p>The agent adapts the question flow based on user responses:</p>
+<ul>
+<li><strong>Follow-up Questions</strong>: Triggered by specific keywords in responses</li>
+<li><strong>Sequential Flow</strong>: Default progression through question bank</li>
+<li><strong>Skip Logic</strong>: Optional questions can be skipped</li>
+<li><strong>Dynamic Progress</strong>: Real-time progress calculation</li>
+</ul>
+<p>Example follow-up configuration:</p>
+<pre><code class="lang-json">{
+  &quot;QuestionId&quot;: &quot;target_audience&quot;,
+  &quot;QuestionText&quot;: &quot;Who is your target audience?&quot;,
+  &quot;FollowUpQuestions&quot;: {
+    &quot;B2B&quot;: [&quot;decision_makers&quot;],
+    &quot;businesses&quot;: [&quot;decision_makers&quot;]
+  }
+}
+</code></pre>
+<h3 id="3-interview-state-management">3. Interview State Management</h3>
+<p>Each interview session maintains:</p>
+<ul>
+<li><strong>Session ID</strong>: Unique identifier (projectId:chatId)</li>
+<li><strong>Progress Tracking</strong>: 0-100% completion</li>
+<li><strong>Question History</strong>: All questions asked and responses</li>
+<li><strong>Gathered Data</strong>: Extracted key-value pairs</li>
+<li><strong>Pause/Resume</strong>: Ability to pause and resume interviews</li>
+</ul>
+<p>State is persisted to <code>{projectFolder}/interview_states/{chatId}.json</code></p>
+<h3 id="4-response-quality-analysis">4. Response Quality Analysis</h3>
+<p>Responses are analyzed for quality with confidence scoring:</p>
+<ul>
+<li>Word count heuristics</li>
+<li>Response completeness</li>
+<li>Confidence score (0.0 - 1.0)</li>
+</ul>
+<h3 id="5-interview-types">5. Interview Types</h3>
+<p>Built-in interview types:</p>
+<ol>
+<li><strong>onboarding</strong>: Brand onboarding interview (default)</li>
+<li><strong>content_planning</strong>: Content piece planning</li>
+<li><strong>brand_refresh</strong>: Brand update/refresh</li>
+</ol>
+<p>Custom interview types can be added via configuration.</p>
+<h2 id="usage">Usage</h2>
+<h3 id="1-dependency-injection">1. Dependency Injection</h3>
+<p>Register the InterviewAgent service:</p>
+<pre><code class="lang-csharp">services.AddScoped&lt;IInterviewAgent&gt;(sp =&gt;
+{
+    var projects = sp.GetRequiredService&lt;ProjectsRepository&gt;();
+    var config = sp.GetRequiredService&lt;IConfiguration&gt;();
+    return new InterviewAgent(projects, config);
+});
+</code></pre>
+<h3 id="2-start-an-interview">2. Start an Interview</h3>
+<pre><code class="lang-csharp">var interviewAgent = serviceProvider.GetService&lt;IInterviewAgent&gt;();
+
+var state = await interviewAgent.StartInterviewAsync(
+    projectId: &quot;my-project&quot;,
+    chatId: &quot;chat-123&quot;,
+    interviewType: &quot;onboarding&quot;,
+    cancel: cancellationToken
+);
+
+// Present the first question to user
+var firstQuestion = state.CurrentQuestion.QuestionText;
+</code></pre>
+<h3 id="3-process-user-responses">3. Process User Responses</h3>
+<pre><code class="lang-csharp">var updatedState = await interviewAgent.ProcessResponseAsync(
+    projectId: &quot;my-project&quot;,
+    chatId: &quot;chat-123&quot;,
+    userResponse: &quot;My brand is Acme Corp&quot;,
+    cancel: cancellationToken
+);
+
+// Check if interview is complete
+if (updatedState.IsComplete)
+{
+    var summary = await interviewAgent.CompleteInterviewAsync(
+        projectId: &quot;my-project&quot;,
+        chatId: &quot;chat-123&quot;,
+        cancel: cancellationToken
+    );
+}
+else
+{
+    // Present next question
+    var nextQuestion = updatedState.CurrentQuestion.QuestionText;
+}
+</code></pre>
+<h3 id="4-resume-a-paused-interview">4. Resume a Paused Interview</h3>
+<pre><code class="lang-csharp">var resumedState = await interviewAgent.ResumeInterviewAsync(
+    projectId: &quot;my-project&quot;,
+    chatId: &quot;chat-123&quot;,
+    cancel: cancellationToken
+);
+</code></pre>
+<h3 id="5-skip-questions">5. Skip Questions</h3>
+<pre><code class="lang-csharp">var skippedState = await interviewAgent.SkipCurrentQuestionAsync(
+    projectId: &quot;my-project&quot;,
+    chatId: &quot;chat-123&quot;,
+    cancel: cancellationToken
+);
+</code></pre>
+<h2 id="interview-state-structure">Interview State Structure</h2>
+<pre><code class="lang-csharp">public class InterviewState
+{
+    public string SessionId { get; set; }                    // &quot;project:chat&quot;
+    public string InterviewType { get; set; }                // &quot;onboarding&quot;
+    public InterviewQuestion CurrentQuestion { get; set; }   // Current question
+    public List&lt;QuestionResponse&gt; QuestionHistory { get; set; }
+    public int ProgressPercentage { get; set; }              // 0-100
+    public bool IsComplete { get; set; }
+    public bool IsPaused { get; set; }
+    public Dictionary&lt;string, object&gt; GatheredData { get; set; }
+    public List&lt;string&gt; SuggestedNextQuestions { get; set; }
+}
+</code></pre>
+<h2 id="interview-summary">Interview Summary</h2>
+<p>When an interview completes, a summary is generated:</p>
+<pre><code class="lang-csharp">public class InterviewSummary
+{
+    public string SessionId { get; set; }
+    public string InterviewType { get; set; }
+    public int TotalQuestionsAsked { get; set; }
+    public int QuestionsAnswered { get; set; }
+    public int CompletionPercentage { get; set; }
+    public Dictionary&lt;string, object&gt; GatheredData { get; set; }
+    public List&lt;string&gt; KeyInsights { get; set; }
+    public List&lt;string&gt; RecommendedActions { get; set; }
+    public DateTime CompletedAt { get; set; }
+    public TimeSpan Duration { get; set; }
+}
+</code></pre>
+<h2 id="integration-with-chat">Integration with Chat</h2>
+<p>The Interview Agent can be integrated into chat controllers:</p>
+<ol>
+<li>Detect when interview mode should activate</li>
+<li>Start interview session</li>
+<li>Process each user message as a response</li>
+<li>Present questions in chat UI</li>
+<li>Complete interview and store gathered data</li>
+</ol>
+<p>Example integration:</p>
+<pre><code class="lang-csharp">// In ChatController
+private readonly IInterviewAgent _interviewAgent;
+
+// Check if interview is active
+var interviewState = await _interviewAgent.GetInterviewStateAsync(projectId, chatId);
+
+if (!interviewState.IsComplete &amp;&amp; interviewState.CurrentQuestion != null)
+{
+    // Process as interview response
+    var updatedState = await _interviewAgent.ProcessResponseAsync(
+        projectId, chatId, userMessage
+    );
+
+    // Return next question as chat response
+    return updatedState.CurrentQuestion?.QuestionText ?? &quot;Interview complete!&quot;;
+}
+</code></pre>
+<h2 id="best-practices">Best Practices</h2>
+<ol>
+<li><p><strong>Question Design</strong></p>
+<ul>
+<li>Keep questions clear and concise</li>
+<li>Use follow-up questions for depth</li>
+<li>Mark critical questions as required</li>
+<li>Provide response options when appropriate</li>
+</ul>
+</li>
+<li><p><strong>Interview Flow</strong></p>
+<ul>
+<li>Start with basic, easy questions</li>
+<li>Progress to more detailed questions</li>
+<li>Group related questions by category</li>
+<li>Limit total questions to 10-15 for good UX</li>
+</ul>
+</li>
+<li><p><strong>Data Extraction</strong></p>
+<ul>
+<li>Use QuestionId as data key</li>
+<li>Store responses in GatheredData</li>
+<li>Group by category for easy access</li>
+<li>Validate critical data points</li>
+</ul>
+</li>
+<li><p><strong>State Management</strong></p>
+<ul>
+<li>Persist state after each response</li>
+<li>Handle resume scenarios gracefully</li>
+<li>Clean up completed interview states</li>
+<li>Monitor state file size</li>
+</ul>
+</li>
+</ol>
+<h2 id="extensibility">Extensibility</h2>
+<h3 id="custom-question-types">Custom Question Types</h3>
+<p>Extend <code>ResponseType</code> for custom validation:</p>
+<pre><code class="lang-csharp">public class CustomInterviewAgent : InterviewAgent
+{
+    protected override bool ValidateResponse(string response, string responseType)
+    {
+        return responseType switch
+        {
+            &quot;email&quot; =&gt; IsValidEmail(response),
+            &quot;url&quot; =&gt; IsValidUrl(response),
+            _ =&gt; base.ValidateResponse(response, responseType)
+        };
+    }
+}
+</code></pre>
+<h3 id="custom-adaptive-logic">Custom Adaptive Logic</h3>
+<p>Override <code>DetermineNextQuestionAsync</code> for advanced logic:</p>
+<pre><code class="lang-csharp">protected override async Task&lt;InterviewQuestion&gt; DetermineNextQuestionAsync(
+    InterviewState state,
+    string userResponse,
+    CancellationToken cancel)
+{
+    // Custom logic based on AI analysis, sentiment, etc.
+    if (await RequiresFollowUp(userResponse))
+    {
+        return await GenerateDynamicFollowUpQuestion(state, userResponse);
+    }
+
+    return await base.DetermineNextQuestionAsync(state, userResponse, cancel);
+}
+</code></pre>
+<h2 id="file-locations">File Locations</h2>
+<ul>
+<li><strong>Interface</strong>: <code>Hazina.Tools.Services.Chat/Interfaces/IInterviewAgent.cs</code></li>
+<li><strong>Implementation</strong>: <code>Hazina.Tools.Services.Chat/Services/InterviewAgent.cs</code></li>
+<li><strong>Configuration Example</strong>: <code>docs/interview-agent-config-example.json</code></li>
+<li><strong>Documentation</strong>: <code>docs/INTERVIEW_AGENT.md</code></li>
+</ul>
+<h2 id="future-enhancements">Future Enhancements</h2>
+<ol>
+<li><strong>AI-Powered Question Generation</strong>: Dynamic question creation based on context</li>
+<li><strong>Multi-Language Support</strong>: Internationalized question banks</li>
+<li><strong>Voice Integration</strong>: Voice-based interview mode</li>
+<li><strong>Analytics Dashboard</strong>: Visualize interview completion rates and insights</li>
+<li><strong>Question Templates</strong>: Reusable question fragments</li>
+<li><strong>Conditional Logic</strong>: Complex branching based on multiple responses</li>
+<li><strong>Integration with Analysis Fields</strong>: Auto-trigger analysis field generation from responses</li>
+</ol>
+<h2 id="related-documentation">Related Documentation</h2>
+<ul>
+<li><a href="ARCHITECTURE_ANALYSIS_2026-01-05.html">Architecture Analysis</a></li>
+<li><a href="../src/Tools/Services/Hazina.Tools.Services.DataGathering/README.md">Gathered Data System</a></li>
+<li><a href="../src/Tools/Services/Hazina.Tools.Services.Chat/README.md">Chat Services</a></li>
+</ul>
+<hr>
+<p><em>Generated 2026-01-05 - Hazina Framework Documentation</em></p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

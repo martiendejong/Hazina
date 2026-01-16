@@ -1,0 +1,294 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>NuGet Package Versioning and Publishing Guide | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="NuGet Package Versioning and Publishing Guide | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="nuget-package-versioning-and-publishing-guide">NuGet Package Versioning and Publishing Guide</h1>
+
+<p>This document explains how to manage versions and publish NuGet packages for the Hazina project.</p>
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="one-command-publishing">One-Command Publishing</h3>
+<p>To increment the version and publish all packages in one go:</p>
+<pre><code class="lang-bat">increment-and-publish.bat
+</code></pre>
+<p>This will:</p>
+<ol>
+<li>Increment the PATCH version (e.g., 1.0.5 → 1.0.6)</li>
+<li>Update all .csproj files</li>
+<li>Build all packages</li>
+<li>Publish to NuGet</li>
+</ol>
+<h3 id="version-increment-options">Version Increment Options</h3>
+<pre><code class="lang-bat"># Increment patch version (1.0.5 → 1.0.6) - for bug fixes
+increment-and-publish.bat patch
+
+# Increment minor version (1.0.5 → 1.1.0) - for new features
+increment-and-publish.bat minor
+
+# Increment major version (1.0.5 → 2.0.0) - for breaking changes
+increment-and-publish.bat major
+</code></pre>
+<h3 id="increment-without-publishing">Increment Without Publishing</h3>
+<p>To only update version numbers without publishing:</p>
+<pre><code class="lang-bat">increment-and-publish.bat patch --no-publish
+</code></pre>
+<h2 id="setup">Setup</h2>
+<h3 id="first-time-setup">First Time Setup</h3>
+<ol>
+<li><p><strong>Set your NuGet API Key</strong> (one of these methods):</p>
+<p><strong>Method A - Environment Variable (Recommended):</strong></p>
+<pre><code class="lang-bat">setx NUGET_API_KEY &quot;your-api-key-here&quot;
+</code></pre>
+<p>You'll need to restart your terminal after this.</p>
+<p><strong>Method B - Pass as argument:</strong></p>
+<pre><code class="lang-bat">nuget-publish.bat your-api-key-here
+</code></pre>
+</li>
+<li><p><strong>Verify setup:</strong></p>
+<pre><code class="lang-bat">echo %NUGET_API_KEY%
+</code></pre>
+</li>
+</ol>
+<h2 id="manual-workflow">Manual Workflow</h2>
+<p>If you prefer to do things step by step:</p>
+<h3 id="1-update-versions-manually">1. Update Versions Manually</h3>
+<p>Edit the version in <code>updateversions.ps1</code>:</p>
+<pre><code class="lang-powershell">$targetVersion = &quot;1.0.6&quot;
+</code></pre>
+<p>Then run:</p>
+<pre><code class="lang-bat">powershell -ExecutionPolicy Bypass -File updateversions.ps1
+</code></pre>
+<h3 id="2-build-packages">2. Build Packages</h3>
+<pre><code class="lang-bat">dotnet clean
+dotnet build -c Release
+dotnet pack -c Release --no-build
+</code></pre>
+<h3 id="3-publish-to-nuget">3. Publish to NuGet</h3>
+<pre><code class="lang-bat">nuget-publish.bat
+</code></pre>
+<h2 id="versioning-strategy">Versioning Strategy</h2>
+<p>This project uses <strong>Synchronized Semantic Versioning</strong> across all packages.</p>
+<h3 id="semantic-versioning-semver">Semantic Versioning (SemVer)</h3>
+<p>Version format: <code>MAJOR.MINOR.PATCH</code></p>
+<ul>
+<li><strong>MAJOR</strong> (1.x.x → 2.x.x): Breaking changes - API changes that break compatibility</li>
+<li><strong>MINOR</strong> (x.1.x → x.2.x): New features - Backwards compatible additions</li>
+<li><strong>PATCH</strong> (x.x.1 → x.x.2): Bug fixes - Backwards compatible fixes</li>
+</ul>
+<h3 id="synchronized-versions">Synchronized Versions</h3>
+<p>All Hazina packages share the same version number:</p>
+<ul>
+<li>✅ Simple to manage</li>
+<li>✅ Clear which packages belong together</li>
+<li>✅ Less confusion for consumers</li>
+<li>✅ Easy dependency management</li>
+</ul>
+<p>Example: If you update <code>Hazina.LLMs.Classes</code>, all packages get version bump (even if unchanged).</p>
+<h3 id="when-to-increment">When to Increment</h3>
+<table>
+<thead>
+<tr>
+<th>Change Type</th>
+<th>Version Change</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bug fix</td>
+<td>PATCH</td>
+<td>1.0.5 → 1.0.6</td>
+</tr>
+<tr>
+<td>New feature (compatible)</td>
+<td>MINOR</td>
+<td>1.0.5 → 1.1.0</td>
+</tr>
+<tr>
+<td>Breaking change</td>
+<td>MAJOR</td>
+<td>1.0.5 → 2.0.0</td>
+</tr>
+</tbody>
+</table>
+<h2 id="package-list">Package List</h2>
+<p>The following packages are managed:</p>
+<ol>
+<li>Hazina.AgentFactory</li>
+<li>Hazina.LLMs.Classes</li>
+<li>Hazina.Store.DocumentStore</li>
+<li>Hazina.Store.EmbeddingStore</li>
+<li>Hazina.Generator</li>
+<li>Hazina.Helpers</li>
+<li>Hazina.LLMs.HuggingFace</li>
+<li>Hazina.LLMs.Client</li>
+<li>Hazina.LLMs.Tools</li>
+<li>Hazina.LLMs.OpenAI</li>
+</ol>
+<h2 id="git-workflow">Git Workflow</h2>
+<p>After publishing, don't forget to commit and tag:</p>
+<pre><code class="lang-bat">git add .
+git commit -m &quot;Bump version to 1.0.6&quot;
+git tag v1.0.6
+git push
+git push --tags
+</code></pre>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="api-key-not-found">&quot;API key not found&quot;</h3>
+<p>Make sure you've set the <code>NUGET_API_KEY</code> environment variable and restarted your terminal.</p>
+<h3 id="package-not-found-in-binrelease">&quot;Package not found in bin\Release&quot;</h3>
+<p>Run <code>dotnet pack -c Release</code> first to build the packages.</p>
+<h3 id="package-already-exists">&quot;Package already exists&quot;</h3>
+<p>The publish script uses <code>--skip-duplicate</code>, so this should be handled automatically. If you see this, the package is already on NuGet.</p>
+<h3 id="failed-to-publish">&quot;Failed to publish&quot;</h3>
+<ul>
+<li>Check your API key is valid</li>
+<li>Verify you have permissions for the package on nuget.org</li>
+<li>Check your internet connection</li>
+</ul>
+<h2 id="security-notes">Security Notes</h2>
+<p><strong>IMPORTANT</strong>: Never commit the API key to git!</p>
+<ul>
+<li>✅ Use environment variables</li>
+<li>✅ Use <code>.gitignore</code> to exclude <code>nuget.bat.old</code> (which contains the old key)</li>
+<li>❌ Don't hardcode API keys in scripts</li>
+<li>❌ Don't commit API keys to version control</li>
+</ul>
+<h2 id="files">Files</h2>
+<ul>
+<li><code>increment-and-publish.bat</code> - Main script for version increment and publishing</li>
+<li><code>nuget-publish.bat</code> - Publishing script (can be used standalone)</li>
+<li><code>updateversions.ps1</code> - PowerShell script that updates .csproj files</li>
+<li><code>nuget.bat.old</code> - Backup of old script (contains API key - don't commit!)</li>
+</ul>
+<h2 id="examples">Examples</h2>
+<h3 id="release-a-bug-fix">Release a Bug Fix</h3>
+<pre><code class="lang-bat">increment-and-publish.bat patch
+# Commits and tags
+git add .
+git commit -m &quot;Fix: Resolved null reference in HazinaGeneratedImage&quot;
+git tag v1.0.6
+git push &amp;&amp; git push --tags
+</code></pre>
+<h3 id="release-new-features">Release New Features</h3>
+<pre><code class="lang-bat">increment-and-publish.bat minor
+# Commits and tags
+git add .
+git commit -m &quot;Feature: Add support for GPT-4 Turbo&quot;
+git tag v1.1.0
+git push &amp;&amp; git push --tags
+</code></pre>
+<h3 id="preview-changes-without-publishing">Preview Changes Without Publishing</h3>
+<pre><code class="lang-bat">increment-and-publish.bat patch --no-publish
+# Review the packages in bin/Release folders
+# If satisfied, publish manually:
+nuget-publish.bat
+</code></pre>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

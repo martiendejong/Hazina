@@ -1,0 +1,454 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Hazina vs Semantic Kernel Analysis | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Hazina vs Semantic Kernel Analysis | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="hazina-vs-semantic-kernel-analysis">Hazina vs Semantic Kernel Analysis</h1>
+
+<h1 id="hazina-vs-microsoft-semantic-kernel-complete-analysis">Hazina vs Microsoft Semantic Kernel: Complete Analysis</h1>
+<h2 id="1-documentstore-architecture">1. DocumentStore Architecture</h2>
+<p>Hazina: Three-tier composition (embeddings + text + chunks + metadata)</p>
+<ul>
+<li>File-based JSON embeddings (no external DB)</li>
+<li>Built-in document splitting with parent-child tracking</li>
+<li>Token-aware relevance filtering (automatic context limiting)</li>
+<li>Rich metadata: MIME type, size, creation date, custom fields</li>
+<li>Multi-store support with read/write flags</li>
+</ul>
+<p>Semantic Kernel:</p>
+<ul>
+<li>ISemanticTextMemory with external vector DB connectors</li>
+<li>No built-in chunking strategy</li>
+<li>Manual token budgeting required</li>
+<li>Opaque metadata (only embeddings + key)</li>
+</ul>
+<p>Winner: Hazina (out-of-the-box, local, token-budgeted RAG)</p>
+<hr>
+<h2 id="2-safe-file-modification-updatestoreresponse">2. Safe File Modification: UpdateStoreResponse</h2>
+<p>Hazina: Strongly-typed response pattern</p>
+<ul>
+<li>Schema injected into system prompt</li>
+<li>Atomic operations (full file writes, explicit deletes/moves)</li>
+<li>PartialJsonParser for streaming JSON repair</li>
+<li>No partial edits (prevents malformed code)</li>
+<li>Compiler-checked contracts</li>
+</ul>
+<p>Semantic Kernel:</p>
+<ul>
+<li>Generic tool calling with typed parameters</li>
+<li>No built-in safe file operation semantics</li>
+<li>Developers implement custom guardrails</li>
+</ul>
+<p>Winner: Hazina (deterministic, safe, atomic)</p>
+<hr>
+<h2 id="3-rag-implementation">3. RAG Implementation</h2>
+<p>Hazina: Complete message assembly pipeline</p>
+<ul>
+<li>Conversation history (sliding window, max 20 messages)</li>
+<li>Relevant documents (cosine similarity, token-limited)</li>
+<li>Optional file listing for global context</li>
+<li>System prompts</li>
+<li>Recent messages (recency bias)</li>
+<li>Current user request</li>
+</ul>
+<p>Multi-store support with per-store permissions</p>
+<p>Semantic Kernel:</p>
+<ul>
+<li>ChatHistory management</li>
+<li>Plugins for context retrieval</li>
+<li>Manual message assembly</li>
+</ul>
+<p>Winner: Hazina (turnkey RAG pipeline)</p>
+<hr>
+<h2 id="4-configuration-system">4. Configuration System</h2>
+<p>Hazina: Dual-format (text + JSON)</p>
+<ul>
+<li>.hazina text format (human-readable)</li>
+<li>JSON format (programmatic)</li>
+<li>Three entities: Store, Agent, Flow</li>
+<li>Per-store read/write flags</li>
+<li>Function opt-in system</li>
+</ul>
+<p>Semantic Kernel:</p>
+<ul>
+<li>Programmatic setup (KernelBuilder)</li>
+<li>appsettings.json for models</li>
+<li>No declarative configuration</li>
+</ul>
+<p>Winner: Hazina (non-developer friendly)</p>
+<hr>
+<h2 id="5-tool-system">5. Tool System</h2>
+<p>Hazina: Dynamic registration with built-in sets</p>
+<ul>
+<li>Store tools (list, read, relevancy, write, delete, move)</li>
+<li>Developer tools (git, dotnet, npm, build)</li>
+<li>Data tools (BigQuery, email, WordPress)</li>
+<li>HTTP tools (web scrape)</li>
+<li>Tools receive full message history context</li>
+<li>Permission-aware execution</li>
+</ul>
+<p>Semantic Kernel:</p>
+<ul>
+<li>KernelFunction definitions</li>
+<li>Plugin discovery</li>
+<li>No built-in developer tools</li>
+<li>Tools receive only arguments</li>
+</ul>
+<p>Winner: Hazina (built-in dev tools, context-aware)</p>
+<hr>
+<h2 id="6-multi-agent-flows">6. Multi-Agent Flows</h2>
+<p>Hazina: Sequential orchestration</p>
+<ul>
+<li>Ordered agent execution</li>
+<li>Automatic context propagation (output → input)</li>
+<li>Mode switching (WriteMode flag for code agents)</li>
+<li>Rich message metadata (caller, agent, function, flow)</li>
+<li>Implicit handoff (no explicit message passing)</li>
+</ul>
+<p>Semantic Kernel:</p>
+<ul>
+<li>Round-robin group chat</li>
+<li>Manual handoff logic</li>
+<li>No mode switching</li>
+<li>Basic message history</li>
+</ul>
+<p>Winner: Hazina (sequential flows, auto context)</p>
+<hr>
+<h2 id="7-cost-tracking">7. Cost Tracking</h2>
+<p>Hazina: Automatic token usage + cost</p>
+<ul>
+<li>TokenUsageInfo class with input/output tokens and costs</li>
+<li>Operator overloading for aggregation</li>
+<li>Every response includes paired token usage</li>
+<li>Automatic cost calculation (per model)</li>
+<li>Multi-turn aggregation</li>
+</ul>
+<p>Semantic Kernel:</p>
+<ul>
+<li>Provider-dependent token tracking</li>
+<li>No aggregation semantics</li>
+<li>Metadata varies by provider</li>
+</ul>
+<p>Winner: Hazina (automatic, aggregatable)</p>
+<hr>
+<h2 id="8-developer-tools">8. Developer Tools</h2>
+<p>Hazina: Out-of-the-box support</p>
+<ul>
+<li>git: status, diff, commit, push, pull</li>
+<li>dotnet: build, test, publish, clean</li>
+<li>npm: install, build, test, lint, format</li>
+<li>build: generic command execution</li>
+<li>All with timeout and permission controls</li>
+</ul>
+<p>Semantic Kernel:</p>
+<ul>
+<li>No built-in developer tools</li>
+<li>Requires custom wrappers</li>
+</ul>
+<p>Winner: Hazina (zero boilerplate)</p>
+<hr>
+<h2 id="9-store-permissions">9. Store Permissions</h2>
+<p>Hazina: Granular control</p>
+<ul>
+<li>Per-store read/write flags</li>
+<li>StoreRef(Name, Write boolean)</li>
+<li>ExplicitModify flag for schema-based permissions</li>
+<li>WriteMode global switch for agent orchestration</li>
+</ul>
+<p>Semantic Kernel:</p>
+<ul>
+<li>Binary function availability</li>
+<li>No permission model</li>
+</ul>
+<p>Winner: Hazina (explicit, granular)</p>
+<hr>
+<h2 id="10-streaming">10. Streaming</h2>
+<p>Hazina: Real-time callbacks with token tracking</p>
+<ul>
+<li>Action<string> callback per chunk</string></li>
+<li>Token tracking during stream</li>
+<li>Support for typed responses (UpdateStoreResponse)</li>
+<li>Integration with RAG pipeline</li>
+</ul>
+<p>Semantic Kernel:</p>
+<ul>
+<li>IAsyncEnumerable<streamingchatmessagecontent></streamingchatmessagecontent></li>
+<li>Inconsistent token metadata</li>
+<li>No callback pattern</li>
+</ul>
+<p>Winner: Hazina (callbacks, typed streaming)</p>
+<hr>
+<h2 id="comparison-matrix">Comparison Matrix</h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Hazina</th>
+<th>SK</th>
+<th>Winner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>File-based embeddings</td>
+<td>✓</td>
+<td>✗</td>
+<td>Hazina</td>
+</tr>
+<tr>
+<td>Multi-store composition</td>
+<td>✓</td>
+<td>✗</td>
+<td>Hazina</td>
+</tr>
+<tr>
+<td>Token-aware limiting</td>
+<td>✓</td>
+<td>✗</td>
+<td>Hazina</td>
+</tr>
+<tr>
+<td>Safe file ops</td>
+<td>✓</td>
+<td>✗</td>
+<td>Hazina</td>
+</tr>
+<tr>
+<td>Automatic RAG</td>
+<td>✓</td>
+<td>✗</td>
+<td>Hazina</td>
+</tr>
+<tr>
+<td>Declarative config</td>
+<td>✓</td>
+<td>✗</td>
+<td>Hazina</td>
+</tr>
+<tr>
+<td>Per-store permissions</td>
+<td>✓</td>
+<td>✗</td>
+<td>Hazina</td>
+</tr>
+<tr>
+<td>Built-in dev tools</td>
+<td>✓</td>
+<td>✗</td>
+<td>Hazina</td>
+</tr>
+<tr>
+<td>Sequential flows</td>
+<td>✓</td>
+<td>✗</td>
+<td>Hazina</td>
+</tr>
+<tr>
+<td>Auto cost tracking</td>
+<td>✓</td>
+<td>✗</td>
+<td>Hazina</td>
+</tr>
+<tr>
+<td>Streaming callbacks</td>
+<td>✓</td>
+<td>✗</td>
+<td>Hazina</td>
+</tr>
+<tr>
+<td>Large plugin ecosystem</td>
+<td>✗</td>
+<td>✓</td>
+<td>SK</td>
+</tr>
+<tr>
+<td>Advanced planners</td>
+<td>✗</td>
+<td>✓</td>
+<td>SK</td>
+</tr>
+<tr>
+<td>Multiple LLM providers</td>
+<td>✗</td>
+<td>✓</td>
+<td>SK</td>
+</tr>
+<tr>
+<td>Structured outputs</td>
+<td>✓</td>
+<td>✓</td>
+<td>Tie</td>
+</tr>
+<tr>
+<td>Vector DB connectors</td>
+<td>✗</td>
+<td>✓</td>
+<td>SK</td>
+</tr>
+<tr>
+<td>Enterprise support</td>
+<td>✗</td>
+<td>✓</td>
+<td>SK</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="hazina-specialization">Hazina Specialization</h2>
+<ol>
+<li>Code Assistants: Local repos with embeddings, git, safe commits</li>
+<li>Knowledge Q&amp;A: Documents with rich metadata and file listing</li>
+<li>Developer Workflows: Git, dotnet, npm integration</li>
+<li>Multi-Agent Code Gen: Sequential flows with write-mode switching</li>
+<li>Cost-Sensitive: File embeddings, token tracking, no external DB</li>
+<li>Offline/Local: No cloud dependency for orchestration</li>
+<li>Audit/Compliance: Rich history, deterministic mods, explicit perms</li>
+</ol>
+<hr>
+<h2 id="semantic-kernel-specialization">Semantic Kernel Specialization</h2>
+<ol>
+<li>Enterprise Orchestration: Multiple LLM providers</li>
+<li>Advanced Planning: Stepwise decomposition</li>
+<li>Long-Term Memory: Vector DB connectors</li>
+<li>Multi-Modal: Images, documents across plugins</li>
+<li>Extensibility: Large plugin ecosystem</li>
+<li>Production Operations: Telemetry, monitoring</li>
+<li>Flexibility: Any LLM, any backend</li>
+</ol>
+<hr>
+<h2 id="integration-recommendations">Integration Recommendations</h2>
+<p>To enhance SK with Hazina features:</p>
+<ol>
+<li>Copy UpdateStoreResponse pattern</li>
+<li>Implement EmbeddingMatcher token limiting</li>
+<li>Use Hazina JSON embedding format</li>
+<li>Wrap AgentFactory tools as SK plugins</li>
+</ol>
+<p>To enhance Hazina with SK features:</p>
+<ol>
+<li>Implement ILLMClient with SK kernel</li>
+<li>Add SK planners for autonomous decomposition</li>
+<li>Connect SK vector DB adapters</li>
+<li>Use SK native structured outputs</li>
+</ol>
+<hr>
+<h2 id="conclusion">Conclusion</h2>
+<p>Hazina is a specialist framework for local, code-centric AI with out-of-the-box features
+for embeddings, safe code generation, and developer tool integration.</p>
+<p>Semantic Kernel is an orchestration platform for enterprise extensibility, multiple
+providers, and advanced reasoning.</p>
+<p>Both are complementary. The ideal stack combines:</p>
+<ul>
+<li>Hazina: Local RAG, embeddings, safe modifications</li>
+<li>Semantic Kernel: Multi-provider LLM, planners, production memory</li>
+<li>Integration: ILLMClient wrapper around SK kernel</li>
+</ul>
+<p>They are not competitors—they solve different problems for different contexts.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

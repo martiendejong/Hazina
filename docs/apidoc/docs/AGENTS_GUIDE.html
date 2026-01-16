@@ -1,0 +1,635 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Agentic Workflows Guide | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Agentic Workflows Guide | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="agentic-workflows-guide">Agentic Workflows Guide</h1>
+
+<p><strong>Updated for Hazina v2.0</strong></p>
+<hr>
+<h2 id="overview">Overview</h2>
+<p>Hazina's agent system provides autonomous AI agents with tool-calling capabilities, workflow orchestration, and multi-agent coordination.</p>
+<h3 id="new-in-v20">New in v2.0</h3>
+<ul>
+<li>✅ <strong><a href="TOOL_AGENT_ARCHITECTURE.html">3-Layer Tool Agent Architecture</a></strong> - 90% token cost reduction through intelligent layering</li>
+<li>✅ <strong><a href="CONTEXT_COMPRESSION.html">Context Compression</a></strong> - Reduce agent context by 87%</li>
+<li>✅ Improved tool calling with async execution</li>
+<li>✅ Enhanced multi-agent coordination</li>
+</ul>
+<hr>
+<h2 id="core-concepts">Core Concepts</h2>
+<h3 id="agent">Agent</h3>
+<p>An autonomous AI entity that can:</p>
+<ul>
+<li>Execute tasks</li>
+<li>Use tools</li>
+<li>Maintain conversation history</li>
+<li>Integrate with NeuroChain for reasoning</li>
+</ul>
+<h3 id="tool">Tool</h3>
+<p>A capability an agent can use to interact with external systems or perform specific operations.</p>
+<h3 id="workflow">Workflow</h3>
+<p>A multi-step process coordinating multiple agents or operations.</p>
+<h3 id="coordination">Coordination</h3>
+<p>Strategies for multiple agents to work together.</p>
+<h2 id="quick-start">Quick Start</h2>
+<pre><code class="lang-csharp">var orchestrator = new ProviderOrchestrator();
+
+// Create an agent
+var agent = new Agent(
+    &quot;ResearchAssistant&quot;,
+    &quot;An agent that helps with research tasks&quot;,
+    orchestrator
+);
+
+// Execute a task
+var response = await agent.ExecuteAsync(&quot;Research the history of AI&quot;);
+
+Console.WriteLine(response.Result);
+</code></pre>
+<h2 id="creating-agents">Creating Agents</h2>
+<h3 id="basic-agent">Basic Agent</h3>
+<pre><code class="lang-csharp">var agent = new Agent(
+    name: &quot;DataAnalyst&quot;,
+    description: &quot;Analyzes data and provides insights&quot;,
+    orchestrator: orchestrator,
+    config: new AgentConfig
+    {
+        UseNeurochain = false,
+        MinConfidence = 0.8
+    }
+);
+</code></pre>
+<h3 id="agent-with-neurochain">Agent with NeuroChain</h3>
+<pre><code class="lang-csharp">var neurochain = new NeuroChainOrchestrator(orchestrator);
+
+var agent = new Agent(
+    &quot;ExpertAnalyst&quot;,
+    &quot;Expert-level analysis with high confidence&quot;,
+    orchestrator,
+    neurochain,
+    new AgentConfig
+    {
+        UseNeurochain = true,
+        MinConfidence = 0.95
+    }
+);
+</code></pre>
+<h2 id="tool-calling">Tool Calling</h2>
+<h3 id="built-in-tools">Built-in Tools</h3>
+<pre><code class="lang-csharp">var agent = new Agent(&quot;Assistant&quot;, &quot;Helpful assistant&quot;, orchestrator);
+
+// Register calculator tool
+agent.RegisterTool(new CalculatorTool());
+
+// Agent can now use calculator
+var response = await agent.ExecuteAsync(&quot;What is 123 * 456?&quot;);
+// Agent will call: TOOL: Calculator(expression=123 * 456)
+</code></pre>
+<h3 id="custom-tools">Custom Tools</h3>
+<pre><code class="lang-csharp">public class WeatherTool : AgentTool
+{
+    public WeatherTool()
+    {
+        Name = &quot;GetWeather&quot;;
+        Description = &quot;Gets current weather for a location&quot;;
+        Parameters = new Dictionary&lt;string, ToolParameter&gt;
+        {
+            [&quot;location&quot;] = new ToolParameter
+            {
+                Type = &quot;string&quot;,
+                Description = &quot;City name or coordinates&quot;,
+                Required = true
+            }
+        };
+    }
+
+    public override async Task&lt;ToolResult&gt; ExecuteAsync(
+        Dictionary&lt;string, object&gt; arguments,
+        CancellationToken cancellationToken = default)
+    {
+        if (!ValidateArguments(arguments, out var error))
+        {
+            return new ToolResult { Success = false, Error = error };
+        }
+
+        var location = arguments[&quot;location&quot;].ToString();
+        var weather = await FetchWeatherAsync(location);
+
+        return new ToolResult
+        {
+            Success = true,
+            Output = $&quot;Weather in {location}: {weather}&quot;
+        };
+    }
+
+    private async Task&lt;string&gt; FetchWeatherAsync(string location)
+    {
+        // Your weather API call here
+        return &quot;Sunny, 72°F&quot;;
+    }
+}
+
+// Use the tool
+agent.RegisterTool(new WeatherTool());
+var response = await agent.ExecuteAsync(&quot;What's the weather in New York?&quot;);
+</code></pre>
+<h3 id="multiple-tools">Multiple Tools</h3>
+<pre><code class="lang-csharp">var agent = new Agent(&quot;Assistant&quot;, &quot;Multi-purpose assistant&quot;, orchestrator);
+
+agent.RegisterTool(new CalculatorTool());
+agent.RegisterTool(new WeatherTool());
+agent.RegisterTool(new SearchTool());
+agent.RegisterTool(new FileReaderTool());
+
+// Agent will select appropriate tools based on task
+var response = await agent.ExecuteAsync(
+    &quot;Calculate 50 * 20, then check weather in London&quot;
+);
+</code></pre>
+<h2 id="workflows">Workflows</h2>
+<h3 id="sequential-workflow">Sequential Workflow</h3>
+<pre><code class="lang-csharp">var engine = new WorkflowEngine();
+
+// Register agents
+engine.RegisterAgent(new Agent(&quot;Researcher&quot;, &quot;Researches topics&quot;, orchestrator));
+engine.RegisterAgent(new Agent(&quot;Writer&quot;, &quot;Writes content&quot;, orchestrator));
+engine.RegisterAgent(new Agent(&quot;Editor&quot;, &quot;Edits and polishes&quot;, orchestrator));
+
+// Define workflow
+var workflow = new Workflow
+{
+    Name = &quot;ContentCreation&quot;,
+    Description = &quot;Research, write, and edit content&quot;,
+    Steps = new List&lt;WorkflowStep&gt;
+    {
+        new WorkflowStep
+        {
+            Name = &quot;Research&quot;,
+            Type = StepType.AgentTask,
+            AgentName = &quot;Researcher&quot;,
+            Task = &quot;Research {topic}&quot;,
+            OutputKey = &quot;research&quot;
+        },
+        new WorkflowStep
+        {
+            Name = &quot;Write&quot;,
+            Type = StepType.AgentTask,
+            AgentName = &quot;Writer&quot;,
+            Task = &quot;Write article based on: {research}&quot;,
+            OutputKey = &quot;draft&quot;
+        },
+        new WorkflowStep
+        {
+            Name = &quot;Edit&quot;,
+            Type = StepType.AgentTask,
+            AgentName = &quot;Editor&quot;,
+            Task = &quot;Edit and polish: {draft}&quot;,
+            OutputKey = &quot;final&quot;
+        }
+    }
+};
+
+// Execute workflow
+var result = await engine.ExecuteWorkflowAsync(
+    workflow,
+    new Dictionary&lt;string, object&gt; { [&quot;topic&quot;] = &quot;AI Safety&quot; }
+);
+
+Console.WriteLine($&quot;Final result: {result.FinalContext[&quot;final&quot;]}&quot;);
+</code></pre>
+<h3 id="parallel-workflow">Parallel Workflow</h3>
+<pre><code class="lang-csharp">var workflow = new Workflow
+{
+    Name = &quot;ParallelResearch&quot;,
+    Steps = new List&lt;WorkflowStep&gt;
+    {
+        new WorkflowStep
+        {
+            Name = &quot;ParallelResearch&quot;,
+            Type = StepType.Parallel,
+            ParallelSteps = new List&lt;WorkflowStep&gt;
+            {
+                new WorkflowStep
+                {
+                    Name = &quot;TechnicalResearch&quot;,
+                    Type = StepType.AgentTask,
+                    AgentName = &quot;TechResearcher&quot;,
+                    Task = &quot;Research technical aspects of {topic}&quot;
+                },
+                new WorkflowStep
+                {
+                    Name = &quot;BusinessResearch&quot;,
+                    Type = StepType.AgentTask,
+                    AgentName = &quot;BusinessAnalyst&quot;,
+                    Task = &quot;Research business implications of {topic}&quot;
+                },
+                new WorkflowStep
+                {
+                    Name = &quot;EthicalResearch&quot;,
+                    Type = StepType.AgentTask,
+                    AgentName = &quot;EthicsExpert&quot;,
+                    Task = &quot;Research ethical considerations of {topic}&quot;
+                }
+            }
+        }
+    }
+};
+</code></pre>
+<h3 id="conditional-workflow">Conditional Workflow</h3>
+<pre><code class="lang-csharp">var workflow = new Workflow
+{
+    Steps = new List&lt;WorkflowStep&gt;
+    {
+        new WorkflowStep
+        {
+            Name = &quot;InitialAnalysis&quot;,
+            Type = StepType.AgentTask,
+            AgentName = &quot;Analyst&quot;,
+            Task = &quot;Analyze: {data}&quot;,
+            OutputKey = &quot;analysis&quot;
+        },
+        new WorkflowStep
+        {
+            Name = &quot;ConditionalAction&quot;,
+            Type = StepType.Conditional,
+            Condition = new WorkflowCondition
+            {
+                Variable = &quot;analysis&quot;,
+                Operator = ConditionOperator.Contains,
+                Value = &quot;urgent&quot;
+            },
+            ThenStep = new WorkflowStep
+            {
+                Name = &quot;UrgentResponse&quot;,
+                Type = StepType.AgentTask,
+                AgentName = &quot;UrgentHandler&quot;,
+                Task = &quot;Handle urgent issue: {analysis}&quot;
+            },
+            ElseStep = new WorkflowStep
+            {
+                Name = &quot;NormalResponse&quot;,
+                Type = StepType.AgentTask,
+                AgentName = &quot;NormalHandler&quot;,
+                Task = &quot;Process normally: {analysis}&quot;
+            }
+        }
+    }
+};
+</code></pre>
+<h3 id="loop-workflow">Loop Workflow</h3>
+<pre><code class="lang-csharp">var workflow = new Workflow
+{
+    Steps = new List&lt;WorkflowStep&gt;
+    {
+        new WorkflowStep
+        {
+            Name = &quot;IterativeRefinement&quot;,
+            Type = StepType.Loop,
+            MaxIterations = 5,
+            LoopCondition = new WorkflowCondition
+            {
+                Variable = &quot;quality_score&quot;,
+                Operator = ConditionOperator.Equals,
+                Value = &quot;low&quot;
+            },
+            LoopStep = new WorkflowStep
+            {
+                Name = &quot;Refine&quot;,
+                Type = StepType.AgentTask,
+                AgentName = &quot;Refiner&quot;,
+                Task = &quot;Improve the output&quot;,
+                OutputKey = &quot;quality_score&quot;
+            }
+        }
+    }
+};
+</code></pre>
+<h2 id="multi-agent-coordination">Multi-Agent Coordination</h2>
+<h3 id="sequential-coordination">Sequential Coordination</h3>
+<p>Agents work in pipeline - output of one becomes input to next:</p>
+<pre><code class="lang-csharp">var coordinator = new MultiAgentCoordinator(
+    orchestrator,
+    CoordinationStrategy.Sequential
+);
+
+coordinator.RegisterAgent(new Agent(&quot;Agent1&quot;, &quot;First processor&quot;, orchestrator));
+coordinator.RegisterAgent(new Agent(&quot;Agent2&quot;, &quot;Second processor&quot;, orchestrator));
+coordinator.RegisterAgent(new Agent(&quot;Agent3&quot;, &quot;Final processor&quot;, orchestrator));
+
+var result = await coordinator.ExecuteAsync(&quot;Process this data&quot;);
+// Agent1 → Agent2 → Agent3
+</code></pre>
+<h3 id="parallel-coordination">Parallel Coordination</h3>
+<p>Agents work independently, results aggregated:</p>
+<pre><code class="lang-csharp">var coordinator = new MultiAgentCoordinator(
+    orchestrator,
+    CoordinationStrategy.Parallel
+);
+
+coordinator.RegisterAgent(new Agent(&quot;Specialist1&quot;, &quot;Domain expert 1&quot;, orchestrator));
+coordinator.RegisterAgent(new Agent(&quot;Specialist2&quot;, &quot;Domain expert 2&quot;, orchestrator));
+coordinator.RegisterAgent(new Agent(&quot;Specialist3&quot;, &quot;Domain expert 3&quot;, orchestrator));
+
+var result = await coordinator.ExecuteAsync(&quot;Analyze this problem&quot;);
+// All agents work simultaneously, answers combined
+</code></pre>
+<h3 id="debate-coordination">Debate Coordination</h3>
+<p>Agents discuss and reach consensus:</p>
+<pre><code class="lang-csharp">var coordinator = new MultiAgentCoordinator(
+    orchestrator,
+    CoordinationStrategy.Debate
+);
+
+coordinator.RegisterAgent(new Agent(&quot;Optimist&quot;, &quot;Optimistic viewpoint&quot;, orchestrator));
+coordinator.RegisterAgent(new Agent(&quot;Pessimist&quot;, &quot;Critical viewpoint&quot;, orchestrator));
+coordinator.RegisterAgent(new Agent(&quot;Realist&quot;, &quot;Balanced viewpoint&quot;, orchestrator));
+
+var result = await coordinator.ExecuteAsync(&quot;Should we adopt this technology?&quot;);
+// Agents debate over 3 rounds, final answer synthesized
+</code></pre>
+<h3 id="hierarchical-coordination">Hierarchical Coordination</h3>
+<p>One agent coordinates others:</p>
+<pre><code class="lang-csharp">var coordinator = new MultiAgentCoordinator(
+    orchestrator,
+    CoordinationStrategy.Hierarchical
+);
+
+// First agent is the coordinator
+coordinator.RegisterAgent(new Agent(&quot;Manager&quot;, &quot;Coordinates work&quot;, orchestrator));
+coordinator.RegisterAgent(new Agent(&quot;Worker1&quot;, &quot;Executes tasks&quot;, orchestrator));
+coordinator.RegisterAgent(new Agent(&quot;Worker2&quot;, &quot;Executes tasks&quot;, orchestrator));
+coordinator.RegisterAgent(new Agent(&quot;Worker3&quot;, &quot;Executes tasks&quot;, orchestrator));
+
+var result = await coordinator.ExecuteAsync(&quot;Complete this project&quot;);
+// Manager breaks down task, assigns to workers, synthesizes results
+</code></pre>
+<h2 id="advanced-features">Advanced Features</h2>
+<h3 id="conversation-history">Conversation History</h3>
+<pre><code class="lang-csharp">var agent = new Agent(&quot;Assistant&quot;, &quot;Remembers context&quot;, orchestrator);
+
+await agent.ExecuteAsync(&quot;My name is John&quot;);
+await agent.ExecuteAsync(&quot;What is my name?&quot;);
+// Agent remembers previous conversation
+
+// Access history
+var history = agent.GetConversationHistory();
+foreach (var message in history)
+{
+    Console.WriteLine($&quot;[{message.Role}] {message.Content}&quot;);
+}
+
+// Clear history when needed
+agent.ClearHistory();
+</code></pre>
+<h3 id="context-passing">Context Passing</h3>
+<pre><code class="lang-csharp">var context = new Dictionary&lt;string, object&gt;
+{
+    [&quot;user_id&quot;] = &quot;12345&quot;,
+    [&quot;preferences&quot;] = new[] { &quot;detailed&quot;, &quot;technical&quot; },
+    [&quot;previous_interactions&quot;] = 42
+};
+
+var response = await agent.ExecuteAsync(&quot;Provide analysis&quot;, context);
+// Agent has access to context during execution
+</code></pre>
+<h3 id="error-handling-in-workflows">Error Handling in Workflows</h3>
+<pre><code class="lang-csharp">var workflow = new Workflow
+{
+    Steps = new List&lt;WorkflowStep&gt;
+    {
+        new WorkflowStep
+        {
+            Name = &quot;RiskyOperation&quot;,
+            Type = StepType.AgentTask,
+            AgentName = &quot;Worker&quot;,
+            Task = &quot;Do risky operation&quot;,
+            ContinueOnFailure = true  // Don't stop workflow on failure
+        },
+        new WorkflowStep
+        {
+            Name = &quot;CleanupIfNeeded&quot;,
+            Type = StepType.AgentTask,
+            AgentName = &quot;Cleanup&quot;,
+            Task = &quot;Cleanup if previous failed&quot;
+        }
+    }
+};
+
+var result = await engine.ExecuteWorkflowAsync(workflow);
+
+if (!result.Success)
+{
+    Console.WriteLine($&quot;Workflow error: {result.Error}&quot;);
+    foreach (var step in result.StepResults.Where(s =&gt; !s.Success))
+    {
+        Console.WriteLine($&quot;  Failed step: {step.StepName} - {step.Error}&quot;);
+    }
+}
+</code></pre>
+<h2 id="best-practices">Best Practices</h2>
+<ol>
+<li><strong>Single Responsibility</strong>: Each agent should have a clear, focused purpose</li>
+<li><strong>Tool Granularity</strong>: Create focused tools rather than monolithic ones</li>
+<li><strong>Error Handling</strong>: Always handle tool execution failures gracefully</li>
+<li><strong>Context Management</strong>: Clear history when starting new conversations</li>
+<li><strong>Workflow Design</strong>: Break complex tasks into manageable steps</li>
+<li><strong>Coordination Strategy</strong>: Choose based on task nature:
+<ul>
+<li>Sequential: When order matters</li>
+<li>Parallel: For independent analyses</li>
+<li>Debate: For controversial or uncertain decisions</li>
+<li>Hierarchical: For complex, decomposable tasks</li>
+</ul>
+</li>
+</ol>
+<h2 id="example-complete-agent-system">Example: Complete Agent System</h2>
+<pre><code class="lang-csharp">// Setup
+var orchestrator = new ProviderOrchestrator();
+var neurochain = new NeuroChainOrchestrator(orchestrator);
+
+// Create specialized agents
+var researcher = new Agent(&quot;Researcher&quot;, &quot;Researches topics thoroughly&quot;, orchestrator);
+researcher.RegisterTool(new WebSearchTool());
+researcher.RegisterTool(new DatabaseQueryTool());
+
+var analyst = new Agent(&quot;Analyst&quot;, &quot;Analyzes data&quot;, orchestrator, neurochain,
+    new AgentConfig { UseNeurochain = true, MinConfidence = 0.9 });
+analyst.RegisterTool(new CalculatorTool());
+analyst.RegisterTool(new StatisticsTool());
+
+var writer = new Agent(&quot;Writer&quot;, &quot;Creates polished content&quot;, orchestrator);
+
+// Create workflow
+var engine = new WorkflowEngine();
+engine.RegisterAgent(researcher);
+engine.RegisterAgent(analyst);
+engine.RegisterAgent(writer);
+
+var workflow = new Workflow
+{
+    Name = &quot;ResearchReport&quot;,
+    Steps = new List&lt;WorkflowStep&gt;
+    {
+        // Parallel research
+        new WorkflowStep
+        {
+            Name = &quot;GatherData&quot;,
+            Type = StepType.Parallel,
+            ParallelSteps = new List&lt;WorkflowStep&gt;
+            {
+                new WorkflowStep
+                {
+                    Name = &quot;WebResearch&quot;,
+                    Type = StepType.AgentTask,
+                    AgentName = &quot;Researcher&quot;,
+                    Task = &quot;Research {topic} from web sources&quot;,
+                    OutputKey = &quot;web_data&quot;
+                },
+                new WorkflowStep
+                {
+                    Name = &quot;DatabaseResearch&quot;,
+                    Type = StepType.AgentTask,
+                    AgentName = &quot;Researcher&quot;,
+                    Task = &quot;Query database for {topic}&quot;,
+                    OutputKey = &quot;db_data&quot;
+                }
+            }
+        },
+        // Analyze
+        new WorkflowStep
+        {
+            Name = &quot;Analyze&quot;,
+            Type = StepType.AgentTask,
+            AgentName = &quot;Analyst&quot;,
+            Task = &quot;Analyze: Web: {web_data}, DB: {db_data}&quot;,
+            OutputKey = &quot;analysis&quot;
+        },
+        // Write report
+        new WorkflowStep
+        {
+            Name = &quot;WriteReport&quot;,
+            Type = StepType.AgentTask,
+            AgentName = &quot;Writer&quot;,
+            Task = &quot;Write comprehensive report on {analysis}&quot;,
+            OutputKey = &quot;report&quot;
+        }
+    }
+};
+
+// Execute
+var result = await engine.ExecuteWorkflowAsync(
+    workflow,
+    new Dictionary&lt;string, object&gt; { [&quot;topic&quot;] = &quot;Climate Change Impact&quot; }
+);
+
+Console.WriteLine($&quot;Report: {result.FinalContext[&quot;report&quot;]}&quot;);
+</code></pre>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

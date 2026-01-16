@@ -1,0 +1,559 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>RAG (Retrieval-Augmented Generation) Guide | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="RAG (Retrieval-Augmented Generation) Guide | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="rag-retrieval-augmented-generation-guide">RAG (Retrieval-Augmented Generation) Guide</h1>
+
+<h2 id="overview">Overview</h2>
+<p>Hazina's RAG engine combines metadata-driven retrieval with optional vector search for context-aware responses.</p>
+<blockquote>
+<p><strong>Architecture Note</strong>: Hazina uses a knowledge database as the primary query layer, with embeddings as an optional secondary index. See <a href="KNOWLEDGE_STORAGE.html">Knowledge Storage &amp; Search Model</a> for the design principles.</p>
+</blockquote>
+<h2 id="features">Features</h2>
+<ul>
+<li>Document indexing with metadata and optional embeddings</li>
+<li>Metadata-first filtering with SQL queries</li>
+<li>Optional semantic search with similarity scoring</li>
+<li>Context building and ranking</li>
+<li>Intelligent text chunking</li>
+<li>Result reranking</li>
+<li>Integration with NeuroChain for higher confidence</li>
+<li>Full functionality with embeddings disabled</li>
+</ul>
+<h2 id="quick-start">Quick Start</h2>
+<pre><code class="lang-csharp">var orchestrator = new ProviderOrchestrator();
+var vectorStore = new PgVectorStore(connectionString);
+var ragEngine = new RAGEngine(orchestrator, vectorStore);
+
+// Index documents
+var documents = new List&lt;Document&gt;
+{
+    new Document
+    {
+        Content = &quot;Quantum entanglement is a physical phenomenon...&quot;,
+        Metadata = new Dictionary&lt;string, object&gt;
+        {
+            [&quot;source&quot;] = &quot;physics_textbook.pdf&quot;,
+            [&quot;page&quot;] = 42
+        }
+    }
+};
+
+var indexResult = await ragEngine.IndexDocumentsAsync(documents);
+Console.WriteLine($&quot;Indexed: {indexResult.IndexedDocuments}/{indexResult.TotalDocuments}&quot;);
+
+// Query with RAG
+var response = await ragEngine.QueryAsync(
+    &quot;Explain quantum entanglement&quot;,
+    new RAGQueryOptions
+    {
+        TopK = 5,
+        MinSimilarity = 0.7,
+        MaxContextLength = 4000
+    }
+);
+
+Console.WriteLine($&quot;Answer: {response.Answer}&quot;);
+Console.WriteLine($&quot;Retrieved {response.RetrievedDocuments.Count} documents&quot;);
+</code></pre>
+<h2 id="document-indexing">Document Indexing</h2>
+<h3 id="basic-indexing">Basic Indexing</h3>
+<pre><code class="lang-csharp">var documents = new List&lt;Document&gt;
+{
+    new Document
+    {
+        Id = &quot;doc1&quot;,
+        Content = &quot;Content to index&quot;,
+        Metadata = new Dictionary&lt;string, object&gt;
+        {
+            [&quot;category&quot;] = &quot;science&quot;,
+            [&quot;author&quot;] = &quot;John Doe&quot;
+        }
+    }
+};
+
+var result = await ragEngine.IndexDocumentsAsync(documents);
+</code></pre>
+<h3 id="chunking-long-documents">Chunking Long Documents</h3>
+<pre><code class="lang-csharp">var chunker = new TextChunker(new TextChunkingOptions
+{
+    Strategy = ChunkingStrategy.Sentence,
+    ChunkSize = 1000,
+    OverlapSize = 200
+});
+
+var chunks = chunker.ChunkText(longDocument, metadata);
+
+var documents = chunks.Select(chunk =&gt; new Document
+{
+    Id = $&quot;{documentId}_chunk_{chunk.Index}&quot;,
+    Content = chunk.Text,
+    Metadata = chunk.Metadata
+}).ToList();
+
+await ragEngine.IndexDocumentsAsync(documents);
+</code></pre>
+<h3 id="chunking-strategies">Chunking Strategies</h3>
+<pre><code class="lang-csharp">// Fixed size chunks
+var chunker = new TextChunker(new TextChunkingOptions
+{
+    Strategy = ChunkingStrategy.FixedSize,
+    ChunkSize = 512,
+    OverlapSize = 128
+});
+
+// Sentence-based chunks
+var chunker = new TextChunker(new TextChunkingOptions
+{
+    Strategy = ChunkingStrategy.Sentence,
+    ChunkSize = 1000
+});
+
+// Paragraph-based chunks
+var chunker = new TextChunker(new TextChunkingOptions
+{
+    Strategy = ChunkingStrategy.Paragraph
+});
+</code></pre>
+<h2 id="querying">Querying</h2>
+<h3 id="basic-query">Basic Query</h3>
+<pre><code class="lang-csharp">var response = await ragEngine.QueryAsync(&quot;What is machine learning?&quot;);
+Console.WriteLine(response.Answer);
+</code></pre>
+<h3 id="advanced-query-options">Advanced Query Options</h3>
+<pre><code class="lang-csharp">var options = new RAGQueryOptions
+{
+    TopK = 10,                    // Retrieve top 10 documents
+    MinSimilarity = 0.75,         // Minimum similarity threshold
+    MaxContextLength = 8000,      // Max tokens for context
+    UseNeurochain = true,         // Use multi-layer reasoning
+    MinConfidence = 0.9,          // High confidence required
+    RequireCitation = true        // Include citations in answer
+};
+
+var response = await ragEngine.QueryAsync(&quot;Complex question&quot;, options);
+
+// Review retrieved documents
+foreach (var doc in response.RetrievedDocuments)
+{
+    Console.WriteLine($&quot;[{doc.Similarity:P0}] {doc.Content.Substring(0, 100)}...&quot;);
+}
+</code></pre>
+<h3 id="search-without-generation">Search Without Generation</h3>
+<pre><code class="lang-csharp">// Just retrieve similar documents
+var documents = await ragEngine.SearchAsync(
+    &quot;search query&quot;,
+    topK: 5,
+    minSimilarity: 0.7
+);
+
+foreach (var doc in documents)
+{
+    Console.WriteLine($&quot;{doc.Id}: {doc.Similarity:P0}&quot;);
+    Console.WriteLine(doc.Content);
+}
+</code></pre>
+<h2 id="reranking">Reranking</h2>
+<p>Improve retrieval quality with reranking:</p>
+<pre><code class="lang-csharp">var reranker = new Reranker(orchestrator, new RerankingOptions
+{
+    Strategy = RerankingStrategy.Hybrid,
+    SimilarityWeight = 0.5,
+    LLMWeight = 0.5
+});
+
+var retrievedDocs = await ragEngine.SearchAsync(&quot;query&quot;);
+var rerankedDocs = await reranker.RerankAsync(&quot;query&quot;, retrievedDocs);
+
+// Reranked documents are now in better relevance order
+</code></pre>
+<h3 id="reranking-strategies">Reranking Strategies</h3>
+<pre><code class="lang-csharp">// Similarity-based (fast, uses embeddings only)
+var reranker = new Reranker(options: new RerankingOptions
+{
+    Strategy = RerankingStrategy.Similarity
+});
+
+// LLM-based (slower, more accurate)
+var reranker = new Reranker(orchestrator, new RerankingOptions
+{
+    Strategy = RerankingStrategy.LLMBased
+});
+
+// Hybrid (balanced)
+var reranker = new Reranker(orchestrator, new RerankingOptions
+{
+    Strategy = RerankingStrategy.Hybrid,
+    SimilarityWeight = 0.3,
+    LLMWeight = 0.7
+});
+</code></pre>
+<h3 id="diversity-and-filtering">Diversity and Filtering</h3>
+<pre><code class="lang-csharp">// Filter by relevance
+var filtered = reranker.FilterByRelevance(documents, minRelevance: 0.8);
+
+// Diversify results (reduce redundancy)
+var diverse = reranker.DiversifyResults(
+    documents,
+    maxResults: 5,
+    diversityThreshold: 0.8
+);
+</code></pre>
+<h2 id="advanced-features">Advanced Features</h2>
+<h3 id="with-neurochain">With NeuroChain</h3>
+<pre><code class="lang-csharp">var neurochain = new NeuroChainOrchestrator(orchestrator);
+var ragEngine = new RAGEngine(orchestrator, vectorStore, neurochain);
+
+var response = await ragEngine.QueryAsync(
+    &quot;Complex research question&quot;,
+    new RAGQueryOptions
+    {
+        UseNeurochain = true,
+        MinConfidence = 0.95
+    }
+);
+
+// Higher confidence, multi-layer reasoning
+Console.WriteLine($&quot;Confidence: {response.FinalConfidence:P0}&quot;);
+</code></pre>
+<h3 id="custom-context-building">Custom Context Building</h3>
+<pre><code class="lang-csharp">// The RAG engine builds context automatically, but you can customize:
+var retrievedDocs = await ragEngine.SearchAsync(&quot;query&quot;, topK: 10);
+
+// Custom reranking
+var reranked = await CustomRerank(retrievedDocs);
+
+// Custom context assembly
+var context = BuildCustomContext(reranked, maxLength: 4000);
+
+// Generate with custom context
+var messages = new List&lt;HazinaChatMessage&gt;
+{
+    new HazinaChatMessage
+    {
+        Role = HazinaMessageRole.System,
+        Text = &quot;You are a helpful assistant. Use the provided context to answer questions.&quot;
+    },
+    new HazinaChatMessage
+    {
+        Role = HazinaMessageRole.User,
+        Text = $&quot;Context:\n{context}\n\nQuestion: {query}&quot;
+    }
+};
+
+var response = await orchestrator.GetResponse(messages);
+</code></pre>
+<h2 id="knowledge-storage-architecture">Knowledge Storage Architecture</h2>
+<p>Hazina uses a <strong>metadata-first</strong> approach to knowledge storage:</p>
+<h3 id="design-principles">Design Principles</h3>
+<ol>
+<li><strong>Metadata is primary</strong> — Tags, properties, and structure are always queryable</li>
+<li><strong>Embeddings are secondary</strong> — Optional acceleration for semantic search</li>
+<li><strong>Database is truth</strong> — SQLite (local) or PostgreSQL (production) holds all queryable data</li>
+<li><strong>Files are sources</strong> — Documents are inputs, not the query layer</li>
+</ol>
+<h3 id="search-strategy">Search Strategy</h3>
+<pre><code class="lang-csharp">// Metadata-first search (always available)
+var results = await ragEngine.SearchAsync(&quot;query&quot;, new SearchOptions
+{
+    MetadataFilter = new Dictionary&lt;string, object&gt;
+    {
+        [&quot;source&quot;] = &quot;api-reference.md&quot;,
+        [&quot;category&quot;] = &quot;authentication&quot;
+    },
+    UseSemanticSearch = false  // Pure metadata search
+});
+
+// Hybrid search (metadata + embeddings)
+var results = await ragEngine.SearchAsync(&quot;query&quot;, new SearchOptions
+{
+    MetadataFilter = new Dictionary&lt;string, object&gt;
+    {
+        [&quot;category&quot;] = &quot;security&quot;
+    },
+    UseSemanticSearch = true  // Add embedding similarity ranking
+});
+</code></pre>
+<h3 id="embeddings-are-optional">Embeddings Are Optional</h3>
+<p>Hazina functions correctly without embeddings:</p>
+<pre><code class="lang-csharp">var rag = new RAGEngine(ai, vectorStore, config: new RAGConfig
+{
+    UseEmbeddings = false  // Metadata and keyword search only
+});
+
+// Search still works — uses full-text search and metadata
+var results = await rag.SearchAsync(&quot;authentication flow&quot;);
+</code></pre>
+<p>When embeddings are disabled:</p>
+<ul>
+<li>Indexing stores content and metadata (faster)</li>
+<li>Search uses keyword matching (BM25/full-text)</li>
+<li>Results are ranked by text relevance, not vector similarity</li>
+</ul>
+<p>See <a href="KNOWLEDGE_STORAGE.html">Knowledge Storage &amp; Search Model</a> for complete architecture details.</p>
+<hr>
+<h2 id="vector-stores">Vector Stores</h2>
+<p>When embeddings are enabled, vector stores provide similarity search:</p>
+<h3 id="supported-stores">Supported Stores</h3>
+<pre><code class="lang-csharp">// PostgreSQL with pgvector (production)
+var vectorStore = new PgVectorStore(connectionString);
+
+// In-memory (development/testing)
+var vectorStore = new InMemoryVectorStore();
+
+// File-based (local persistence)
+var vectorStore = new FileVectorStore(path);
+</code></pre>
+<h3 id="custom-vector-store">Custom Vector Store</h3>
+<pre><code class="lang-csharp">public class CustomVectorStore : IVectorStore
+{
+    public async Task AddAsync(
+        string id,
+        float[] embedding,
+        Dictionary&lt;string, object&gt; metadata,
+        CancellationToken cancellationToken)
+    {
+        // Your implementation
+    }
+
+    public async Task&lt;List&lt;VectorSearchResult&gt;&gt; SearchAsync(
+        float[] queryEmbedding,
+        int topK,
+        CancellationToken cancellationToken)
+    {
+        // Your implementation
+    }
+}
+</code></pre>
+<h2 id="performance-optimization">Performance Optimization</h2>
+<h3 id="batch-indexing">Batch Indexing</h3>
+<pre><code class="lang-csharp">// Index in batches for better performance
+const int batchSize = 100;
+for (int i = 0; i &lt; allDocuments.Count; i += batchSize)
+{
+    var batch = allDocuments.Skip(i).Take(batchSize).ToList();
+    await ragEngine.IndexDocumentsAsync(batch);
+    Console.WriteLine($&quot;Indexed {i + batch.Count}/{allDocuments.Count}&quot;);
+}
+</code></pre>
+<h3 id="caching">Caching</h3>
+<pre><code class="lang-csharp">// Cache embeddings
+var embeddingCache = new Dictionary&lt;string, float[]&gt;();
+
+foreach (var doc in documents)
+{
+    if (!embeddingCache.ContainsKey(doc.Id))
+    {
+        var embedding = await GenerateEmbedding(doc.Content);
+        embeddingCache[doc.Id] = embedding;
+    }
+}
+</code></pre>
+<h3 id="optimal-chunk-size">Optimal Chunk Size</h3>
+<pre><code class="lang-csharp">// Experiment with chunk sizes for your use case
+var chunkSizes = new[] { 256, 512, 1024, 2048 };
+
+foreach (var size in chunkSizes)
+{
+    var chunker = new TextChunker(new TextChunkingOptions
+    {
+        ChunkSize = size,
+        OverlapSize = size / 4
+    });
+
+    // Test and measure
+    var metrics = await TestChunkSize(chunker);
+    Console.WriteLine($&quot;Size {size}: {metrics}&quot;);
+}
+</code></pre>
+<h2 id="error-handling">Error Handling</h2>
+<pre><code class="lang-csharp">try
+{
+    var response = await ragEngine.QueryAsync(&quot;question&quot;);
+
+    if (!response.Success)
+    {
+        Console.WriteLine($&quot;Query failed: {response.Error}&quot;);
+        return;
+    }
+
+    if (response.RetrievedDocuments.Count == 0)
+    {
+        Console.WriteLine(&quot;No relevant documents found&quot;);
+        return;
+    }
+
+    Console.WriteLine(response.Answer);
+}
+catch (Exception ex)
+{
+    Console.WriteLine($&quot;Error: {ex.Message}&quot;);
+}
+</code></pre>
+<h2 id="best-practices">Best Practices</h2>
+<ol>
+<li><strong>Chunk Size</strong>: 500-1000 tokens for most use cases</li>
+<li><strong>Overlap</strong>: 10-20% of chunk size</li>
+<li><strong>TopK</strong>: Start with 5-10, adjust based on results</li>
+<li><strong>Similarity Threshold</strong>: 0.7 is a good starting point</li>
+<li><strong>Reranking</strong>: Use for critical applications</li>
+<li><strong>Citations</strong>: Enable for factual questions</li>
+<li><strong>NeuroChain</strong>: Use for complex queries requiring high confidence</li>
+</ol>
+<h2 id="example-complete-rag-system">Example: Complete RAG System</h2>
+<pre><code class="lang-csharp">// Setup
+var orchestrator = new ProviderOrchestrator();
+var vectorStore = new PgVectorStore(connectionString);
+var neurochain = new NeuroChainOrchestrator(orchestrator);
+var ragEngine = new RAGEngine(orchestrator, vectorStore, neurochain);
+var reranker = new Reranker(orchestrator);
+var chunker = new TextChunker();
+
+// Index documents
+var documents = await LoadDocumentsAsync();
+var allChunks = new List&lt;Document&gt;();
+
+foreach (var doc in documents)
+{
+    var chunks = chunker.ChunkText(doc.Content, doc.Metadata);
+    allChunks.AddRange(chunks.Select(c =&gt; new Document
+    {
+        Id = $&quot;{doc.Id}_{c.Index}&quot;,
+        Content = c.Text,
+        Metadata = c.Metadata
+    }));
+}
+
+await ragEngine.IndexDocumentsAsync(allChunks);
+
+// Query
+var response = await ragEngine.QueryAsync(
+    &quot;What are the main themes?&quot;,
+    new RAGQueryOptions
+    {
+        TopK = 10,
+        MinSimilarity = 0.75,
+        UseNeurochain = true,
+        MinConfidence = 0.9,
+        RequireCitation = true
+    }
+);
+
+// Rerank for better results
+var reranked = await reranker.RerankAsync(
+    &quot;What are the main themes?&quot;,
+    response.RetrievedDocuments
+);
+
+Console.WriteLine($&quot;Answer: {response.Answer}&quot;);
+Console.WriteLine($&quot;Sources: {response.RetrievedDocuments.Count}&quot;);
+</code></pre>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

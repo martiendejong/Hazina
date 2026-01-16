@@ -105,7 +105,7 @@ build_errors.log
 ################################################################################
 
 # Generated documentation site
-docs/_site/
+# docs/apidoc is now tracked - no longer excluded
 
 # Generated API metadata
 docs/api/*.yml

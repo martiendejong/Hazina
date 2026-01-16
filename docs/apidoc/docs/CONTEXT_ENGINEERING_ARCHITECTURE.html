@@ -1,0 +1,461 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Context Engineering Architecture | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Context Engineering Architecture | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="context-engineering-architecture">Context Engineering Architecture</h1>
+
+<p><strong>Date</strong>: 2026-01-09
+<strong>Author</strong>: Claude Sonnet 4.5
+<strong>Status</strong>: Design Draft</p>
+<h2 id="overview">Overview</h2>
+<p>The Context Engineering layer provides a language-agnostic, fully configurable framework for intelligent context retrieval and assembly. It sits on top of Hazina's existing RAG infrastructure and orchestrates multiple retrieval strategies to build optimal context for LLM queries.</p>
+<h2 id="design-principles">Design Principles</h2>
+<ol>
+<li><strong>Language Independence</strong>: All internal representations are language-agnostic (concepts, tags, embeddings)</li>
+<li><strong>Full Configurability</strong>: Every retrieval, scoring, and packing decision is policy-driven</li>
+<li><strong>Backwards Compatibility</strong>: Builds on existing Hazina.AI.RAG without breaking changes</li>
+<li><strong>Multi-Layer Retrieval</strong>: Combines semantic, metadata, facts, and direct lookup strategies</li>
+<li><strong>Policy-Based Fusion</strong>: Configurable weights and scoring for combining retrieval results</li>
+</ol>
+<h2 id="architecture-layers">Architecture Layers</h2>
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│              ContextEngineOrchestrator                      │
+│  (Main entry point - coordinates all layers)                │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+        ┌────────────┼────────────┐
+        │            │            │
+        v            v            v
+┌───────────┐ ┌─────────────┐ ┌──────────────┐
+│ Retrieval │ │   Fusion    │ │   Packing    │
+│   Layer   │ │    Layer    │ │    Layer     │
+└─────┬─────┘ └──────┬──────┘ └──────┬───────┘
+      │              │               │
+      v              v               v
+┌───────────────────────────────────────────────────┐
+│              Configuration Layer                  │
+│  (RetrievalPolicy, ScoringPolicy, PackingPolicy)  │
+└───────────────────┬───────────────────────────────┘
+                    │
+                    v
+┌───────────────────────────────────────────────────┐
+│               Storage Layer                       │
+│  (Documents, Embeddings, Facts, Metadata)         │
+└───────────────────────────────────────────────────┘
+</code></pre>
+<h2 id="component-details">Component Details</h2>
+<h3 id="1-storage-layer">1. Storage Layer</h3>
+<p><strong>Purpose</strong>: Provide unified access to multiple store types</p>
+<p><strong>Components</strong>:</p>
+<ul>
+<li><code>IFactsStore</code> - NEW: Store for compact, relevant facts</li>
+<li><code>IDocumentStore</code> - EXISTING: Full document content (reuse Hazina.Store.DocumentStore)</li>
+<li><code>IEmbeddingStore</code> - EXISTING: Chunked embeddings (reuse Hazina.Store.EmbeddingStore)</li>
+<li><code>IMetadataStore</code> - EXISTING: Titles, tags, metadata (part of DocumentStore)</li>
+</ul>
+<p><strong>New Project</strong>: <code>Hazina.Store.FactsStore</code></p>
+<p><strong>Fact Model</strong>:</p>
+<pre><code class="lang-csharp">public class Fact
+{
+    public string Id { get; set; }
+    public string Content { get; set; }  // Short NL sentence or key-value
+    public string Type { get; set; }  // &quot;concept&quot;, &quot;entity&quot;, &quot;rule&quot;, &quot;state&quot;
+    public Dictionary&lt;string, string&gt; Metadata { get; set; }
+    public List&lt;string&gt; Tags { get; set; }
+    public DateTime Created { get; set; }
+    public DateTime? Updated { get; set; }
+}
+</code></pre>
+<h3 id="2-retrieval-layer">2. Retrieval Layer</h3>
+<p><strong>Purpose</strong>: Provide multiple retrieval strategies</p>
+<p><strong>Components</strong>:</p>
+<ul>
+<li><code>SemanticRetriever</code> - Uses embeddings for semantic search (extends existing VectorStoreRetriever)</li>
+<li><code>MetadataRetriever</code> - Uses metadata filters (NEW wrapper around existing metadata search)</li>
+<li><code>FactRetriever</code> - NEW: Retrieves from facts store</li>
+<li><code>IdLookupRetriever</code> - NEW: Direct ID-based lookup across all stores</li>
+</ul>
+<p><strong>New Project</strong>: <code>Hazina.AI.ContextEngineering</code> (contains all retrievers)</p>
+<p><strong>Interface</strong>:</p>
+<pre><code class="lang-csharp">public interface IContextRetriever
+{
+    Task&lt;List&lt;RetrievalResult&gt;&gt; RetrieveAsync(
+        RetrievalQuery query,
+        RetrievalPolicy policy,
+        CancellationToken ct = default);
+}
+</code></pre>
+<h3 id="3-fusion-layer">3. Fusion Layer</h3>
+<p><strong>Purpose</strong>: Combine results from multiple retrievers</p>
+<p><strong>Components</strong>:</p>
+<ul>
+<li><code>FusionEngine</code> - Combines results from multiple retrievers</li>
+<li><code>RelevanceScorer</code> - Applies scoring policies</li>
+<li><code>ResultDeduplicator</code> - Removes duplicate results</li>
+<li><code>ResultReranker</code> - Final re-ranking based on composite score</li>
+</ul>
+<p><strong>Fusion Strategies</strong>:</p>
+<ul>
+<li><strong>Linear Combination</strong>: <code>score = w1*semantic + w2*metadata + w3*facts</code></li>
+<li><strong>RRF (Reciprocal Rank Fusion)</strong>: <code>score = Σ 1/(k + rank_i)</code></li>
+<li><strong>Custom Formula</strong>: User-defined scoring function</li>
+</ul>
+<h3 id="4-packing-layer">4. Packing Layer</h3>
+<p><strong>Purpose</strong>: Assemble final context from retrieval results</p>
+<p><strong>Components</strong>:</p>
+<ul>
+<li><code>ContextPacker</code> - Assembles context sections</li>
+<li><code>SectionFormatter</code> - Formats different section types</li>
+<li><code>TokenBudget manager</code> - Ensures context fits within limits</li>
+</ul>
+<p><strong>Context Structure</strong>:</p>
+<pre><code>[FACTS]
+- Fact 1
+- Fact 2
+
+[METADATA]
+Tags: tag1, tag2
+Relevant documents: 3
+
+[SEMANTIC CHUNKS]
+[Score: 0.92] Content chunk 1...
+[Score: 0.87] Content chunk 2...
+
+[QUERY]
+User query here
+</code></pre>
+<h3 id="5-configuration-layer">5. Configuration Layer</h3>
+<p><strong>Purpose</strong>: Policy-driven configuration for all components</p>
+<p><strong>Policies</strong>:</p>
+<p><strong>RetrievalPolicy</strong>:</p>
+<pre><code class="lang-csharp">public class RetrievalPolicy
+{
+    public bool SemanticEnabled { get; set; } = true;
+    public int SemanticTopK { get; set; } = 8;
+    public double SemanticWeight { get; set; } = 0.6;
+
+    public bool MetadataEnabled { get; set; } = true;
+    public double MetadataWeight { get; set; } = 0.3;
+
+    public bool FactsEnabled { get; set; } = true;
+    public int FactsTopK { get; set; } = 5;
+    public double FactsWeight { get; set; } = 0.1;
+
+    public Dictionary&lt;string, string&gt;? MetadataFilters { get; set; }
+}
+</code></pre>
+<p><strong>ScoringPolicy</strong>:</p>
+<pre><code class="lang-csharp">public class ScoringPolicy
+{
+    public string Formula { get; set; } = &quot;(0.6*semantic) + (0.3*metadata) + (0.1*facts)&quot;;
+    public double Threshold { get; set; } = 0.45;
+    public bool UseTagBoost { get; set; } = true;
+    public double TagBoostPower { get; set; } = 1.2;
+}
+</code></pre>
+<p><strong>PackingPolicy</strong>:</p>
+<pre><code class="lang-csharp">public class PackingPolicy
+{
+    public int MaxTokens { get; set; } = 12000;
+    public List&lt;string&gt; Sections { get; set; } = [&quot;facts&quot;, &quot;metadata&quot;, &quot;chunks&quot;, &quot;query&quot;];
+    public string TargetLanguage { get; set; } = &quot;auto&quot;;
+}
+</code></pre>
+<h3 id="6-orchestration">6. Orchestration</h3>
+<p><strong>ContextEngineOrchestrator</strong>:</p>
+<pre><code class="lang-csharp">public class ContextEngineOrchestrator
+{
+    public async Task&lt;ContextResult&gt; BuildContextAsync(
+        string query,
+        ContextEngineConfig config,
+        CancellationToken ct = default)
+    {
+        // 1. Retrieve from multiple sources
+        var retrievalResults = await ParallelRetrieveAsync(query, config.RetrievalPolicy);
+
+        // 2. Fuse and score
+        var fusedResults = await _fusionEngine.FuseAsync(retrievalResults, config.ScoringPolicy);
+
+        // 3. Pack into context
+        var context = await _packer.PackAsync(fusedResults, config.PackingPolicy);
+
+        return context;
+    }
+}
+</code></pre>
+<h2 id="project-structure">Project Structure</h2>
+<pre><code>src/
+├── Core/
+│   ├── AI/
+│   │   ├── Hazina.AI.RAG/                    (EXISTING - unchanged)
+│   │   └── Hazina.AI.ContextEngineering/     (NEW)
+│   │       ├── Interfaces/
+│   │       │   ├── IContextRetriever.cs
+│   │       │   ├── IFusionEngine.cs
+│   │       │   └── IContextPacker.cs
+│   │       ├── Retrieval/
+│   │       │   ├── SemanticRetriever.cs
+│   │       │   ├── MetadataRetriever.cs
+│   │       │   ├── FactRetriever.cs
+│   │       │   └── IdLookupRetriever.cs
+│   │       ├── Fusion/
+│   │       │   ├── FusionEngine.cs
+│   │       │   ├── RelevanceScorer.cs
+│   │       │   └── ResultReranker.cs
+│   │       ├── Packing/
+│   │       │   ├── ContextPacker.cs
+│   │       │   └── SectionFormatter.cs
+│   │       ├── Configuration/
+│   │       │   ├── RetrievalPolicy.cs
+│   │       │   ├── ScoringPolicy.cs
+│   │       │   ├── PackingPolicy.cs
+│   │       │   └── ContextEngineConfig.cs
+│   │       ├── Orchestration/
+│   │       │   └── ContextEngineOrchestrator.cs
+│   │       └── Extensions/
+│   │           └── ServiceCollectionExtensions.cs
+│   └── Storage/
+│       └── Hazina.Store.FactsStore/          (NEW)
+│           ├── Interfaces/
+│           │   └── IFactsStore.cs
+│           ├── Models/
+│           │   ├── Fact.cs
+│           │   └── FactQuery.cs
+│           ├── Implementations/
+│           │   └── SqliteFactsStore.cs
+│           └── Extensions/
+│               └── ServiceCollectionExtensions.cs
+</code></pre>
+<h2 id="implementation-phases">Implementation Phases</h2>
+<h3 id="phase-1-storage-layer-feature-1">Phase 1: Storage Layer (Feature 1)</h3>
+<ul>
+<li>✅ Create Hazina.Store.FactsStore project</li>
+<li>✅ Implement IFactsStore interface</li>
+<li>✅ Implement SqliteFactsStore</li>
+<li>✅ Add DI extensions</li>
+<li>✅ Create PR</li>
+</ul>
+<h3 id="phase-2-retrieval--fusion-feature-2">Phase 2: Retrieval + Fusion (Feature 2)</h3>
+<ul>
+<li>Create Hazina.AI.ContextEngineering project</li>
+<li>Implement IContextRetriever interface</li>
+<li>Implement 4 retriever types</li>
+<li>Implement FusionEngine</li>
+<li>Create PR</li>
+</ul>
+<h3 id="phase-3-configuration-feature-3">Phase 3: Configuration (Feature 3)</h3>
+<ul>
+<li>Implement policy classes</li>
+<li>Add JSON serialization</li>
+<li>Add validation</li>
+<li>Create PR</li>
+</ul>
+<h3 id="phase-4-packing--orchestration-feature-4">Phase 4: Packing + Orchestration (Feature 4)</h3>
+<ul>
+<li>Implement ContextPacker</li>
+<li>Implement ContextEngineOrchestrator</li>
+<li>Add integration tests</li>
+<li>Create PR</li>
+</ul>
+<h3 id="phase-5-tests--documentation-feature-5">Phase 5: Tests + Documentation (Feature 5)</h3>
+<ul>
+<li>Write unit tests for all components</li>
+<li>Write integration tests</li>
+<li>Write comprehensive documentation</li>
+<li>Create PR</li>
+</ul>
+<h2 id="language-independence-strategy">Language Independence Strategy</h2>
+<h3 id="internal-representation">Internal Representation</h3>
+<ul>
+<li>Use concept tags: <code>concept:sensor_pipeline</code>, <code>entity:building_X</code></li>
+<li>Store facts as symbolic or minimal NL</li>
+<li>Metadata keys are language-neutral</li>
+<li>Embeddings use multilingual models (or separate per language)</li>
+</ul>
+<h3 id="output-layer">Output Layer</h3>
+<ul>
+<li>LLM translates final context to target language</li>
+<li>Configuration specifies <code>targetLanguage: &quot;auto&quot;</code> or specific locale</li>
+<li>Packing layer passes through symbolic content unchanged</li>
+</ul>
+<h2 id="backwards-compatibility">Backwards Compatibility</h2>
+<ul>
+<li>Existing <code>RAGEngine</code> continues to work unchanged</li>
+<li><code>ContextEngineOrchestrator</code> can wrap <code>RAGEngine</code> as semantic retriever</li>
+<li>All new components are opt-in</li>
+<li>Zero breaking changes to existing interfaces</li>
+</ul>
+<h2 id="example-usage">Example Usage</h2>
+<pre><code class="lang-csharp">// Configure
+var config = new ContextEngineConfig
+{
+    RetrievalPolicy = new RetrievalPolicy
+    {
+        SemanticEnabled = true,
+        SemanticTopK = 8,
+        SemanticWeight = 0.6,
+
+        MetadataEnabled = true,
+        MetadataWeight = 0.3,
+
+        FactsEnabled = true,
+        FactsTopK = 5,
+        FactsWeight = 0.1
+    },
+    ScoringPolicy = ScoringPolicy.Default,
+    PackingPolicy = new PackingPolicy
+    {
+        MaxTokens = 12000,
+        Sections = [&quot;facts&quot;, &quot;metadata&quot;, &quot;chunks&quot;, &quot;query&quot;],
+        TargetLanguage = &quot;auto&quot;
+    }
+};
+
+// Use
+var orchestrator = serviceProvider.GetRequiredService&lt;ContextEngineOrchestrator&gt;();
+var result = await orchestrator.BuildContextAsync(&quot;How do I configure sensors?&quot;, config);
+
+Console.WriteLine(result.AssembledContext);
+// Output:
+// [FACTS]
+// - Building X has 24 sensors
+// - Sensor pipeline type is Modbus
+//
+// [METADATA]
+// Tags: iot, sensors, configuration
+// ...
+</code></pre>
+<h2 id="dependencies">Dependencies</h2>
+<ul>
+<li>Hazina.AI.RAG (existing)</li>
+<li>Hazina.Store.EmbeddingStore (existing)</li>
+<li>Hazina.Store.DocumentStore (existing)</li>
+<li>Hazina.Store.FactsStore (new)</li>
+<li>Microsoft.Extensions.Configuration.Abstractions</li>
+<li>Microsoft.Extensions.DependencyInjection</li>
+</ul>
+<h2 id="testing-strategy">Testing Strategy</h2>
+<ul>
+<li>Unit tests for each retriever</li>
+<li>Unit tests for fusion engine with different policies</li>
+<li>Unit tests for packing with different configurations</li>
+<li>Integration tests for full orchestration</li>
+<li>Performance benchmarks for retrieval latency</li>
+</ul>
+<h2 id="future-enhancements">Future Enhancements</h2>
+<ul>
+<li>Support for custom retriever plugins</li>
+<li>Machine learning-based fusion (not just weighted)</li>
+<li>Dynamic policy adjustment based on query type</li>
+<li>Caching layer for repeated queries</li>
+<li>Telemetry and observability</li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

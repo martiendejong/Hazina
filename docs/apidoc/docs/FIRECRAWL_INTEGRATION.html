@@ -1,0 +1,828 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>FireCrawl MCP Integration - Documentation | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="FireCrawl MCP Integration - Documentation | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="firecrawl-mcp-integration---documentation">FireCrawl MCP Integration - Documentation</h1>
+
+<p><strong>Date Created:</strong> 2026-01-12
+<strong>Version:</strong> 1.0
+<strong>Status:</strong> Active</p>
+<h2 id="overview">Overview</h2>
+<p>FireCrawl MCP integration enables Hazina agents to perform autonomous web scraping, branding extraction, site mapping, and structured data extraction through natural language. This transforms Hazina into a powerful web intelligence tool without requiring coding for each scraping operation.</p>
+<h2 id="key-features">Key Features</h2>
+<ol>
+<li><strong>Web Scraping</strong> - Pull webpage content and convert to clean markdown</li>
+<li><strong>Site Mapping</strong> - Discover website structure and all internal links</li>
+<li><strong>Web Crawling</strong> - Traverse multiple linked pages automatically</li>
+<li><strong>Data Extraction</strong> - Extract structured data using AI (branding, product info, etc.)</li>
+<li><strong>Branding Analysis</strong> - Automatically extract colors, fonts, logos, typography</li>
+<li><strong>Screenshot Capture</strong> - Full-page screenshots for documentation</li>
+<li><strong>Content Search</strong> - Search within websites for specific information</li>
+</ol>
+<h2 id="architecture">Architecture</h2>
+<h3 id="placement-in-hazina">Placement in Hazina</h3>
+<pre><code>[User/Agent]
+   |
+Natural Language Request
+   |
+Reasoning Layer
+   |
+Tool Services (FireCrawlService)
+   |
+FireCrawl HTTP API
+   |
+Web Targets
+</code></pre>
+<p>FireCrawl is implemented as a <strong>Tool Service</strong> in <code>Hazina.Tools.Services.Web</code>, following the same pattern as <code>WebSearchService</code> and <code>WebScrapingService</code>.</p>
+<h3 id="components">Components</h3>
+<p><strong>Location:</strong> <code>src/Tools/Services/Hazina.Tools.Services.Web/</code></p>
+<ol>
+<li><p><strong>Models</strong> (<code>Models/FireCrawlModels.cs</code>)</p>
+<ul>
+<li><code>FireCrawlConfig</code> - Configuration (API key, base URL)</li>
+<li><code>FireCrawlScrapeResult</code> - Single page scrape result</li>
+<li><code>FireCrawlMapResult</code> - Site structure map</li>
+<li><code>FireCrawlCrawlRequest</code> / <code>FireCrawlCrawlResult</code> - Multi-page crawling</li>
+<li><code>FireCrawlExtractRequest</code> / <code>FireCrawlExtractResult</code> - Structured data extraction</li>
+<li><code>FireCrawlScreenshotRequest</code> / <code>FireCrawlScreenshotResult</code> - Screenshot capture</li>
+<li><code>BrandingData</code> - Extracted branding information</li>
+<li><code>FireCrawlSearchRequest</code> / <code>FireCrawlSearchResult</code> - Content search</li>
+</ul>
+</li>
+<li><p><strong>Interface</strong> (<code>Abstractions/IFireCrawlService.cs</code>)</p>
+<ul>
+<li><code>ScrapeAsync()</code> - Scrape single page</li>
+<li><code>MapAsync()</code> - Map site structure</li>
+<li><code>CrawlAsync()</code> - Crawl multiple pages</li>
+<li><code>ExtractAsync()</code> - Extract structured data</li>
+<li><code>ExtractBrandingAsync()</code> - Extract branding (convenience method)</li>
+<li><code>ScreenshotAsync()</code> - Capture screenshot</li>
+<li><code>SearchAsync()</code> - Search within site</li>
+</ul>
+</li>
+<li><p><strong>Implementation</strong> (<code>FireCrawlService.cs</code>)</p>
+<ul>
+<li>HTTP client wrapper for FireCrawl API</li>
+<li>JSON serialization/deserialization</li>
+<li>Error handling and logging</li>
+<li>Result normalization</li>
+</ul>
+</li>
+</ol>
+<h2 id="use-cases-in-hazina-ecosystem">Use Cases in Hazina Ecosystem</h2>
+<h3 id="1-brand2boost---automated-branding-extraction">1. Brand2Boost - Automated Branding Extraction</h3>
+<p><strong>User Request:</strong> &quot;Import branding from tesla.com for a marketing campaign&quot;</p>
+<p><strong>Workflow:</strong></p>
+<pre><code class="lang-csharp">var fireCrawl = new FireCrawlService(config);
+
+// Extract branding
+var result = await fireCrawl.ExtractBrandingAsync(&quot;https://tesla.com&quot;);
+
+if (result.Success &amp;&amp; result.Branding != null)
+{
+    // Feed to Brand2Boost generators
+    var branding = result.Branding;
+    // branding.Colors = [&quot;#E82127&quot;, &quot;#000000&quot;, &quot;#FFFFFF&quot;]
+    // branding.Fonts = [&quot;Gotham&quot;, &quot;Arial&quot;]
+    // branding.PrimaryColor = &quot;#E82127&quot;
+    // branding.LogoUrl = &quot;https://tesla.com/logo.svg&quot;
+
+    // Auto-generate:
+    // - Color palettes
+    // - Typography sets
+    // - Logo detection
+    // - Brand guidelines
+}
+</code></pre>
+<h3 id="2-competitive-analysis--market-research">2. Competitive Analysis &amp; Market Research</h3>
+<p><strong>User Request:</strong> &quot;Analyze competitor pricing and features from their website&quot;</p>
+<p><strong>Workflow:</strong></p>
+<pre><code class="lang-csharp">// Map competitor site structure
+var map = await fireCrawl.MapAsync(&quot;https://competitor.com&quot;, maxDepth: 2);
+
+// Extract structured pricing data
+var pricingExtract = await fireCrawl.ExtractAsync(new FireCrawlExtractRequest
+{
+    Url = &quot;https://competitor.com/pricing&quot;,
+    ExtractionPrompt = &quot;Extract all pricing tiers, features, and costs&quot;,
+    Schema = new Dictionary&lt;string, string&gt;
+    {
+        { &quot;tiers&quot;, &quot;array of pricing tier objects&quot; },
+        { &quot;features&quot;, &quot;array of feature descriptions&quot; },
+        { &quot;prices&quot;, &quot;array of price points&quot; }
+    }
+});
+
+// Store in DocumentStore for RAG
+</code></pre>
+<h3 id="3-client-onboarding--site-audits">3. Client Onboarding &amp; Site Audits</h3>
+<p><strong>User Request:</strong> &quot;Audit client's existing website and create brand inventory&quot;</p>
+<p><strong>Workflow:</strong></p>
+<pre><code class="lang-csharp">// Full site crawl
+var crawl = await fireCrawl.CrawlAsync(new FireCrawlCrawlRequest
+{
+    Url = &quot;https://client-site.com&quot;,
+    MaxDepth = 3,
+    MaxPages = 25,
+    IncludeScreenshots = true
+});
+
+// Extract branding from homepage
+var branding = await fireCrawl.ExtractBrandingAsync(&quot;https://client-site.com&quot;);
+
+// Generate audit report with:
+// - All pages crawled
+// - Current branding (colors, fonts)
+// - Screenshots for documentation
+// - Recommendations for improvement
+</code></pre>
+<h3 id="4-knowledge-graph-construction">4. Knowledge Graph Construction</h3>
+<p><strong>User Request:</strong> &quot;Build knowledge graph of Palantir's product offerings&quot;</p>
+<p><strong>Workflow:</strong></p>
+<pre><code class="lang-csharp">// Map site structure
+var map = await fireCrawl.MapAsync(&quot;https://palantir.com&quot;, maxDepth: 2);
+
+// Crawl product pages
+var crawl = await fireCrawl.CrawlAsync(new FireCrawlCrawlRequest
+{
+    Url = &quot;https://palantir.com/products&quot;,
+    MaxDepth = 2,
+    MaxPages = 20
+});
+
+// For each page:
+// - Extract structured product info
+// - Embed content → DocumentStore
+// - Build knowledge graph edges
+//   - nodes = pages
+//   - edges = internal links
+//   - semantic edges via LLM tagging
+</code></pre>
+<h3 id="5-rfp--procurement-intelligence">5. RFP &amp; Procurement Intelligence</h3>
+<p><strong>User Request:</strong> &quot;Research vendor capabilities for RFP response&quot;</p>
+<p><strong>Workflow:</strong></p>
+<pre><code class="lang-csharp">// Search vendor site for specific capabilities
+var search = await fireCrawl.SearchAsync(new FireCrawlSearchRequest
+{
+    Query = &quot;enterprise security compliance SOC2 HIPAA&quot;,
+    Domain = &quot;vendor-site.com&quot;,
+    MaxResults = 10
+});
+
+// Extract from relevant pages
+foreach (var result in search.Results)
+{
+    var extracted = await fireCrawl.ExtractAsync(new FireCrawlExtractRequest
+    {
+        Url = result.Url,
+        ExtractionPrompt = &quot;Extract security certifications, compliance standards, and capabilities&quot;
+    });
+
+    // Store for RAG-based RFP generation
+}
+</code></pre>
+<h3 id="6-portfolio--asset-management">6. Portfolio &amp; Asset Management</h3>
+<p><strong>User Request:</strong> &quot;Import screenshots and branding from our portfolio sites&quot;</p>
+<p><strong>Workflow:</strong></p>
+<pre><code class="lang-csharp">var portfolioSites = new[] { &quot;site1.com&quot;, &quot;site2.com&quot;, &quot;site3.com&quot; };
+
+foreach (var site in portfolioSites)
+{
+    // Screenshot
+    var screenshot = await fireCrawl.ScreenshotAsync(new FireCrawlScreenshotRequest
+    {
+        Url = $&quot;https://{site}&quot;,
+        FullPage = true,
+        Width = 1920,
+        Height = 1080
+    });
+
+    // Store screenshot → AssetStore or BinaryStore
+    await assetStore.SaveAsync($&quot;{site}-screenshot.png&quot;,
+        Convert.FromBase64String(screenshot.Screenshot));
+
+    // Extract branding
+    var branding = await fireCrawl.ExtractBrandingAsync($&quot;https://{site}&quot;);
+
+    // Store in portfolio database
+}
+</code></pre>
+<h2 id="configuration">Configuration</h2>
+<h3 id="setup">Setup</h3>
+<ol>
+<li><p><strong>Obtain FireCrawl API Key</strong></p>
+<ul>
+<li>Sign up at <a href="https://firecrawl.dev">https://firecrawl.dev</a></li>
+<li>Get API key from dashboard</li>
+</ul>
+</li>
+<li><p><strong>Configure in Hazina</strong></p>
+</li>
+</ol>
+<pre><code class="lang-csharp">// In appsettings.json or environment variables
+{
+  &quot;FireCrawl&quot;: {
+    &quot;ApiKey&quot;: &quot;fc-your-api-key-here&quot;,
+    &quot;BaseUrl&quot;: &quot;https://api.firecrawl.dev/v1&quot;
+  }
+}
+
+// In service registration (Program.cs or Startup.cs)
+services.AddSingleton&lt;IFireCrawlService&gt;(sp =&gt;
+{
+    var config = new FireCrawlConfig
+    {
+        ApiKey = configuration[&quot;FireCrawl:ApiKey&quot;],
+        BaseUrl = configuration[&quot;FireCrawl:BaseUrl&quot;] ?? &quot;https://api.firecrawl.dev/v1&quot;
+    };
+
+    var logger = sp.GetRequiredService&lt;ILogger&lt;FireCrawlService&gt;&gt;();
+
+    return new FireCrawlService(
+        config,
+        httpClient: null, // Uses new HttpClient
+        logInfo: msg =&gt; logger.LogInformation(msg),
+        logError: (ex, msg) =&gt; logger.LogError(ex, msg)
+    );
+});
+</code></pre>
+<h2 id="api-reference">API Reference</h2>
+<h3 id="scrapeasync">ScrapeAsync</h3>
+<pre><code class="lang-csharp">Task&lt;FireCrawlScrapeResult&gt; ScrapeAsync(string url, bool includeHtml = false)
+</code></pre>
+<p><strong>Purpose:</strong> Scrape a single webpage, convert HTML to markdown.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>url</code> - URL to scrape</li>
+<li><code>includeHtml</code> - Include raw HTML in response (default: false)</li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>Markdown</code> - Clean markdown content</li>
+<li><code>Html</code> - Raw HTML (if requested)</li>
+<li><code>Metadata</code> - Page metadata (title, description, etc.)</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><code class="lang-csharp">var result = await fireCrawl.ScrapeAsync(&quot;https://example.com&quot;);
+if (result.Success)
+{
+    Console.WriteLine(result.Markdown); // Clean markdown
+}
+</code></pre>
+<hr>
+<h3 id="mapasync">MapAsync</h3>
+<pre><code class="lang-csharp">Task&lt;FireCrawlMapResult&gt; MapAsync(string baseUrl, int maxDepth = 2)
+</code></pre>
+<p><strong>Purpose:</strong> Discover website structure and all internal links.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>baseUrl</code> - Base URL to map</li>
+<li><code>maxDepth</code> - Maximum depth to traverse (default: 2)</li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>Links</code> - List of all discovered URLs</li>
+<li><code>Structure</code> - Hierarchical site structure</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><code class="lang-csharp">var map = await fireCrawl.MapAsync(&quot;https://example.com&quot;, maxDepth: 3);
+Console.WriteLine($&quot;Found {map.Links.Count} pages&quot;);
+</code></pre>
+<hr>
+<h3 id="crawlasync">CrawlAsync</h3>
+<pre><code class="lang-csharp">Task&lt;FireCrawlCrawlResult&gt; CrawlAsync(FireCrawlCrawlRequest request)
+</code></pre>
+<p><strong>Purpose:</strong> Crawl multiple linked pages and collect content.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>request.Url</code> - Starting URL</li>
+<li><code>request.MaxDepth</code> - Maximum crawl depth (default: 2)</li>
+<li><code>request.MaxPages</code> - Maximum pages to crawl (default: 10)</li>
+<li><code>request.IncludeScreenshots</code> - Capture screenshots (default: false)</li>
+<li><code>request.AllowedDomains</code> - Restrict crawling to specific domains</li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>Pages</code> - Collection of crawled pages with content</li>
+<li><code>PagesCrawled</code> - Number of pages successfully crawled</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><code class="lang-csharp">var crawl = await fireCrawl.CrawlAsync(new FireCrawlCrawlRequest
+{
+    Url = &quot;https://example.com&quot;,
+    MaxDepth = 2,
+    MaxPages = 20,
+    IncludeScreenshots = false
+});
+
+foreach (var page in crawl.Pages)
+{
+    Console.WriteLine($&quot;{page.Title}: {page.Url}&quot;);
+    // page.Markdown contains clean content
+}
+</code></pre>
+<hr>
+<h3 id="extractasync">ExtractAsync</h3>
+<pre><code class="lang-csharp">Task&lt;FireCrawlExtractResult&gt; ExtractAsync(FireCrawlExtractRequest request)
+</code></pre>
+<p><strong>Purpose:</strong> Extract structured data using AI.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>request.Url</code> - URL to extract from</li>
+<li><code>request.ExtractionPrompt</code> - Natural language extraction instructions</li>
+<li><code>request.Schema</code> - Optional schema definition for structured output</li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>ExtractedData</code> - Structured data dictionary</li>
+<li><code>Branding</code> - Branding data (if extracting branding)</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><code class="lang-csharp">var extract = await fireCrawl.ExtractAsync(new FireCrawlExtractRequest
+{
+    Url = &quot;https://example.com/pricing&quot;,
+    ExtractionPrompt = &quot;Extract all pricing tiers with features and prices&quot;,
+    Schema = new Dictionary&lt;string, string&gt;
+    {
+        { &quot;tiers&quot;, &quot;array of tier objects&quot; },
+        { &quot;features&quot;, &quot;array of feature lists&quot; },
+        { &quot;prices&quot;, &quot;array of price points&quot; }
+    }
+});
+
+// Access structured data
+var tiers = extract.ExtractedData[&quot;tiers&quot;];
+</code></pre>
+<hr>
+<h3 id="extractbrandingasync">ExtractBrandingAsync</h3>
+<pre><code class="lang-csharp">Task&lt;FireCrawlExtractResult&gt; ExtractBrandingAsync(string url)
+</code></pre>
+<p><strong>Purpose:</strong> Convenience method to extract branding (colors, fonts, logo).</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>url</code> - URL to extract branding from</li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>Branding.Colors</code> - List of hex color codes</li>
+<li><code>Branding.Fonts</code> - List of font families</li>
+<li><code>Branding.PrimaryColor</code> - Primary brand color (hex)</li>
+<li><code>Branding.SecondaryColor</code> - Secondary brand color (hex)</li>
+<li><code>Branding.LogoUrl</code> - URL of company logo</li>
+<li><code>Branding.Typography</code> - Font assignments (heading, body, etc.)</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><code class="lang-csharp">var result = await fireCrawl.ExtractBrandingAsync(&quot;https://example.com&quot;);
+if (result.Success &amp;&amp; result.Branding != null)
+{
+    Console.WriteLine($&quot;Primary Color: {result.Branding.PrimaryColor}&quot;);
+    Console.WriteLine($&quot;Fonts: {string.Join(&quot;, &quot;, result.Branding.Fonts)}&quot;);
+}
+</code></pre>
+<hr>
+<h3 id="screenshotasync">ScreenshotAsync</h3>
+<pre><code class="lang-csharp">Task&lt;FireCrawlScreenshotResult&gt; ScreenshotAsync(FireCrawlScreenshotRequest request)
+</code></pre>
+<p><strong>Purpose:</strong> Capture full-page screenshot.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>request.Url</code> - URL to screenshot</li>
+<li><code>request.FullPage</code> - Capture entire page vs viewport only (default: true)</li>
+<li><code>request.Width</code> - Viewport width (default: 1280)</li>
+<li><code>request.Height</code> - Viewport height (default: 720)</li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>Screenshot</code> - Base64-encoded PNG image</li>
+<li><code>MimeType</code> - Image format (always &quot;image/png&quot;)</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><code class="lang-csharp">var screenshot = await fireCrawl.ScreenshotAsync(new FireCrawlScreenshotRequest
+{
+    Url = &quot;https://example.com&quot;,
+    FullPage = true,
+    Width = 1920,
+    Height = 1080
+});
+
+if (screenshot.Success)
+{
+    var imageBytes = Convert.FromBase64String(screenshot.Screenshot);
+    await File.WriteAllBytesAsync(&quot;screenshot.png&quot;, imageBytes);
+}
+</code></pre>
+<hr>
+<h3 id="searchasync">SearchAsync</h3>
+<pre><code class="lang-csharp">Task&lt;FireCrawlSearchResult&gt; SearchAsync(FireCrawlSearchRequest request)
+</code></pre>
+<p><strong>Purpose:</strong> Search within a website for specific content.</p>
+<p><strong>Parameters:</strong></p>
+<ul>
+<li><code>request.Query</code> - Search query</li>
+<li><code>request.Domain</code> - Optional domain to restrict search</li>
+<li><code>request.MaxResults</code> - Maximum results to return (default: 5)</li>
+</ul>
+<p><strong>Returns:</strong></p>
+<ul>
+<li><code>Results</code> - List of matching pages with snippets</li>
+<li><code>ResultCount</code> - Number of results found</li>
+</ul>
+<p><strong>Example:</strong></p>
+<pre><code class="lang-csharp">var search = await fireCrawl.SearchAsync(new FireCrawlSearchRequest
+{
+    Query = &quot;pricing enterprise plan&quot;,
+    Domain = &quot;example.com&quot;,
+    MaxResults = 10
+});
+
+foreach (var result in search.Results)
+{
+    Console.WriteLine($&quot;{result.Title}: {result.Url}&quot;);
+    Console.WriteLine($&quot;  {result.Snippet}&quot;);
+    Console.WriteLine($&quot;  Relevance: {result.Relevance}&quot;);
+}
+</code></pre>
+<h2 id="integration-patterns">Integration Patterns</h2>
+<h3 id="pattern-1-scrape--embed--store">Pattern 1: Scrape → Embed → Store</h3>
+<pre><code class="lang-csharp">// Scrape content
+var scrape = await fireCrawl.ScrapeAsync(url);
+
+// Normalize to markdown
+var markdown = scrape.Markdown;
+
+// Embed with Hazina embedding provider
+var embedding = await embeddingService.EmbedAsync(markdown);
+
+// Store in DocumentStore
+await documentStore.AddAsync(new Document
+{
+    Id = Guid.NewGuid().ToString(),
+    Content = markdown,
+    Embedding = embedding,
+    Metadata = new Dictionary&lt;string, object&gt;
+    {
+        { &quot;source&quot;, url },
+        { &quot;type&quot;, &quot;web-scrape&quot; },
+        { &quot;scraped_at&quot;, DateTime.UtcNow }
+    }
+});
+</code></pre>
+<h3 id="pattern-2-map--filter--crawl">Pattern 2: Map → Filter → Crawl</h3>
+<pre><code class="lang-csharp">// Map entire site
+var map = await fireCrawl.MapAsync(baseUrl, maxDepth: 3);
+
+// Filter for relevant pages (e.g., only /products/* URLs)
+var productPages = map.Links
+    .Where(url =&gt; url.Contains(&quot;/products/&quot;))
+    .Take(20)
+    .ToList();
+
+// Crawl filtered pages
+foreach (var url in productPages)
+{
+    var scrape = await fireCrawl.ScrapeAsync(url);
+    // Process content...
+}
+</code></pre>
+<h3 id="pattern-3-extract--transform--knowledge-graph">Pattern 3: Extract → Transform → Knowledge Graph</h3>
+<pre><code class="lang-csharp">// Extract structured data
+var extract = await fireCrawl.ExtractAsync(request);
+
+// Transform to knowledge graph nodes/edges
+var node = new KnowledgeNode
+{
+    Id = Guid.NewGuid(),
+    Type = &quot;Product&quot;,
+    Properties = extract.ExtractedData
+};
+
+// Add edges based on extracted relationships
+await graphStore.AddNodeAsync(node);
+</code></pre>
+<h3 id="pattern-4-branding--brand2boost-pipeline">Pattern 4: Branding → Brand2Boost Pipeline</h3>
+<pre><code class="lang-csharp">// Extract branding
+var branding = await fireCrawl.ExtractBrandingAsync(url);
+
+// Feed to Brand2Boost generators
+var colorPalette = await brand2boost.GeneratePaletteAsync(branding.Branding.Colors);
+var typographySet = await brand2boost.GenerateTypographyAsync(branding.Branding.Fonts);
+var logoVariations = await brand2boost.GenerateLogoVariationsAsync(branding.Branding.LogoUrl);
+
+// Generate brand guidelines document
+var brandGuide = await brand2boost.GenerateBrandGuideAsync(new BrandGuideRequest
+{
+    Colors = branding.Branding.Colors,
+    Fonts = branding.Branding.Fonts,
+    Logo = branding.Branding.LogoUrl,
+    Typography = branding.Branding.Typography
+});
+</code></pre>
+<h2 id="error-handling">Error Handling</h2>
+<p>All methods return result objects with <code>Success</code> and <code>Error</code> properties:</p>
+<pre><code class="lang-csharp">var result = await fireCrawl.ScrapeAsync(url);
+
+if (!result.Success)
+{
+    Console.WriteLine($&quot;Error: {result.Error}&quot;);
+    // Handle error (retry, log, notify user, etc.)
+}
+else
+{
+    // Process successful result
+    var content = result.Markdown;
+}
+</code></pre>
+<p><strong>Common Errors:</strong></p>
+<ul>
+<li><strong>401 Unauthorized</strong> - Invalid API key</li>
+<li><strong>404 Not Found</strong> - URL does not exist</li>
+<li><strong>429 Rate Limited</strong> - Too many requests</li>
+<li><strong>500 Server Error</strong> - FireCrawl API issue</li>
+<li><strong>Timeout</strong> - Page took too long to load</li>
+</ul>
+<h2 id="performance-considerations">Performance Considerations</h2>
+<h3 id="rate-limiting">Rate Limiting</h3>
+<p>FireCrawl API has rate limits. Implement throttling for bulk operations:</p>
+<pre><code class="lang-csharp">var semaphore = new SemaphoreSlim(5); // Max 5 concurrent requests
+
+foreach (var url in urls)
+{
+    await semaphore.WaitAsync();
+
+    _ = Task.Run(async () =&gt;
+    {
+        try
+        {
+            var result = await fireCrawl.ScrapeAsync(url);
+            // Process result...
+        }
+        finally
+        {
+            semaphore.Release();
+        }
+    });
+}
+</code></pre>
+<h3 id="caching">Caching</h3>
+<p>Cache scraped content to avoid redundant API calls:</p>
+<pre><code class="lang-csharp">// Check cache first
+var cachedContent = await cache.GetAsync&lt;string&gt;($&quot;scrape:{url}&quot;);
+if (cachedContent != null)
+{
+    return cachedContent;
+}
+
+// Scrape if not cached
+var result = await fireCrawl.ScrapeAsync(url);
+if (result.Success)
+{
+    await cache.SetAsync($&quot;scrape:{url}&quot;, result.Markdown, TimeSpan.FromHours(24));
+}
+</code></pre>
+<h3 id="large-crawls">Large Crawls</h3>
+<p>For crawling 100+ pages, use async processing:</p>
+<pre><code class="lang-csharp">// Queue crawl jobs
+foreach (var url in largeSiteMap.Links)
+{
+    await queue.EnqueueAsync(new CrawlJob { Url = url });
+}
+
+// Background worker processes queue
+public class CrawlWorker : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var job = await queue.DequeueAsync(stoppingToken);
+            var result = await fireCrawl.ScrapeAsync(job.Url);
+            await ProcessResultAsync(result);
+        }
+    }
+}
+</code></pre>
+<h2 id="benefits-for-hazina-ecosystem">Benefits for Hazina Ecosystem</h2>
+<table>
+<thead>
+<tr>
+<th>Benefit</th>
+<th>Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Data Autonomy</strong></td>
+<td>No reliance on provided corpora, agents operate on live web data</td>
+</tr>
+<tr>
+<td><strong>Live Intelligence</strong></td>
+<td>Real-time competitive analysis, pricing updates, market research</td>
+</tr>
+<tr>
+<td><strong>Zero-Code Input</strong></td>
+<td>Lowers user barrier - natural language queries vs manual scraping code</td>
+</tr>
+<tr>
+<td><strong>Structured Ingestion</strong></td>
+<td>Clean markdown + structured extraction fuels knowledge graphs &amp; RAG</td>
+</tr>
+<tr>
+<td><strong>Multi-Modal</strong></td>
+<td>Text + screenshots + branding data for comprehensive analysis</td>
+</tr>
+<tr>
+<td><strong>Agent Autonomy</strong></td>
+<td>Agents can research web autonomously during task execution</td>
+</tr>
+<tr>
+<td><strong>Brand2Boost Integration</strong></td>
+<td>Automatic branding extraction → generative marketing workflows</td>
+</tr>
+<tr>
+<td><strong>Knowledge Graph</strong></td>
+<td>Site structure mapping → graph construction → semantic search</td>
+</tr>
+</tbody>
+</table>
+<h2 id="future-enhancements">Future Enhancements</h2>
+<p><strong>Planned Features:</strong></p>
+<ol>
+<li><strong>Incremental Crawling</strong> - Track changes over time, only re-scrape updated pages</li>
+<li><strong>JavaScript Rendering</strong> - Handle SPAs and dynamic content (React, Vue, Angular)</li>
+<li><strong>Form Interaction</strong> - Submit forms, login flows for authenticated scraping</li>
+<li><strong>PDF Extraction</strong> - Extract data from PDF documents found during crawls</li>
+<li><strong>Video/Audio Transcription</strong> - Extract transcripts from embedded media</li>
+<li><strong>Proxy Support</strong> - Route requests through proxies for geo-specific content</li>
+<li><strong>CAPTCHA Solving</strong> - Integrate CAPTCHA solving for protected sites</li>
+</ol>
+<h2 id="support--troubleshooting">Support &amp; Troubleshooting</h2>
+<h3 id="api-key-issues">API Key Issues</h3>
+<p><strong>Symptom:</strong> 401 Unauthorized errors
+<strong>Solution:</strong> Verify API key is correctly set in configuration</p>
+<pre><code class="lang-bash"># Check configuration
+dotnet user-secrets list | grep FireCrawl
+</code></pre>
+<h3 id="timeout-errors">Timeout Errors</h3>
+<p><strong>Symptom:</strong> HttpClient timeout exceptions
+<strong>Solution:</strong> Increase timeout for slow-loading sites</p>
+<pre><code class="lang-csharp">var config = new FireCrawlConfig { ApiKey = &quot;...&quot;, BaseUrl = &quot;...&quot; };
+var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(120) };
+var service = new FireCrawlService(config, httpClient);
+</code></pre>
+<h3 id="empty-results">Empty Results</h3>
+<p><strong>Symptom:</strong> Success = true but no data extracted
+<strong>Solution:</strong> Check extraction prompt specificity</p>
+<pre><code class="lang-csharp">// Too vague
+ExtractionPrompt = &quot;Extract data&quot;
+
+// Better
+ExtractionPrompt = &quot;Extract all pricing tiers with: tier name, monthly price, annual price, and feature list&quot;
+</code></pre>
+<h3 id="rate-limiting-1">Rate Limiting</h3>
+<p><strong>Symptom:</strong> 429 Rate Limited errors
+<strong>Solution:</strong> Implement exponential backoff</p>
+<pre><code class="lang-csharp">int retryCount = 0;
+while (retryCount &lt; 3)
+{
+    var result = await fireCrawl.ScrapeAsync(url);
+    if (result.Success) break;
+
+    if (result.Error?.Contains(&quot;429&quot;) == true)
+    {
+        await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, retryCount)));
+        retryCount++;
+    }
+    else
+    {
+        break; // Different error, don't retry
+    }
+}
+</code></pre>
+<h2 id="references">References</h2>
+<ul>
+<li><strong>FireCrawl Documentation:</strong> <a href="https://docs.firecrawl.dev">https://docs.firecrawl.dev</a></li>
+<li><strong>FireCrawl API Reference:</strong> <a href="https://docs.firecrawl.dev/api-reference">https://docs.firecrawl.dev/api-reference</a></li>
+<li><strong>Hazina Architecture:</strong> <a href="https://github.com/martiendejong/Hazina">https://github.com/martiendejong/Hazina</a></li>
+<li><strong>MCP (Model Context Protocol):</strong> <a href="https://modelcontextprotocol.io">https://modelcontextprotocol.io</a></li>
+</ul>
+<h2 id="changelog">Changelog</h2>
+<p><strong>v1.0 (2026-01-12)</strong></p>
+<ul>
+<li>Initial implementation</li>
+<li>All 7 core operations (scrape, map, crawl, extract, branding, screenshot, search)</li>
+<li>Complete documentation with use cases and examples</li>
+<li>Integration patterns for Hazina ecosystem</li>
+</ul>
+<hr>
+<p><strong>Implemented by:</strong> Claude Sonnet 4.5
+<strong>Review Status:</strong> Ready for PR
+<strong>License:</strong> Same as Hazina project</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

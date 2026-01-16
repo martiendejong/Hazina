@@ -1,0 +1,1114 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Proactive Agent Functions - Implementation Analysis | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Proactive Agent Functions - Implementation Analysis | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="proactive-agent-functions---implementation-analysis">Proactive Agent Functions - Implementation Analysis</h1>
+
+<p><strong>Date</strong>: 2026-01-13
+<strong>Author</strong>: Claude Sonnet 4.5
+<strong>Repository</strong>: Hazina Framework
+<strong>Purpose</strong>: Assessment of proactive agent capabilities and implementation roadmap</p>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>This document analyzes the current implementation status of 14 proactive agent functions in the Hazina repository and provides a structured plan for implementing missing or partially implemented features.</p>
+<p><strong>Key Findings:</strong></p>
+<ul>
+<li>✅ <strong>5 functions fully implemented</strong> (35%)</li>
+<li>🔶 <strong>7 functions partially implemented</strong> (50%)</li>
+<li>❌ <strong>2 functions not implemented</strong> (15%)</li>
+</ul>
+<p><strong>Overall Maturity</strong>: <strong>Production-Ready Foundation with Strategic Gaps</strong></p>
+<hr>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#implementation-status-matrix">Implementation Status Matrix</a></li>
+<li><a href="#detailed-analysis-by-function">Detailed Analysis by Function</a></li>
+<li><a href="#architecture-overview">Architecture Overview</a></li>
+<li><a href="#implementation-roadmap">Implementation Roadmap</a></li>
+<li><a href="#dependencies--integration">Dependencies &amp; Integration</a></li>
+<li><a href="#risk-assessment">Risk Assessment</a></li>
+</ol>
+<hr>
+<h2 id="implementation-status-matrix">Implementation Status Matrix</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Function</th>
+<th>Status</th>
+<th>Module</th>
+<th>Priority</th>
+<th>Effort</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>ObserverEngine</td>
+<td>❌ not-implemented</td>
+<td>N/A</td>
+<td>P2-Medium</td>
+<td>2 weeks</td>
+</tr>
+<tr>
+<td>2</td>
+<td>PredictiveModel</td>
+<td>❌ not-implemented</td>
+<td>N/A</td>
+<td>P3-Low</td>
+<td>3 weeks</td>
+</tr>
+<tr>
+<td>3</td>
+<td>TriggerSystem</td>
+<td>🔶 partial</td>
+<td>AI.PromptManagement</td>
+<td>P2-Medium</td>
+<td>1 week</td>
+</tr>
+<tr>
+<td>4</td>
+<td>TaskScheduler</td>
+<td>🔶 partial</td>
+<td>Brain.MemoryModule</td>
+<td>P1-High</td>
+<td>2 weeks</td>
+</tr>
+<tr>
+<td>5</td>
+<td>SuggestionBus</td>
+<td>🔶 partial</td>
+<td>Tool Agent Architecture</td>
+<td>P2-Medium</td>
+<td>1 week</td>
+</tr>
+<tr>
+<td>6</td>
+<td>PermissionGuard</td>
+<td>❌ not-implemented</td>
+<td>N/A</td>
+<td>P1-High</td>
+<td>2 weeks</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Auto-embeddings</td>
+<td>✅ implemented</td>
+<td>Store.EmbeddingStore</td>
+<td>N/A</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Auto-summarization</td>
+<td>✅ implemented</td>
+<td>AI.Orchestration, LongContext</td>
+<td>N/A</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Context prediction</td>
+<td>🔶 partial</td>
+<td>Tools.Services.Chat</td>
+<td>P2-Medium</td>
+<td>1 week</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Fact extraction</td>
+<td>✅ implemented</td>
+<td>Brain.MemoryDistiller</td>
+<td>N/A</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Context graph enrichment</td>
+<td>✅ implemented</td>
+<td>AI.RAG.Graph</td>
+<td>N/A</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Conflict detection</td>
+<td>✅ implemented</td>
+<td>AI.FaultDetection</td>
+<td>N/A</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Background RAG prefetching</td>
+<td>🔶 partial</td>
+<td>AI.RAG</td>
+<td>P2-Medium</td>
+<td>1 week</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Automatic backlog/task generation</td>
+<td>🔶 partial</td>
+<td>CodeGeneration.Core</td>
+<td>P3-Low</td>
+<td>2 weeks</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Legend:</strong></p>
+<ul>
+<li>✅ <strong>implemented</strong> - Fully functional with tests</li>
+<li>🔶 <strong>partial</strong> - Core exists but needs enhancement</li>
+<li>❌ <strong>not-implemented</strong> - No current implementation</li>
+</ul>
+<hr>
+<h2 id="detailed-analysis-by-function">Detailed Analysis by Function</h2>
+<h3 id="1-observerengine-queryfiletool-event-logging">1. ObserverEngine (Query/File/Tool Event Logging)</h3>
+<p><strong>Status</strong>: ❌ <strong>not-implemented</strong></p>
+<p><strong>What It Should Do:</strong></p>
+<ul>
+<li>Log all LLM queries, file operations, and tool invocations</li>
+<li>Create audit trail for debugging and analysis</li>
+<li>Enable replay and analysis of agent behavior</li>
+<li>Track token usage and performance metrics</li>
+</ul>
+<p><strong>Current State:</strong></p>
+<ul>
+<li>No centralized event logging system</li>
+<li>Individual modules have local logging (ILogger<t>)</t></li>
+<li>No structured event storage</li>
+</ul>
+<p><strong>What's Needed:</strong></p>
+<pre><code class="lang-csharp">// Proposed: Hazina.AI.Observability/Events/
+public interface IEventObserver
+{
+    Task LogQueryAsync(QueryEvent evt);
+    Task LogFileOperationAsync(FileOperationEvent evt);
+    Task LogToolInvocationAsync(ToolInvocationEvent evt);
+    Task&lt;List&lt;Event&gt;&gt; GetEventsAsync(EventQuery query);
+}
+
+public class EventStore : IEventObserver
+{
+    // Store events in SQLite/Postgres
+    // Provide query API for analysis
+}
+</code></pre>
+<p><strong>Implementation Path:</strong></p>
+<ol>
+<li>Create <code>Hazina.AI.Observability</code> module</li>
+<li>Define event models (QueryEvent, FileEvent, ToolEvent)</li>
+<li>Integrate with existing orchestrators</li>
+<li>Add SQLite storage backend</li>
+<li>Build query/analysis API</li>
+</ol>
+<p><strong>Priority</strong>: P2-Medium (useful for debugging but not critical for core functionality)</p>
+<hr>
+<h3 id="2-predictivemodel-embedding-based-intent-prediction">2. PredictiveModel (Embedding-Based Intent Prediction)</h3>
+<p><strong>Status</strong>: ❌ <strong>not-implemented</strong></p>
+<p><strong>What It Should Do:</strong></p>
+<ul>
+<li>Predict user intent from partial input</li>
+<li>Suggest next actions based on context</li>
+<li>Use embeddings to match to known patterns</li>
+<li>Enable autocomplete/suggestions</li>
+</ul>
+<p><strong>Current State:</strong></p>
+<ul>
+<li>No predictive model exists</li>
+<li>Embeddings infrastructure exists (Store.EmbeddingStore)</li>
+<li>Could leverage existing LLM orchestrator</li>
+</ul>
+<p><strong>What's Needed:</strong></p>
+<pre><code class="lang-csharp">// Proposed: Hazina.AI.Prediction/
+public interface IIntentPredictor
+{
+    Task&lt;List&lt;IntentPrediction&gt;&gt; PredictIntentAsync(
+        string partialInput,
+        ConversationContext context);
+}
+
+public class EmbeddingBasedPredictor : IIntentPredictor
+{
+    // 1. Embed partial input
+    // 2. Search similar past queries in vector store
+    // 3. Extract intent patterns
+    // 4. Rank and return predictions
+}
+</code></pre>
+<p><strong>Implementation Path:</strong></p>
+<ol>
+<li>Create <code>Hazina.AI.Prediction</code> module</li>
+<li>Build intent pattern database (store historical queries)</li>
+<li>Implement embedding-based similarity search</li>
+<li>Add intent classification</li>
+<li>Integrate with Tool Agent for suggestions</li>
+</ol>
+<p><strong>Priority</strong>: P3-Low (nice-to-have, not core to proactive behavior)</p>
+<hr>
+<h3 id="3-triggersystem-pattern--action">3. TriggerSystem (Pattern → Action)</h3>
+<p><strong>Status</strong>: 🔶 <strong>partial</strong></p>
+<p><strong>What Exists:</strong></p>
+<ul>
+<li><code>EvaluationPipeline</code> in AI.PromptManagement (C:\Projects\hazina\src\Core\AI\Hazina.AI.PromptManagement\Evaluation\EvaluationPipeline.cs)</li>
+<li>Basic trigger logic exists but limited to prompt evaluation</li>
+</ul>
+<p><strong>What's Missing:</strong></p>
+<ul>
+<li>Generic pattern matching system</li>
+<li>Action registry</li>
+<li>Runtime pattern registration</li>
+<li>Complex condition evaluation</li>
+</ul>
+<p><strong>What's Needed:</strong></p>
+<pre><code class="lang-csharp">// Extend: Hazina.AI.Triggers/
+public interface ITriggerSystem
+{
+    Task RegisterTriggerAsync(Trigger trigger);
+    Task EvaluateAsync(TriggerContext context);
+}
+
+public class Trigger
+{
+    public string Id { get; set; }
+    public ITriggerPattern Pattern { get; set; }
+    public IAction Action { get; set; }
+    public TriggerConditions Conditions { get; set; }
+}
+
+// Example triggers:
+// - When user mentions &quot;report&quot; → suggest ReportGenerationTool
+// - When error detected → log to error tracking
+// - When task completed → update status dashboard
+</code></pre>
+<p><strong>Implementation Path:</strong></p>
+<ol>
+<li>Extend EvaluationPipeline to support custom triggers</li>
+<li>Create trigger registry</li>
+<li>Add pattern matching engine</li>
+<li>Integrate with Tool Agent architecture</li>
+</ol>
+<p><strong>Priority</strong>: P2-Medium (enables proactive suggestions)</p>
+<hr>
+<h3 id="4-taskscheduler-asyncbackground-tasks">4. TaskScheduler (Async/Background Tasks)</h3>
+<p><strong>Status</strong>: 🔶 <strong>partial</strong></p>
+<p><strong>What Exists:</strong></p>
+<ul>
+<li><code>MemoryModule</code> has background task hints (fire-and-forget for fact distillation)</li>
+<li>Tool Agent supports async execution</li>
+<li>No centralized task queue</li>
+</ul>
+<p><strong>Evidence:</strong></p>
+<pre><code class="lang-csharp">// From MemoryModule.cs:71
+if (_options.DistillOnObserve)
+{
+    // For now, await (can be made background task with IHostedService queue)
+    await _distiller.TryDistillFactsAsync(episode, ct);
+}
+
+// Comment suggests background service needed but not implemented
+</code></pre>
+<p><strong>What's Missing:</strong></p>
+<ul>
+<li>Task queue (e.g., Hangfire, custom queue)</li>
+<li>Scheduling system (cron-like)</li>
+<li>Task persistence</li>
+<li>Failure retry logic</li>
+</ul>
+<p><strong>What's Needed:</strong></p>
+<pre><code class="lang-csharp">// Proposed: Hazina.TaskScheduling/
+public interface ITaskScheduler
+{
+    Task&lt;Guid&gt; ScheduleAsync(ScheduledTask task);
+    Task&lt;TaskStatus&gt; GetStatusAsync(Guid taskId);
+    Task CancelAsync(Guid taskId);
+}
+
+public class BackgroundTaskQueue : ITaskScheduler
+{
+    // Queue tasks for background execution
+    // Support: one-time, recurring, delayed
+    // Persistence in SQLite
+}
+
+// Use cases:
+// - Fact distillation (background)
+// - Graph construction (async)
+// - Long-running analysis
+// - Scheduled maintenance (pruning, decay)
+</code></pre>
+<p><strong>Implementation Path:</strong></p>
+<ol>
+<li>Create <code>Hazina.TaskScheduling</code> module</li>
+<li>Implement task queue with SQLite persistence</li>
+<li>Add IHostedService background worker</li>
+<li>Update Brain module to use scheduler</li>
+<li>Add scheduling API to Tool Agent</li>
+</ol>
+<p><strong>Priority</strong>: P1-High (critical for scalable proactive operations)</p>
+<hr>
+<h3 id="5-suggestionbus-ui-suggestionsmessages">5. SuggestionBus (UI Suggestions/Messages)</h3>
+<p><strong>Status</strong>: 🔶 <strong>partial</strong></p>
+<p><strong>What Exists:</strong></p>
+<ul>
+<li>Tool Agent Architecture has &quot;show_guidance_card&quot; tool (docs/TOOL_AGENT_ARCHITECTURE.md:69)</li>
+<li>Chat agent can send UI messages</li>
+<li>No centralized suggestion system</li>
+</ul>
+<p><strong>Evidence from Tool Agent Architecture:</strong></p>
+<pre><code class="lang-csharp">// Layer 2 tools include:
+// - show_guidance_card  ← UI feedback
+</code></pre>
+<p><strong>What's Missing:</strong></p>
+<ul>
+<li>Centralized suggestion queue</li>
+<li>Priority/ranking system</li>
+<li>User preference tracking</li>
+<li>Suggestion analytics</li>
+</ul>
+<p><strong>What's Needed:</strong></p>
+<pre><code class="lang-csharp">// Proposed: Hazina.UI.Suggestions/
+public interface ISuggestionBus
+{
+    Task PublishAsync(Suggestion suggestion);
+    Task&lt;List&lt;Suggestion&gt;&gt; GetPendingAsync(string userId);
+    Task DismissAsync(Guid suggestionId);
+    Task AcceptAsync(Guid suggestionId);
+}
+
+public class Suggestion
+{
+    public Guid Id { get; set; }
+    public SuggestionType Type { get; set; }  // Tip, Action, Warning
+    public string Title { get; set; }
+    public string Content { get; set; }
+    public List&lt;SuggestionAction&gt; Actions { get; set; }
+    public int Priority { get; set; }
+}
+
+// Example: &quot;I noticed you're working on a report. Want me to generate a template?&quot;
+</code></pre>
+<p><strong>Implementation Path:</strong></p>
+<ol>
+<li>Create <code>Hazina.UI.Suggestions</code> module</li>
+<li>Implement in-memory suggestion queue</li>
+<li>Add priority/ranking logic</li>
+<li>Integrate with Tool Agent &quot;show_guidance_card&quot;</li>
+<li>Add analytics tracking</li>
+</ol>
+<p><strong>Priority</strong>: P2-Medium (enhances UX but not critical)</p>
+<hr>
+<h3 id="6-permissionguard-safety-for-autonomous-actions">6. PermissionGuard (Safety for Autonomous Actions)</h3>
+<p><strong>Status</strong>: ❌ <strong>not-implemented</strong></p>
+<p><strong>What It Should Do:</strong></p>
+<ul>
+<li>Validate autonomous actions before execution</li>
+<li>Check permissions (file system, API calls, data modifications)</li>
+<li>Implement safety constraints</li>
+<li>Prevent destructive operations</li>
+<li>Log permission decisions</li>
+</ul>
+<p><strong>Current State:</strong></p>
+<ul>
+<li>No permission system exists</li>
+<li>Tools execute without safety checks</li>
+<li>Potential for unsafe autonomous behavior</li>
+</ul>
+<p><strong>What's Needed:</strong></p>
+<pre><code class="lang-csharp">// Proposed: Hazina.Security.Permissions/
+public interface IPermissionGuard
+{
+    Task&lt;PermissionResult&gt; CheckPermissionAsync(
+        string userId,
+        PermissionRequest request);
+
+    Task&lt;bool&gt; IsActionSafeAsync(
+        ActionContext action,
+        SafetyRules rules);
+}
+
+public enum PermissionLevel
+{
+    Read,           // Safe: read files, query data
+    Write,          // Caution: write files, modify data
+    Execute,        // Dangerous: run commands, call APIs
+    Administrative  // Critical: delete, system changes
+}
+
+// Example rules:
+// - Autonomous agents: Read + Write only
+// - User-approved actions: Execute allowed
+// - Critical ops: Require explicit permission
+</code></pre>
+<p><strong>Implementation Path:</strong></p>
+<ol>
+<li>Create <code>Hazina.Security.Permissions</code> module</li>
+<li>Define permission model (user, resource, action)</li>
+<li>Implement rule engine</li>
+<li>Add pre-execution checks to all tools</li>
+<li>Create audit trail for permission decisions</li>
+<li>Add safety constraints (e.g., no file deletion without approval)</li>
+</ol>
+<p><strong>Priority</strong>: P1-High (CRITICAL for safe autonomous operation)</p>
+<hr>
+<h3 id="7-auto-embeddings">7. Auto-embeddings</h3>
+<p><strong>Status</strong>: ✅ <strong>implemented</strong></p>
+<p><strong>What Exists:</strong></p>
+<ul>
+<li><code>IEmbeddingGenerator</code> interface (Store.EmbeddingStore/Interfaces/IEmbeddingGenerator.cs)</li>
+<li><code>LLMEmbeddingGenerator</code> (Store.EmbeddingStore/Generators/LLMEmbeddingGenerator.cs)</li>
+<li><code>IncrementalEmbeddingService</code> (Store.DocumentStore/Services/IncrementalEmbeddingService.cs)</li>
+<li>Auto-embedding on document ingestion</li>
+</ul>
+<p><strong>Evidence:</strong></p>
+<pre><code class="lang-csharp">// From EmbeddingService.cs
+public class EmbeddingService
+{
+    public async Task&lt;ReadOnlyMemory&lt;double&gt;&gt; GenerateEmbeddingAsync(...)
+    // Automatically generates embeddings for text
+}
+
+// From IncrementalEmbeddingService.cs
+public async Task EmbedNewDocumentsAsync(...)
+// Automatically embeds documents as they're added
+</code></pre>
+<p><strong>Status</strong>: ✅ Production-ready, no changes needed</p>
+<hr>
+<h3 id="8-auto-summarization">8. Auto-summarization</h3>
+<p><strong>Status</strong>: ✅ <strong>implemented</strong></p>
+<p><strong>What Exists:</strong></p>
+<ul>
+<li><code>ContextManager.SummarizeContextAsync()</code> (AI.Orchestration/Context/ContextManager.cs:88)</li>
+<li><code>LongContext</code> module with summarization nodes (LongContext/README.md)</li>
+<li>Automatic context compression</li>
+</ul>
+<p><strong>Evidence:</strong></p>
+<pre><code class="lang-csharp">// From ContextManager.cs:88
+public async Task&lt;string&gt; SummarizeContextAsync(string contextId, ...)
+{
+    var messagesToSummarize = context.Messages.Take(context.Messages.Count - 5).ToList();
+    // Creates summarization prompt
+    // Replaces old messages with summary
+}
+</code></pre>
+<p><strong>Status</strong>: ✅ Production-ready, integrated into conversation management</p>
+<hr>
+<h3 id="9-context-prediction">9. Context prediction</h3>
+<p><strong>Status</strong>: 🔶 <strong>partial</strong></p>
+<p><strong>What Exists:</strong></p>
+<ul>
+<li><code>SmartContextBuilder</code> (Tools.Services.Chat/Optimization/SmartContextBuilder.cs)</li>
+<li><code>RequestClassifier</code> (Tools.Services.Chat/Optimization/RequestClassifier.cs)</li>
+<li>Progressive context building based on request type</li>
+</ul>
+<p><strong>Evidence:</strong></p>
+<pre><code class="lang-csharp">// From SmartContextBuilder.cs
+public async Task&lt;ContextBuildResult&gt; BuildContextAsync(
+    RequestStrategy strategy,
+    string projectId,
+    List&lt;ConversationMessage&gt; recentHistory,
+    string? customPrompt = null)
+{
+    // Builds different context based on predicted need
+    // ImmediateResponseStrategy → minimal context
+    // TargetedRetrievalStrategy → specific fields
+    // FullExplorationStrategy → full context
+}
+</code></pre>
+<p><strong>What's Missing:</strong></p>
+<ul>
+<li>Predictive prefetching (load context before user asks)</li>
+<li>Learning from usage patterns</li>
+<li>Multi-turn prediction</li>
+</ul>
+<p><strong>What's Needed:</strong></p>
+<pre><code class="lang-csharp">// Extend SmartContextBuilder:
+public interface IContextPredictor
+{
+    Task&lt;PredictedContext&gt; PredictNextContextAsync(
+        ConversationHistory history,
+        UserProfile profile);
+
+    Task PrefetchAsync(PredictedContext prediction);
+}
+
+// Use ML or heuristics to predict:
+// - User likely to ask for X → prefetch X data
+// - Conversation pattern suggests Y → prepare Y context
+</code></pre>
+<p><strong>Implementation Path:</strong></p>
+<ol>
+<li>Analyze conversation patterns</li>
+<li>Build prediction model (could be simple heuristics)</li>
+<li>Add prefetching to SmartContextBuilder</li>
+<li>Cache predicted contexts</li>
+</ol>
+<p><strong>Priority</strong>: P2-Medium (optimization, not critical)</p>
+<hr>
+<h3 id="10-fact-extraction">10. Fact extraction</h3>
+<p><strong>Status</strong>: ✅ <strong>implemented</strong></p>
+<p><strong>What Exists:</strong></p>
+<ul>
+<li><code>MemoryDistiller</code> (Brain/Services/MemoryDistiller.cs)</li>
+<li><code>LLMEntityExtractor</code> (AI.RAG/Graph/Pipeline/LLMEntityExtractor.cs)</li>
+<li><code>LLMRelationshipExtractor</code> (AI.RAG/Graph/Pipeline/LLMRelationshipExtractor.cs)</li>
+</ul>
+<p><strong>Evidence:</strong></p>
+<pre><code class="lang-csharp">// From MemoryDistiller.cs:27
+public async Task&lt;int&gt; TryDistillFactsAsync(MemoryEpisode episode, ...)
+{
+    // Extracts factual statements from episodes
+    // Stores as MemoryFact objects
+    // Note: Currently heuristic-based, LLM integration planned
+}
+
+// From LLMEntityExtractor.cs
+public async Task&lt;List&lt;GraphEntity&gt;&gt; ExtractEntitiesAsync(...)
+// Extracts entities using LLM prompts
+</code></pre>
+<p><strong>Current Implementation:</strong></p>
+<ul>
+<li>Heuristic-based (simple patterns)</li>
+<li>LLM-based extraction ready but commented as &quot;future&quot;</li>
+</ul>
+<p><strong>Status</strong>: ✅ Core implemented, enhancement (LLM) documented for future</p>
+<hr>
+<h3 id="11-context-graph-enrichment">11. Context graph enrichment</h3>
+<p><strong>Status</strong>: ✅ <strong>implemented</strong></p>
+<p><strong>What Exists:</strong></p>
+<ul>
+<li><code>GraphConstructionPipeline</code> (AI.RAG/Graph/Pipeline/GraphConstructionPipeline.cs)</li>
+<li><code>EntityNormalizationService</code> (AI.RAG/Graph/Pipeline/EntityNormalizationService.cs)</li>
+<li>Complete graph construction system</li>
+<li>GraphRAG implementation plan (GRAPHRAG_IMPLEMENTATION_PLAN.md)</li>
+</ul>
+<p><strong>Evidence:</strong></p>
+<pre><code class="lang-csharp">// From GraphConstructionPipeline.cs:43
+public async Task&lt;GraphConstructionResult&gt; ProcessDocumentAsync(
+    string documentId,
+    string documentText,
+    CancellationToken cancellationToken = default)
+{
+    // 1. Extract entities
+    // 2. Extract relationships
+    // 3. Normalize entities (deduplicate)
+    // 4. Persist to graph store
+    // Complete pipeline for graph enrichment
+}
+</code></pre>
+<p><strong>Status</strong>: ✅ Fully implemented with comprehensive plan for extension</p>
+<hr>
+<h3 id="12-conflict-detection--semantic-contradiction">12. Conflict detection / Semantic contradiction</h3>
+<p><strong>Status</strong>: ✅ <strong>implemented</strong></p>
+<p><strong>What Exists:</strong></p>
+<ul>
+<li><code>BasicHallucinationDetector</code> (AI.FaultDetection/Detectors/BasicHallucinationDetector.cs)</li>
+<li>Detects contradictions with conversation history</li>
+<li>Detects unsupported claims</li>
+<li>Detects context mismatches</li>
+</ul>
+<p><strong>Evidence:</strong></p>
+<pre><code class="lang-csharp">// From BasicHallucinationDetector.cs:39
+private void DetectContradictions(
+    string response,
+    ValidationContext context,
+    HallucinationDetectionResult result)
+{
+    // Checks if response contradicts conversation history
+    // Uses keyword-based detection (basic)
+    // Identifies opposite words (yes/no, true/false, etc.)
+}
+</code></pre>
+<p><strong>Current Implementation:</strong></p>
+<ul>
+<li>Heuristic-based (keyword matching)</li>
+<li>Detects basic contradictions</li>
+<li>Could be enhanced with semantic similarity</li>
+</ul>
+<p><strong>Status</strong>: ✅ Core implemented, semantic enhancement possible</p>
+<hr>
+<h3 id="13-background-rag-prefetching">13. Background RAG prefetching</h3>
+<p><strong>Status</strong>: 🔶 <strong>partial</strong></p>
+<p><strong>What Exists:</strong></p>
+<ul>
+<li>RAG infrastructure complete</li>
+<li>No background prefetching system</li>
+<li>Retrieval is reactive (on-demand)</li>
+</ul>
+<p><strong>What's Missing:</strong></p>
+<pre><code class="lang-csharp">// Proposed extension to RAG:
+public interface IRAGPrefetcher
+{
+    Task PrefetchAsync(PrefetchContext context);
+    Task WarmCacheAsync(List&lt;string&gt; likelyQueries);
+}
+
+public class PrefetchContext
+{
+    public ConversationHistory History { get; set; }
+    public UserProfile Profile { get; set; }
+    public List&lt;string&gt; PredictedQueries { get; set; }
+}
+
+// Use cases:
+// - User uploads document → prefetch common queries
+// - Conversation about topic X → prefetch related documents
+// - User pattern suggests next question → prefetch results
+</code></pre>
+<p><strong>Implementation Path:</strong></p>
+<ol>
+<li>Add query prediction to SmartContextBuilder</li>
+<li>Create prefetch service</li>
+<li>Cache prefetched results</li>
+<li>Integrate with RAGEngine</li>
+</ol>
+<p><strong>Priority</strong>: P2-Medium (performance optimization)</p>
+<hr>
+<h3 id="14-automatic-backlogtask-generation">14. Automatic backlog/task generation</h3>
+<p><strong>Status</strong>: 🔶 <strong>partial</strong></p>
+<p><strong>What Exists:</strong></p>
+<ul>
+<li><code>IntentParser</code> (CodeGeneration.Core/Parsing/IntentParser.cs)</li>
+<li><code>CodeGenerationPipeline</code> (CodeGeneration.Core/Pipeline/CodeGenerationPipeline.cs)</li>
+<li>Tool Agent has task generation hints</li>
+</ul>
+<p><strong>Evidence:</strong></p>
+<pre><code class="lang-csharp">// From IntentParser.cs, CodeGenerationPipeline.cs
+// Can parse intent and generate code
+// Could be extended to generate task backlog
+</code></pre>
+<p><strong>What's Missing:</strong></p>
+<ul>
+<li>Automatic task decomposition</li>
+<li>Backlog prioritization</li>
+<li>Task tracking system</li>
+<li>Integration with project management</li>
+</ul>
+<p><strong>What's Needed:</strong></p>
+<pre><code class="lang-csharp">// Proposed: Hazina.Planning/
+public interface ITaskGenerator
+{
+    Task&lt;List&lt;Task&gt;&gt; GenerateTasksAsync(
+        ProjectContext context,
+        string goal);
+
+    Task&lt;TaskBacklog&gt; CreateBacklogAsync(
+        List&lt;Task&gt; tasks);
+}
+
+// Example:
+// User: &quot;I want to build a blog system&quot;
+// Generator:
+// 1. Create database schema
+// 2. Implement post CRUD API
+// 3. Build frontend UI
+// 4. Add authentication
+// 5. Deploy
+</code></pre>
+<p><strong>Implementation Path:</strong></p>
+<ol>
+<li>Create <code>Hazina.Planning</code> module</li>
+<li>Build task decomposition using LLM</li>
+<li>Add priority/dependency detection</li>
+<li>Integrate with Tool Agent</li>
+</ol>
+<p><strong>Priority</strong>: P3-Low (advanced feature, not core)</p>
+<hr>
+<h2 id="architecture-overview">Architecture Overview</h2>
+<h3 id="current-architecture-strengths">Current Architecture Strengths</h3>
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│ HAZINA PROACTIVE CAPABILITIES (Current State)               │
+│─────────────────────────────────────────────────────────────│
+│                                                              │
+│  ✅ IMPLEMENTED FOUNDATION                                   │
+│  ├─ Auto-embeddings (Store.EmbeddingStore)                  │
+│  ├─ Auto-summarization (AI.Orchestration, LongContext)      │
+│  ├─ Fact extraction (Brain.MemoryDistiller)                 │
+│  ├─ Graph enrichment (AI.RAG.Graph)                         │
+│  └─ Conflict detection (AI.FaultDetection)                  │
+│                                                              │
+│  🔶 PARTIAL (Needs Extension)                                │
+│  ├─ TriggerSystem (AI.PromptManagement.Evaluation)          │
+│  ├─ TaskScheduler (hints in Brain, Tool Agent)              │
+│  ├─ SuggestionBus (Tool Agent show_guidance_card)           │
+│  ├─ Context prediction (SmartContextBuilder)                │
+│  ├─ RAG prefetching (infrastructure exists)                 │
+│  └─ Task generation (CodeGeneration.IntentParser)           │
+│                                                              │
+│  ❌ NOT IMPLEMENTED (New Modules Needed)                     │
+│  ├─ ObserverEngine (event logging/audit trail)              │
+│  ├─ PredictiveModel (intent prediction)                     │
+│  └─ PermissionGuard (safety/security) ⚠️ CRITICAL           │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="integration-points">Integration Points</h3>
+<pre><code>┌────────────────┐      ┌──────────────┐      ┌─────────────┐
+│  User Input    │─────&gt;│ Chat Agent   │─────&gt;│ Tool Agent  │
+└────────────────┘      │ (Layer 1)    │      │ (Layer 2)   │
+                        └──────────────┘      └─────────────┘
+                               │                      │
+                               │                      ▼
+                               │              ┌──────────────┐
+                               │              │ Generation   │
+                               │              │ Services     │
+                               │              │ (Layer 3)    │
+                               │              └──────────────┘
+                               │                      │
+                               ▼                      ▼
+                        ┌──────────────────────────────────┐
+                        │  PROACTIVE CAPABILITIES          │
+                        ├──────────────────────────────────┤
+                        │ • Context Prediction             │
+                        │ • Fact Extraction                │
+                        │ • Graph Enrichment               │
+                        │ • Conflict Detection             │
+                        │ • Auto-summarization             │
+                        │ • (Future) Permission Guard      │
+                        │ • (Future) Task Scheduler        │
+                        │ • (Future) Trigger System        │
+                        └──────────────────────────────────┘
+                                       │
+                                       ▼
+                        ┌──────────────────────────────────┐
+                        │  STORAGE LAYER                   │
+                        ├──────────────────────────────────┤
+                        │ • Vector Store (Embeddings)      │
+                        │ • Graph Store (Knowledge Graph)  │
+                        │ • Memory Store (Episodes/Facts)  │
+                        │ • Document Store                 │
+                        └──────────────────────────────────┘
+</code></pre>
+<hr>
+<h2 id="implementation-roadmap">Implementation Roadmap</h2>
+<h3 id="phase-1-safety--infrastructure-4-weeks---p1-high">Phase 1: Safety &amp; Infrastructure (4 weeks) - P1-High</h3>
+<p><strong>Goal</strong>: Make autonomous operation safe and scalable</p>
+<h4 id="week-1-2-permissionguard">Week 1-2: PermissionGuard</h4>
+<ul>
+<li>Create <code>Hazina.Security.Permissions</code> module</li>
+<li>Define permission model and rule engine</li>
+<li>Integrate with all tool invocations</li>
+<li>Add audit trail for permission decisions</li>
+<li><strong>Deliverable</strong>: Safe autonomous execution</li>
+</ul>
+<h4 id="week-3-4-taskscheduler">Week 3-4: TaskScheduler</h4>
+<ul>
+<li>Create <code>Hazina.TaskScheduling</code> module</li>
+<li>Implement background task queue</li>
+<li>Add IHostedService worker</li>
+<li>Update Brain module for async fact distillation</li>
+<li><strong>Deliverable</strong>: Scalable background operations</li>
+</ul>
+<p><strong>Success Criteria:</strong></p>
+<ul>
+<li>✅ All tool executions checked for permissions</li>
+<li>✅ Background tasks running reliably</li>
+<li>✅ Audit trail for all autonomous actions</li>
+<li>✅ No blocking operations in main thread</li>
+</ul>
+<hr>
+<h3 id="phase-2-proactive-engagement-3-weeks---p2-medium">Phase 2: Proactive Engagement (3 weeks) - P2-Medium</h3>
+<p><strong>Goal</strong>: Enable proactive suggestions and context awareness</p>
+<h4 id="week-1-triggersystem-enhancement">Week 1: TriggerSystem Enhancement</h4>
+<ul>
+<li>Extend <code>EvaluationPipeline</code> to generic trigger system</li>
+<li>Add trigger registry and pattern matching</li>
+<li>Integrate with Tool Agent</li>
+<li><strong>Deliverable</strong>: Pattern-based proactive actions</li>
+</ul>
+<h4 id="week-2-suggestionbus">Week 2: SuggestionBus</h4>
+<ul>
+<li>Create <code>Hazina.UI.Suggestions</code> module</li>
+<li>Implement suggestion queue and ranking</li>
+<li>Integrate with Tool Agent &quot;show_guidance_card&quot;</li>
+<li><strong>Deliverable</strong>: Proactive UI suggestions</li>
+</ul>
+<h4 id="week-3-context-prediction-enhancement">Week 3: Context Prediction Enhancement</h4>
+<ul>
+<li>Add prefetching to <code>SmartContextBuilder</code></li>
+<li>Implement pattern learning</li>
+<li>Add RAG prefetching</li>
+<li><strong>Deliverable</strong>: Faster responses through prediction</li>
+</ul>
+<p><strong>Success Criteria:</strong></p>
+<ul>
+<li>✅ Agents suggest actions proactively</li>
+<li>✅ Context prefetched before needed</li>
+<li>✅ User sees helpful suggestions in UI</li>
+<li>✅ 30% reduction in query latency</li>
+</ul>
+<hr>
+<h3 id="phase-3-intelligence--learning-4-weeks---p3-low">Phase 3: Intelligence &amp; Learning (4 weeks) - P3-Low</h3>
+<p><strong>Goal</strong>: Advanced prediction and automation</p>
+<h4 id="week-1-2-observerengine">Week 1-2: ObserverEngine</h4>
+<ul>
+<li>Create <code>Hazina.AI.Observability</code> module</li>
+<li>Implement event storage (SQLite)</li>
+<li>Add query/analysis API</li>
+<li>Integrate with orchestrators</li>
+<li><strong>Deliverable</strong>: Complete observability</li>
+</ul>
+<h4 id="week-3-4-predictivemodel--task-generation">Week 3-4: PredictiveModel &amp; Task Generation</h4>
+<ul>
+<li>Create <code>Hazina.AI.Prediction</code> module</li>
+<li>Build intent prediction using embeddings</li>
+<li>Enhance task generation in CodeGeneration</li>
+<li><strong>Deliverable</strong>: Intelligent automation</li>
+</ul>
+<p><strong>Success Criteria:</strong></p>
+<ul>
+<li>✅ All events logged and queryable</li>
+<li>✅ Intent prediction &gt;70% accuracy</li>
+<li>✅ Automatic task decomposition working</li>
+<li>✅ Learning from usage patterns</li>
+</ul>
+<hr>
+<h2 id="dependencies--integration">Dependencies &amp; Integration</h2>
+<h3 id="module-dependencies">Module Dependencies</h3>
+<pre><code>Hazina.Security.Permissions (new)
+    ├─ depends on: Core, AI.Orchestration
+    └─ used by: All tool contexts
+
+Hazina.TaskScheduling (new)
+    ├─ depends on: Core
+    └─ used by: Brain, RAG, CodeGeneration
+
+Hazina.AI.Triggers (extend existing)
+    ├─ depends on: AI.PromptManagement
+    └─ used by: Tool Agent, Chat Agent
+
+Hazina.UI.Suggestions (new)
+    ├─ depends on: Core
+    └─ used by: Tool Agent, client-manager frontend
+
+Hazina.AI.Observability (new)
+    ├─ depends on: Core, AI.Orchestration
+    └─ used by: All modules (for logging)
+
+Hazina.AI.Prediction (new)
+    ├─ depends on: Store.EmbeddingStore, AI.Orchestration
+    └─ used by: SmartContextBuilder, Tool Agent
+
+Hazina.Planning (new)
+    ├─ depends on: CodeGeneration.Core, AI.Orchestration
+    └─ used by: Tool Agent, Project Management
+</code></pre>
+<h3 id="integration-with-existing-systems">Integration with Existing Systems</h3>
+<p><strong>Client-Manager Integration:</strong></p>
+<ul>
+<li>PermissionGuard → Check user permissions before tool execution</li>
+<li>SuggestionBus → Display proactive suggestions in UI</li>
+<li>TaskScheduler → Background generation (logo, content, etc.)</li>
+</ul>
+<p><strong>Tool Agent Integration:</strong></p>
+<ul>
+<li>TriggerSystem → Automatic action suggestions</li>
+<li>PredictiveModel → Intent prediction for routing</li>
+<li>ObserverEngine → Audit trail for debugging</li>
+</ul>
+<hr>
+<h2 id="risk-assessment">Risk Assessment</h2>
+<h3 id="critical-risks-p1">Critical Risks (P1)</h3>
+<p><strong>Risk 1: Unsafe Autonomous Actions</strong></p>
+<ul>
+<li><strong>Impact</strong>: High - Could damage user data or system</li>
+<li><strong>Mitigation</strong>: Implement PermissionGuard FIRST (Phase 1)</li>
+<li><strong>Status</strong>: ❌ Not yet mitigated</li>
+</ul>
+<p><strong>Risk 2: Background Task Failures</strong></p>
+<ul>
+<li><strong>Impact</strong>: Medium - Silent failures, no error visibility</li>
+<li><strong>Mitigation</strong>: Implement TaskScheduler with retry/logging (Phase 1)</li>
+<li><strong>Status</strong>: 🔶 Partial - Fire-and-forget exists but no reliability</li>
+</ul>
+<h3 id="medium-risks-p2">Medium Risks (P2)</h3>
+<p><strong>Risk 3: Poor Prediction Accuracy</strong></p>
+<ul>
+<li><strong>Impact</strong>: Medium - Wrong suggestions annoy users</li>
+<li><strong>Mitigation</strong>: Start with high-confidence triggers only, learn from feedback</li>
+<li><strong>Status</strong>: 🔶 Acceptable - Can iterate</li>
+</ul>
+<p><strong>Risk 4: Performance Degradation</strong></p>
+<ul>
+<li><strong>Impact</strong>: Medium - Too many background tasks slow system</li>
+<li><strong>Mitigation</strong>: Task priority system, resource limits</li>
+<li><strong>Status</strong>: 🔶 Manageable with proper scheduler</li>
+</ul>
+<h3 id="low-risks-p3">Low Risks (P3)</h3>
+<p><strong>Risk 5: Over-Engineering</strong></p>
+<ul>
+<li><strong>Impact</strong>: Low - Development time wasted</li>
+<li><strong>Mitigation</strong>: Follow roadmap phases, validate before building</li>
+<li><strong>Status</strong>: ✅ Mitigated by phased approach</li>
+</ul>
+<hr>
+<h2 id="success-metrics">Success Metrics</h2>
+<h3 id="phase-1-safety--infrastructure">Phase 1 (Safety &amp; Infrastructure)</h3>
+<ul>
+<li>✅ 100% of tool executions pass through PermissionGuard</li>
+<li>✅ 95% background task success rate</li>
+<li>✅ &lt;100ms permission check latency</li>
+<li>✅ Complete audit trail for 30 days</li>
+</ul>
+<h3 id="phase-2-proactive-engagement">Phase 2 (Proactive Engagement)</h3>
+<ul>
+<li>✅ 50+ proactive suggestions per 100 user sessions</li>
+<li>✅ 30% acceptance rate on suggestions</li>
+<li>✅ 30% reduction in query latency via prefetching</li>
+<li>✅ User satisfaction score &gt;4.0/5.0</li>
+</ul>
+<h3 id="phase-3-intelligence--learning">Phase 3 (Intelligence &amp; Learning)</h3>
+<ul>
+<li>✅ Intent prediction accuracy &gt;70%</li>
+<li>✅ Event query response time &lt;500ms</li>
+<li>✅ 80% of tasks auto-decomposed correctly</li>
+<li>✅ Observable improvement in prediction over time</li>
+</ul>
+<hr>
+<h2 id="recommendations">Recommendations</h2>
+<h3 id="immediate-actions-next-2-weeks">Immediate Actions (Next 2 Weeks)</h3>
+<ol>
+<li>✅ <strong>Implement PermissionGuard</strong> (CRITICAL for safety)</li>
+<li>✅ <strong>Begin TaskScheduler</strong> (enables scalability)</li>
+<li>🔶 <strong>Document existing partial implementations</strong> (avoid rework)</li>
+</ol>
+<h3 id="short-term-next-2-months">Short-term (Next 2 Months)</h3>
+<ol>
+<li>Complete Phase 1 (Safety &amp; Infrastructure)</li>
+<li>Begin Phase 2 (Proactive Engagement)</li>
+<li>Test with real users, gather feedback</li>
+</ol>
+<h3 id="long-term-6-months">Long-term (6+ Months)</h3>
+<ol>
+<li>Complete all phases</li>
+<li>Machine learning for prediction (replace heuristics)</li>
+<li>Advanced planning and task decomposition</li>
+<li>Multi-agent coordination</li>
+</ol>
+<hr>
+<h2 id="conclusion">Conclusion</h2>
+<p><strong>Overall Assessment</strong>: Hazina has a <strong>strong foundation</strong> for proactive agent capabilities with 35% fully implemented and 50% partially implemented. The missing pieces are strategic rather than foundational.</p>
+<p><strong>Critical Gap</strong>: <strong>PermissionGuard</strong> - Must be implemented before autonomous agents can be safely deployed in production.</p>
+<p><strong>Quick Wins</strong>: Extend existing partial implementations (TriggerSystem, SuggestionBus, Context Prediction) for immediate proactive benefits.</p>
+<p><strong>Long-term Vision</strong>: With full implementation of all 14 functions, Hazina will be a <strong>best-in-class proactive agent framework</strong> capable of safe, intelligent, autonomous operation.</p>
+<hr>
+<p><strong>Next Steps:</strong></p>
+<ol>
+<li>Review this analysis with team</li>
+<li>Prioritize Phase 1 modules (PermissionGuard, TaskScheduler)</li>
+<li>Allocate resources for implementation</li>
+<li>Begin development following roadmap</li>
+</ol>
+<p><strong>Prepared by</strong>: Claude Sonnet 4.5
+<strong>Date</strong>: 2026-01-13
+<strong>Status</strong>: Ready for Implementation</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

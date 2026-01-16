@@ -1,0 +1,437 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Knowledge Storage &amp; Search Model | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Knowledge Storage &amp; Search Model | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="knowledge-storage--search-model">Knowledge Storage &amp; Search Model</h1>
+
+<p>This document defines the canonical storage and search architecture for Hazina. All implementations must conform to these design principles.</p>
+<hr>
+<h2 id="canonical-design-principle">Canonical Design Principle</h2>
+<p>Hazina is an <strong>agent-first knowledge framework</strong> where:</p>
+<ol>
+<li><strong>Metadata is the primary knowledge layer</strong> — structured data, tags, and properties are queryable without semantic search</li>
+<li><strong>Embeddings are a replaceable search index</strong> — a secondary acceleration layer, not the source of truth</li>
+<li><strong>A project-scoped SQLite database is the single query and knowledge layer</strong> — not an embedding file</li>
+</ol>
+<h3 id="design-decisions-not-implementation-details">Design Decisions (Not Implementation Details)</h3>
+<p>These are architectural choices that define how Hazina operates:</p>
+<table>
+<thead>
+<tr>
+<th>Principle</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Database as truth</strong></td>
+<td>The SQLite knowledge database is the canonical store. All queries route through it.</td>
+</tr>
+<tr>
+<td><strong>Files as sources</strong></td>
+<td>Documents, chunks, and source files are inputs, not the queryable layer.</td>
+</tr>
+<tr>
+<td><strong>Embeddings as optional</strong></td>
+<td>If embeddings are disabled, Hazina continues to function correctly.</td>
+</tr>
+<tr>
+<td><strong>Rebuild over restore</strong></td>
+<td>Embeddings can be regenerated from sources. They are not backup-critical.</td>
+</tr>
+</tbody>
+</table>
+<p>This architecture ensures Hazina remains:</p>
+<ul>
+<li>Independent of specific embedding providers</li>
+<li>Functional without vector search infrastructure</li>
+<li>Reproducible from source files alone</li>
+</ul>
+<hr>
+<h2 id="metadata-first-class-citizen">Metadata: First-Class Citizen</h2>
+<p>Metadata, tags, and structural properties are <strong>always stored in the database</strong> and <strong>always queryable</strong>.</p>
+<h3 id="what-metadata-includes">What Metadata Includes</h3>
+<ul>
+<li>Document source, type, and category</li>
+<li>Chunk position, parent document, and sequence</li>
+<li>Custom tags assigned by users or ingestion pipelines</li>
+<li>Structural properties (file path, checksum, last modified)</li>
+<li>Agent-defined labels and classifications</li>
+</ul>
+<h3 id="query-capabilities">Query Capabilities</h3>
+<p>Agents query metadata directly via SQL without requiring embeddings:</p>
+<pre><code class="lang-sql">-- Find all chunks from a specific source
+SELECT * FROM chunks WHERE source = 'api-reference.md';
+
+-- Find chunks by tag
+SELECT c.* FROM chunks c
+JOIN chunk_tags ct ON c.id = ct.chunk_id
+WHERE ct.tag = 'authentication';
+
+-- Find recently modified content
+SELECT * FROM items WHERE modified_at &gt; datetime('now', '-7 days');
+</code></pre>
+<h3 id="design-guarantee">Design Guarantee</h3>
+<pre><code>Metadata queries never require embedding computation.
+</code></pre>
+<p>This ensures:</p>
+<ul>
+<li>Fast filtering before semantic search</li>
+<li>Deterministic results for structured queries</li>
+<li>Agent control over what content enters the search pipeline</li>
+</ul>
+<p><strong>Relevance is not equivalent to semantic similarity.</strong> An agent may determine relevance through:</p>
+<ul>
+<li>Source authority</li>
+<li>Recency</li>
+<li>Tag matching</li>
+<li>Structural position</li>
+<li>Explicit priority</li>
+</ul>
+<hr>
+<h2 id="embeddings-secondary-search-index">Embeddings: Secondary Search Index</h2>
+<p>Embeddings are <strong>optional</strong>, <strong>replaceable</strong>, and <strong>serve only as search accelerators</strong>.</p>
+<h3 id="role-of-embeddings">Role of Embeddings</h3>
+<table>
+<thead>
+<tr>
+<th>Use</th>
+<th>Not For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Relevance ranking within filtered results</td>
+<td>Primary truth</td>
+</tr>
+<tr>
+<td>Semantic similarity scoring</td>
+<td>Sole retrieval mechanism</td>
+</tr>
+<tr>
+<td>Approximate nearest neighbor search</td>
+<td>Replacing metadata queries</td>
+</tr>
+</tbody>
+</table>
+<h3 id="design-properties">Design Properties</h3>
+<ol>
+<li><strong>Optional</strong>: Embeddings can be disabled entirely. The system must function with keyword/metadata search alone.</li>
+<li><strong>Replaceable</strong>: Swap embedding providers (OpenAI, local models, etc.) without data loss. Re-embed from sources.</li>
+<li><strong>Multiple per item</strong>: A single chunk may have embeddings from multiple providers or models.</li>
+<li><strong>Rebuild-safe</strong>: Embeddings are derived data. They can be deleted and regenerated.</li>
+</ol>
+<h3 id="configuration">Configuration</h3>
+<pre><code class="lang-json">{
+  &quot;Knowledge&quot;: {
+    &quot;EmbeddingsEnabled&quot;: true,
+    &quot;EmbeddingProvider&quot;: &quot;openai&quot;,
+    &quot;FallbackToKeyword&quot;: true
+  }
+}
+</code></pre>
+<p>When <code>EmbeddingsEnabled: false</code>:</p>
+<ul>
+<li>Indexing stores metadata and text only</li>
+<li>Search uses keyword matching (BM25 or full-text)</li>
+<li>Agents receive results without similarity scores</li>
+</ul>
+<p><strong>If embeddings are disabled, Hazina must continue to function correctly.</strong></p>
+<hr>
+<h2 id="agent-first-search-flow">Agent-First Search Flow</h2>
+<p>Search in Hazina follows a layered pattern where <strong>the agent controls the search strategy</strong>:</p>
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│                     Agent Query                              │
+│  &quot;Find authentication examples in recent API docs&quot;          │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│             Step 1: Metadata Filtering (SQL)                 │
+│  WHERE source LIKE 'api-%' AND modified_at &gt; 7 days ago     │
+│  Result: 45 chunks match                                     │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│        Step 2: Optional Embedding Similarity Search          │
+│  Vector search within filtered set (if enabled)              │
+│  Result: Top 10 by semantic similarity                       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│         Step 3: Agent-Side Interpretation &amp; Ranking          │
+│  Agent reviews results, applies domain logic                 │
+│  May discard low-relevance matches, request more context     │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="key-principles">Key Principles</h3>
+<ol>
+<li><strong>The agent decides</strong> whether to use embeddings for a given query</li>
+<li><strong>Not every query is semantic</strong> — exact matches, tag queries, and structural queries bypass embeddings</li>
+<li><strong>Metadata filtering reduces search space</strong> before expensive vector operations</li>
+<li><strong>Agent interprets results</strong> — similarity scores inform but don't dictate relevance</li>
+</ol>
+<h3 id="implementation">Implementation</h3>
+<pre><code class="lang-csharp">public class AgentSearchService
+{
+    public async Task&lt;SearchResult&gt; SearchAsync(AgentQuery query)
+    {
+        // Step 1: Always start with metadata filtering
+        var filtered = await _knowledgeDb.FilterByMetadataAsync(
+            query.SourceFilter,
+            query.TagFilter,
+            query.DateRange
+        );
+
+        // Step 2: Optionally apply embedding search
+        if (query.UseSemanticSearch &amp;&amp; _config.EmbeddingsEnabled)
+        {
+            filtered = await _embeddingSearch.RankBySimilarityAsync(
+                query.Text,
+                filtered
+            );
+        }
+
+        // Step 3: Return to agent for interpretation
+        return new SearchResult
+        {
+            Items = filtered,
+            SearchStrategy = query.UseSemanticSearch ? &quot;hybrid&quot; : &quot;metadata&quot;
+        };
+    }
+}
+</code></pre>
+<hr>
+<h2 id="sqlite-knowledge-database">SQLite Knowledge Database</h2>
+<p>The knowledge database is conceptually structured as follows (implementation may vary):</p>
+<h3 id="logical-structure">Logical Structure</h3>
+<pre><code>┌─────────────────────────────────────────────────────────────┐
+│                    Knowledge Database                        │
+├─────────────────────────────────────────────────────────────┤
+│  Items                                                       │
+│  ├── id (unique identifier)                                 │
+│  ├── content (text, JSON, or reference)                     │
+│  ├── type (chunk, document, post, json_object)              │
+│  ├── source_file (path to original file)                    │
+│  └── checksum (integrity verification)                       │
+├─────────────────────────────────────────────────────────────┤
+│  Metadata                                                    │
+│  ├── item_id → Items.id                                     │
+│  ├── key (metadata property name)                           │
+│  └── value (metadata property value)                        │
+├─────────────────────────────────────────────────────────────┤
+│  Tags                                                        │
+│  ├── item_id → Items.id                                     │
+│  └── tag (tag name)                                         │
+├─────────────────────────────────────────────────────────────┤
+│  Embeddings                                                  │
+│  ├── item_id → Items.id                                     │
+│  ├── provider (openai, local, etc.)                         │
+│  ├── model (text-embedding-ada-002, etc.)                   │
+│  └── vector (float array)                                   │
+├─────────────────────────────────────────────────────────────┤
+│  FileReferences                                              │
+│  ├── item_id → Items.id                                     │
+│  ├── file_path (absolute path to source)                    │
+│  ├── checksum (SHA256 of file content)                      │
+│  └── indexed_at (timestamp)                                  │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="design-notes">Design Notes</h3>
+<ul>
+<li><strong>Items</strong> represent any queryable unit: chunks, documents, JSON objects, social posts</li>
+<li><strong>Metadata</strong> is key-value, allowing arbitrary properties without schema changes</li>
+<li><strong>Tags</strong> are a first-class concept for classification and filtering</li>
+<li><strong>Embeddings</strong> are stored per-provider, allowing multiple models per item</li>
+<li><strong>FileReferences</strong> track source provenance and enable change detection</li>
+</ul>
+<p>This structure supports:</p>
+<ul>
+<li>Full-text search on content</li>
+<li>Metadata filtering via SQL</li>
+<li>Tag-based navigation</li>
+<li>Embedding similarity (when enabled)</li>
+<li>Source file integrity verification</li>
+</ul>
+<hr>
+<h2 id="migrating-from-embedding-files">Migrating from Embedding Files</h2>
+<p>If your project previously used standalone embedding files:</p>
+<h3 id="before-embedding-file-approach">Before (Embedding File Approach)</h3>
+<pre><code>project/
+├── data/
+│   ├── embeddings.json      ← Primary store (problematic)
+│   └── documents/           ← Source files
+</code></pre>
+<h3 id="after-knowledge-database-approach">After (Knowledge Database Approach)</h3>
+<pre><code>project/
+├── data/
+│   ├── knowledge.db         ← SQLite database (primary)
+│   └── documents/           ← Source files (unchanged)
+</code></pre>
+<h3 id="migration-principles">Migration Principles</h3>
+<ol>
+<li><strong>Embeddings are rebuilt, not migrated</strong> — regenerate from source files</li>
+<li><strong>Metadata is extracted and stored</strong> — parse from filenames, directories, file content</li>
+<li><strong>Database becomes queryable immediately</strong> — no embedding generation required for basic function</li>
+</ol>
+<hr>
+<h2 id="why-this-matters">Why This Matters</h2>
+<p>This architecture makes Hazina:</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Benefit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Scalable</strong></td>
+<td>SQLite handles millions of items; embeddings computed on-demand</td>
+</tr>
+<tr>
+<td><strong>Reproducible</strong></td>
+<td>Delete database, re-index from sources, get identical results</td>
+</tr>
+<tr>
+<td><strong>Agent-compatible</strong></td>
+<td>Agents control search strategy, not locked to vector similarity</td>
+</tr>
+<tr>
+<td><strong>Provider-independent</strong></td>
+<td>Swap embedding models without data migration</td>
+</tr>
+<tr>
+<td><strong>Offline-capable</strong></td>
+<td>Metadata search works without API calls</td>
+</tr>
+</tbody>
+</table>
+<h3 id="for-agentic-workflows">For Agentic Workflows</h3>
+<p>Agents need:</p>
+<ul>
+<li><strong>Deterministic queries</strong> for structured information (metadata)</li>
+<li><strong>Fuzzy search</strong> for semantic exploration (embeddings)</li>
+<li><strong>Control</strong> over which approach to use</li>
+</ul>
+<p>Hazina provides both, with clear separation and agent control.</p>
+<hr>
+<h2 id="related-documentation">Related Documentation</h2>
+<ul>
+<li><a href="RAG_GUIDE.html">RAG Guide</a> — Document indexing, chunking, retrieval</li>
+<li><a href="ARCHITECTURE_STANDARDS.html">Architecture Standards</a> — Mandatory patterns</li>
+<li><a href="SUPABASE_SETUP.html">Supabase Setup</a> — Cloud database backend</li>
+</ul>
+<hr>
+<p><em>Last updated: 2026-01-03</em></p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

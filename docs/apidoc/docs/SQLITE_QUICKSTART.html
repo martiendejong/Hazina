@@ -1,0 +1,425 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>SQLite Storage Backend - Quick Start Guide | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="SQLite Storage Backend - Quick Start Guide | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="sqlite-storage-backend---quick-start-guide">SQLite Storage Backend - Quick Start Guide</h1>
+
+<p><strong>Status</strong>: ✅ Implemented (2026-01-06)
+<strong>Commit</strong>: <code>DB_EMB2: Implement SQLite storage backend as configurable option</code></p>
+<h2 id="overview">Overview</h2>
+<p>Hazina now supports SQLite as a storage backend option, providing single-file database storage ideal for:</p>
+<ul>
+<li>Local development and testing</li>
+<li>Embedded scenarios</li>
+<li>Portable projects</li>
+<li>Projects without external database requirements</li>
+</ul>
+<p><strong>Key Features</strong>:</p>
+<ul>
+<li>✅ Single-file database (<code>hazina.db</code>)</li>
+<li>✅ FTS5 full-text search</li>
+<li>✅ File checksum tracking for rebuildability</li>
+<li>✅ Schema versioning for migrations</li>
+<li>✅ Optional embeddings (metadata-first mode)</li>
+<li>✅ All existing backends remain supported</li>
+</ul>
+<h2 id="configuration-options">Configuration Options</h2>
+<p>Hazina maintains its multi-backend strategy pattern. You can choose:</p>
+<table>
+<thead>
+<tr>
+<th>Backend</th>
+<th>Use Case</th>
+<th>Configuration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SQLite</strong></td>
+<td>Local, embedded, portable</td>
+<td><code>SqliteSettings.Enabled = true</code></td>
+</tr>
+<tr>
+<td><strong>File-based</strong></td>
+<td>Legacy, simple projects</td>
+<td>Default (no config needed)</td>
+</tr>
+<tr>
+<td><strong>PostgreSQL/Supabase</strong></td>
+<td>Cloud, production, scale</td>
+<td><code>SupabaseSettings.Enabled = true</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="option-1-code-configuration">Option 1: Code Configuration</h3>
+<pre><code class="lang-csharp">using HazinaStore.Models;
+using Hazina.Tools.Data;
+
+var config = new HazinaStoreConfig
+{
+    ApiSettings = new ApiSettings
+    {
+        OpenApiKey = &quot;your-openai-key&quot;
+    },
+    SqliteSettings = new SqliteSettings
+    {
+        Enabled = true,
+        DatabasePath = &quot;./myproject.db&quot; // Relative or absolute path
+    }
+};
+
+// Get store setup - automatically uses SQLite
+var storeSetup = StoreProvider.GetStoreSetup(config);
+
+// Use the store
+await storeSetup.Store.Store(&quot;doc1&quot;, &quot;Hello World!&quot;, new DocumentMetadata
+{
+    Id = &quot;doc1&quot;,
+    MimeType = &quot;text/plain&quot;,
+    Tags = new List&lt;string&gt; { &quot;example&quot;, &quot;demo&quot; }
+});
+</code></pre>
+<h3 id="option-2-json-configuration">Option 2: JSON Configuration</h3>
+<p><strong>appsettings.json</strong>:</p>
+<pre><code class="lang-json">{
+  &quot;HazinaStore&quot;: {
+    &quot;ApiSettings&quot;: {
+      &quot;OpenApiKey&quot;: &quot;your-openai-key&quot;
+    },
+    &quot;SqliteSettings&quot;: {
+      &quot;Enabled&quot;: true,
+      &quot;DatabasePath&quot;: &quot;./hazina.db&quot;,
+      &quot;EmbeddingsOptional&quot;: false
+    }
+  }
+}
+</code></pre>
+<p><strong>Usage</strong>:</p>
+<pre><code class="lang-csharp">var configuration = new ConfigurationBuilder()
+    .AddJsonFile(&quot;appsettings.json&quot;)
+    .Build();
+
+var config = configuration.GetSection(&quot;HazinaStore&quot;).Get&lt;HazinaStoreConfig&gt;();
+var storeSetup = StoreProvider.GetStoreSetup(config);
+</code></pre>
+<h3 id="option-3-environment-variables">Option 3: Environment Variables</h3>
+<pre><code class="lang-bash"># Windows
+set SQLITE_DB_PATH=C:\data\hazina.db
+set OPENAI_API_KEY=your-key
+
+# Linux/Mac
+export SQLITE_DB_PATH=/data/hazina.db
+export OPENAI_API_KEY=your-key
+</code></pre>
+<pre><code class="lang-csharp">var config = new HazinaStoreConfig
+{
+    SqliteSettings = new SqliteSettings
+    {
+        Enabled = true,
+        DatabasePath = Environment.GetEnvironmentVariable(&quot;SQLITE_DB_PATH&quot;)
+    }
+};
+</code></pre>
+<h2 id="advanced-features">Advanced Features</h2>
+<h3 id="metadata-first-mode-no-embeddings">Metadata-First Mode (No Embeddings)</h3>
+<p>Save costs by using only metadata and keyword search:</p>
+<pre><code class="lang-csharp">var config = new HazinaStoreConfig
+{
+    SqliteSettings = new SqliteSettings
+    {
+        Enabled = true,
+        DatabasePath = &quot;./hazina.db&quot;,
+        EmbeddingsOptional = true // ← Disables embeddings
+    }
+};
+
+var storeSetup = SqliteStoreProvider.GetMetadataOnlyStoreSetup(
+    config.SqliteSettings,
+    apiKey,
+    projectFolder
+);
+</code></pre>
+<p><strong>How it works</strong>:</p>
+<ul>
+<li>No embedding generation (no OpenAI embedding API calls)</li>
+<li>Uses FTS5 full-text search for keyword matching</li>
+<li>Metadata filtering via SQL queries</li>
+<li>Tag-based categorization</li>
+<li>Perfect for text-heavy projects where semantic search isn't critical</li>
+</ul>
+<h3 id="custom-connection-string">Custom Connection String</h3>
+<pre><code class="lang-csharp">var config = new HazinaStoreConfig
+{
+    SqliteSettings = new SqliteSettings
+    {
+        Enabled = true,
+        ConnectionString = &quot;Data Source=C:\\mydb.db;Mode=ReadWriteCreate;Cache=Shared&quot;
+    }
+};
+</code></pre>
+<h3 id="database-schema">Database Schema</h3>
+<p>The SQLite backend creates the following tables:</p>
+<pre><code class="lang-sql">-- Core knowledge
+items          -- Documents with checksums and metadata
+metadata       -- Custom key-value metadata
+tags           -- Document tags for categorization
+chunks         -- Document chunks with parent references
+embeddings     -- Vector embeddings (optional)
+items_fts      -- FTS5 full-text search index
+
+-- System
+schema_info    -- Schema version tracking
+</code></pre>
+<h2 id="migration-from-file-based-storage">Migration from File-Based Storage</h2>
+<p>To migrate an existing project from file-based to SQLite:</p>
+<ol>
+<li><p><strong>Keep your existing data</strong> (optional backup):</p>
+<pre><code class="lang-bash">cp -r ./embeddings ./embeddings.backup
+</code></pre>
+</li>
+<li><p><strong>Update configuration</strong>:</p>
+<pre><code class="lang-csharp">// Change from:
+var storeSetup = StoreProvider.GetStoreSetup(folder, apiKey);
+
+// To:
+var config = new HazinaStoreConfig
+{
+    ApiSettings = new ApiSettings { OpenApiKey = apiKey },
+    SqliteSettings = new SqliteSettings
+    {
+        Enabled = true,
+        DatabasePath = &quot;./hazina.db&quot;
+    }
+};
+var storeSetup = StoreProvider.GetStoreSetup(config);
+</code></pre>
+</li>
+<li><p><strong>Re-ingest your documents</strong>:</p>
+<pre><code class="lang-csharp">// The new SQLite store will be empty initially
+// Re-run your document ingestion process
+foreach (var file in Directory.GetFiles(sourceFolder))
+{
+    var content = File.ReadAllText(file);
+    await storeSetup.Store.Store(file, content, new DocumentMetadata { ... });
+}
+</code></pre>
+</li>
+</ol>
+<p><strong>Note</strong>: A dedicated migration tool is planned for future releases to automate data transfer from file-based stores to SQLite.</p>
+<h2 id="performance-characteristics">Performance Characteristics</h2>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>File-Based</th>
+<th>SQLite</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Small datasets</strong> (&lt;1K docs)</td>
+<td>Fast</td>
+<td>Fast</td>
+<td>Comparable performance</td>
+</tr>
+<tr>
+<td><strong>Large datasets</strong> (&gt;10K docs)</td>
+<td>Slow</td>
+<td>Fast</td>
+<td>SQLite scales better</td>
+</tr>
+<tr>
+<td><strong>Startup time</strong></td>
+<td>Slow (loads all)</td>
+<td>Fast</td>
+<td>No full index rebuild</td>
+</tr>
+<tr>
+<td><strong>Disk usage</strong></td>
+<td>Moderate</td>
+<td>Lower</td>
+<td>SQLite compression</td>
+</tr>
+<tr>
+<td><strong>Metadata queries</strong></td>
+<td>In-memory</td>
+<td>SQL</td>
+<td>SQLite more efficient</td>
+</tr>
+<tr>
+<td><strong>Full-text search</strong></td>
+<td>Slow</td>
+<td>Fast</td>
+<td>FTS5 optimized</td>
+</tr>
+</tbody>
+</table>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="database-locked-error">Database Locked Error</h3>
+<pre><code>Error: database is locked
+</code></pre>
+<p><strong>Solution</strong>: SQLite uses file-based locking. Ensure only one process accesses the database at a time, or use <code>Cache=Shared</code> in the connection string.</p>
+<h3 id="fts5-not-available">FTS5 Not Available</h3>
+<pre><code>Error: no such module: fts5
+</code></pre>
+<p><strong>Solution</strong>: Ensure you're using a recent version of Microsoft.Data.Sqlite (9.0.0+) which includes FTS5 support.</p>
+<h3 id="path-not-found">Path Not Found</h3>
+<pre><code>Error: unable to open database file
+</code></pre>
+<p><strong>Solution</strong>: Ensure the directory exists. SqliteSettings automatically creates the directory if using <code>DatabasePath</code>, but not for custom connection strings.</p>
+<h2 id="next-steps">Next Steps</h2>
+<ul>
+<li>✅ <strong>Implemented</strong>: SQLite backend with FTS5 search</li>
+<li>✅ <strong>Implemented</strong>: File checksum tracking</li>
+<li>✅ <strong>Implemented</strong>: Schema versioning</li>
+<li>⏳ <strong>Planned</strong>: Migration tool (file → SQLite)</li>
+<li>⏳ <strong>Planned</strong>: Performance benchmarks vs file-based</li>
+<li>⏳ <strong>Planned</strong>: Advanced query examples</li>
+</ul>
+<h2 id="architecture-notes">Architecture Notes</h2>
+<p>The SQLite implementation follows Hazina's canonical storage model:</p>
+<p><strong>Knowledge Layer Hierarchy</strong>:</p>
+<pre><code>Items (source files with checksums)
+  ↓
+Metadata + Tags + Chunks (always queryable)
+  ↓
+Embeddings (optional, rebuildable)
+</code></pre>
+<p><strong>Search Flow</strong>:</p>
+<pre><code>Agent Query
+  ↓
+SQL Metadata Filter (fast, always available)
+  ↓
+(Optional) Embedding Similarity Search
+  ↓
+Agent Interpretation
+</code></pre>
+<p>This design ensures:</p>
+<ul>
+<li>Database is the single source of truth</li>
+<li>Embeddings are secondary and optional</li>
+<li>System works without embeddings</li>
+<li>Full rebuildability via checksums</li>
+<li>Agent-first architecture</li>
+</ul>
+<h2 id="support">Support</h2>
+<p>For questions or issues:</p>
+<ul>
+<li>See full architecture analysis: <code>docs/architecture-storage-analysis.md</code></li>
+<li>File issues: <a href="https://github.com/martiendejong/Hazina/issues">GitHub Issues</a></li>
+<li>Review commit: <code>DB_EMB2: Implement SQLite storage backend</code></li>
+</ul>
+<hr>
+<p><strong>Last Updated</strong>: 2026-01-06
+<strong>Version</strong>: Hazina 2.0.0+</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

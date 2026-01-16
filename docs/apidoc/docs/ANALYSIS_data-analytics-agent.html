@@ -1,0 +1,639 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Analysis: data-analytics-agent Repository | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Analysis: data-analytics-agent Repository | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="analysis-data-analytics-agent-repository">Analysis: data-analytics-agent Repository</h1>
+
+<h2 id="repository-overview">Repository Overview</h2>
+<p><strong>Source</strong>: <a href="https://github.com/agency-ai-solutions/data-analytics-agent">https://github.com/agency-ai-solutions/data-analytics-agent</a>
+<strong>Purpose</strong>: AI-powered data analyst that automates analytics workflows across multiple platforms
+<strong>Framework</strong>: agency-swarm (Python-based multi-agent framework)
+<strong>Deployment</strong>: Docker containerized, 60-second setup</p>
+<hr>
+<h2 id="architecture-analysis">Architecture Analysis</h2>
+<h3 id="1-agent-pattern">1. Agent Pattern</h3>
+<p><strong>Single Autonomous Agent Model</strong></p>
+<ul>
+<li>One specialized <code>data_analyst</code> agent with 4 core tools</li>
+<li>No multi-agent communication flows</li>
+<li>Operates within agency_swarm framework wrapper</li>
+<li>Simple orchestration with minimal configuration</li>
+</ul>
+<h3 id="2-core-tools-4-tool-system">2. Core Tools (4-Tool System)</h3>
+<pre><code>1. IPythonInterpreter - Execute Python code for data analysis
+2. LocalShellTool - File system operations
+3. WebSearchTool - API documentation lookup
+4. load_images - Multimodal visual chart analysis
+</code></pre>
+<h3 id="3-key-innovation-dynamic-api-integration">3. Key Innovation: Dynamic API Integration</h3>
+<p><strong>Self-Directed API Discovery</strong></p>
+<ul>
+<li>NO pre-configured MCP servers or connectors</li>
+<li>Agent reads API documentation on-demand via web search</li>
+<li>Dynamically generates API requests for ANY platform</li>
+<li>Platform-agnostic approach (Google Analytics, Stripe, PostgreSQL, MongoDB, etc.)</li>
+</ul>
+<h3 id="4-multimodal-analysis-pattern">4. Multimodal Analysis Pattern</h3>
+<p><strong>Human-Like Workflow</strong></p>
+<pre><code>1. Generate data visualizations (matplotlib, plotly, seaborn)
+2. Save charts as images
+3. Load images back into context
+4. Visually analyze the charts (like a human analyst)
+5. Provide insights based on visual interpretation
+</code></pre>
+<h3 id="5-instruction-architecture">5. Instruction Architecture</h3>
+<p><strong>Templated Business Context</strong></p>
+<ul>
+<li><code>shared_instructions.md</code> with template placeholders</li>
+<li>Dynamic personalization: {company_name}, {business_overview}, {business_goals}</li>
+<li>Single codebase → multiple deployments via config</li>
+<li>Agent-specific instructions in separate file</li>
+</ul>
+<h3 id="6-workflow-methodology-5-step-process">6. Workflow Methodology (5-Step Process)</h3>
+<pre><code>1. Clarify questions → identify metrics
+2. Search web → find API docs
+3. Fetch data → Python analysis
+4. Generate visualizations → load images
+5. Deliver quantified insights → actionable recommendations
+</code></pre>
+<hr>
+<h2 id="technical-stack">Technical Stack</h2>
+<h3 id="dependencies">Dependencies</h3>
+<p><strong>Core Framework</strong></p>
+<ul>
+<li>agency-swarm (with FastAPI and LiteLLM support)</li>
+<li>openai-agents (v0.3.3)</li>
+</ul>
+<p><strong>Data Science</strong></p>
+<ul>
+<li>pandas, numpy, scipy</li>
+<li>statsmodels, scikit-learn</li>
+</ul>
+<p><strong>Visualization</strong></p>
+<ul>
+<li>matplotlib, seaborn, plotly</li>
+</ul>
+<p><strong>Database Connectors</strong></p>
+<ul>
+<li>PostgreSQL, MongoDB, Redis</li>
+<li>SQLAlchemy</li>
+</ul>
+<p><strong>Third-Party API Integrations</strong></p>
+<ul>
+<li>Google Analytics, BigQuery, Cloud Storage</li>
+<li>Stripe, Mixpanel, Segment, Amplitude</li>
+<li>HubSpot, Salesforce</li>
+<li>Slack, Notion</li>
+<li>Airtable, Google Sheets</li>
+</ul>
+<h3 id="deployment-strategy">Deployment Strategy</h3>
+<p><strong>Docker Configuration</strong></p>
+<ul>
+<li>Base: Python 3.13-slim</li>
+<li>Unbuffered output for logging</li>
+<li>No .pyc file generation</li>
+<li>Entry point: <code>python -u main.py</code></li>
+<li>Credentials stored in container-local <code>/credentials/</code> directory</li>
+<li>Environment-based configuration via .env</li>
+</ul>
+<hr>
+<h2 id="what-we-can-learn--implement">What We Can Learn &amp; Implement</h2>
+<h3 id="1--dynamic-api-integration-pattern">1. ✅ <strong>Dynamic API Integration Pattern</strong></h3>
+<p><strong>Concept</strong>: Agent discovers and calls APIs without pre-built connectors</p>
+<p><strong>How it works</strong>:</p>
+<ul>
+<li>Agent uses web search to find API documentation</li>
+<li>Parses documentation to understand endpoints</li>
+<li>Generates appropriate API requests dynamically</li>
+<li>Handles authentication from stored credentials</li>
+</ul>
+<p><strong>Implementation for Hazina</strong>:</p>
+<pre><code class="lang-csharp">// New Tool: WebSearchTool
+public class WebSearchTool : HazinaChatTool
+{
+    public WebSearchTool() : base(
+        &quot;web_search&quot;,
+        &quot;Search the web for API documentation, code examples, or technical information&quot;,
+        new List&lt;ChatToolParameter&gt; {
+            new ChatToolParameter { Name = &quot;query&quot;, Type = &quot;string&quot;, Description = &quot;Search query&quot; }
+        },
+        async (messages, call, cancel) =&gt; {
+            // Use Bing/Google Search API
+            // Parse and return relevant documentation
+        }
+    ) {}
+}
+
+// New Tool: DynamicAPITool
+public class DynamicAPITool : HazinaChatTool
+{
+    public DynamicAPITool() : base(
+        &quot;call_api&quot;,
+        &quot;Make HTTP requests to any API endpoint based on discovered documentation&quot;,
+        new List&lt;ChatToolParameter&gt; {
+            new ChatToolParameter { Name = &quot;url&quot;, Type = &quot;string&quot; },
+            new ChatToolParameter { Name = &quot;method&quot;, Type = &quot;string&quot; },
+            new ChatToolParameter { Name = &quot;headers&quot;, Type = &quot;object&quot; },
+            new ChatToolParameter { Name = &quot;body&quot;, Type = &quot;object&quot; }
+        },
+        async (messages, call, cancel) =&gt; {
+            // Generic HTTP client
+            // Load credentials from store
+            // Execute request
+        }
+    ) {}
+}
+</code></pre>
+<h3 id="2--multimodal-visual-analysis">2. ✅ <strong>Multimodal Visual Analysis</strong></h3>
+<p><strong>Concept</strong>: Generate charts → Save → Load → Analyze visually</p>
+<p><strong>Current Hazina State</strong>:</p>
+<ul>
+<li>We support image input via <code>List&lt;ImageData&gt;</code> parameter</li>
+<li>LLMClient already handles multimodal requests</li>
+</ul>
+<p><strong>Enhancement Needed</strong>:</p>
+<pre><code class="lang-csharp">// New Tool: SaveVisualization
+public class SaveVisualizationTool : HazinaChatTool
+{
+    public SaveVisualizationTool(string outputPath) : base(
+        &quot;save_chart&quot;,
+        &quot;Save generated visualization to file for later visual analysis&quot;,
+        new List&lt;ChatToolParameter&gt; {
+            new ChatToolParameter { Name = &quot;chart_data&quot;, Type = &quot;string&quot;, Description = &quot;Base64 encoded image or plot data&quot; },
+            new ChatToolParameter { Name = &quot;filename&quot;, Type = &quot;string&quot; }
+        },
+        async (messages, call, cancel) =&gt; {
+            // Save to outputPath
+            // Return file path
+        }
+    ) {}
+}
+
+// New Tool: LoadImageForAnalysis
+public class LoadImageTool : HazinaChatTool
+{
+    public LoadImageTool() : base(
+        &quot;load_image&quot;,
+        &quot;Load previously saved image/chart for visual analysis&quot;,
+        new List&lt;ChatToolParameter&gt; {
+            new ChatToolParameter { Name = &quot;file_path&quot;, Type = &quot;string&quot; }
+        },
+        async (messages, call, cancel) =&gt; {
+            // Load image file
+            // Convert to ImageData
+            // Trigger new LLM call with image in context
+        }
+    ) {}
+}
+</code></pre>
+<h3 id="3--templated-agent-instructions">3. ✅ <strong>Templated Agent Instructions</strong></h3>
+<p><strong>Concept</strong>: Single codebase with dynamic business context</p>
+<p><strong>Current Hazina State</strong>:</p>
+<ul>
+<li>Agents use BaseMessages for instructions</li>
+<li>Already supports per-agent configuration</li>
+</ul>
+<p><strong>Enhancement</strong>:</p>
+<pre><code class="lang-csharp">public class AgentInstructionTemplate
+{
+    public string Template { get; set; }
+    public Dictionary&lt;string, string&gt; Variables { get; set; }
+
+    public string Render()
+    {
+        var result = Template;
+        foreach (var kvp in Variables)
+        {
+            result = result.Replace($&quot;{{{kvp.Key}}}&quot;, kvp.Value);
+        }
+        return result;
+    }
+}
+
+// Usage in AgentConfig
+public class AgentConfig
+{
+    public string Name { get; set; }
+    public string InstructionTemplate { get; set; } // Path to .md file
+    public Dictionary&lt;string, string&gt; TemplateVariables { get; set; }
+}
+</code></pre>
+<h3 id="4--credential-management-system">4. ✅ <strong>Credential Management System</strong></h3>
+<p><strong>Concept</strong>: Secure, containerized credential storage</p>
+<p><strong>Implementation Recommendation</strong>:</p>
+<pre><code class="lang-csharp">public class CredentialStore
+{
+    private readonly string _credentialsPath;
+    private readonly Dictionary&lt;string, string&gt; _cache = new();
+
+    public CredentialStore(string credentialsPath)
+    {
+        _credentialsPath = credentialsPath;
+    }
+
+    public async Task&lt;string&gt; GetCredential(string serviceName, string keyName)
+    {
+        var cacheKey = $&quot;{serviceName}:{keyName}&quot;;
+        if (_cache.ContainsKey(cacheKey))
+            return _cache[cacheKey];
+
+        // Load from file: ./credentials/{serviceName}.json
+        var filePath = Path.Combine(_credentialsPath, $&quot;{serviceName}.json&quot;);
+        if (File.Exists(filePath))
+        {
+            var json = await File.ReadAllTextAsync(filePath);
+            var creds = JsonSerializer.Deserialize&lt;Dictionary&lt;string, string&gt;&gt;(json);
+            if (creds?.ContainsKey(keyName) == true)
+            {
+                _cache[cacheKey] = creds[keyName];
+                return creds[keyName];
+            }
+        }
+
+        // Fallback to environment variables
+        var envVar = $&quot;{serviceName.ToUpper()}_{keyName.ToUpper()}&quot;;
+        var value = Environment.GetEnvironmentVariable(envVar);
+        if (value != null)
+        {
+            _cache[cacheKey] = value;
+            return value;
+        }
+
+        throw new Exception($&quot;Credential not found: {serviceName}/{keyName}&quot;);
+    }
+}
+
+// Tool integration
+public class ApiCallTool : HazinaChatTool
+{
+    private readonly CredentialStore _credStore;
+
+    public ApiCallTool(CredentialStore credStore) : base(...)
+    {
+        _credStore = credStore;
+    }
+
+    private async Task&lt;string&gt; ExecuteCall(...)
+    {
+        // Auto-inject credentials
+        var apiKey = await _credStore.GetCredential(&quot;stripe&quot;, &quot;api_key&quot;);
+        // Use in HTTP request
+    }
+}
+</code></pre>
+<h3 id="5--data-first-analysis-principle">5. ✅ <strong>Data-First Analysis Principle</strong></h3>
+<p><strong>Concept</strong>: &quot;Never answer without analyzing data first&quot;</p>
+<p><strong>Implementation as Agent Instruction</strong>:</p>
+<pre><code class="lang-markdown"># Data Analyst Agent Instructions
+
+## Core Principle
+**NEVER provide answers or recommendations without first analyzing actual data.**
+
+## Required Workflow
+1. ✓ Identify data sources needed to answer the question
+2. ✓ Fetch and validate data (check for nulls, date ranges, completeness)
+3. ✓ Perform statistical analysis
+4. ✓ Generate visualizations if trends are involved
+5. ✓ Quantify findings with specific numbers
+6. ✓ State data period analyzed
+7. ✓ Cite data sources
+8. ✓ Provide actionable recommendations
+
+## Forbidden Actions
+- ✗ Generic advice without data backing
+- ✗ Assumptions about data without validation
+- ✗ Answers based on &quot;typical&quot; patterns instead of actual data
+- ✗ Visualizations without context or interpretation
+</code></pre>
+<h3 id="6--python-execution-tool">6. ✅ <strong>Python Execution Tool</strong></h3>
+<p><strong>Concept</strong>: IPythonInterpreter for data analysis</p>
+<p><strong>Implementation Path</strong>:</p>
+<pre><code class="lang-csharp">public class PythonExecutionTool : HazinaChatTool
+{
+    private readonly string _workingDir;
+
+    public PythonExecutionTool(string workingDir) : base(
+        &quot;execute_python&quot;,
+        &quot;Execute Python code for data analysis, visualization, or computation. Supports pandas, numpy, matplotlib, etc.&quot;,
+        new List&lt;ChatToolParameter&gt; {
+            new ChatToolParameter { Name = &quot;code&quot;, Type = &quot;string&quot;, Description = &quot;Python code to execute&quot; },
+            new ChatToolParameter { Name = &quot;install_packages&quot;, Type = &quot;array&quot;, Description = &quot;Optional packages to pip install first&quot; }
+        },
+        async (messages, call, cancel) =&gt; {
+            // 1. Parse code from call
+            // 2. Install packages if needed (pip install)
+            // 3. Execute in sandboxed Python subprocess
+            // 4. Capture stdout, stderr, and any saved files
+            // 5. Return results + file paths
+        }
+    ) {}
+}
+</code></pre>
+<p><strong>Alternative</strong>: Use existing C# libraries</p>
+<ul>
+<li>Math.NET for scientific computing</li>
+<li>ScottPlot for visualization</li>
+<li>But Python has better ecosystem for data science</li>
+</ul>
+<h3 id="7--simplified-tool-architecture">7. ⚠️ <strong>Simplified Tool Architecture</strong></h3>
+<p><strong>Their Approach</strong>: 4 tools only
+<strong>Our Current State</strong>: Multiple specialized tools</p>
+<p><strong>Recommendation</strong>: Create &quot;tool bundles&quot; for specific domains</p>
+<pre><code class="lang-csharp">public class DataAnalystToolBundle
+{
+    public static List&lt;HazinaChatTool&gt; GetTools(CredentialStore credStore, string outputPath)
+    {
+        return new List&lt;HazinaChatTool&gt;
+        {
+            new PythonExecutionTool(outputPath),
+            new WebSearchTool(),
+            new DynamicAPITool(credStore),
+            new LoadImageTool(),
+            new SaveVisualizationTool(outputPath)
+        };
+    }
+}
+
+// Usage in AgentConfig
+var agent = new HazinaAgent(
+    &quot;data_analyst&quot;,
+    generator,
+    new ToolsContext {
+        Tools = DataAnalystToolBundle.GetTools(credStore, &quot;./outputs&quot;)
+    }
+);
+</code></pre>
+<hr>
+<h2 id="comparison-hazina-vs-data-analytics-agent">Comparison: Hazina vs data-analytics-agent</h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>data-analytics-agent</th>
+<th>Hazina</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Multi-agent support</td>
+<td>❌ Single agent</td>
+<td>✅ Multiple agents + flows</td>
+<td>Keep our advantage</td>
+</tr>
+<tr>
+<td>Dynamic API calls</td>
+<td>✅ Via web search + generic HTTP</td>
+<td>❌ Pre-configured tools</td>
+<td><strong>IMPLEMENT</strong></td>
+</tr>
+<tr>
+<td>Multimodal analysis</td>
+<td>✅ Generate → Save → Load → Analyze</td>
+<td>⚠️ Input only, no loop</td>
+<td><strong>ENHANCE</strong></td>
+</tr>
+<tr>
+<td>Credential management</td>
+<td>✅ File + env based</td>
+<td>⚠️ Per-tool hardcoded</td>
+<td><strong>CENTRALIZE</strong></td>
+</tr>
+<tr>
+<td>Python execution</td>
+<td>✅ IPython interpreter</td>
+<td>❌ No sandboxed execution</td>
+<td><strong>ADD TOOL</strong></td>
+</tr>
+<tr>
+<td>Visualization</td>
+<td>✅ matplotlib, plotly, seaborn</td>
+<td>❌ No native support</td>
+<td><strong>ADD VIA PYTHON</strong></td>
+</tr>
+<tr>
+<td>Instruction templates</td>
+<td>✅ Dynamic with variables</td>
+<td>⚠️ Static per agent</td>
+<td><strong>ENHANCE</strong></td>
+</tr>
+<tr>
+<td>Token tracking</td>
+<td>❌ None visible</td>
+<td>✅ Full LLMResponse tracking</td>
+<td>Our advantage ✓</td>
+</tr>
+<tr>
+<td>Document store</td>
+<td>❌ File-based only</td>
+<td>✅ Multiple backends</td>
+<td>Our advantage ✓</td>
+</tr>
+<tr>
+<td>Streaming responses</td>
+<td>❌ Not highlighted</td>
+<td>✅ Full support</td>
+<td>Our advantage ✓</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="implementation-priority">Implementation Priority</h2>
+<h3 id="-high-priority-immediate-value">🔴 HIGH Priority (Immediate Value)</h3>
+<ol>
+<li><strong>Credential Store</strong> - Centralized, secure credential management</li>
+<li><strong>Dynamic API Tool</strong> - Call any API without pre-configuration</li>
+<li><strong>Web Search Tool</strong> - Find documentation/info dynamically</li>
+<li><strong>Templated Instructions</strong> - Reusable agent configs with variables</li>
+</ol>
+<h3 id="-medium-priority-next-quarter">🟡 MEDIUM Priority (Next Quarter)</h3>
+<ol start="5">
+<li><strong>Python Execution Tool</strong> - Data analysis &amp; visualization</li>
+<li><strong>Multimodal Loop</strong> - Save → Load → Analyze pattern</li>
+<li><strong>Tool Bundles</strong> - Pre-configured tool sets for domains</li>
+</ol>
+<h3 id="-low-priority-future-consideration">🟢 LOW Priority (Future Consideration)</h3>
+<ol start="8">
+<li><strong>Docker Deployment Template</strong> - Like their 60-second setup</li>
+<li><strong>Marketplace Integration</strong> - Deploy agents as services</li>
+<li><strong>Agency Swarm Evaluation</strong> - Consider framework migration?</li>
+</ol>
+<hr>
+<h2 id="code-examples-ready-for-integration">Code Examples Ready for Integration</h2>
+<h3 id="example-1-credential-store">Example 1: Credential Store</h3>
+<pre><code class="lang-csharp">// In AgentFactory or StoresAndAgentsLoader
+var credStore = new CredentialStore(&quot;./credentials&quot;);
+
+// Tools can now access credentials uniformly
+var stripeKey = await credStore.GetCredential(&quot;stripe&quot;, &quot;api_key&quot;);
+var googleServiceAccount = await credStore.GetCredential(&quot;google_analytics&quot;, &quot;service_account_json&quot;);
+</code></pre>
+<h3 id="example-2-dynamic-api-tool-integration">Example 2: Dynamic API Tool Integration</h3>
+<pre><code class="lang-csharp">var tools = new ToolsContext();
+tools.Add(new WebSearchTool());
+tools.Add(new DynamicAPITool(credStore));
+
+var agent = new HazinaAgent(&quot;api_researcher&quot;, generator, tools);
+
+// Agent can now discover and call ANY API
+var response = await agent.Generator.GetResponse(
+    &quot;Fetch my Stripe revenue for last month&quot;,
+    cancel
+);
+// Agent will:
+// 1. Search web for Stripe API docs
+// 2. Find /v1/balance_transactions endpoint
+// 3. Load API key from credStore
+// 4. Make authenticated request
+// 5. Return structured data
+</code></pre>
+<h3 id="example-3-templated-agent-config">Example 3: Templated Agent Config</h3>
+<pre><code class="lang-json">{
+  &quot;name&quot;: &quot;sales_analyst&quot;,
+  &quot;instruction_template&quot;: &quot;./templates/analyst_instructions.md&quot;,
+  &quot;template_variables&quot;: {
+    &quot;company_name&quot;: &quot;Acme Corp&quot;,
+    &quot;business_overview&quot;: &quot;B2B SaaS platform for project management&quot;,
+    &quot;business_goals&quot;: &quot;Increase MRR by 20%, reduce churn to &lt;5%&quot;,
+    &quot;data_sources&quot;: &quot;Stripe, Google Analytics, Salesforce&quot;
+  },
+  &quot;tools&quot;: [&quot;python&quot;, &quot;web_search&quot;, &quot;api_call&quot;, &quot;load_image&quot;]
+}
+</code></pre>
+<hr>
+<h2 id="conclusion">Conclusion</h2>
+<p>The data-analytics-agent repository demonstrates several powerful patterns:</p>
+<p><strong>Most Valuable Learnings</strong>:</p>
+<ol>
+<li><strong>Dynamic API integration</strong> without pre-built connectors</li>
+<li><strong>Multimodal analysis loop</strong> (generate → save → load → analyze)</li>
+<li><strong>Credential abstraction</strong> for security and portability</li>
+<li><strong>Templated instructions</strong> for deployment flexibility</li>
+<li><strong>Data-first methodology</strong> as core agent principle</li>
+</ol>
+<p><strong>Recommended Next Steps</strong>:</p>
+<ol>
+<li>Implement CredentialStore class</li>
+<li>Add WebSearchTool and DynamicAPITool</li>
+<li>Enhance agent instruction system with templates</li>
+<li>Evaluate Python execution sandbox for data analysis</li>
+<li>Create multimodal analysis workflow for chart interpretation</li>
+</ol>
+<p><strong>Our Competitive Advantages to Maintain</strong>:</p>
+<ul>
+<li>Multi-agent orchestration with flows</li>
+<li>Token usage tracking and cost transparency</li>
+<li>Document store abstraction (multiple backends)</li>
+<li>Streaming response support</li>
+<li>Established tool ecosystem</li>
+</ul>
+<p>By selectively adopting their patterns while keeping our strengths, we can create a more powerful and flexible agent platform.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
