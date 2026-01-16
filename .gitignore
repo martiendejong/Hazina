@@ -99,3 +99,17 @@ build_errors.log
 /Tests/Core/Hazina.LLMs.OpenAI.Tests
 /Tests/Core/Hazina.LLMs.OpenAI.Tests/appsettings.example.json
 /**/tmpclaude**
+
+################################################################################
+# Documentation (DocFX)
+################################################################################
+
+# Generated documentation site
+docs/_site/
+
+# Generated API metadata
+docs/api/*.yml
+docs/api/.manifest
+
+# DocFX log files
+docs/obj/

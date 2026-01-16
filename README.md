@@ -310,6 +310,43 @@ All contributions to Hazina must meet the complete Definition of Done before bei
 
 ---
 
+## Documentation
+
+Hazina provides comprehensive documentation to help you get started and master the framework.
+
+### Online Documentation
+
+Visit the [Hazina Documentation](https://your-docs-site.com) for:
+- **Getting Started** - Quickstart guides and tutorials
+- **API Reference** - Complete API documentation
+- **Architecture** - Design decisions and patterns
+- **Guides** - RAG, agents, context engineering, and more
+
+### Generating Documentation Locally
+
+```bash
+# Generate API documentation from source code
+.\generate-docs.ps1
+
+# Generate and preview in browser (http://localhost:8080)
+.\generate-docs.ps1 -Serve
+
+# Clean previous build and regenerate
+.\generate-docs.ps1 -Clean
+```
+
+### Documentation Standards
+
+All public APIs must include XML documentation comments. See [DOCUMENTATION_GUIDELINES.md](DOCUMENTATION_GUIDELINES.md) for details.
+
+**Before creating a PR:**
+- ✅ All public APIs have XML documentation
+- ✅ Complex features have usage examples
+- ✅ Documentation builds without errors: `.\generate-docs.ps1`
+- ✅ No CS1591 warnings (missing XML comments)
+
+---
+
 ## Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.

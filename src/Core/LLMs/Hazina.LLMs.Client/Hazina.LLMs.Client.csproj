@@ -14,6 +14,8 @@
     <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>llm;ai;interface;abstraction;chat;streaming;embeddings;tool-calling;provider-agnostic</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.12.0" />
@@ -28,5 +30,3 @@
     <ProjectReference Include="..\Hazina.LLMs.Helpers\Hazina.LLMs.Helpers.csproj" />
   </ItemGroup>
 </Project>
-
-

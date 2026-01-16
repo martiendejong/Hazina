@@ -14,9 +14,10 @@
     <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>llm;ai;language-model;chat;openai;anthropic;claude;gpt;tokens;tool-calling</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Memory.Data" Version="6.0.0" />
   </ItemGroup>
 </Project>
-
