@@ -4,6 +4,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/hazina-ai/hazina)
 [![NuGet](https://img.shields.io/badge/NuGet-coming%20soon-blue)](https://www.nuget.org/)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://martiendejong.github.io/Hazina/)
+[![Deploy Docs](https://github.com/martiendejong/Hazina/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/martiendejong/Hazina/actions/workflows/deploy-docs.yml)
 
 **Production-ready AI infrastructure for .NET that scales from prototype to production without rewriting your code.**
 
@@ -250,9 +252,12 @@ var result = await neurochain.ReasonAsync("Complex question requiring high confi
 
 ## Documentation
 
+📚 **[View Full Documentation](https://martiendejong.github.io/Hazina/)** — Complete API reference and guides hosted on GitHub Pages
+
 ### Getting Started
 - **[Solutions Guide](SOLUTIONS.md)** — Choose the right solution file for your work (QuickStart, Core, AI, Tools, Apps)
 - [30-Minute RAG Tutorial](docs/quickstart.md) — Build production RAG in 30 minutes
+- **[API Reference](https://martiendejong.github.io/Hazina/api/)** — Complete API documentation
 
 ### Feature Guides
 - [Knowledge Storage & Search Model](docs/KNOWLEDGE_STORAGE.md) — Agent-first architecture, metadata-driven storage
@@ -264,6 +269,11 @@ var result = await neurochain.ReasonAsync("Complex question requiring high confi
 
 ### Setup & Configuration
 - [Supabase Setup](docs/SUPABASE_SETUP.md) — Cloud database backend
+- [GitHub Pages Setup](GITHUB_PAGES_SETUP.md) — Automatic documentation deployment
+
+### For Contributors
+- [Documentation Guidelines](DOCUMENTATION_GUIDELINES.md) — XML documentation standards
+- **Generate Docs Locally**: Run `.\generate-docs.ps1 -Serve` to preview at http://localhost:8080
 
 ## Quick Start
 
