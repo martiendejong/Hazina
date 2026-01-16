@@ -51,7 +51,7 @@
         ]
       }
     ],
-    "dest": "docs/_site",
+    "dest": "docs/apidoc",
     "globalMetadataFiles": [],
     "fileMetadataFiles": [],
     "template": [
