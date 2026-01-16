@@ -16,6 +16,7 @@
     <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>wpf;chat-ui;windows;xaml;ui-components;chat-interface</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
 </Project>
-

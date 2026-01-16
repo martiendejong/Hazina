@@ -24,6 +24,40 @@ This file is used to track progress and coordinate efforts between Antigravity, 
 ## Notes
 - Please log your major actions and any blockers here.
 
+## Pull Request Requirements
+
+**BEFORE creating ANY PR for Hazina, you MUST:**
+
+### Documentation Requirements
+1. ✅ **XML Documentation**: All public classes, methods, and properties have XML documentation comments
+2. ✅ **Documentation Build**: Run `.\generate-docs.ps1` without errors
+3. ✅ **No Warnings**: No CS1591 warnings (missing XML comments) in build output
+4. ✅ **Usage Examples**: Complex APIs include `<example>` tags with code samples
+5. ✅ **Guide Updates**: New features documented in `/docs` guides
+
+### How to Generate Documentation
+```bash
+# Test documentation generation
+.\generate-docs.ps1
+
+# Preview documentation locally
+.\generate-docs.ps1 -Serve
+
+# Clean and regenerate
+.\generate-docs.ps1 -Clean
+```
+
+### Documentation Standards
+- See [DOCUMENTATION_GUIDELINES.md](DOCUMENTATION_GUIDELINES.md) for complete standards
+- Use `<summary>`, `<param>`, `<returns>`, `<exception>`, `<example>` tags
+- Link to related types with `<see cref="TypeName"/>`
+- Provide usage examples for complex APIs
+
+### CI/CD Integration
+- Documentation generation runs automatically in CI/CD pipeline
+- PRs will be blocked if documentation build fails
+- All public APIs must be documented before merge
+
 ---
 
 ## Recent Implementation: SQLite Storage Backend & Migration Tool (2026-01-06)

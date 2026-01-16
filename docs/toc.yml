@@ -1,0 +1,33 @@
+- name: Home
+  href: README.md
+- name: Getting Started
+  href: quickstart.md
+- name: Guides
+  items:
+    - name: Configuration
+      href: CONFIGURATION_GUIDE.md
+    - name: Agents
+      href: AGENTS_GUIDE.md
+    - name: RAG & Search
+      href: RAG_GUIDE.md
+    - name: Logging
+      href: LOGGING_GUIDE.md
+    - name: Testing
+      href: TESTING.md
+- name: Architecture
+  items:
+    - name: Overview
+      href: ARCHITECTURE.md
+    - name: Architecture Standards
+      href: ARCHITECTURE_STANDARDS.md
+    - name: Storage & Search
+      href: STORAGE_SEARCH_ARCHITECTURE.md
+    - name: Tool Agent
+      href: TOOL_AGENT_ARCHITECTURE.md
+- name: API Reference
+  href: api/
+  homepage: api/index.md
+- name: Release Notes
+  href: RELEASE_NOTES.md
+- name: Contributing
+  href: CONTRIBUTING.md

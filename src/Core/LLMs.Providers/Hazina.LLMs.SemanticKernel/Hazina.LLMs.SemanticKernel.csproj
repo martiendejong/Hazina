@@ -14,6 +14,8 @@
     <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>semantic-kernel;llm;ai;chat;multi-provider;openai;azure;anthropic;ollama;plugins</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
     <NoWarn>$(NoWarn);SKEXP0001;SKEXP0010</NoWarn>

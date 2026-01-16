@@ -14,15 +14,15 @@
     <RepositoryUrl>https://github.com/martiendejong/Hazina.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>sqlite;storage;embeddings;vector-store;fts5;metadata;rag;local-database</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Helpers\Hazina.LLMs.Helpers.csproj" />
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
     <ProjectReference Include="..\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />
     <ProjectReference Include="..\Hazina.Store.DocumentStore\Hazina.Store.DocumentStore.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
