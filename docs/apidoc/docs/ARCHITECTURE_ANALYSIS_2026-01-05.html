@@ -1,0 +1,1113 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Hasina Framework - Architecture Analysis | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Hasina Framework - Architecture Analysis | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="hasina-framework---architecture-analysis">Hasina Framework - Architecture Analysis</h1>
+
+<p><strong>Date</strong>: 2026-01-05
+<strong>Analyst</strong>: Claude Code
+<strong>Scope</strong>: Complete framework analysis against conceptual model</p>
+<hr>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>Hasina is een <strong>generiek, config-gedreven framework</strong> voor conversational AI-systemen met incrementele profielbouw. De architectuur implementeert het conceptuele model grotendeels volledig, met sterke scheiding tussen generic core (Hasina) en domain-specifieke implementatie (Brand2Boost/Client-Manager).</p>
+<p><strong>Kernbevindingen</strong>:</p>
+<ul>
+<li>✔ 7 van 8 concepten volledig geïmplementeerd</li>
+<li>◑ 1 concept gedeeltelijk geïmplementeerd (Interview Agent)</li>
+<li>✖ 0 concepten ontbreken</li>
+<li>Sterke generieke basis, minimale technische schuld</li>
+<li>Sprint 4 features <strong>NIET</strong> geïntegreerd in chat</li>
+</ul>
+<hr>
+<h2 id="1-chat--llm-agent-system">1. Chat → LLM Agent System</h2>
+<p><strong>Status</strong>: ✔ <strong>VOLLEDIG GEÏMPLEMENTEERD</strong></p>
+<h3 id="bewijs-in-code">Bewijs in Code</h3>
+<p><strong>Framework Core</strong>:</p>
+<ul>
+<li><code>Hazina.AgentFactory/Core/HazinaAgent.cs</code> - Basis agent model
+<ul>
+<li>Properties: Name, DocumentGenerator, IToolsContext, IsCoder</li>
+<li>Orchestreert tool execution</li>
+</ul>
+</li>
+</ul>
+<p><strong>Agent Types</strong>:</p>
+<ul>
+<li><code>Hazina.Tools.AI.Agents/Agents/GeneratorAgentBase.cs</code> - Base klasse</li>
+<li><code>Hazina.Tools.AI.Agents/Agents/HazinaStoreAgent.cs</code> - Store-based agent</li>
+</ul>
+<p><strong>Chat Integration</strong>:</p>
+<ul>
+<li><code>ClientManagerAPI/Controllers/ChatController.cs</code> (lines 70-180)
+<ul>
+<li>Dynamische ChatService instantiatie</li>
+<li>SignalR streaming responses</li>
+<li>Integreert DataGathering, AnalysisFields, ImageGeneration</li>
+</ul>
+</li>
+</ul>
+<p><strong>Tool Context</strong>:</p>
+<ul>
+<li><code>Hazina.LLMs.Client/IToolsContext.cs</code>
+<pre><code class="lang-csharp">public interface IToolsContext {
+    List&lt;HazinaChatTool&gt; Tools { get; }
+    string ProjectId { get; }
+    Func&lt;string, Task&gt; SendMessage { get; }
+    Action&lt;TokenUsage&gt; OnTokensUsed { get; }
+}
+</code></pre>
+</li>
+</ul>
+<h3 id="architectuur">Architectuur</h3>
+<pre><code>User Message
+    ↓
+ChatController
+    ↓
+ChatService (dynamisch aangemaakt)
+    ↓
+HazinaAgent + IToolsContext
+    ↓
+LLM Call (via ILLMClient)
+    ↓
+Tool Execution (indien nodig)
+    ↓
+Response Stream (via SignalR)
+</code></pre>
+<h3 id="observaties">Observaties</h3>
+<ul>
+<li>Agents zijn stateless, per-request instanties</li>
+<li>Tool context bevat alle benodigde services</li>
+<li>SignalR voor real-time streaming</li>
+<li>Session-aware routing (elk browser tab = unieke sessie)</li>
+</ul>
+<hr>
+<h2 id="2-tools-als-application-functions">2. Tools als Application Functions</h2>
+<p><strong>Status</strong>: ✔ <strong>VOLLEDIG GEÏMPLEMENTEERD</strong></p>
+<h3 id="bewijs-in-code-1">Bewijs in Code</h3>
+<p><strong>Tool Model</strong>:</p>
+<ul>
+<li><code>Hazina.LLMs.Classes/Models/Tools/HazinaChatTool.cs</code>
+<pre><code class="lang-csharp">public class HazinaChatTool {
+    public string FunctionName { get; set; }
+    public string Description { get; set; }
+    public List&lt;ChatToolParameter&gt; Parameters { get; set; }
+    public Func&lt;List&lt;HazinaChatMessage&gt;, HazinaChatToolCall,
+                 CancellationToken, Task&lt;string&gt;&gt; Execute { get; set; }
+}
+</code></pre>
+</li>
+</ul>
+<p><strong>Tool Registration Pattern</strong>:</p>
+<ul>
+<li><code>ClientManagerAPI/Extensions/ToolsContextAnalysisExtensions.cs</code> (lines 22-231)
+<pre><code class="lang-csharp">var tool = new HazinaChatTool(
+    &quot;generate_analysis_field&quot;,
+    &quot;Generate or regenerate...&quot;,
+    parameters,
+    async (messages, toolCall, cancel) =&gt; {
+        // ECHTE APPLICATION LOGIC - geen mock
+        var result = await analysisFieldService
+            .GenerateTypedFieldAsync(...);
+        return JsonSerializer.Serialize(result);
+    });
+context.Tools.Add(tool);
+</code></pre>
+</li>
+</ul>
+<p><strong>Beschikbare Tools</strong>:</p>
+<ol>
+<li><code>generate_analysis_field</code> - Analysis field generation</li>
+<li><code>update_analysis_field</code> - Field updates</li>
+<li><code>generate_logo</code> - Logo generation via DALL-E</li>
+<li><code>generate_illustration</code> - General image generation</li>
+<li><code>create_variations</code> - Image variations</li>
+</ol>
+<h3 id="kritieke-eigenschap">Kritieke Eigenschap</h3>
+<p><strong>Tools zijn NIET LLM tool specs</strong> - ze zijn C# functions die direct application services aanroepen:</p>
+<ul>
+<li><code>IAnalysisFieldService.GenerateTypedFieldAsync()</code></li>
+<li><code>ChatService.GenerateImage()</code></li>
+<li>Database writes</li>
+<li>SignalR broadcasts</li>
+</ul>
+<h3 id="observaties-1">Observaties</h3>
+<ul>
+<li>Execute delegate voert volledige business logic uit</li>
+<li>Direct integration met services (DI)</li>
+<li>Async/await pattern voor long-running operations</li>
+<li>Returns JSON string naar LLM</li>
+</ul>
+<hr>
+<h2 id="3-twee-datatypes-gathered-data--analysis-fields">3. Twee Datatypes: Gathered Data + Analysis Fields</h2>
+<p><strong>Status</strong>: ✔ <strong>VOLLEDIG GEÏMPLEMENTEERD</strong></p>
+<h3 id="a-gathered-data-keyvalue-van-gebruiker">A. Gathered Data (key→value van gebruiker)</h3>
+<p><strong>Model</strong>:</p>
+<ul>
+<li><code>Hazina.Tools.Services.DataGathering/Models/GatheredDataItem.cs</code>
+<pre><code class="lang-csharp">public class GatheredDataItem {
+    public string Key { get; set; }           // &quot;brand-name&quot;
+    public string Title { get; set; }         // &quot;Brand Name&quot;
+    public GatheredDataValue Data { get; set; } // String/Number/LargeText/List
+    public DateTime GatheredAt { get; set; }
+    public string? Source { get; set; }       // &quot;api&quot;, &quot;chat:123&quot;
+}
+
+public class GatheredDataValue {
+    public GatheredDataType Type { get; set; } // String, Number, LargeText, List
+    public string? StringValue { get; set; }
+    public double? NumberValue { get; set; }
+    public List&lt;string&gt;? ListValue { get; set; }
+}
+</code></pre>
+</li>
+</ul>
+<p><strong>Provider Interface</strong>:</p>
+<ul>
+<li><code>Hazina.Tools.Services.DataGathering/Abstractions/IGatheredDataProvider.cs</code>
+<ul>
+<li>GetAllAsync, GetAsync, SaveAsync, DeleteAsync, ExistsAsync</li>
+</ul>
+</li>
+</ul>
+<p><strong>Implementatie</strong>:</p>
+<ul>
+<li><code>FileSystemGatheredDataProvider.cs</code> - JSON files per project</li>
+</ul>
+<p><strong>Service</strong>:</p>
+<ul>
+<li><code>IDataGatheringService.GatherDataFromMessageAsync()</code> - LLM extracts entities</li>
+</ul>
+<p><strong>API</strong>:</p>
+<ul>
+<li><code>ClientManagerAPI/Controllers/GatheredDataController.cs</code>
+<ul>
+<li>GET <code>/api/gatherdata/{projectId}/{key}</code></li>
+<li>PUT <code>/api/gatherdata/{projectId}/{key}</code></li>
+<li>DELETE <code>/api/gatherdata/{projectId}/{key}</code></li>
+</ul>
+</li>
+</ul>
+<p><strong>Real-time Updates</strong>:</p>
+<ul>
+<li><code>SignalRGatheredDataNotifier.cs</code> - Broadcasts changes</li>
+</ul>
+<h3 id="b-analysis-fields-gegenereerdafgeleid-config-driven">B. Analysis Fields (gegenereerd/afgeleid, config-driven)</h3>
+<p><strong>Configuration Model</strong>:</p>
+<ul>
+<li><code>ClientManagerAPI/Models/AnalysisFieldConfiguration.cs</code>
+<pre><code class="lang-csharp">public class AnalysisFieldDefinition {
+    public string Key { get; set; }          // &quot;brand-profile&quot;
+    public string FileName { get; set; }     // &quot;brand-profile.json&quot;
+    public string DisplayName { get; set; }  // &quot;Brand Profile&quot;
+    public string ConfigFileName { get; set; } // &quot;brand-profile.prompt.txt&quot;
+    public string GenericType { get; set; }  // &quot;ColorScheme&quot;, &quot;ImageSet&quot;
+    public string ComponentName { get; set; } // &quot;ColorScheme&quot; → UI component
+}
+</code></pre>
+</li>
+</ul>
+<p><strong>Config Loader</strong>:</p>
+<ul>
+<li><code>Hazina.Tools.Services.Store/Analysis/AnalysisFieldConfigLoader.cs</code>
+<ul>
+<li>Laadt <code>analysis-fields.config.json</code> uit project folder</li>
+</ul>
+</li>
+</ul>
+<p><strong>Service Interface</strong>:</p>
+<ul>
+<li><code>Hazina.Tools.Services.DataGathering/Abstractions/IAnalysisFieldService.cs</code>
+<pre><code class="lang-csharp">Task&lt;Dictionary&lt;string, AnalysisFieldConfig&gt;&gt; LoadFieldConfigsAsync(string projectId);
+Task&lt;IReadOnlyList&lt;GeneratedAnalysisField&gt;&gt; GenerateFromConversationAsync(...);
+Task&lt;object?&gt; GenerateTypedFieldAsync(projectId, chatId, key, instruction);
+</code></pre>
+</li>
+</ul>
+<p><strong>Generation Strategy Pattern</strong>:</p>
+<ul>
+<li><code>ClientManagerAPI/Strategies/FieldGenerationStrategyFactory.cs</code>
+<pre><code class="lang-csharp">public static IFieldGenerationStrategy GetStrategy(AnalysisFieldConfig config) {
+    foreach (var strategy in _strategies) {
+        if (strategy.CanHandle(config)) return strategy;
+    }
+    return null; // Fallback to plain text
+}
+</code></pre>
+<ul>
+<li>Strategies: <code>ImageSetGenerationStrategy</code>, <code>TypedFieldGenerationStrategy</code></li>
+<li>Extensible via <code>RegisterStrategy()</code></li>
+</ul>
+</li>
+</ul>
+<p><strong>Type-Based Handlers</strong> (AnalysisController.cs lines 695-759):</p>
+<ul>
+<li><code>ColorScheme</code> → Typed JSON generation</li>
+<li><code>ToneOfVoice</code> → Typed JSON generation</li>
+<li><code>CoreValues</code> → Typed JSON generation</li>
+<li><code>ImageSet</code> (Logo) → DALL-E image generation</li>
+<li>Plain text → Instruction-based generation</li>
+</ul>
+<p><strong>API</strong>:</p>
+<ul>
+<li><code>ClientManagerAPI/Controllers/AnalysisController.cs</code>
+<ul>
+<li>POST <code>/api/analysis/{projectId}/generate-field/{fieldName}</code></li>
+<li>GET <code>/api/analysis/{projectId}/field/{fieldName}</code></li>
+<li>PUT <code>/api/analysis/{projectId}/field/{fieldName}</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="scheiding-gathered-vs-analysis">Scheiding Gathered vs Analysis</h3>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Gathered Data</th>
+<th>Analysis Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Bron</strong></td>
+<td>User input (chat/API)</td>
+<td>LLM generation</td>
+</tr>
+<tr>
+<td><strong>Type</strong></td>
+<td>String/Number/List</td>
+<td>JSON/Text/Image</td>
+</tr>
+<tr>
+<td><strong>Storage</strong></td>
+<td>gathered-data/*.json</td>
+<td>analysis-fields/*.json</td>
+</tr>
+<tr>
+<td><strong>API</strong></td>
+<td>/api/gatherdata</td>
+<td>/api/analysis</td>
+</tr>
+<tr>
+<td><strong>Config</strong></td>
+<td>N/A</td>
+<td>analysis-fields.config.json</td>
+</tr>
+<tr>
+<td><strong>Event</strong></td>
+<td>GatheredData (SignalR)</td>
+<td>AnalysisData (SignalR)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="observaties-2">Observaties</h3>
+<ul>
+<li>Duidelijke scheiding tussen extracted vs generated data</li>
+<li>Analysis fields zijn volledig config-driven</li>
+<li>Strategy pattern maakt extensie eenvoudig</li>
+<li>Type-safe generation voor known types</li>
+<li>Fallback naar plain text generation</li>
+</ul>
+<hr>
+<h2 id="4-dependencies-tussen-fields">4. Dependencies tussen Fields</h2>
+<p><strong>Status</strong>: ◑ <strong>GEDEELTELIJK GEÏMPLEMENTEERD</strong></p>
+<h3 id="bewijs-van-dependency-support">Bewijs van Dependency Support</h3>
+<p><strong>Fragment Metadata</strong>:</p>
+<ul>
+<li><code>BrandFragmentService.cs</code> (lines 179-184)
+<pre><code class="lang-csharp">fragment.Metadata = new FragmentMetadata {
+    Dependencies = new List&lt;string&gt; {
+        &quot;logo&quot;, &quot;color-scheme&quot;, &quot;typography&quot;, &quot;brand-profile&quot;
+    }
+};
+</code></pre>
+</li>
+</ul>
+<p><strong>Field Generation met Context</strong>:</p>
+<ul>
+<li><code>AnalysisController.cs</code> (lines 1228-1290)
+<pre><code class="lang-csharp">// Logo generation laadt brand-profile voor context
+var brandProfile = await _analysisFieldService
+    .LoadFieldAsync&lt;BrandProfile&gt;(id, &quot;brand-profile&quot;);
+
+var prompt = $&quot;Professional logo for {brandProfile.BrandName}...&quot;;
+</code></pre>
+</li>
+</ul>
+<p><strong>Gathered Data → Analysis Flow</strong>:</p>
+<ul>
+<li><code>ChatController.cs</code> (lines 84-107)
+<pre><code class="lang-csharp">var chatService = new ChatService(
+    // ...
+    analysisProvider: analysisProvider, // Enables field updates
+    // ...
+);
+</code></pre>
+</li>
+</ul>
+<p><strong>Fragment Slot Resolution</strong>:</p>
+<ul>
+<li>Slots marked &quot;gathered&quot; → populated from gathered data</li>
+<li>Slots marked &quot;generated&quot; → LLM generation</li>
+<li><code>RefreshGatheredSlotsAsync()</code> re-populates from gathered data</li>
+</ul>
+<h3 id="wat-ontbreekt">Wat Ontbreekt</h3>
+<p><strong>Expliciete Dependency Graph</strong>:</p>
+<ul>
+<li>Geen DAG (Directed Acyclic Graph) evaluatie</li>
+<li>Geen topological sort voor generation order</li>
+<li>Geen circular dependency detection</li>
+<li>Dependencies zijn documentatie, niet enforcement</li>
+</ul>
+<p><strong>Auto-regeneration</strong>:</p>
+<ul>
+<li>Geen cascade updates bij dependency changes</li>
+<li>Handmatige regeneration vereist</li>
+</ul>
+<p><strong>Dependency Validation</strong>:</p>
+<ul>
+<li>Geen check of dependencies exist before generation</li>
+<li>Geen &quot;ready to generate&quot; status</li>
+</ul>
+<h3 id="observaties-3">Observaties</h3>
+<ul>
+<li>Dependencies zijn metadata, niet runtime enforcement</li>
+<li>Context loading is manual in generation strategies</li>
+<li>Works pragmatisch maar niet formeel</li>
+<li>Ruimte voor verbetering met dependency engine</li>
+</ul>
+<hr>
+<h2 id="5-background-job-orchestration">5. Background Job Orchestration</h2>
+<p><strong>Status</strong>: ✔ <strong>VOLLEDIG GEÏMPLEMENTEERD</strong></p>
+<h3 id="framework">Framework</h3>
+<p><strong>Hangfire Integration</strong>:</p>
+<ul>
+<li><code>ClientManagerAPI/Jobs/BackgroundJobs.cs</code></li>
+<li>Persistent job storage</li>
+<li>Automatic retry met exponential backoff</li>
+<li>Queue prioritization (critical/default/low)</li>
+</ul>
+<h3 id="registered-jobs">Registered Jobs</h3>
+<p><strong>1. Token Reset</strong> (Daily at midnight UTC):</p>
+<pre><code class="lang-csharp">[AutomaticRetry(Attempts = 3)]
+public async Task ResetDailyTokensAsync()
+</code></pre>
+<p><strong>2. Embeddings Processing</strong> (On file upload):</p>
+<pre><code class="lang-csharp">[AutomaticRetry(Attempts = 3)]
+public async Task ProcessEmbeddingsAsync(string projectId, string filePath)
+</code></pre>
+<p><strong>3. Document Generation</strong> (On demand):</p>
+<pre><code class="lang-csharp">public async Task GenerateDocumentAsync(...)
+</code></pre>
+<p><strong>4. Scheduled Post Publishing</strong> (Every minute):</p>
+<pre><code class="lang-csharp">[AutomaticRetry(Attempts = 3)]
+public async Task PublishScheduledPostsAsync()
+</code></pre>
+<p><strong>5. Data Cleanup</strong> (Weekly):</p>
+<pre><code class="lang-csharp">[AutomaticRetry(Attempts = 1)]
+public async Task CleanupOldDataAsync()
+</code></pre>
+<h3 id="job-execution">Job Execution</h3>
+<p><strong>Enqueue Pattern</strong>:</p>
+<pre><code class="lang-csharp">// Immediate execution
+BackgroundJob.Enqueue(() =&gt; ProcessEmbeddingsAsync(projectId, filePath));
+
+// Delayed execution
+BackgroundJob.Schedule(() =&gt; GenerateDocumentAsync(...), TimeSpan.FromMinutes(5));
+
+// Recurring job
+RecurringJob.AddOrUpdate(&quot;publish-posts&quot;,
+    () =&gt; PublishScheduledPostsAsync(),
+    Cron.Minutely);
+</code></pre>
+<p><strong>Embeddings Queue Integration</strong>:</p>
+<ul>
+<li><code>ClientManagerAPI/Controllers/AnalysisController.cs</code> (lines 1488-1501)
+<pre><code class="lang-csharp">_embeddingsQueue?.EnqueueEmbedProjectFile(projectId, fileName);
+</code></pre>
+<ul>
+<li>Non-blocking</li>
+<li>Enqueued after field generation</li>
+<li>Background processing</li>
+</ul>
+</li>
+</ul>
+<h3 id="job-monitoring">Job Monitoring</h3>
+<p><strong>Execution Recording</strong>:</p>
+<pre><code class="lang-csharp">private async Task RecordJobExecutionAsync(string jobName, bool success, string? error)
+</code></pre>
+<p><strong>Audit Trail</strong>:</p>
+<ul>
+<li>Job execution history</li>
+<li>Success/failure tracking</li>
+<li>Error logging</li>
+</ul>
+<h3 id="observaties-4">Observaties</h3>
+<ul>
+<li>Hangfire dashboard voor monitoring (indien enabled)</li>
+<li>Automatic retry met configurable attempts</li>
+<li>Queue-based prioritization</li>
+<li>Transaction-safe execution</li>
+<li>Non-blocking architecture</li>
+</ul>
+<hr>
+<h2 id="6-event-driven-ui-met-component-descriptors">6. Event-Driven UI met Component Descriptors</h2>
+<p><strong>Status</strong>: ✔ <strong>VOLLEDIG GEÏMPLEMENTEERD</strong></p>
+<h3 id="signalr-architecture">SignalR Architecture</h3>
+<p><strong>Hub</strong>:</p>
+<ul>
+<li><code>ClientManagerAPI/Custom/MyHub.cs</code>
+<pre><code class="lang-csharp">public class MyHub : Hub {
+    public async Task JoinProject(string projectId, string sessionId) {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $&quot;project:{projectId}&quot;);
+        await Groups.AddToGroupAsync(Context.ConnectionId, $&quot;session:{sessionId}&quot;);
+    }
+}
+</code></pre>
+</li>
+</ul>
+<p><strong>Two-Level Routing</strong>:</p>
+<ol>
+<li><strong>Session Group</strong>: <code>&quot;session:{sessionId}&quot;</code> - Streaming responses, specific browser tab</li>
+<li><strong>Project Group</strong>: <code>&quot;project:{projectId}&quot;</code> - Shared updates, all team members</li>
+<li><strong>Fallback</strong>: <code>&quot;All&quot;</code> - Backwards compatibility</li>
+</ol>
+<h3 id="event-types">Event Types</h3>
+<p><strong>1. Analysis Field Events</strong>:</p>
+<ul>
+<li><code>SignalRAnalysisFieldNotifier.cs</code> (lines 37-128)
+<pre><code class="lang-csharp">public async Task NotifyFieldGeneratedAsync(
+    string projectId, string chatId, string key,
+    string displayName, string content,
+    string? componentName = null, ...) {
+
+    // Component resolution
+    var resolvedComponentName = &quot;view/analysis/AnalysisData&quot;;
+    if (!string.IsNullOrWhiteSpace(componentName)) {
+        var chatComponentName = componentName.EndsWith(&quot;Chat&quot;)
+            ? componentName
+            : $&quot;{componentName}Chat&quot;;
+        resolvedComponentName = $&quot;view/analysis/{chatComponentName}&quot;;
+    }
+
+    var message = new {
+        type = &quot;generated&quot;,
+        projectId,
+        chatId,
+        key,
+        payload = new {
+            type = &quot;analysis-data&quot;,
+            componentName = resolvedComponentName,
+            data = content
+        }
+    };
+
+    await _hubContext.Clients.Group($&quot;session:{sessionId}&quot;)
+        .SendAsync(&quot;AnalysisData&quot;, message, cancellationToken);
+}
+</code></pre>
+</li>
+</ul>
+<p><strong>2. Gathered Data Events</strong>:</p>
+<ul>
+<li><code>SignalRGatheredDataNotifier.cs</code></li>
+<li>Channel: <code>GatheredData</code></li>
+<li>Similar routing pattern</li>
+</ul>
+<p><strong>3. Chat Streaming Events</strong>:</p>
+<ul>
+<li><code>ChatController.cs</code> + <code>ChatStreamService</code></li>
+<li>Real-time token streaming</li>
+<li>Image generation progress</li>
+<li>Session-specific routing</li>
+</ul>
+<h3 id="component-descriptor-pattern">Component Descriptor Pattern</h3>
+<p><strong>Configuration → Component Mapping</strong>:</p>
+<pre><code class="lang-csharp">// In analysis-fields.config.json
+{
+  &quot;key&quot;: &quot;color-scheme&quot;,
+  &quot;componentName&quot;: &quot;ColorScheme&quot;,    // Backend name
+  &quot;rowComponentName&quot;: &quot;ColorSchemeRow&quot;
+}
+
+// Becomes in SignalR event
+{
+  &quot;componentName&quot;: &quot;view/analysis/ColorSchemeChat&quot;,  // Frontend path
+  &quot;type&quot;: &quot;analysis-data&quot;,
+  &quot;data&quot;: { /* ColorScheme JSON */ }
+}
+</code></pre>
+<p><strong>Frontend Rendering</strong> (assumed):</p>
+<pre><code class="lang-javascript">signalR.on(&quot;AnalysisData&quot;, (message) =&gt; {
+    const Component = resolveComponent(message.payload.componentName);
+    render(&lt;Component data={message.payload.data} /&gt;);
+});
+</code></pre>
+<h3 id="component-types">Component Types</h3>
+<p><strong>Configured Components</strong> (AnalysisController.cs lines 365-472):</p>
+<ul>
+<li><code>ColorScheme</code> → ColorSchemeChat/ColorSchemeRow</li>
+<li><code>ToneOfVoice</code> → ToneOfVoiceChat/ToneOfVoiceRow</li>
+<li><code>CoreValues</code> → CoreValuesRow</li>
+<li><code>ImageSet</code> → Logo viewer</li>
+<li>Plain text → Generic AnalysisData viewer</li>
+</ul>
+<h3 id="observaties-5">Observaties</h3>
+<ul>
+<li>String-based component resolution (geen type safety)</li>
+<li>Convention: ComponentName + &quot;Chat&quot; suffix</li>
+<li>Two-tier routing prevents cross-talk between sessions</li>
+<li>Flexible: nieuwe component types via config</li>
+</ul>
+<hr>
+<h2 id="7-interview-agent--vraagstrategie">7. Interview Agent / Vraagstrategie</h2>
+<p><strong>Status</strong>: ◑ <strong>GEDEELTELIJK GEÏMPLEMENTEERD</strong></p>
+<h3 id="wat-bestaat">Wat Bestaat</h3>
+<p><strong>Intake System</strong>:</p>
+<ul>
+<li><code>Hazina.Tools.Services.Intake/IntakeRepository.cs</code> - Structured intake configs</li>
+<li><code>Hazina.Tools.Services.Intake/HazinaStoreIntakeWorker.cs</code> - Orchestration</li>
+</ul>
+<p><strong>Conversational Data Extraction</strong>:</p>
+<ul>
+<li><code>IDataGatheringService.GatherDataFromMessageAsync()</code> extracts entities</li>
+<li>LLM analyzes chat context</li>
+<li>Structured data extracted automatically</li>
+</ul>
+<p><strong>Profile Building Pattern</strong>:</p>
+<pre><code>User: &quot;We're a tech startup called Acme&quot;
+    ↓
+DataGatheringService analyzes message
+    ↓
+Extracts: { &quot;brand-name&quot;: &quot;Acme&quot;, &quot;industry&quot;: &quot;tech&quot;, &quot;company-type&quot;: &quot;startup&quot; }
+    ↓
+GatheredDataItems saved
+    ↓
+SignalR broadcasts updates
+    ↓
+AnalysisFieldService checks if enough context
+    ↓
+Auto-generates analysis fields when ready
+</code></pre>
+<p><strong>Conversation Starters</strong>:</p>
+<ul>
+<li><code>ClientManagerAPI/Controllers/ChatController.cs</code> (line 145)</li>
+<li><code>ConversationStarterService</code> suggests next questions</li>
+<li>Guides interview flow</li>
+</ul>
+<p><strong>Onboarding Flow</strong>:</p>
+<ul>
+<li><code>ClientManagerAPI/Controllers/OnboardingController.cs</code></li>
+<li>Suggested brand discovery questions</li>
+<li>Multi-step intake process</li>
+</ul>
+<h3 id="wat-ontbreekt-1">Wat Ontbreekt</h3>
+<p><strong>Expliciete Interview Agent Class</strong>:</p>
+<ul>
+<li>Geen <code>InterviewAgent</code> met question strategies</li>
+<li>Geen state machine voor interview flow</li>
+<li>Geen completion detection (&quot;enough info gathered&quot;)</li>
+</ul>
+<p><strong>Vraagstrategie</strong>:</p>
+<ul>
+<li>Geen expliciete decision tree</li>
+<li>Geen prioritization van questions</li>
+<li>Geen adaptive questioning based on gaps</li>
+</ul>
+<p><strong>Proactieve Vragen</strong>:</p>
+<ul>
+<li>Geen automatic follow-up questions</li>
+<li>Geen &quot;what's missing?&quot; analysis</li>
+<li>LLM moet implicitly begrijpen wat te vragen</li>
+</ul>
+<h3 id="huidige-implementatie">Huidige Implementatie</h3>
+<p><strong>Implicit Interview via Prompts</strong>:</p>
+<ul>
+<li>System prompt stuurt conversational tone</li>
+<li>LLM begrijpt context en stelt vragen</li>
+<li>DataGathering extracts answers automatisch</li>
+<li>Works, maar niet formeel gestructureerd</li>
+</ul>
+<p><strong>Semi-Structured Alternative</strong>:</p>
+<ul>
+<li>IntakeController voor expliciete intake forms</li>
+<li>OnboardingController voor guided flow</li>
+<li>Mix van conversational + structured approaches</li>
+</ul>
+<h3 id="observaties-6">Observaties</h3>
+<ul>
+<li>&quot;Smart extraction&quot; in plaats van &quot;formal interview&quot;</li>
+<li>Werkt goed voor ervaren gebruikers</li>
+<li>Minder predictable voor onervaren gebruikers</li>
+<li>Ruimte voor expliciete InterviewAgent klasse met:
+<ul>
+<li>Question bank</li>
+<li>Completion criteria</li>
+<li>Gap analysis</li>
+<li>Adaptive strategies</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="8-genericity-in-hasina-core">8. Genericity in Hasina Core</h2>
+<p><strong>Status</strong>: ✔ <strong>VOLLEDIG GEÏMPLEMENTEERD</strong></p>
+<h3 id="generieke-componenten-in-hasina">Generieke Componenten (in Hasina)</h3>
+<p><strong>1. Agent Model</strong>:</p>
+<ul>
+<li><code>HazinaAgent.cs</code> - Geen domain assumptions</li>
+<li>Takes any <code>IToolsContext</code></li>
+<li>Agnostic voor project type</li>
+</ul>
+<p><strong>2. Tool System</strong>:</p>
+<ul>
+<li><code>HazinaChatTool</code> - Generic C# function signature</li>
+<li><code>IToolsContext</code> - Interface zonder domain knowledge</li>
+<li>Tools registratie is code-based, niet config</li>
+</ul>
+<p><strong>3. Data Models</strong>:</p>
+<ul>
+<li><code>GatheredDataItem</code> - Key-value met flexible types</li>
+<li><code>GatheredDataValue</code> - String/Number/LargeText/List</li>
+<li>Geen project-specifieke structuren</li>
+</ul>
+<p><strong>4. Field Configuration</strong>:</p>
+<ul>
+<li><code>AnalysisFieldConfiguration</code> - JSON-driven</li>
+<li>Any field can have any GenericType</li>
+<li>Strategy pattern for generation</li>
+</ul>
+<p><strong>5. Storage Abstractions</strong>:</p>
+<ul>
+<li><code>IGatheredDataProvider</code> - Interface voor storage</li>
+<li><code>IAnalysisFieldsProvider</code> - Interface voor fields</li>
+<li>Implementaties: FileSystem, maar abstractions allow DB/Cloud</li>
+</ul>
+<p><strong>6. Service Interfaces</strong>:</p>
+<ul>
+<li><code>IDataGatheringService</code> - Generic extraction</li>
+<li><code>IAnalysisFieldService</code> - Generic generation</li>
+<li><code>INotifier</code> interfaces - Event pattern</li>
+</ul>
+<p><strong>7. LLM Client Abstraction</strong>:</p>
+<ul>
+<li><code>ILLMClient</code> - Provider-agnostic</li>
+<li>Wrappers: OpenAI, Anthropic, Azure, etc.</li>
+<li>Switchable via config</li>
+</ul>
+<h3 id="domain-specifieke-componenten-in-brand2boostclient-manager">Domain-Specifieke Componenten (in Brand2Boost/Client-Manager)</h3>
+<p><strong>1. UI Components</strong>:</p>
+<ul>
+<li><code>ColorScheme</code>, <code>ToneOfVoice</code>, <code>CoreValues</code> models</li>
+<li>SignalR notifiers met component routing</li>
+<li>Frontend component library</li>
+</ul>
+<p><strong>2. Field Definitions</strong>:</p>
+<ul>
+<li><code>analysis-fields.config.json</code> - Project-specific fields</li>
+<li>Prompt files: <code>*.prompt.txt</code> - Domain knowledge</li>
+<li>Generation strategies: Logo, color scheme, etc.</li>
+</ul>
+<p><strong>3. Controllers</strong>:</p>
+<ul>
+<li><code>AnalysisController</code> - Business logic</li>
+<li><code>ChatController</code> - Chat orchestration</li>
+<li><code>GatheredDataController</code> - CRUD operations</li>
+</ul>
+<p><strong>4. Extensions</strong>:</p>
+<ul>
+<li><code>ToolsContextAnalysisExtensions</code> - Register domain tools</li>
+<li><code>AgentWithImageTools</code> - Decorate context</li>
+<li>Strategy factories</li>
+</ul>
+<p><strong>5. Background Jobs</strong>:</p>
+<ul>
+<li>Token management</li>
+<li>Social media publishing</li>
+<li>Embeddings processing</li>
+</ul>
+<h3 id="scheiding-tabel">Scheiding Tabel</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Hasina (Generic)</th>
+<th>Brand2Boost (Domain)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Agent</td>
+<td>✓ HazinaAgent</td>
+<td>ChatController</td>
+</tr>
+<tr>
+<td>Tools</td>
+<td>✓ HazinaChatTool</td>
+<td>generate_logo, etc.</td>
+</tr>
+<tr>
+<td>Data</td>
+<td>✓ GatheredDataItem</td>
+<td>&quot;brand-name&quot;, &quot;target-audience&quot;</td>
+</tr>
+<tr>
+<td>Fields</td>
+<td>✓ AnalysisFieldConfig</td>
+<td>ColorScheme, ToneOfVoice</td>
+</tr>
+<tr>
+<td>Storage</td>
+<td>✓ FileSystemProvider</td>
+<td>analysis-fields.config.json</td>
+</tr>
+<tr>
+<td>Generation</td>
+<td>✓ IAnalysisFieldService</td>
+<td>ImageSetGenerationStrategy</td>
+</tr>
+<tr>
+<td>UI Events</td>
+<td>✓ INotifier interface</td>
+<td>SignalRAnalysisFieldNotifier</td>
+</tr>
+<tr>
+<td>LLM</td>
+<td>✓ ILLMClient</td>
+<td>Prompt engineering</td>
+</tr>
+</tbody>
+</table>
+<h3 id="observaties-7">Observaties</h3>
+<ul>
+<li><strong>Sterke scheiding</strong> tussen framework en implementatie</li>
+<li>Hasina kan gebruikt worden voor andere projecten (HR, Sales, etc.)</li>
+<li>Domain logic zit in config + extensions, niet in core</li>
+<li>Migration naar andere storage (DB, S3) is mogelijk via interface swap</li>
+</ul>
+<hr>
+<h2 id="sprint-4-features-en-chat-integratie">Sprint 4 Features en Chat Integratie</h2>
+<p><strong>Status</strong>: ✖ <strong>NIET GEÏNTEGREERD IN CHAT</strong></p>
+<h3 id="sprint-4-features-geïmplementeerd">Sprint 4 Features (geïmplementeerd)</h3>
+<p><strong>Controllers</strong>:</p>
+<ol>
+<li><code>SocialMediaAnalyticsController.cs</code> - 8 analytics endpoints</li>
+<li><code>SocialMediaPostController.cs</code> - Enhanced met bulk operations</li>
+</ol>
+<p><strong>Services</strong>:</p>
+<ol>
+<li><code>SocialMediaMetricsService.cs</code> - Metrics aggregation</li>
+<li><code>ContentPreviewService.cs</code> - Platform-specific previews</li>
+<li><code>SocialMediaPublishingService.cs</code> - Enhanced multi-account</li>
+</ol>
+<p><strong>Features</strong>:</p>
+<ul>
+<li>Analytics dashboard (project/platform/trends)</li>
+<li>Retry failed posts (single/bulk)</li>
+<li>Multi-account selection</li>
+<li>Content preview &amp; validation</li>
+<li>Best time to post analysis</li>
+<li>Bulk operations (delete/publish/schedule/status)</li>
+</ul>
+<h3 id="wat-niet-bestaat">Wat NIET Bestaat</h3>
+<p><strong>❌ Tools voor Sprint 4 Features</strong>:</p>
+<ul>
+<li>Geen <code>analyze_social_performance</code> tool</li>
+<li>Geen <code>preview_content_for_platform</code> tool</li>
+<li>Geen <code>bulk_publish_posts</code> tool</li>
+<li>Geen <code>get_best_time_to_post</code> tool</li>
+</ul>
+<p><strong>❌ Chat Commands</strong>:</p>
+<ul>
+<li>Geen conversational access tot analytics</li>
+<li>Geen &quot;show me platform performance&quot;</li>
+<li>Geen &quot;what's the best time to post on LinkedIn?&quot;</li>
+<li>Geen &quot;preview this content on Twitter&quot;</li>
+</ul>
+<p><strong>❌ Integration</strong>:</p>
+<ul>
+<li>Sprint 4 is <strong>pure REST API</strong></li>
+<li>Frontend moet direct API calls doen</li>
+<li>Geen LLM agent access</li>
+<li>Geen chat-driven workflows</li>
+</ul>
+<h3 id="impact">Impact</h3>
+<p><strong>Huidige Situatie</strong>:</p>
+<pre><code>User: &quot;Show me how this post performs on LinkedIn&quot;
+Agent: &quot;I don't have access to analytics. Use the dashboard.&quot;
+</code></pre>
+<p><strong>Gewenste Situatie</strong>:</p>
+<pre><code>User: &quot;Show me how this post performs on LinkedIn&quot;
+Agent: [Calls analyze_social_performance tool]
+Agent: &quot;Your LinkedIn post got 45 likes, 12 comments, and 3 shares...&quot;
+</code></pre>
+<h3 id="required-work">Required Work</h3>
+<p>Om Sprint 4 te integreren in chat:</p>
+<p><strong>1. Tool Registration</strong> (in ToolsContextExtensions):</p>
+<pre><code class="lang-csharp">var analyticsTool = new HazinaChatTool(
+    &quot;analyze_social_performance&quot;,
+    &quot;Get analytics for social media posts&quot;,
+    parameters,
+    async (messages, toolCall, cancel) =&gt; {
+        var analytics = await metricsService
+            .GetProjectAnalyticsAsync(projectId, startDate, endDate);
+        return JsonSerializer.Serialize(analytics);
+    });
+</code></pre>
+<p><strong>2. Additional Tools Needed</strong>:</p>
+<ul>
+<li><code>get_platform_comparison</code> - Cross-platform metrics</li>
+<li><code>get_best_time_to_post</code> - Posting recommendations</li>
+<li><code>preview_content</code> - Platform-specific previews</li>
+<li><code>bulk_publish</code> - Multi-post operations</li>
+<li><code>retry_failed_posts</code> - Error recovery</li>
+</ul>
+<p><strong>3. Natural Language Interface</strong>:</p>
+<ul>
+<li>LLM moet parameters extraheren uit conversatie</li>
+<li>Date ranges: &quot;last month&quot;, &quot;this week&quot;</li>
+<li>Platforms: &quot;LinkedIn&quot;, &quot;all platforms&quot;</li>
+<li>Post selection: &quot;all failed posts&quot;, &quot;scheduled for tomorrow&quot;</li>
+</ul>
+<p><strong>4. Response Formatting</strong>:</p>
+<ul>
+<li>Analytics data moet conversational worden</li>
+<li>Charts/graphs als SignalR component events</li>
+<li>Markdown tables voor data</li>
+<li>Summaries in natural language</li>
+</ul>
+<h3 id="observaties-8">Observaties</h3>
+<ul>
+<li><strong>Grote GAP</strong>: Volledige feature set niet toegankelijk via chat</li>
+<li>Gebruikers moeten switchen tussen chat en dashboard</li>
+<li>Missed opportunity voor conversational analytics</li>
+<li>Relatief eenvoudig te implementeren (tool registration + formatting)</li>
+</ul>
+<hr>
+<h2 id="architecturale-risicos">Architecturale Risico's</h2>
+<h3 id="1-string-based-component-resolution">1. String-Based Component Resolution</h3>
+<p><strong>Risico</strong>: <code>componentName</code> is string-based, geen compile-time check
+<strong>Impact</strong>: Runtime errors als component niet bestaat
+<strong>Mitigatie</strong>: Component registry met validation</p>
+<h3 id="2-no-dependency-dag">2. No Dependency DAG</h3>
+<p><strong>Risico</strong>: Circular dependencies mogelijk, no enforcement
+<strong>Impact</strong>: Infinite loops, generation failures
+<strong>Mitigatie</strong>: Dependency graph builder met cycle detection</p>
+<h3 id="3-file-system-storage">3. File System Storage</h3>
+<p><strong>Risico</strong>: Niet schaalbaar voor multi-tenant cloud deployment
+<strong>Impact</strong>: Performance, concurrency issues
+<strong>Mitigatie</strong>: Database provider implementatie</p>
+<h3 id="4-no-caching-layer">4. No Caching Layer</h3>
+<p><strong>Risico</strong>: Config files geladen bij elke request
+<strong>Impact</strong>: Performance overhead
+<strong>Mitigatie</strong>: In-memory cache met invalidation</p>
+<h3 id="5-tool-registration-at-runtime">5. Tool Registration at Runtime</h3>
+<p><strong>Risico</strong>: Tools niet hot-reloadable, restart required
+<strong>Impact</strong>: Development velocity, deployment downtime
+<strong>Mitigatie</strong>: Config-driven tool registration</p>
+<h3 id="6-no-rate-limiting">6. No Rate Limiting</h3>
+<p><strong>Risico</strong>: LLM API abuse, cost explosion
+<strong>Impact</strong>: Financial, quota exhaustion
+<strong>Mitigatie</strong>: Token budget system (exists), rate limiting middleware</p>
+<h3 id="7-no-interview-completion-detection">7. No Interview Completion Detection</h3>
+<p><strong>Risico</strong>: User doesn't know when profile is &quot;complete&quot;
+<strong>Impact</strong>: UX confusion, incomplete data
+<strong>Mitigatie</strong>: Explicit InterviewAgent met completion criteria</p>
+<hr>
+<h2 id="inconsistenties">Inconsistenties</h2>
+<h3 id="1-mixed-terminology">1. Mixed Terminology</h3>
+<ul>
+<li>&quot;Analysis Field&quot; vs &quot;Generated Field&quot; vs &quot;Analysis Data&quot;</li>
+<li>&quot;Gathered Data&quot; vs &quot;Intake Data&quot; vs &quot;User Data&quot;</li>
+<li><strong>Resolutie</strong>: Documenteer canonical terms</li>
+</ul>
+<h3 id="2-component-naming">2. Component Naming</h3>
+<ul>
+<li>Some: <code>ColorScheme</code> → <code>ColorSchemeChat</code></li>
+<li>Others: <code>ImageSet</code> → just <code>ImageSet</code></li>
+<li><strong>Resolutie</strong>: Enforce naming convention</li>
+</ul>
+<h3 id="3-event-routing">3. Event Routing</h3>
+<ul>
+<li>Session-specific vs Project-wide inconsistent</li>
+<li>Some use session, some skip to project</li>
+<li><strong>Resolutie</strong>: Clear routing decision tree</li>
+</ul>
+<h3 id="4-error-handling">4. Error Handling</h3>
+<ul>
+<li>Some services throw exceptions</li>
+<li>Some return null</li>
+<li>Some return error messages</li>
+<li><strong>Resolutie</strong>: Standardize error pattern</li>
+</ul>
+<h3 id="5-configuration-locations">5. Configuration Locations</h3>
+<ul>
+<li>Some config in code (AnalysisController defaults)</li>
+<li>Some in JSON files</li>
+<li>Some in prompt files</li>
+<li><strong>Resolutie</strong>: Config-driven defaults</li>
+</ul>
+<hr>
+<h2 id="technische-schuld">Technische Schuld</h2>
+<h3 id="laag-acceptable">Laag (Acceptable)</h3>
+<ol>
+<li>FileSystem storage (works for current scale)</li>
+<li>No caching (not bottleneck yet)</li>
+<li>String-based components (convention works)</li>
+</ol>
+<h3 id="medium-should-address">Medium (Should Address)</h3>
+<ol>
+<li><strong>Sprint 4 niet in chat</strong> - Grote feature gap</li>
+<li><strong>No dependency enforcement</strong> - Potential bugs</li>
+<li><strong>Mixed error handling</strong> - Inconsistent UX</li>
+<li><strong>Tool registration in code</strong> - Not hot-reloadable</li>
+</ol>
+<h3 id="hoog-critical">Hoog (Critical)</h3>
+<p>None identified. Architecture is solid.</p>
+<hr>
+<h2 id="kansen-voor-vereenvoudiging">Kansen voor Vereenvoudiging</h2>
+<h3 id="1-unified-tool-registration">1. Unified Tool Registration</h3>
+<p><strong>Huidig</strong>: Tools geregistreerd in extension methods
+<strong>Voorstel</strong>: JSON-based tool definitions
+<strong>Voordeel</strong>: Hot-reload, no recompile</p>
+<h3 id="2-dependency-engine">2. Dependency Engine</h3>
+<p><strong>Huidig</strong>: Dependencies in metadata, niet enforced
+<strong>Voorstel</strong>: Dependency resolver met auto-ordering
+<strong>Voordeel</strong>: Correctness, auto-regeneration</p>
+<h3 id="3-component-registry">3. Component Registry</h3>
+<p><strong>Huidig</strong>: String-based resolution
+<strong>Voorstel</strong>: Registry met type checking
+<strong>Voordeel</strong>: Compile-time safety</p>
+<h3 id="4-interview-state-machine">4. Interview State Machine</h3>
+<p><strong>Huidig</strong>: Implicit via LLM prompts
+<strong>Voorstel</strong>: Explicit InterviewAgent klasse
+<strong>Voordeel</strong>: Predictable, testable, completeness detection</p>
+<h3 id="5-unified-event-model">5. Unified Event Model</h3>
+<p><strong>Huidig</strong>: Different notifiers voor different events
+<strong>Voorstel</strong>: Single event bus met typed events
+<strong>Voordeel</strong>: Simplicity, extensibility</p>
+<hr>
+<h2 id="conclusie">Conclusie</h2>
+<p>Hasina framework is een <strong>solide, goed-gestructureerde implementatie</strong> van het conceptuele model. Key strengths:</p>
+<p>✅ <strong>Generieke core</strong> - Hasina is reusable
+✅ <strong>Clean separation</strong> - Domain logic in Brand2Boost layer
+✅ <strong>Config-driven</strong> - Fields, components, strategies via config
+✅ <strong>Event-driven UI</strong> - Real-time updates via SignalR
+✅ <strong>Tool system</strong> - Application functions, not specs
+✅ <strong>Two-tier data</strong> - Gathered vs Analysis clear
+✅ <strong>Background jobs</strong> - Async orchestration met Hangfire</p>
+<p><strong>Grootste Gap</strong>: Sprint 4 features niet toegankelijk via chat
+<strong>Grootste Kans</strong>: Interview Agent formaliseren
+<strong>Grootste Risico</strong>: Dependency management niet enforced</p>
+<p>Overall score: <strong>8/10</strong> - Excellent foundation, minor improvements possible</p>
+<hr>
+<p><strong>Document Version</strong>: 1.0
+<strong>Next Review</strong>: After implementing proposals
+<strong>Maintained By</strong>: Architecture team</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -14,10 +14,11 @@
     <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>llm;tokens;document-splitting;chunking;utilities;helpers;json-parser</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
     <PackageReference Include="SharpToken" Version="2.0.3" />
   </ItemGroup>
 </Project>
-

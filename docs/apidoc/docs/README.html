@@ -1,0 +1,696 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Hazina | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Hazina | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="hazina">Hazina</h1>
+
+<div class="TIP">
+<h5>Tip</h5>
+<p><strong>🚀 New to Hazina?</strong> Start with the <a href="quickstart.html">QUICKSTART Guide</a> for a comprehensive walkthrough.</p>
+<p>Learn how to:</p>
+<ul>
+<li>Build a RAG AI system with document indexing</li>
+<li>Swap LLM providers via configuration</li>
+<li>Connect to PostgreSQL/Supabase for production</li>
+<li>Add multi-layer reasoning with Neurochain</li>
+</ul>
+</div>
+<p>Hazina is an agentic framework for .NET that lets you build, run, and orchestrate AI agents over your own documents and source code. It combines retrieval‑augmented generation (RAG), tool calling, and safe file modifications so agents can search, read, reason, and update your repositories with context.</p>
+<p>It ships with:</p>
+<ul>
+<li>A set of core libraries (also packaged for NuGet) for embeddings, document stores, tool contexts, LLM client wrappers, and agent orchestration.</li>
+<li>A Windows desktop app to author Stores, Agents, and Flows, and to chat with them.</li>
+<li>Sample utilities (EmbeddingsViewer, Crosslink, PDFMaker, HtmlMockupGenerator) demonstrating the building blocks in practical scenarios.</li>
+</ul>
+<p>Made by Martien de Jong — <a href="https://martiendejong.nl">https://martiendejong.nl</a></p>
+<hr>
+<h2 id="what-this-tool-is-for">What This Tool Is For</h2>
+<p>Hazina helps you create autonomous or semi‑autonomous AI agents that can:</p>
+<ul>
+<li>Index your documents and code into lightweight, local embedding stores.</li>
+<li>Find the most relevant files for a prompt and feed them to an LLM.</li>
+<li>Call developer‑oriented tools (e.g., <code>git</code>, <code>dotnet</code>, <code>npm</code>), data tools (e.g., Google BigQuery), and custom tools.</li>
+<li>Modify files deterministically through a strongly typed “update store” response format.</li>
+<li>Collaborate via multi‑agent “flows,” where agents call other agents and exchange context.</li>
+</ul>
+<p>Common use cases:</p>
+<ul>
+<li>Code assistants that read/update local repositories with explicit write permissions per store.</li>
+<li>Knowledge assistants that answer questions using your docs, knowledge base, or customer data.</li>
+<li>Data helpers that explore and query datasets (e.g., BigQuery) and synthesize insights.</li>
+</ul>
+<hr>
+<h2 id="highlevel-architecture">High‑Level Architecture</h2>
+<p>Core concepts:</p>
+<ul>
+<li>Stores: A <code>DocumentStore</code> combines a text store (files), an embedding store (vectors), and a parts store (chunk index). Stores are named, can be read‑only or writable, and power RAG.</li>
+<li>Agents: A <code>HazinaAgent</code> pairs a <code>DocumentGenerator</code> (LLM + RAG) with a <code>ToolsContextBase</code> (tool calls). Agents are configured with a system prompt, a set of stores, and an allowed toolset.</li>
+<li>Flows: A <code>HazinaFlow</code> is a lightweight orchestration over agents. A flow describes which agents can be called in sequence or on demand.</li>
+<li>LLM Client: <code>ILLMClient</code> abstracts LLM providers. <code>Hazina.LLMs.OpenAI</code> provides an OpenAI implementation (chat, streaming, images, embeddings).</li>
+<li>Tools: Tool definitions (functions + typed parameters) the model can call during a conversation. Tools are attached to an agent via its <code>ToolsContextBase</code>.</li>
+</ul>
+<p>Key libraries and roles:</p>
+<ul>
+<li>Hazina.Classes: Shared contracts (chat messages, tool calls, typed responses like <code>UpdateStoreResponse</code>).</li>
+<li>Hazina.Helpers: Utilities (document splitting, partial JSON parser, token counting, checksum, store helpers).</li>
+<li>Hazina.EmbeddingStore: Embedding backends (file‑based and in‑memory) with a simple JSON format.</li>
+<li>Hazina.DocumentStore: <code>DocumentStore</code> composition + RAG helpers (relevant items, listing, move/remove, etc.).</li>
+<li>Hazina.LLMClient: The provider‑agnostic LLM interface.</li>
+<li>Hazina.OpenAI: Concrete OpenAI implementation (chat, streaming, images, embeddings) + response parsing.</li>
+<li>Hazina.LLMClientTools: Tool context abstraction and helper tools (e.g., <code>WebPageScraper</code>).</li>
+<li>Hazina.Generator: <code>DocumentGenerator</code> that assembles messages with relevant context and can safely apply file updates.</li>
+<li>Hazina.AgentFactory: Agent/store/flow creation, config format helpers, built‑in toolsets (read/write/list/relevancy, git/dotnet/npm/build, BigQuery, email, WordPress placeholder).</li>
+<li>Hazina.ChatShared: Shared WPF chat UI (<code>ChatWindow</code>) and <code>IChatController</code> abstraction so multiple apps can reuse a single chat experience.</li>
+</ul>
+<p>Applications:</p>
+<ul>
+<li>Windows: WPF app to author Stores/Agents/Flows (as text or cards) and chat with selected agent/flow.</li>
+<li>Hazina.ExplorerIntegration: WPF utility that integrates with Windows Explorer workflows to embed a folder and chat over its contents; uses the shared chat component.</li>
+<li>EmbeddingsViewer: WPF tool to inspect <code>.embed</code> files and list their keys.</li>
+<li>Crosslink: Console sample showing semantic matching of a CV to job postings using stores.</li>
+<li>PDFMaker, HtmlMockupGenerator: Samples that show how to compose Hazina components.</li>
+</ul>
+<hr>
+<h2 id="repository-structure-selected">Repository Structure (Selected)</h2>
+<ul>
+<li>Hazina.AgentFactory — Agent orchestration, config parsing, and built‑in tools.</li>
+<li>Hazina.Classes — Message/response models, tool metadata, image data.</li>
+<li>Hazina.DocumentStore — Store composition and RAG helpers.</li>
+<li>Hazina.EmbeddingStore — File/in‑memory embedding backends.</li>
+<li>Hazina.Generator — <code>DocumentGenerator</code> for responses and safe file updates.</li>
+<li>Hazina.Helpers — Splitting, token counting, partial JSON parsing, store helpers.</li>
+<li>Hazina.LLMClient — Provider‑agnostic LLM interface.</li>
+<li>Hazina.OpenAI — OpenAI implementation (chat, stream, images, embeddings).</li>
+<li>Hazina.LLMClientTools — Tool context and helper tools (e.g., web page scraping).</li>
+<li>Hazina.ChatShared — Shared WPF chat UI and controller abstraction used by Windows and ExplorerIntegration.</li>
+<li>Windows — WPF desktop authoring and chat app for Hazina.</li>
+<li>Hazina.ExplorerIntegration — Explorer‑focused WPF utility to embed and chat over a selected folder, using the shared chat window.</li>
+<li>EmbeddingsViewer — WPF embedding file inspector.</li>
+<li>Crosslink — Console sample for semantic matching.</li>
+</ul>
+<p>Local packages (for testing): <code>local_packages/*.nupkg</code> for the Hazina libraries.</p>
+<hr>
+<h2 id="configuration-stores-agents-flows">Configuration: Stores, Agents, Flows</h2>
+<p>Hazina supports both JSON and a simple <code>.hazina</code> text format for configuration. The Windows app can edit either format. At runtime, the loader auto‑detects the format.</p>
+<p>Examples:</p>
+<p>stores.hazina</p>
+<pre><code>Name: hazina_sourcecode
+Description: Alle projectcode, inclusief tests, CI/CD scripts, infra en devopsconfiguraties.
+Path: C:\Projects\Hazina
+FileFilters: *.cs,*.ts,*.js,*.py,*.sh,*.yml,*.yaml,*.json,*.csproj,*.sln,Dockerfile
+SubDirectory: 
+ExcludePattern: bin,obj,node_modules,dist
+</code></pre>
+<p>agents.hazina</p>
+<pre><code>Name: hazina_simpleagent
+Description:
+Prompt: Handle the instruction.
+Stores: hazina_sourcecode|False
+Functions: 
+CallsAgents: 
+CallsFlows: 
+ExplicitModify: False
+</code></pre>
+<p>Key fields:</p>
+<ul>
+<li>Store <code>Write</code> flag: controls whether an agent may call write/delete tools on that store.</li>
+<li>Functions: opt‑in to tool sets (e.g., <code>git</code>, <code>dotnet</code>, <code>npm</code>, <code>build</code>, <code>bigquery</code>, <code>email</code>, <code>wordpress</code>, <code>custom</code>).</li>
+<li>CallsAgents/CallsFlows: allow cross‑agent or flow invocations from within an agent.</li>
+</ul>
+<hr>
+<h2 id="how-responses-are-generated">How Responses Are Generated</h2>
+<p><code>DocumentGenerator</code> assembles the LLM message list as:</p>
+<ul>
+<li>Recent conversation history (sliding window).</li>
+<li>Retrieved relevant document snippets from the agent’s writable store plus any extra read‑only stores.</li>
+<li>A list of files in the writable store (optional, provides global context).</li>
+<li>The agent’s system prompt and the user input.</li>
+</ul>
+<p>Agents can request tool calls (e.g., list/read files, search by relevancy, run <code>git</code>/<code>dotnet</code>/<code>npm</code>, query BigQuery). The OpenAI wrapper handles tool streaming and merges tool outputs back into the conversation.</p>
+<p>For safe code changes, the model is asked to respond in the strongly typed <code>UpdateStoreResponse</code> shape. Hazina parses and applies:</p>
+<ul>
+<li>Modifications: write updated file contents.</li>
+<li>Deletions: remove files.</li>
+<li>Moves: rename files.</li>
+</ul>
+<p>This enforces full‑file writes and avoids “partial edits” that would yield broken code.</p>
+<hr>
+<h2 id="windows-app-wpf">Windows App (WPF)</h2>
+<p>The Windows app lets you:</p>
+<ul>
+<li>Open/edit/save Stores, Agents, and Flows (as text or card views).</li>
+<li>Start a chat window bound to an agent or flow.</li>
+<li>See interim tool output messages and final replies.</li>
+</ul>
+<p>Required settings:</p>
+<ul>
+<li>OpenAI API key and model selection are read from <code>appsettings.json</code> (see OpenAIConfig below).</li>
+<li>Some tools (e.g., BigQuery) require credentials (<code>googleaccount.json</code> next to the app executable).</li>
+</ul>
+<hr>
+<h2 id="openai-configuration">OpenAI Configuration</h2>
+<p><code>Hazina.OpenAI</code> reads configuration via <code>OpenAIConfig</code>:</p>
+<p>appsettings.json</p>
+<pre><code>{
+  &quot;OpenAI&quot;: {
+    &quot;ApiKey&quot;: &quot;sk-...&quot;,
+    &quot;Model&quot;: &quot;gpt-4.1&quot;,
+    &quot;ImageModel&quot;: &quot;gpt-image-1&quot;,
+    &quot;EmbeddingModel&quot;: &quot;text-embedding-ada-002&quot;,
+    &quot;LogPath&quot;: &quot;C:\\projects\\Hazina\\logs.txt&quot;
+  }
+}
+</code></pre>
+<p>Or construct <code>OpenAIConfig</code> in code and pass it to <code>OpenAIClientWrapper</code>.</p>
+<hr>
+<h2 id="using-hazina-in-your-code">Using Hazina In Your Code</h2>
+<p>Minimal agent from code:</p>
+<pre><code>var openAI = new OpenAIConfig(apiKey);
+var llm = new OpenAIClientWrapper(openAI);
+
+var store = new DocumentStore(
+    new EmbeddingFileStore(@&quot;C:\\myproj\\repo.embed&quot;, llm),
+    new TextFileStore(@&quot;C:\\myproj&quot;),
+    new DocumentPartFileStore(@&quot;C:\\myproj\\repo.parts&quot;),
+    llm);
+await store.UpdateEmbeddings();
+
+var baseMsgs = new List&lt;HazinaChatMessage&gt; {
+  new HazinaChatMessage { Role = HazinaMessageRole.System, Text = &quot;You are a helpful assistant.&quot; }
+};
+var generator = new DocumentGenerator(store, baseMsgs, llm, new List&lt;IDocumentStore&gt;());
+var tools = new ToolsContextBase();
+
+// Optional: add read tools for the store
+// (See AgentFactory.AddReadTools for reference or use AgentFactory directly)
+
+var agent = new HazinaAgent(&quot;assistant&quot;, generator, tools);
+var reply = await agent.Generator.GetResponse(&quot;What files relate to authentication?&quot;, default);
+</code></pre>
+<p>Using configuration files via AgentManager:</p>
+<pre><code>var mgr = new AgentManager(
+  storesJsonPath: &quot;stores.hazina&quot;,
+  agentsJsonPath: &quot;agents.hazina&quot;,
+  flowsJsonPath:  &quot;flows.hazina&quot;,
+  openAIApiKey: apiKey,
+  logFilePath:   &quot;C:\\logs\\hazina.log&quot;);
+await mgr.LoadStoresAndAgents();
+var response = await mgr.SendMessage(&quot;Explain how build works&quot;, default, agentName: &quot;hazina_simpleagent&quot;);
+</code></pre>
+<hr>
+<h2 id="nuget-packages-main">NuGet Packages (Main)</h2>
+<p>The following libraries are intended for packaging and reuse in Visual Studio projects:</p>
+<ul>
+<li>Hazina.Classes — Shared contracts and types.</li>
+<li>Hazina.Helpers — Generic helpers and parsing utilities.</li>
+<li>Hazina.EmbeddingStore — Pluggable embedding backends.</li>
+<li>Hazina.DocumentStore — Store composition and RAG helpers.</li>
+<li>Hazina.LLMClient — Provider abstraction.</li>
+<li>Hazina.OpenAI — OpenAI client implementation.</li>
+<li>Hazina.HuggingFace — HuggingFace client implementation.</li>
+<li>Hazina.LLMClientTools — Tooling context and helpers.</li>
+<li>Hazina.Generator — Response generation and update‑store pipeline.</li>
+<li>Hazina.AgentFactory — Agent/flow creation and built‑in tools.</li>
+</ul>
+<p>All packages follow synchronized semantic versioning. See <a href="NUGET-VERSIONING.html">NUGET-VERSIONING.md</a> for details on publishing and version management.</p>
+<p>Local builds of these packages exist under <code>local_packages/</code>.</p>
+<hr>
+<h2 id="proposal-radically-improve-quality-and-usability">Proposal: Radically Improve Quality and Usability</h2>
+<p>Focus areas and actions per main library (NuGet packages):</p>
+<p>Hazina.Classes</p>
+<ul>
+<li>Stabilize public API with XML docs and examples.</li>
+<li>Add analyzers and nullable annotations consistently across types.</li>
+<li>Provide consistent naming (HazinaChatMessage, HazinaChatTool, etc.).</li>
+</ul>
+<p>Hazina.Helpers</p>
+<ul>
+<li>Extract token counting and parsing into cohesive namespaces.</li>
+<li>Harden <code>PartialJsonParser</code> with formal streaming/JSON repair strategies and tests.</li>
+<li>Add benchmarks for splitter/token counter to tune defaults.</li>
+</ul>
+<p>Hazina.Store.EmbeddingStore</p>
+<ul>
+<li>Unify file format, add schema version, and safe persistence (temp + atomic replace).</li>
+<li>Add compaction and integrity verification commands.</li>
+<li>Expose asynchronous batch APIs for indexing.</li>
+</ul>
+<p>Hazina.Store.DocumentStore</p>
+<ul>
+<li>Enforce consistent path normalization, case rules, and separators.</li>
+<li>Add transactional update API for multi‑file edits and rollbacks on failure.</li>
+<li>Provide adapters for alternative storage (e.g., SQLite/Faiss/PGVector via plugin pattern).</li>
+</ul>
+<p>Hazina.LLMs.Client</p>
+<ul>
+<li>Keep provider‑neutral with explicit capabilities (chat, stream, tools, images, embeddings).</li>
+<li>Add retry/backoff and rate‑limit policies in the abstraction (pluggable strategies).</li>
+<li>Introduce cancellation guidance and timeouts per call.</li>
+</ul>
+<p>Hazina.LLMs.OpenAI</p>
+<ul>
+<li>Centralize model configuration and safety prompts per operation.</li>
+<li>Improve streaming tool‑call assembly and error surfaces (clear exceptions when partial tool data is malformed).</li>
+<li>Add structured logging hooks, correlation IDs, and redaction utilities.</li>
+</ul>
+<p>Hazina.LLMs.Tools</p>
+<ul>
+<li>Formalize a Tool Provider pattern to register tool sets (fs, git, dotnet, npm, http, webscrape, email, bigquery) with discovery and capability flags.</li>
+<li>Add input validation and guardrails for each tool (timeouts, allowlists, working dirs).</li>
+<li>Provide mocks/fakes for offline tests.</li>
+</ul>
+<p>Hazina.Generator</p>
+<ul>
+<li>Refactor message assembly pipeline into pluggable “message enrichers” (history window, relevant snippets, file list, extra stores) with ordering and limits.</li>
+<li>Expose safe policies for UpdateStore (e.g., max file size, extension allowlist, diff preview mode).</li>
+<li>Add optional dry‑run and patch preview generation.</li>
+</ul>
+<p>Hazina.AgentFactory</p>
+<ul>
+<li>Separate config parsing from construction; expose typed validation with diagnostics.</li>
+<li>Remove hardcoded paths; inject <code>IClock</code>, <code>IFileSystem</code> to ease testing.</li>
+<li>Make tool sets explicitly opt‑in by name and document them in generated schema.</li>
+</ul>
+<p>Cross‑cutting</p>
+<ul>
+<li>Add unit and integration tests throughout; create small sample repos for repeatable tests.</li>
+<li>Add CI (build, test, package) and publish signed NuGet packages.</li>
+<li>Provide sandboxes and safety defaults (no write tools unless explicitly configured).</li>
+<li>Write end‑to‑end samples: “Code Assistant,” “Docs Q&amp;A,” “Data Analyst with BigQuery.”</li>
+</ul>
+<hr>
+<h2 id="whats-needed-for-vs-developer-usability">What’s Needed For VS Developer Usability</h2>
+<p>To make Hazina drop‑in for typical Visual Studio projects:</p>
+<ul>
+<li>Publish NuGet packages with semantic versioning and clear release notes.</li>
+<li>Provide QuickStart templates/snippets for common scenarios (one‑agent, multi‑agent flow, RAG only).</li>
+<li>Ship a minimal <code>AgentManager</code> bootstrapper with JSON config support out‑of‑the‑box.</li>
+<li>Document <code>appsettings.json</code> for OpenAIConfig and environment variable overrides.</li>
+<li>Provide a sample <code>stores.hazina</code>/<code>agents.hazina</code> for a standard .NET solution.</li>
+<li>Offer a “no‑write by default” configuration with clear steps to enable safe writes.</li>
+<li>Add a <code>Hazina.Tools.FileSystem</code> module with explicit root allowlists and path guards for Windows/Linux.</li>
+<li>Ensure all public APIs target <code>net8.0</code> and consider <code>netstandard2.1</code> where feasible for wider reuse.</li>
+<li>Provide a Visual Studio “Connected Service” or item template for adding Hazina quickly (optional).</li>
+</ul>
+<hr>
+<h2 id="task-list-status-todo">Task List (Status: TODO)</h2>
+<ul>
+<li>TODO Stabilize and document public APIs across all NuGet libraries.</li>
+<li>TODO Add XML docs and samples to each package (Classes, Helpers, EmbeddingStore, DocumentStore, LLMClient, OpenAI, LLMClientTools, Generator, AgentFactory).</li>
+<li>TODO Introduce analyzers, nullable reference types, and consistent coding style (EditorConfig).</li>
+<li>TODO Refactor <code>PartialJsonParser</code> with robust streaming JSON repair and test coverage.</li>
+<li>TODO Add transactional update and dry‑run support to <code>DocumentStore</code> and <code>DocumentGenerator</code>.</li>
+<li>TODO Implement atomic file writes and integrity checks in <code>EmbeddingFileStore</code> and <code>DocumentPartFileStore</code>.</li>
+<li>TODO Extract tool sets into a formal Tool Provider with validation/guards and tests.</li>
+<li>TODO Remove hardcoded paths; inject file system/clock abstractions for testability.</li>
+<li>TODO Add retry/backoff policies and timeouts at the <code>ILLMClient</code> level.</li>
+<li>TODO Improve streaming tool‑call assembly and error reporting in <code>Hazina.LLMs.OpenAI</code>.</li>
+<li>TODO Add unit/integration tests with small sample repositories and BigQuery mocks.</li>
+<li>TODO Set up CI (build, test, pack, sign) and publish to NuGet.</li>
+<li>TODO Provide QuickStart templates and minimal examples for VS users.</li>
+<li>TODO Document configuration formats and generate JSON schema for Stores/Agents/Flows.</li>
+<li>TODO Add safety defaults: read‑only by default, explicit write capability per store, size/extension limits.</li>
+<li>TODO Provide migration guides and versioned release notes.</li>
+<li>TODO Add additional provider adapters (optional): Azure OpenAI, Ollama/local.</li>
+</ul>
+<hr>
+<h2 id="license">License</h2>
+<p>Add an OSS license of your choice if you plan to publish. If this remains private, clarify usage restrictions in your organization.</p>
+<hr>
+<h2 id="consumer-projects-and-multi-repository-setup">Consumer Projects and Multi-Repository Setup</h2>
+<p>This Hazina repository is part of a multi-repository development environment. Consumer projects reference these libraries either as NuGet packages (production) or as local project references (development).</p>
+<h3 id="known-consumer-projects">Known Consumer Projects</h3>
+<h4 id="client-manager-hazinastoreapi">Client Manager (HazinaStoreAPI)</h4>
+<ul>
+<li><strong>Location</strong>: <code>C:\projects\client-manager</code></li>
+<li><strong>Purpose</strong>: .NET 8 API application for AI-powered content generation and management</li>
+<li><strong>Integration</strong>: Uses Hazina LLM libraries (Classes, Helpers, Client, OpenAI, Anthropic, etc.) along with HazinaTools libraries</li>
+</ul>
+<p>The client-manager project demonstrates two integration patterns:</p>
+<ol>
+<li><p><strong>Production Pattern</strong> (<code>ClientManager.sln</code>):</p>
+<ul>
+<li>Uses published NuGet packages</li>
+<li>Suitable for CI/CD and production deployments</li>
+<li>Cannot step through library source code when debugging</li>
+</ul>
+</li>
+<li><p><strong>Development Pattern</strong> (<code>ClientManager.local.sln</code>):</p>
+<ul>
+<li>Uses local project references to this repository</li>
+<li>Full debugging support with symbols</li>
+<li>Ideal for library development and troubleshooting</li>
+</ul>
+</li>
+</ol>
+<h3 id="local-development-workflow">Local Development Workflow</h3>
+<p>When working on Hazina libraries with a consumer project:</p>
+<ol>
+<li><p><strong>Directory Structure</strong>:</p>
+<pre><code>C:\projects\
+├── devgpt\              (this repository)
+├── hazina\         (companion tools repository)
+└── client-manager\      (consumer API project)
+</code></pre>
+</li>
+<li><p><strong>Making Changes</strong>:</p>
+<ul>
+<li>Make changes to Hazina libraries in <code>C:\projects\devgpt</code></li>
+<li>Open consumer project using its <code>.local.sln</code> file</li>
+<li>Rebuild the consumer solution - changes are immediately reflected</li>
+<li>Debug with full symbol support</li>
+</ul>
+</li>
+<li><p><strong>Publishing Updates</strong>:</p>
+<pre><code class="lang-bash">cd C:\projects\devgpt
+# Update version numbers in .csproj files
+./bump-and-publish.ps1  # Windows
+</code></pre>
+<p>Then update consumer project's <code>packages.config</code> or <code>.csproj</code> to use new versions.</p>
+</li>
+</ol>
+<h3 id="debugging-symbol-loading">Debugging Symbol Loading</h3>
+<p><strong>Important</strong>: Consumer projects must use the <code>.local.sln</code> solution file to debug into Hazina library code. The standard <code>.sln</code> file references NuGet packages which don't include full debugging symbols or source code.</p>
+<p><strong>Symptom</strong>: &quot;Symbols not loaded&quot; message when trying to step into Hazina methods during debugging.</p>
+<p><strong>Solution</strong>: Open the consumer project's <code>.local.sln</code> file in Visual Studio, rebuild, and start debugging.</p>
+<h3 id="related-repositories">Related Repositories</h3>
+<ul>
+<li><strong>Hazina</strong> (this repo): Core agentic framework, LLM clients, stores, and generator</li>
+<li><strong>HazinaTools</strong>: Content generation services, BigQuery integration, WordPress, etc.</li>
+<li><strong>Client Manager</strong>: Consumer API that integrates both Hazina and HazinaTools</li>
+</ul>
+<p>See <code>C:\projects\client-manager\README.md</code> for detailed documentation on the multi-repository development workflow.</p>
+<h1 id="hazinatools">HazinaTools</h1>
+<p>A collection of .NET libraries for building AI-powered content generation tools.</p>
+<h2 id="overview">Overview</h2>
+<p>HazinaTools is a comprehensive suite of libraries designed to support AI-driven content generation, text extraction, and various service integrations. All projects are published as NuGet packages for easy integration into other applications.</p>
+<h2 id="projects">Projects</h2>
+<h3 id="common-libraries">Common Libraries</h3>
+<ul>
+<li><strong>Hazina.Tools.Common.Models</strong> - Shared data models and DTOs</li>
+<li><strong>Hazina.Tools.Common.Utilities</strong> - Common utilities and extensions</li>
+<li><strong>Hazina.Tools.Common.Infrastructure.AspNetCore</strong> - ASP.NET Core infrastructure components</li>
+</ul>
+<h3 id="core-libraries">Core Libraries</h3>
+<ul>
+<li><strong>Hazina.Tools.Core</strong> - Core functionality</li>
+<li><strong>Hazina.Tools.Models</strong> - Domain models</li>
+<li><strong>Hazina.Tools.Data</strong> - Data access layer</li>
+<li><strong>Hazina.Tools.AI.Agents</strong> - AI agent implementations</li>
+</ul>
+<h3 id="services">Services</h3>
+<ul>
+<li><strong>Hazina.Tools.Services</strong> - Main service orchestration</li>
+<li><strong>Hazina.Tools.Services.BigQuery</strong> - Google BigQuery integration</li>
+<li><strong>Hazina.Tools.Services.Chat</strong> - Chat services</li>
+<li><strong>Hazina.Tools.Services.ContentRetrieval</strong> - Content retrieval services</li>
+<li><strong>Hazina.Tools.Services.Embeddings</strong> - Vector embeddings services</li>
+<li><strong>Hazina.Tools.Services.FileOps</strong> - File operations</li>
+<li><strong>Hazina.Tools.Services.Intake</strong> - Content intake services</li>
+<li><strong>Hazina.Tools.Services.Prompts</strong> - Prompt management</li>
+<li><strong>Hazina.Tools.Services.Social</strong> - Social media integrations</li>
+<li><strong>Hazina.Tools.Services.Store</strong> - Storage services</li>
+<li><strong>Hazina.Tools.Services.Web</strong> - Web scraping and interaction</li>
+<li><strong>Hazina.Tools.Services.WordPress</strong> - WordPress integration</li>
+</ul>
+<h3 id="text-extraction">Text Extraction</h3>
+<ul>
+<li><strong>Hazina.Tools.TextExtraction</strong> - Text extraction from various file formats (PDF, Word, Excel, images)</li>
+</ul>
+<h2 id="building-the-solution">Building the Solution</h2>
+<pre><code class="lang-bash"># Restore dependencies
+dotnet restore HazinaTools.sln
+
+# Build all projects
+dotnet build HazinaTools.sln
+
+# Build in Release mode
+dotnet build HazinaTools.sln -c Release
+</code></pre>
+<h2 id="publishing-nuget-packages">Publishing NuGet Packages</h2>
+<p>All projects are configured to build NuGet packages. The publish script automatically publishes to NuGet.org if you have set the API key.</p>
+<h3 id="setup-one-time">Setup (One-time)</h3>
+<p>Set your NuGet API key as an environment variable:</p>
+<p><strong>Windows (PowerShell):</strong></p>
+<pre><code class="lang-powershell">setx NUGET_API_KEY &quot;your-api-key-here&quot;
+</code></pre>
+<p><strong>Linux/macOS:</strong></p>
+<pre><code class="lang-bash">export NUGET_API_KEY=&quot;your-api-key-here&quot;
+# Add to ~/.bashrc or ~/.zshrc for persistence
+echo 'export NUGET_API_KEY=&quot;your-api-key-here&quot;' &gt;&gt; ~/.bashrc
+</code></pre>
+<p>Get your API key from: <a href="https://www.nuget.org/account/apikeys">https://www.nuget.org/account/apikeys</a></p>
+<h3 id="usage">Usage</h3>
+<p><strong>Windows (PowerShell):</strong></p>
+<pre><code class="lang-powershell">./publish-nuget.ps1
+</code></pre>
+<p><strong>Linux/macOS (Bash):</strong></p>
+<pre><code class="lang-bash">./publish-nuget.sh
+</code></pre>
+<p>The script will:</p>
+<ol>
+<li>Build all projects in Release mode</li>
+<li>Create NuGet packages in <code>./nupkgs</code> directory</li>
+<li><strong>Automatically publish to NuGet.org</strong> (if NUGET_API_KEY is set)</li>
+</ol>
+<p>If the API key is not set, packages are built but not published.</p>
+<h2 id="for-ai-assistants--llms">For AI Assistants / LLMs</h2>
+<p>If you're an AI assistant working on this codebase, please read <a href="LLM-INSTRUCTIONS.html">LLM-INSTRUCTIONS.md</a> for important guidelines about:</p>
+<ul>
+<li>NuGet package publishing requirements</li>
+<li>Project structure conventions</li>
+<li>Version management</li>
+<li>Testing procedures</li>
+</ul>
+<h2 id="requirements">Requirements</h2>
+<ul>
+<li>.NET 8.0 SDK or later</li>
+<li>Windows (projects target net8.0-windows)</li>
+</ul>
+<h2 id="license-1">License</h2>
+<p>[Specify your license here]</p>
+<hr>
+<h2 id="consumer-projects-and-multi-repository-setup-1">Consumer Projects and Multi-Repository Setup</h2>
+<p>This HazinaTools repository is part of a multi-repository development environment. Consumer projects reference these libraries either as NuGet packages (production) or as local project references (development).</p>
+<h3 id="known-consumer-projects-1">Known Consumer Projects</h3>
+<h4 id="client-manager-hazinastoreapi-1">Client Manager (HazinaStoreAPI)</h4>
+<ul>
+<li><strong>Location</strong>: <code>C:\projects\client-manager</code></li>
+<li><strong>Purpose</strong>: .NET 8 API application for AI-powered content generation and management</li>
+<li><strong>Integration</strong>: Uses all HazinaTools services (Store, Chat, BigQuery, WordPress, etc.) along with Hazina LLM libraries</li>
+</ul>
+<p>The client-manager project demonstrates two integration patterns:</p>
+<ol>
+<li><p><strong>Production Pattern</strong> (<code>ClientManager.sln</code>):</p>
+<ul>
+<li>Uses published NuGet packages (version 1.0.16)</li>
+<li>Suitable for CI/CD and production deployments</li>
+<li>Cannot step through library source code when debugging</li>
+</ul>
+</li>
+<li><p><strong>Development Pattern</strong> (<code>ClientManager.local.sln</code>):</p>
+<ul>
+<li>Uses local project references to this repository</li>
+<li>Full debugging support with symbols</li>
+<li>Ideal for library development and troubleshooting</li>
+</ul>
+</li>
+</ol>
+<h3 id="local-development-workflow-1">Local Development Workflow</h3>
+<p>When working on HazinaTools libraries with a consumer project:</p>
+<ol>
+<li><p><strong>Directory Structure</strong>:</p>
+<pre><code>C:\projects\
+├── devgpt\              (companion LLM framework)
+├── hazina\         (this repository)
+└── client-manager\      (consumer API project)
+</code></pre>
+</li>
+<li><p><strong>Making Changes</strong>:</p>
+<ul>
+<li>Make changes to HazinaTools libraries in <code>C:\projects\hazina</code></li>
+<li>Open consumer project using its <code>.local.sln</code> file</li>
+<li>Rebuild the consumer solution - changes are immediately reflected</li>
+<li>Debug with full symbol support</li>
+</ul>
+</li>
+<li><p><strong>Publishing Updates</strong>:</p>
+<pre><code class="lang-bash">cd C:\projects\hazina
+# Update version numbers in .csproj files
+./publish-nuget.ps1  # Windows
+# or
+./publish-nuget.sh   # Linux/macOS
+</code></pre>
+<p>Then update consumer project's <code>.csproj</code> to use new package versions.</p>
+</li>
+</ol>
+<h3 id="project-reference-structure">Project Reference Structure</h3>
+<p>When using local development mode, the consumer project references all HazinaTools projects:</p>
+<p><strong>Common Libraries</strong>:</p>
+<ul>
+<li>Hazina.Tools.Common.Infrastructure.AspNetCore</li>
+<li>Hazina.Tools.Common.Models</li>
+</ul>
+<p><strong>Core Libraries</strong>:</p>
+<ul>
+<li>Hazina.Tools.Core</li>
+<li>Hazina.Tools.Models</li>
+<li>Hazina.Tools.Data</li>
+<li>Hazina.Tools.AI.Agents</li>
+</ul>
+<p><strong>Service Libraries</strong>:</p>
+<ul>
+<li>Hazina.Tools.Services (main orchestration)</li>
+<li>Hazina.Tools.Services.BigQuery</li>
+<li>Hazina.Tools.Services.Chat</li>
+<li>Hazina.Tools.Services.ContentRetrieval</li>
+<li>Hazina.Tools.Services.FileOps</li>
+<li>Hazina.Tools.Services.Intake</li>
+<li>Hazina.Tools.Services.Prompts</li>
+<li>Hazina.Tools.Services.Social</li>
+<li>Hazina.Tools.Services.Store</li>
+<li>Hazina.Tools.Services.Web</li>
+<li>Hazina.Tools.Services.WordPress</li>
+</ul>
+<p>All these projects are referenced with <code>.local.csproj</code> variants in the consumer's local solution.</p>
+<h3 id="debugging-symbol-loading-issue">Debugging Symbol Loading Issue</h3>
+<p><strong>Important</strong>: Consumer projects must use the <code>.local.sln</code> solution file to debug into HazinaTools library code.</p>
+<p><strong>Problem</strong>: When debugging HazinaStoreAPI using <code>ClientManager.sln</code>, symbols for <code>Hazina.Tools.Services.Store</code> and other libraries don't load.</p>
+<p><strong>Solution</strong>:</p>
+<ol>
+<li>Close the standard solution in Visual Studio</li>
+<li>Open <code>C:\projects\client-manager\ClientManager.local.sln</code></li>
+<li>Rebuild the entire solution to ensure all local projects build with symbols</li>
+<li>Start debugging - symbols will now load properly</li>
+</ol>
+<p><strong>Why</strong>:</p>
+<ul>
+<li>Standard <code>.sln</code> files reference compiled NuGet package DLLs without source code or full debugging symbols</li>
+<li><code>.local.sln</code> files reference actual source code projects with full PDB symbols</li>
+<li>The <code>.local</code> solution pattern was specifically created for local development with debugging support</li>
+</ul>
+<h3 id="related-repositories-1">Related Repositories</h3>
+<ul>
+<li><strong>Hazina</strong>: Core agentic framework, LLM clients, stores, and generator (<code>C:\projects\devgpt</code>)</li>
+<li><strong>HazinaTools</strong> (this repo): Content generation services and integrations</li>
+<li><strong>Client Manager</strong>: Consumer API that integrates both Hazina and HazinaTools (<code>C:\projects\client-manager</code>)</li>
+</ul>
+<p>See <code>C:\projects\client-manager\README.md</code> for detailed documentation on the multi-repository development workflow.</p>
+<h3 id="for-ai-assistants-working-on-this-codebase">For AI Assistants Working on This Codebase</h3>
+<p>When working with consumer projects:</p>
+<ul>
+<li><strong>Always check all three repository locations</strong> (<code>C:\projects\devgpt</code>, <code>C:\projects\hazina</code>, <code>C:\projects\client-manager</code>)</li>
+<li><strong>Use the <code>.local.sln</code> files</strong> for development and debugging</li>
+<li><strong>Understand the dual solution pattern</strong>: standard for production, local for development</li>
+<li><strong>Reference the LLM-INSTRUCTIONS.md</strong> in this repository for NuGet publishing guidelines</li>
+<li><strong>Test changes locally</strong> before publishing new package versions</li>
+</ul>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

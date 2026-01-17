@@ -1,0 +1,368 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Hazina Logging Guide | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Hazina Logging Guide | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="hazina-logging-guide">Hazina Logging Guide</h1>
+
+<h2 id="overview">Overview</h2>
+<p>Hazina uses <code>Microsoft.Extensions.Logging</code> for structured logging across all components. This guide establishes patterns for consistent, production-ready logging.</p>
+<hr>
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="1-add-package-reference">1. Add Package Reference</h3>
+<pre><code class="lang-xml">&lt;PackageReference Include=&quot;Microsoft.Extensions.Logging.Abstractions&quot; Version=&quot;9.0.0&quot; /&gt;
+</code></pre>
+<h3 id="2-add-logger-to-class">2. Add Logger to Class</h3>
+<pre><code class="lang-csharp">using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
+public class MyService
+{
+    private readonly ILogger&lt;MyService&gt; _logger;
+
+    // Optional logger with NullLogger fallback (backward compatible)
+    public MyService(ILogger&lt;MyService&gt;? logger = null)
+    {
+        _logger = logger ?? NullLogger&lt;MyService&gt;.Instance;
+    }
+}
+</code></pre>
+<h3 id="3-log-messages">3. Log Messages</h3>
+<pre><code class="lang-csharp">_logger.LogDebug(&quot;Processing item: {ItemId}&quot;, itemId);
+_logger.LogInformation(&quot;Request completed in {Duration}ms&quot;, duration);
+_logger.LogWarning(&quot;Rate limit approaching: {Usage}%&quot;, usage);
+_logger.LogError(exception, &quot;Failed to process: {Message}&quot;, message);
+</code></pre>
+<hr>
+<h2 id="log-levels">Log Levels</h2>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Usage</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Trace</code></td>
+<td>Fine-grained debugging</td>
+<td>Method entry/exit, loop iterations</td>
+</tr>
+<tr>
+<td><code>Debug</code></td>
+<td>Development diagnostics</td>
+<td>Tool calls, intermediate results</td>
+</tr>
+<tr>
+<td><code>Information</code></td>
+<td>Normal operations</td>
+<td>Requests completed, operations started</td>
+</tr>
+<tr>
+<td><code>Warning</code></td>
+<td>Unexpected but handled</td>
+<td>Budget alerts, retry attempts</td>
+</tr>
+<tr>
+<td><code>Error</code></td>
+<td>Failures requiring attention</td>
+<td>API failures, validation errors</td>
+</tr>
+<tr>
+<td><code>Critical</code></td>
+<td>System-wide failures</td>
+<td>Startup failures, data corruption</td>
+</tr>
+</tbody>
+</table>
+<h3 id="decision-tree">Decision Tree</h3>
+<pre><code>Is it a failure?
+├── Yes → Is it recoverable?
+│   ├── Yes → Warning (if user action needed) or Debug (if auto-recovered)
+│   └── No → Error (component failure) or Critical (system failure)
+└── No → Is it useful for production monitoring?
+    ├── Yes → Information
+    └── No → Debug or Trace
+</code></pre>
+<hr>
+<h2 id="structured-logging-best-practices">Structured Logging Best Practices</h2>
+<h3 id="do-use-message-templates">DO: Use Message Templates</h3>
+<pre><code class="lang-csharp">// GOOD - Structured, searchable
+_logger.LogInformation(&quot;User {UserId} created order {OrderId}&quot;, userId, orderId);
+
+// BAD - String interpolation breaks structure
+_logger.LogInformation($&quot;User {userId} created order {orderId}&quot;);
+</code></pre>
+<h3 id="do-use-semantic-property-names">DO: Use Semantic Property Names</h3>
+<pre><code class="lang-csharp">// GOOD - Clear, consistent names
+_logger.LogWarning(&quot;Budget Alert: {Message} - Provider: {Provider}, Cost: ${Cost:F2}&quot;,
+    alert.Message, provider, cost);
+
+// BAD - Generic names
+_logger.LogWarning(&quot;Alert: {p1} - {p2}, {p3}&quot;, alert.Message, provider, cost);
+</code></pre>
+<h3 id="do-include-context">DO: Include Context</h3>
+<pre><code class="lang-csharp">// GOOD - Includes correlation ID
+_logger.LogError(ex, &quot;Request {RequestId} failed for user {UserId}&quot;, requestId, userId);
+
+// BAD - No context for debugging
+_logger.LogError(ex, &quot;Request failed&quot;);
+</code></pre>
+<h3 id="dont-log-sensitive-data">DON'T: Log Sensitive Data</h3>
+<pre><code class="lang-csharp">// GOOD - Redacted
+_logger.LogDebug(&quot;Authenticating user {UserId}&quot;, userId);
+
+// BAD - Exposes credentials
+_logger.LogDebug(&quot;Authenticating with password {Password}&quot;, password);
+</code></pre>
+<hr>
+<h2 id="migration-from-consolewriteline">Migration from Console.WriteLine</h2>
+<h3 id="pattern-1-debug-output">Pattern 1: Debug Output</h3>
+<pre><code class="lang-csharp">// Before
+Console.WriteLine($&quot;[Debug] Processing {itemCount} items&quot;);
+
+// After
+_logger.LogDebug(&quot;Processing {ItemCount} items&quot;, itemCount);
+</code></pre>
+<h3 id="pattern-2-error-reporting">Pattern 2: Error Reporting</h3>
+<pre><code class="lang-csharp">// Before
+Console.WriteLine($&quot;Error: {ex.Message}&quot;);
+Console.WriteLine(ex.StackTrace);
+
+// After
+_logger.LogError(ex, &quot;Operation failed: {Message}&quot;, ex.Message);
+</code></pre>
+<h3 id="pattern-3-progress-updates">Pattern 3: Progress Updates</h3>
+<pre><code class="lang-csharp">// Before
+Console.WriteLine($&quot;Progress: {percent}%&quot;);
+
+// After
+_logger.LogInformation(&quot;Progress: {Percent}%&quot;, percent);
+// Or for frequent updates:
+_logger.LogTrace(&quot;Progress: {Percent}%&quot;, percent);
+</code></pre>
+<h3 id="pattern-4-alertswarnings">Pattern 4: Alerts/Warnings</h3>
+<pre><code class="lang-csharp">// Before
+Console.WriteLine($&quot;[WARNING] Budget at {usage}%!&quot;);
+
+// After
+_logger.LogWarning(&quot;Budget utilization at {Usage}%&quot;, usage);
+</code></pre>
+<hr>
+<h2 id="common-scenarios">Common Scenarios</h2>
+<h3 id="provider-operations">Provider Operations</h3>
+<pre><code class="lang-csharp">_logger.LogInformation(&quot;Selecting provider {Provider} using strategy {Strategy}&quot;,
+    providerName, strategy);
+
+_logger.LogWarning(&quot;Provider {Provider} unhealthy, failing over to {FallbackProvider}&quot;,
+    primaryProvider, fallbackProvider);
+
+_logger.LogError(ex, &quot;Provider {Provider} request failed after {Retries} retries&quot;,
+    providerName, retryCount);
+</code></pre>
+<h3 id="tool-execution">Tool Execution</h3>
+<pre><code class="lang-csharp">_logger.LogDebug(&quot;Executing tool {ToolName} with arguments: {Arguments}&quot;,
+    tool.Name, JsonSerializer.Serialize(args));
+
+_logger.LogDebug(&quot;Tool {ToolName} completed in {Duration}ms with result length {Length}&quot;,
+    tool.Name, duration, result.Length);
+</code></pre>
+<h3 id="cost-tracking">Cost Tracking</h3>
+<pre><code class="lang-csharp">_logger.LogInformation(&quot;Request cost: ${Cost:F6} ({InputTokens} input, {OutputTokens} output)&quot;,
+    cost, inputTokens, outputTokens);
+
+_logger.LogWarning(&quot;Budget alert: {AlertMessage} - Current spend: ${CurrentCost:F2} ({Utilization:F1}%)&quot;,
+    alertMessage, currentCost, utilization);
+</code></pre>
+<hr>
+<h2 id="configuration">Configuration</h2>
+<h3 id="in-aspnet-core">In ASP.NET Core</h3>
+<pre><code class="lang-json">{
+  &quot;Logging&quot;: {
+    &quot;LogLevel&quot;: {
+      &quot;Default&quot;: &quot;Information&quot;,
+      &quot;Hazina&quot;: &quot;Debug&quot;,
+      &quot;Hazina.AI.Providers&quot;: &quot;Information&quot;
+    }
+  }
+}
+</code></pre>
+<h3 id="in-console-apps">In Console Apps</h3>
+<pre><code class="lang-csharp">using var loggerFactory = LoggerFactory.Create(builder =&gt;
+{
+    builder
+        .SetMinimumLevel(LogLevel.Debug)
+        .AddConsole();
+});
+
+var logger = loggerFactory.CreateLogger&lt;MyService&gt;();
+var service = new MyService(logger);
+</code></pre>
+<hr>
+<h2 id="files-requiring-migration">Files Requiring Migration</h2>
+<p>The following production code files still use <code>Console.Write</code>:</p>
+<h3 id="high-priority-core-components">High Priority (Core Components)</h3>
+<ul>
+<li>[ ] <code>AgentFactory.cs</code> - Error handling uses Console</li>
+<li>[ ] <code>AgentManager.cs</code> - Status output uses Console</li>
+<li>[ ] <code>ChatService.cs</code> - Various debug output</li>
+<li>[ ] <code>ChatStreamService.cs</code> - Stream progress</li>
+<li>[ ] <code>EmbeddingsService.cs</code> - Processing updates</li>
+</ul>
+<h3 id="medium-priority-infrastructure">Medium Priority (Infrastructure)</h3>
+<ul>
+<li>[ ] <code>StoreProvider.cs</code> - Configuration output</li>
+<li>[ ] <code>SqliteStoreProvider.cs</code> - Initialization messages</li>
+<li>[ ] <code>DocumentRepository.cs</code> - CRUD operations</li>
+</ul>
+<h3 id="low-priority-can-keep-console">Low Priority (Can Keep Console)</h3>
+<ul>
+<li>Example files (<code>*Example*.cs</code>) - Appropriate for demos</li>
+<li>Migration CLI tools - Console output is expected</li>
+<li>Test utilities - Console is appropriate</li>
+</ul>
+<hr>
+<h2 id="testing-with-loggers">Testing with Loggers</h2>
+<pre><code class="lang-csharp">public class MyServiceTests
+{
+    [Fact]
+    public void MyService_LogsExpectedMessages()
+    {
+        // Arrange
+        var mockLogger = new Mock&lt;ILogger&lt;MyService&gt;&gt;();
+        var service = new MyService(mockLogger.Object);
+
+        // Act
+        service.DoSomething();
+
+        // Assert
+        mockLogger.Verify(
+            x =&gt; x.Log(
+                LogLevel.Information,
+                It.IsAny&lt;EventId&gt;(),
+                It.Is&lt;It.IsAnyType&gt;((o, t) =&gt; o.ToString()!.Contains(&quot;expected&quot;)),
+                It.IsAny&lt;Exception&gt;(),
+                It.IsAny&lt;Func&lt;It.IsAnyType, Exception?, string&gt;&gt;()),
+            Times.Once);
+    }
+}
+</code></pre>
+<hr>
+<h2 id="see-also">See Also</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/en-us/dotnet/core/extensions/logging">Microsoft Logging Documentation</a></li>
+<li><a href="https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/">Structured Logging Best Practices</a></li>
+<li><a href="https://serilog.net/">Serilog (alternative sink)</a></li>
+</ul>
+<hr>
+<p><em>Last Updated: 2026-01-08</em>
+<em>Part of: Clean Code Initiative (C30)</em></p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

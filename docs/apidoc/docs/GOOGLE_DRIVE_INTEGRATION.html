@@ -1,0 +1,763 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Google Drive Integration Guide | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Google Drive Integration Guide | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="google-drive-integration-guide">Google Drive Integration Guide</h1>
+
+<p>Store and retrieve Hazina documents directly from Google Drive with full support for folders, permissions, and versioning.</p>
+<hr>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#prerequisites">Prerequisites</a></li>
+<li><a href="#google-cloud-setup">Google Cloud Setup</a></li>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#authentication">Authentication</a></li>
+<li><a href="#quick-start">Quick Start</a></li>
+<li><a href="#document-operations">Document Operations</a></li>
+<li><a href="#folder-management">Folder Management</a></li>
+<li><a href="#permissions--sharing">Permissions &amp; Sharing</a></li>
+<li><a href="#advanced-features">Advanced Features</a></li>
+<li><a href="#best-practices">Best Practices</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+</ol>
+<hr>
+<h2 id="overview">Overview</h2>
+<p>The Google Drive Integration module allows you to:</p>
+<ul>
+<li>✅ <strong>Store documents</strong> in Google Drive with metadata</li>
+<li>✅ <strong>Retrieve documents</strong> by ID or query</li>
+<li>✅ <strong>Organize with folders</strong> - hierarchical structure</li>
+<li>✅ <strong>Version control</strong> - track document revisions</li>
+<li>✅ <strong>Share &amp; collaborate</strong> - manage permissions</li>
+<li>✅ <strong>Search</strong> - powerful query capabilities</li>
+<li>✅ <strong>Sync</strong> - bidirectional synchronization</li>
+</ul>
+<p><strong>Use Cases:</strong></p>
+<ul>
+<li>Cloud-based document storage for RAG systems</li>
+<li>Collaborative AI knowledge bases</li>
+<li>Multi-user document management</li>
+<li>Enterprise document workflows</li>
+<li>Backup and archival</li>
+</ul>
+<hr>
+<h2 id="prerequisites">Prerequisites</h2>
+<h3 id="required-accounts">Required Accounts</h3>
+<ol>
+<li><strong>Google Account</strong> - Personal or Google Workspace</li>
+<li><strong>Google Cloud Project</strong> - Free tier available</li>
+<li><strong>Google Drive API</strong> - Enable in Cloud Console</li>
+</ol>
+<h3 id="required-permissions">Required Permissions</h3>
+<ul>
+<li>Google Drive API access</li>
+<li>OAuth 2.0 credentials OR Service Account</li>
+<li>Appropriate Drive scopes (read/write)</li>
+</ul>
+<hr>
+<h2 id="google-cloud-setup">Google Cloud Setup</h2>
+<h3 id="step-1-create-google-cloud-project">Step 1: Create Google Cloud Project</h3>
+<ol>
+<li>Go to <a href="https://console.cloud.google.com/">Google Cloud Console</a></li>
+<li>Click &quot;Select a project&quot; → &quot;New Project&quot;</li>
+<li>Enter project name: <code>Hazina-Drive-Integration</code></li>
+<li>Click &quot;Create&quot;</li>
+</ol>
+<h3 id="step-2-enable-google-drive-api">Step 2: Enable Google Drive API</h3>
+<ol>
+<li>In Cloud Console, go to &quot;APIs &amp; Services&quot; → &quot;Library&quot;</li>
+<li>Search for &quot;Google Drive API&quot;</li>
+<li>Click &quot;Enable&quot;</li>
+</ol>
+<h3 id="step-3-create-credentials">Step 3: Create Credentials</h3>
+<h4 id="option-a-oauth-20-user-authentication">Option A: OAuth 2.0 (User Authentication)</h4>
+<p><strong>Best for:</strong> Interactive applications, user-owned drives</p>
+<ol>
+<li>Go to &quot;APIs &amp; Services&quot; → &quot;Credentials&quot;</li>
+<li>Click &quot;Create Credentials&quot; → &quot;OAuth client ID&quot;</li>
+<li>Configure consent screen:
+<ul>
+<li>User type: External (for testing) or Internal (for organization)</li>
+<li>Add scopes: <code>https://www.googleapis.com/auth/drive.file</code></li>
+</ul>
+</li>
+<li>Application type: Desktop app or Web application</li>
+<li>Download JSON file → Save as <code>credentials.json</code></li>
+</ol>
+<h4 id="option-b-service-account-application-authentication">Option B: Service Account (Application Authentication)</h4>
+<p><strong>Best for:</strong> Server applications, automated workflows</p>
+<ol>
+<li>Go to &quot;APIs &amp; Services&quot; → &quot;Credentials&quot;</li>
+<li>Click &quot;Create Credentials&quot; → &quot;Service account&quot;</li>
+<li>Fill in details:
+<ul>
+<li>Service account name: <code>hazina-drive-service</code></li>
+<li>Role: None (we'll use Drive sharing)</li>
+</ul>
+</li>
+<li>Click &quot;Create and Continue&quot; → &quot;Done&quot;</li>
+<li>Click on created service account</li>
+<li>Go to &quot;Keys&quot; tab → &quot;Add Key&quot; → &quot;Create new key&quot;</li>
+<li>Choose JSON → Download → Save as <code>service-account.json</code></li>
+</ol>
+<hr>
+<h2 id="installation">Installation</h2>
+<pre><code class="lang-bash">dotnet add package Hazina.Storage.GoogleDrive
+</code></pre>
+<p>Or add to .csproj:</p>
+<pre><code class="lang-xml">&lt;PackageReference Include=&quot;Hazina.Storage.GoogleDrive&quot; Version=&quot;2.0.0&quot; /&gt;
+</code></pre>
+<hr>
+<h2 id="authentication">Authentication</h2>
+<h3 id="method-1-oauth-20-user-flow">Method 1: OAuth 2.0 User Flow</h3>
+<p><strong>Interactive authentication</strong> - Opens browser for user consent.</p>
+<pre><code class="lang-csharp">using Hazina.Storage.GoogleDrive;
+
+// Load OAuth credentials
+var credentials = await GoogleDriveCredentials.FromOAuthAsync(
+    clientSecretsPath: &quot;credentials.json&quot;,
+    scopes: new[] { &quot;https://www.googleapis.com/auth/drive.file&quot; },
+    applicationName: &quot;Hazina RAG System&quot;
+);
+
+// First time: Opens browser for user to authorize
+// Subsequent times: Uses cached token from ~/.credentials/
+</code></pre>
+<p><strong>credentials.json format:</strong></p>
+<pre><code class="lang-json">{
+  &quot;installed&quot;: {
+    &quot;client_id&quot;: &quot;YOUR_CLIENT_ID.apps.googleusercontent.com&quot;,
+    &quot;client_secret&quot;: &quot;YOUR_CLIENT_SECRET&quot;,
+    &quot;redirect_uris&quot;: [&quot;http://localhost&quot;],
+    &quot;auth_uri&quot;: &quot;https://accounts.google.com/o/oauth2/auth&quot;,
+    &quot;token_uri&quot;: &quot;https://oauth2.googleapis.com/token&quot;
+  }
+}
+</code></pre>
+<hr>
+<h3 id="method-2-service-account">Method 2: Service Account</h3>
+<p><strong>Headless authentication</strong> - No browser interaction needed.</p>
+<pre><code class="lang-csharp">var credentials = GoogleDriveCredentials.FromServiceAccount(
+    serviceAccountJsonPath: &quot;service-account.json&quot;,
+    scopes: new[] { &quot;https://www.googleapis.com/auth/drive.file&quot; }
+);
+</code></pre>
+<p><strong>service-account.json format:</strong></p>
+<pre><code class="lang-json">{
+  &quot;type&quot;: &quot;service_account&quot;,
+  &quot;project_id&quot;: &quot;your-project&quot;,
+  &quot;private_key_id&quot;: &quot;...&quot;,
+  &quot;private_key&quot;: &quot;-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n&quot;,
+  &quot;client_email&quot;: &quot;hazina-drive-service@your-project.iam.gserviceaccount.com&quot;,
+  &quot;client_id&quot;: &quot;...&quot;,
+  &quot;auth_uri&quot;: &quot;https://accounts.google.com/o/oauth2/auth&quot;,
+  &quot;token_uri&quot;: &quot;https://oauth2.googleapis.com/token&quot;
+}
+</code></pre>
+<p><strong>⚠️ Important for Service Accounts:</strong>
+Service accounts have their own Drive - they can't access your personal files unless you explicitly share folders with the service account email.</p>
+<hr>
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="basic-document-upload">Basic Document Upload</h3>
+<pre><code class="lang-csharp">using Hazina.Storage.GoogleDrive;
+
+// 1. Authenticate
+var credentials = await GoogleDriveCredentials.FromOAuthAsync(&quot;credentials.json&quot;);
+
+// 2. Create Drive store
+var driveStore = new GoogleDriveDocumentStore(credentials);
+
+// 3. Upload document
+var document = new Document
+{
+    Id = &quot;doc-001&quot;,
+    Content = &quot;Hazina is a .NET AI framework...&quot;,
+    Metadata = new Dictionary&lt;string, object&gt;
+    {
+        { &quot;category&quot;, &quot;documentation&quot; },
+        { &quot;version&quot;, &quot;2.0&quot; }
+    }
+};
+
+var fileId = await driveStore.SaveAsync(document);
+Console.WriteLine($&quot;Uploaded: https://drive.google.com/file/d/{fileId}&quot;);
+
+// 4. Retrieve document
+var retrieved = await driveStore.LoadAsync(fileId);
+Console.WriteLine($&quot;Content: {retrieved.Content}&quot;);
+</code></pre>
+<hr>
+<h2 id="document-operations">Document Operations</h2>
+<h3 id="save-document">Save Document</h3>
+<pre><code class="lang-csharp">var document = new Document
+{
+    Id = &quot;unique-doc-id&quot;,
+    Content = &quot;Document content here...&quot;,
+    Metadata = new Dictionary&lt;string, object&gt;
+    {
+        { &quot;title&quot;, &quot;My Document&quot; },
+        { &quot;author&quot;, &quot;John Doe&quot; },
+        { &quot;tags&quot;, new[] { &quot;AI&quot;, &quot;documentation&quot; } }
+    }
+};
+
+// Save to root
+var fileId = await driveStore.SaveAsync(document);
+
+// Save to specific folder
+var fileId = await driveStore.SaveAsync(document, folderId: &quot;folder-123&quot;);
+</code></pre>
+<hr>
+<h3 id="load-document">Load Document</h3>
+<pre><code class="lang-csharp">// Load by file ID
+var doc = await driveStore.LoadAsync(&quot;file-id-123&quot;);
+
+// Check if exists first
+if (await driveStore.ExistsAsync(&quot;file-id-123&quot;))
+{
+    var doc = await driveStore.LoadAsync(&quot;file-id-123&quot;);
+}
+</code></pre>
+<hr>
+<h3 id="update-document">Update Document</h3>
+<pre><code class="lang-csharp">// Load existing
+var doc = await driveStore.LoadAsync(&quot;file-id-123&quot;);
+
+// Modify
+doc.Content = &quot;Updated content...&quot;;
+doc.Metadata[&quot;version&quot;] = &quot;2.1&quot;;
+doc.Metadata[&quot;updated_at&quot;] = DateTime.UtcNow;
+
+// Save (overwrites existing file, creates new version)
+await driveStore.SaveAsync(doc);
+</code></pre>
+<hr>
+<h3 id="delete-document">Delete Document</h3>
+<pre><code class="lang-csharp">// Move to trash (recoverable)
+await driveStore.DeleteAsync(&quot;file-id-123&quot;);
+
+// Permanent delete (⚠️ irreversible)
+await driveStore.DeletePermanentlyAsync(&quot;file-id-123&quot;);
+</code></pre>
+<hr>
+<h3 id="search-documents">Search Documents</h3>
+<pre><code class="lang-csharp">// Search by query
+var results = await driveStore.SearchAsync(new DriveSearchQuery
+{
+    NameContains = &quot;documentation&quot;,
+    MimeType = &quot;text/plain&quot;,
+    FolderId = &quot;folder-123&quot;,  // Optional: search in specific folder
+    MaxResults = 100
+});
+
+foreach (var file in results)
+{
+    Console.WriteLine($&quot;{file.Name} - {file.Id}&quot;);
+}
+</code></pre>
+<p><strong>Advanced Query:</strong></p>
+<pre><code class="lang-csharp">var query = new DriveSearchQuery
+{
+    Query = &quot;fullText contains 'Hazina' and mimeType='text/plain'&quot;,
+    OrderBy = &quot;modifiedTime desc&quot;,
+    MaxResults = 50
+};
+
+var results = await driveStore.SearchAsync(query);
+</code></pre>
+<p><strong>Google Drive Query Syntax:</strong></p>
+<ul>
+<li><code>name = 'MyDoc.txt'</code> - Exact name match</li>
+<li><code>name contains 'Doc'</code> - Partial name match</li>
+<li><code>fullText contains 'keyword'</code> - Content search</li>
+<li><code>mimeType = 'text/plain'</code> - File type filter</li>
+<li><code>'folder-id' in parents</code> - Files in folder</li>
+<li><code>modifiedTime &gt; '2024-01-01T00:00:00'</code> - Date filter</li>
+</ul>
+<hr>
+<h2 id="folder-management">Folder Management</h2>
+<h3 id="create-folder">Create Folder</h3>
+<pre><code class="lang-csharp">var folderId = await driveStore.CreateFolderAsync(
+    folderName: &quot;Hazina Documents&quot;,
+    parentFolderId: null  // null = root, or specify parent folder
+);
+
+Console.WriteLine($&quot;Folder: https://drive.google.com/drive/folders/{folderId}&quot;);
+</code></pre>
+<hr>
+<h3 id="organize-in-folders">Organize in Folders</h3>
+<pre><code class="lang-csharp">// Create folder structure
+var projectFolder = await driveStore.CreateFolderAsync(&quot;Project Alpha&quot;);
+var docsFolder = await driveStore.CreateFolderAsync(&quot;Documents&quot;, projectFolder);
+var imagesFolder = await driveStore.CreateFolderAsync(&quot;Images&quot;, projectFolder);
+
+// Save documents to folders
+var doc1 = new Document { Id = &quot;doc1&quot;, Content = &quot;...&quot; };
+await driveStore.SaveAsync(doc1, folderId: docsFolder);
+
+var doc2 = new Document { Id = &quot;doc2&quot;, Content = &quot;...&quot; };
+await driveStore.SaveAsync(doc2, folderId: docsFolder);
+</code></pre>
+<hr>
+<h3 id="list-folder-contents">List Folder Contents</h3>
+<pre><code class="lang-csharp">var files = await driveStore.ListFolderAsync(folderId: &quot;folder-123&quot;);
+
+foreach (var file in files)
+{
+    Console.WriteLine($&quot;{file.Name} ({file.MimeType})&quot;);
+}
+</code></pre>
+<hr>
+<h3 id="move-files-between-folders">Move Files Between Folders</h3>
+<pre><code class="lang-csharp">await driveStore.MoveFileAsync(
+    fileId: &quot;file-123&quot;,
+    targetFolderId: &quot;new-folder-456&quot;
+);
+</code></pre>
+<hr>
+<h2 id="permissions--sharing">Permissions &amp; Sharing</h2>
+<h3 id="share-with-specific-user">Share with Specific User</h3>
+<pre><code class="lang-csharp">await driveStore.ShareWithUserAsync(
+    fileId: &quot;file-123&quot;,
+    emailAddress: &quot;user@example.com&quot;,
+    role: DrivePermissionRole.Reader  // Reader, Writer, or Owner
+);
+</code></pre>
+<hr>
+<h3 id="share-with-service-account">Share with Service Account</h3>
+<p>When using service accounts, share folders with the service account email:</p>
+<pre><code class="lang-csharp">// 1. Get service account email from JSON
+// Example: hazina-drive-service@your-project.iam.gserviceaccount.com
+
+// 2. Manually share folder in Drive UI:
+//    - Right-click folder → Share
+//    - Add service account email
+//    - Give &quot;Editor&quot; permission
+
+// 3. Now service account can access that folder
+var files = await driveStore.ListFolderAsync(&quot;shared-folder-id&quot;);
+</code></pre>
+<hr>
+<h3 id="make-public">Make Public</h3>
+<pre><code class="lang-csharp">// Anyone with link can view
+await driveStore.MakePublicAsync(
+    fileId: &quot;file-123&quot;,
+    role: DrivePermissionRole.Reader
+);
+
+// Get shareable link
+var link = $&quot;https://drive.google.com/file/d/file-123/view&quot;;
+</code></pre>
+<hr>
+<h3 id="remove-permission">Remove Permission</h3>
+<pre><code class="lang-csharp">await driveStore.RevokePermissionAsync(
+    fileId: &quot;file-123&quot;,
+    permissionId: &quot;permission-456&quot;
+);
+</code></pre>
+<hr>
+<h2 id="advanced-features">Advanced Features</h2>
+<h3 id="version-history">Version History</h3>
+<p>Google Drive automatically versions files. Access versions:</p>
+<pre><code class="lang-csharp">var versions = await driveStore.GetVersionsAsync(&quot;file-123&quot;);
+
+foreach (var version in versions)
+{
+    Console.WriteLine($&quot;Version {version.Id} - {version.ModifiedTime}&quot;);
+}
+
+// Download specific version
+var oldContent = await driveStore.LoadVersionAsync(
+    fileId: &quot;file-123&quot;,
+    versionId: &quot;version-456&quot;
+);
+</code></pre>
+<hr>
+<h3 id="metadata-management">Metadata Management</h3>
+<pre><code class="lang-csharp">// Set custom metadata (Drive properties)
+await driveStore.SetMetadataAsync(
+    fileId: &quot;file-123&quot;,
+    metadata: new Dictionary&lt;string, string&gt;
+    {
+        { &quot;embedding_model&quot;, &quot;text-embedding-3-small&quot; },
+        { &quot;chunk_size&quot;, &quot;512&quot; },
+        { &quot;indexed_at&quot;, DateTime.UtcNow.ToString(&quot;o&quot;) }
+    }
+);
+
+// Get metadata
+var metadata = await driveStore.GetMetadataAsync(&quot;file-123&quot;);
+</code></pre>
+<hr>
+<h3 id="batch-operations">Batch Operations</h3>
+<pre><code class="lang-csharp">// Upload multiple documents in parallel
+var documents = GetDocumentsToUpload();  // List&lt;Document&gt;
+
+var uploadTasks = documents.Select(doc =&gt;
+    driveStore.SaveAsync(doc, folderId: targetFolder)
+);
+
+var fileIds = await Task.WhenAll(uploadTasks);
+
+Console.WriteLine($&quot;Uploaded {fileIds.Length} documents&quot;);
+</code></pre>
+<hr>
+<h3 id="sync-local--drive">Sync Local ↔ Drive</h3>
+<pre><code class="lang-csharp">// Sync local folder to Drive
+await driveStore.SyncLocalToD riveAsync(
+    localPath: @&quot;C:\HazinaData\Documents&quot;,
+    driveFolderId: &quot;drive-folder-123&quot;,
+    syncOptions: new SyncOptions
+    {
+        DeleteRemote = false,  // Don't delete Drive files not in local
+        OverwriteNewer = false  // Don't overwrite newer Drive versions
+    }
+);
+
+// Sync Drive to local
+await driveStore.SyncDriveToLocalAsync(
+    driveFolderId: &quot;drive-folder-123&quot;,
+    localPath: @&quot;C:\HazinaData\Documents&quot;
+);
+</code></pre>
+<hr>
+<h3 id="export-formats">Export Formats</h3>
+<pre><code class="lang-csharp">// Export Google Docs to different formats
+await driveStore.ExportAsync(
+    fileId: &quot;google-doc-id&quot;,
+    exportFormat: DriveExportFormat.PDF,
+    outputPath: &quot;output.pdf&quot;
+);
+
+// Available formats: PDF, DOCX, TXT, HTML, EPUB
+</code></pre>
+<hr>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="1-use-folders-for-organization">1. Use Folders for Organization</h3>
+<pre><code class="lang-csharp">// Organize by project/category
+var projectStructure = new
+{
+    RootFolder = await driveStore.CreateFolderAsync(&quot;Hazina RAG&quot;),
+    DocumentsFolder = await driveStore.CreateFolderAsync(&quot;Documents&quot;, rootId),
+    EmbeddingsFolder = await driveStore.CreateFolderAsync(&quot;Embeddings&quot;, rootId),
+    MetadataFolder = await driveStore.CreateFolderAsync(&quot;Metadata&quot;, rootId)
+};
+</code></pre>
+<hr>
+<h3 id="2-handle-rate-limits">2. Handle Rate Limits</h3>
+<p>Google Drive API has rate limits (1000 requests per 100 seconds).</p>
+<pre><code class="lang-csharp">// Use retry logic
+var driveStore = new GoogleDriveDocumentStore(credentials, new DriveStoreOptions
+{
+    MaxRetries = 3,
+    RetryDelayMs = 1000,
+    EnableBackoff = true
+});
+
+// Batch operations to reduce API calls
+var docs = new List&lt;Document&gt; { doc1, doc2, doc3 };
+await driveStore.SaveBatchAsync(docs, folderId: targetFolder);
+</code></pre>
+<hr>
+<h3 id="3-cache-metadata">3. Cache Metadata</h3>
+<pre><code class="lang-csharp">// Cache folder structure
+var folderCache = new Dictionary&lt;string, string&gt;();
+
+async Task&lt;string&gt; GetOrCreateFolder(string name, string? parentId = null)
+{
+    var cacheKey = $&quot;{name}-{parentId}&quot;;
+    if (folderCache.TryGetValue(cacheKey, out var folderId))
+        return folderId;
+
+    folderId = await driveStore.CreateFolderAsync(name, parentId);
+    folderCache[cacheKey] = folderId;
+    return folderId;
+}
+</code></pre>
+<hr>
+<h3 id="4-error-handling">4. Error Handling</h3>
+<pre><code class="lang-csharp">try
+{
+    await driveStore.SaveAsync(document);
+}
+catch (GoogleDriveException ex) when (ex.StatusCode == 403)
+{
+    // Permission denied - check sharing settings
+    Console.WriteLine(&quot;Permission denied. Is folder shared with service account?&quot;);
+}
+catch (GoogleDriveException ex) when (ex.StatusCode == 404)
+{
+    // File/folder not found
+    Console.WriteLine(&quot;File or folder not found&quot;);
+}
+catch (GoogleDriveException ex) when (ex.StatusCode == 429)
+{
+    // Rate limit exceeded - wait and retry
+    await Task.Delay(5000);
+    await driveStore.SaveAsync(document);  // Retry
+}
+</code></pre>
+<hr>
+<h3 id="5-secure-credentials">5. Secure Credentials</h3>
+<pre><code class="lang-csharp">// ❌ DON'T commit credentials to git
+// credentials.json
+// service-account.json
+
+// ✅ DO use environment variables
+var credentialsPath = Environment.GetEnvironmentVariable(&quot;GOOGLE_CREDENTIALS_PATH&quot;)
+    ?? throw new InvalidOperationException(&quot;GOOGLE_CREDENTIALS_PATH not set&quot;);
+
+var credentials = await GoogleDriveCredentials.FromOAuthAsync(credentialsPath);
+
+// ✅ DO use secret managers in production
+// Azure Key Vault, AWS Secrets Manager, etc.
+</code></pre>
+<hr>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="issue-invalid-credentials">Issue: &quot;Invalid Credentials&quot;</h3>
+<p><strong>Cause:</strong> credentials.json or service-account.json malformed</p>
+<p><strong>Fix:</strong></p>
+<ol>
+<li>Re-download credentials from Google Cloud Console</li>
+<li>Verify JSON is valid: <code>cat credentials.json | jq</code></li>
+<li>Check file permissions: <code>chmod 600 credentials.json</code></li>
+</ol>
+<hr>
+<h3 id="issue-access-denied-403">Issue: &quot;Access Denied (403)&quot;</h3>
+<p><strong>Cause:</strong> Insufficient permissions or folder not shared</p>
+<p><strong>Fix for Service Accounts:</strong></p>
+<ol>
+<li>Get service account email from JSON</li>
+<li>In Google Drive, share folder with that email</li>
+<li>Give &quot;Editor&quot; permission</li>
+<li>Wait 1-2 minutes for propagation</li>
+</ol>
+<p><strong>Fix for OAuth:</strong></p>
+<ol>
+<li>Delete cached token: <code>~/.credentials/</code></li>
+<li>Re-run authentication flow</li>
+<li>Grant all requested permissions</li>
+</ol>
+<hr>
+<h3 id="issue-file-not-found-404">Issue: &quot;File Not Found (404)&quot;</h3>
+<p><strong>Cause:</strong> File ID doesn't exist or no access</p>
+<p><strong>Fix:</strong></p>
+<pre><code class="lang-csharp">// Verify file exists
+if (!await driveStore.ExistsAsync(fileId))
+{
+    Console.WriteLine(&quot;File doesn't exist or no access&quot;);
+}
+
+// List accessible files
+var files = await driveStore.SearchAsync(new DriveSearchQuery
+{
+    Query = &quot;'me' in owners&quot;,  // Files you own
+    MaxResults = 100
+});
+</code></pre>
+<hr>
+<h3 id="issue-rate-limit-exceeded-429">Issue: &quot;Rate Limit Exceeded (429)&quot;</h3>
+<p><strong>Cause:</strong> Too many API calls</p>
+<p><strong>Fix:</strong></p>
+<pre><code class="lang-csharp">// Implement exponential backoff
+int retries = 0;
+while (retries &lt; 5)
+{
+    try
+    {
+        await driveStore.SaveAsync(document);
+        break;
+    }
+    catch (GoogleDriveException ex) when (ex.StatusCode == 429)
+    {
+        var delay = Math.Pow(2, retries) * 1000;  // 1s, 2s, 4s, 8s, 16s
+        await Task.Delay((int)delay);
+        retries++;
+    }
+}
+
+// Or use batch operations
+await driveStore.SaveBatchAsync(documents);  // Single API call
+</code></pre>
+<hr>
+<h3 id="issue-token-expired">Issue: &quot;Token Expired&quot;</h3>
+<p><strong>Cause:</strong> OAuth token expired (default: 1 hour)</p>
+<p><strong>Fix:</strong> Tokens are auto-refreshed, but if issues persist:</p>
+<pre><code class="lang-csharp">// Delete cached token to force re-authentication
+var tokenPath = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+    &quot;.credentials&quot;, &quot;drive-token.json&quot;
+);
+
+if (File.Exists(tokenPath))
+    File.Delete(tokenPath);
+
+// Re-authenticate
+var credentials = await GoogleDriveCredentials.FromOAuthAsync(&quot;credentials.json&quot;);
+</code></pre>
+<hr>
+<h2 id="example-rag-system-with-drive-storage">Example: RAG System with Drive Storage</h2>
+<p>Complete example integrating Google Drive with Hazina RAG:</p>
+<pre><code class="lang-csharp">using Hazina.AI.FluentAPI.Configuration;
+using Hazina.AI.RAG.Core;
+using Hazina.Storage.GoogleDrive;
+
+// 1. Setup AI
+var ai = QuickSetup.SetupOpenAI(Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!);
+
+// 2. Setup Drive storage
+var driveCredentials = await GoogleDriveCredentials.FromOAuthAsync(&quot;credentials.json&quot;);
+var driveStore = new GoogleDriveDocumentStore(driveCredentials);
+
+// 3. Create Drive folder for embeddings
+var ragFolderId = await driveStore.CreateFolderAsync(&quot;Hazina-RAG-Embeddings&quot;);
+
+// 4. Setup RAG with Drive vector store
+var vectorStore = new GoogleDriveVectorStore(driveStore, ragFolderId);
+var rag = new RAGEngine(ai, vectorStore);
+
+// 5. Index documents from Drive folder
+var docsFolderId = &quot;your-docs-folder-id&quot;;
+var documents = await driveStore.ListFolderAsync(docsFolderId);
+
+foreach (var doc in documents)
+{
+    var content = await driveStore.LoadAsync(doc.Id);
+    await rag.IndexDocumentAsync(content);
+}
+
+// 6. Query
+var response = await rag.QueryAsync(&quot;What is Hazina?&quot;);
+Console.WriteLine(response.Answer);
+
+// 7. Embeddings are automatically stored in Drive for persistence
+</code></pre>
+<hr>
+<h2 id="further-reading">Further Reading</h2>
+<ul>
+<li><a href="https://developers.google.com/drive/api/v3/about-sdk">Google Drive API Documentation</a></li>
+<li><a href="https://developers.google.com/identity/protocols/oauth2">OAuth 2.0 Guide</a></li>
+<li><a href="https://cloud.google.com/iam/docs/service-accounts">Service Accounts Guide</a></li>
+<li><a href="RAG_GUIDE.html">RAG Guide</a> - Using Drive storage with RAG</li>
+<li><a href="API_CHANGELOG.html">API Changelog</a> - v2.0 changes</li>
+</ul>
+<hr>
+<h2 id="support">Support</h2>
+<ul>
+<li><strong>GitHub Issues:</strong> <a href="https://github.com/martiendejong/Hazina/issues">https://github.com/martiendejong/Hazina/issues</a></li>
+<li><strong>Discussions:</strong> <a href="https://github.com/martiendejong/Hazina/discussions">https://github.com/martiendejong/Hazina/discussions</a></li>
+</ul>
+<hr>
+<p><strong>Last Updated:</strong> 2026-01-08
+<strong>Module Version:</strong> 2.0.0
+<strong>Status:</strong> Production Ready ✅</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,509 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Hazina | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Hazina | Hazina Framework ">
+      
+      
+      <link rel="icon" href="favicon.ico">
+      <link rel="stylesheet" href="public/docfx.min.css">
+      <link rel="stylesheet" href="public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="">
+      
+      <meta name="docfx:rel" content="">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="index.html">
+            <img id="logo" class="svg" src="icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="hazina">Hazina</h1>
+
+<p><a href="https://dotnet.microsoft.com/"><img src="https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet" alt=".NET 9.0"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+<a href="https://github.com/hazina-ai/hazina"><img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build Status"></a>
+<a href="https://www.nuget.org/"><img src="https://img.shields.io/badge/NuGet-coming%20soon-blue" alt="NuGet"></a>
+<a href="docs/apidoc/index.html"><img src="https://img.shields.io/badge/docs-docs/apidoc-blue" alt="Documentation"></a>
+<a href="https://github.com/martiendejong/Hazina/actions/workflows/deploy-docs.yml"><img src="https://github.com/martiendejong/Hazina/actions/workflows/deploy-docs.yml/badge.svg" alt="Deploy Docs"></a></p>
+<p><strong>Production-ready AI infrastructure for .NET that scales from prototype to production without rewriting your code.</strong></p>
+<h2 id="-breaking-changes-in-v20">⚠️ Breaking Changes in v2.0</h2>
+<p>If upgrading from v1.x, please note these important changes:</p>
+<ul>
+<li><strong>Config classes:</strong> Use object initializers instead of constructor parameters (<a href="docs/MIGRATION_GUIDE.html">Migration Guide</a>)</li>
+<li><strong>Namespaces:</strong> Add <code>using Hazina.LLMs.OpenAI;</code> for OpenAI-specific classes</li>
+<li><strong>Method signatures:</strong> <code>GenerateTextAsync</code> → <code>GenerateAsync</code> with updated parameters</li>
+</ul>
+<p>See the full <a href="docs/API_CHANGELOG.html">API Changelog</a> for details and migration paths.</p>
+<hr>
+<h2 id="why-hazina-instead-of-x">Why Hazina Instead of X?</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>Hazina</strong></th>
+<th><strong>LangChain</strong></th>
+<th><strong>Semantic Kernel</strong></th>
+<th><strong>Roll Your Own</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Language</strong></td>
+<td>C# native</td>
+<td>Python-first</td>
+<td>C#</td>
+<td>C#</td>
+</tr>
+<tr>
+<td><strong>Setup time</strong></td>
+<td>4 lines</td>
+<td>50+ lines</td>
+<td>30+ lines</td>
+<td>200+ lines</td>
+</tr>
+<tr>
+<td><strong>Multi-provider failover</strong></td>
+<td>Built-in</td>
+<td>Manual</td>
+<td>Plugin required</td>
+<td>Build yourself</td>
+</tr>
+<tr>
+<td><strong>Hallucination detection</strong></td>
+<td>Built-in</td>
+<td>External tools</td>
+<td>Not included</td>
+<td>Build yourself</td>
+</tr>
+<tr>
+<td><strong>Cost tracking</strong></td>
+<td>Automatic</td>
+<td>Manual</td>
+<td>Manual</td>
+<td>Build yourself</td>
+</tr>
+<tr>
+<td><strong>Production monitoring</strong></td>
+<td>Included</td>
+<td>External</td>
+<td>External</td>
+<td>Build yourself</td>
+</tr>
+<tr>
+<td><strong>Local + Cloud</strong></td>
+<td>Unified API</td>
+<td>Separate configs</td>
+<td>Separate configs</td>
+<td>Multiple implementations</td>
+</tr>
+</tbody>
+</table>
+<h3 id="hazina-wins-because">Hazina wins because:</h3>
+<ul>
+<li><strong>4 lines to production</strong> — One-line setup, automatic provider failover, built-in fault detection</li>
+<li><strong>No vendor lock-in</strong> — Switch between OpenAI, Anthropic, local models with zero code changes</li>
+<li><strong>Ship faster</strong> — RAG, agents, embeddings, and monitoring included — not bolted on</li>
+</ul>
+<h2 id="30-minute-quickstart">30-Minute Quickstart</h2>
+<p>Build a production-ready RAG AI that answers questions from your documents:</p>
+<pre><code class="lang-bash">dotnet new console -n MyRAGApp
+cd MyRAGApp
+dotnet add package Hazina.AI.FluentAPI
+dotnet add package Hazina.AI.RAG
+</code></pre>
+<pre><code class="lang-csharp">using Hazina.AI.FluentAPI.Configuration;
+using Hazina.AI.RAG.Core;
+
+// 1. Setup (one line)
+var ai = QuickSetup.SetupOpenAI(Environment.GetEnvironmentVariable(&quot;OPENAI_API_KEY&quot;)!);
+
+// 2. Create RAG engine
+var vectorStore = new InMemoryVectorStore();
+var rag = new RAGEngine(ai, vectorStore);
+
+// 3. Index your documents
+await rag.IndexDocumentsAsync(new List&lt;Document&gt;
+{
+    new() { Content = &quot;Hazina is a .NET AI framework for production applications.&quot; },
+    new() { Content = &quot;RAG combines retrieval with generation for accurate answers.&quot; }
+});
+
+// 4. Query with context
+var response = await rag.QueryAsync(&quot;What is Hazina?&quot;);
+Console.WriteLine(response.Answer);
+</code></pre>
+<p><strong>This scales from demo → production without rewriting.</strong></p>
+<p>See the full <a href="docs/quickstart.html">30-Minute RAG Tutorial</a> for:</p>
+<ul>
+<li>Swap LLM providers via config</li>
+<li>Add PostgreSQL/Supabase backend</li>
+<li>Enable/disable embeddings</li>
+<li>Add multi-layer reasoning</li>
+</ul>
+<h2 id="installation">Installation</h2>
+<pre><code class="lang-bash"># Core package (minimal)
+dotnet add package Hazina.AI.FluentAPI
+
+# Add RAG capabilities
+dotnet add package Hazina.AI.RAG
+
+# Add agentic workflows
+dotnet add package Hazina.AI.Agents
+
+# Add production monitoring
+dotnet add package Hazina.Production.Monitoring
+</code></pre>
+<h2 id="feature-comparison">Feature Comparison</h2>
+<h3 id="vs-langchain-python">vs LangChain (Python)</h3>
+<pre><code class="lang-python"># LangChain - 15+ lines, Python only
+from langchain.llms import OpenAI
+from langchain.chains import RetrievalQA
+from langchain.vectorstores import Chroma
+from langchain.embeddings import OpenAIEmbeddings
+
+embeddings = OpenAIEmbeddings()
+vectorstore = Chroma.from_documents(docs, embeddings)
+llm = OpenAI()
+chain = RetrievalQA.from_chain_type(llm, retriever=vectorstore.as_retriever())
+# No built-in failover, cost tracking, or hallucination detection
+</code></pre>
+<pre><code class="lang-csharp">// Hazina - 4 lines, native C#
+var ai = QuickSetup.SetupWithFailover(openAiKey, anthropicKey); // Auto-failover
+var rag = new RAGEngine(ai, vectorStore);
+await rag.IndexDocumentsAsync(docs);
+var answer = await rag.QueryAsync(&quot;question&quot;); // Cost tracked automatically
+</code></pre>
+<h3 id="vs-semantic-kernel">vs Semantic Kernel</h3>
+<pre><code class="lang-csharp">// Semantic Kernel - requires plugins, manual setup
+var kernel = Kernel.CreateBuilder()
+    .AddOpenAIChatCompletion(&quot;gpt-4&quot;, apiKey)
+    .Build();
+// Failover? Add another plugin. Cost tracking? Write it yourself.
+</code></pre>
+<pre><code class="lang-csharp">// Hazina - batteries included
+var ai = QuickSetup.SetupWithFailover(openAiKey, anthropicKey);
+ai.EnableCostTracking(budgetLimit: 10.00m);
+ai.EnableHealthMonitoring();
+// Failover, cost tracking, health checks — all built-in
+</code></pre>
+<h3 id="vs-rolling-your-own">vs Rolling Your Own</h3>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>DIY Effort</th>
+<th>Hazina</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Multi-provider abstraction</td>
+<td>2-4 weeks</td>
+<td>✅ Included</td>
+</tr>
+<tr>
+<td>Circuit breaker + failover</td>
+<td>1-2 weeks</td>
+<td>✅ Included</td>
+</tr>
+<tr>
+<td>Hallucination detection</td>
+<td>2-4 weeks</td>
+<td>✅ Included</td>
+</tr>
+<tr>
+<td>Cost tracking + budgets</td>
+<td>1 week</td>
+<td>✅ Included</td>
+</tr>
+<tr>
+<td>RAG with chunking</td>
+<td>2-3 weeks</td>
+<td>✅ Included</td>
+</tr>
+<tr>
+<td>Agent workflows</td>
+<td>3-4 weeks</td>
+<td>✅ Included</td>
+</tr>
+<tr>
+<td>Production monitoring</td>
+<td>1-2 weeks</td>
+<td>✅ Included</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total: 12-19 weeks of work → 0 with Hazina</strong></p>
+<h2 id="architecture">Architecture</h2>
+<pre><code>┌─────────────────────────────────────────────────────────────────┐
+│                        Your Application                          │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Hazina.AI.FluentAPI                          │
+│  Hazina.AI() → .WithProvider() → .WithFaultDetection() → Ask()  │
+└─────────────────────────────────────────────────────────────────┘
+          │              │              │              │
+          ▼              ▼              ▼              ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│   Providers  │ │    RAG       │ │   Agents     │ │  Neurochain  │
+│  OpenAI      │ │  Indexing    │ │  Tools       │ │  Multi-layer │
+│  Anthropic   │ │  Retrieval   │ │  Workflows   │ │  Reasoning   │
+│  Local LLMs  │ │  Generation  │ │  Coordination│ │  Validation  │
+└──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
+          │              │              │              │
+          └──────────────┴──────────────┴──────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  Production Monitoring                           │
+│         Metrics • Cost Tracking • Health Checks                  │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 id="core-capabilities">Core Capabilities</h2>
+<h3 id="multi-provider-orchestration">Multi-Provider Orchestration</h3>
+<pre><code class="lang-csharp">var ai = QuickSetup.SetupWithFailover(openAiKey, anthropicKey);
+
+// Automatic failover when primary fails
+var response = await ai.GetResponse(messages); // Uses OpenAI, fails over to Claude
+
+// Or select by strategy
+ai.SetDefaultStrategy(SelectionStrategy.LeastCost);     // Cheapest provider
+ai.SetDefaultStrategy(SelectionStrategy.FastestResponse); // Fastest provider
+</code></pre>
+<h3 id="fault-detection--hallucination-prevention">Fault Detection &amp; Hallucination Prevention</h3>
+<pre><code class="lang-csharp">var result = await Hazina.AI()
+    .WithFaultDetection(minConfidence: 0.9)
+    .Ask(&quot;What is the capital of France?&quot;)
+    .ExecuteAsync();
+
+// Automatically validates responses
+// Detects hallucinations
+// Retries with refined prompts if needed
+</code></pre>
+<h3 id="rag-retrieval-augmented-generation">RAG (Retrieval-Augmented Generation)</h3>
+<pre><code class="lang-csharp">var rag = new RAGEngine(ai, vectorStore);
+
+// Index documents with smart chunking
+await rag.IndexDocumentsAsync(documents);
+
+// Query with automatic context retrieval
+var response = await rag.QueryAsync(&quot;Explain the authentication flow&quot;, new RAGQueryOptions
+{
+    TopK = 5,
+    MinSimilarity = 0.7,
+    RequireCitation = true
+});
+</code></pre>
+<h3 id="agentic-workflows">Agentic Workflows</h3>
+<pre><code class="lang-csharp">var coordinator = new MultiAgentCoordinator();
+
+coordinator.AddAgent(new Agent(&quot;researcher&quot;, researchPrompt, ai));
+coordinator.AddAgent(new Agent(&quot;writer&quot;, writerPrompt, ai));
+coordinator.AddAgent(new Agent(&quot;reviewer&quot;, reviewerPrompt, ai));
+
+var result = await coordinator.ExecuteAsync(&quot;Write a blog post about AI&quot;,
+    CoordinationStrategy.Sequential);
+</code></pre>
+<h3 id="multi-layer-reasoning-neurochain">Multi-Layer Reasoning (Neurochain)</h3>
+<pre><code class="lang-csharp">var neurochain = new NeuroChainOrchestrator();
+neurochain.AddLayer(new FastReasoningLayer(ai));   // Quick analysis
+neurochain.AddLayer(new DeepReasoningLayer(ai));   // Thorough analysis
+neurochain.AddLayer(new VerificationLayer(ai));    // Cross-validation
+
+var result = await neurochain.ReasonAsync(&quot;Complex question requiring high confidence&quot;);
+// Returns 95-99% confidence through independent validation
+</code></pre>
+<h2 id="documentation">Documentation</h2>
+<p>📚 <strong><a href="docs/apidoc/index.html">View Full Documentation</a></strong> — Complete API reference and guides (open locally after cloning)</p>
+<p><strong>For private repositories:</strong> Documentation is committed to the repository at <code>docs/apidoc/</code> - no external hosting required.</p>
+<h3 id="getting-started">Getting Started</h3>
+<ul>
+<li><strong><a href="SOLUTIONS.md">Solutions Guide</a></strong> — Choose the right solution file for your work (QuickStart, Core, AI, Tools, Apps)</li>
+<li><a href="docs/quickstart.html">30-Minute RAG Tutorial</a> — Build production RAG in 30 minutes</li>
+<li><strong><a href="docs/apidoc/api/index.html">API Reference</a></strong> — Complete API documentation</li>
+</ul>
+<h3 id="feature-guides">Feature Guides</h3>
+<ul>
+<li><a href="docs/KNOWLEDGE_STORAGE.html">Knowledge Storage &amp; Search Model</a> — Agent-first architecture, metadata-driven storage</li>
+<li><a href="docs/RAG_GUIDE.html">RAG Guide</a> — Document indexing, chunking, retrieval</li>
+<li><a href="docs/AGENTS_GUIDE.html">Agents Guide</a> — Tool calling, workflows, coordination</li>
+<li><a href="docs/NEUROCHAIN_GUIDE.html">Neurochain Guide</a> — Multi-layer reasoning</li>
+<li><a href="docs/CODE_INTELLIGENCE_GUIDE.html">Code Intelligence Guide</a> — Refactoring, analysis</li>
+<li><a href="docs/PRODUCTION_MONITORING_GUIDE.html">Production Monitoring Guide</a> — Metrics, health checks</li>
+</ul>
+<h3 id="setup--configuration">Setup &amp; Configuration</h3>
+<ul>
+<li><a href="docs/SUPABASE_SETUP.html">Supabase Setup</a> — Cloud database backend</li>
+<li><a href="GITHUB_PAGES_SETUP.md">GitHub Pages Setup</a> — Automatic documentation deployment</li>
+</ul>
+<h3 id="for-contributors">For Contributors</h3>
+<ul>
+<li><a href="DOCUMENTATION_GUIDELINES.md">Documentation Guidelines</a> — XML documentation standards</li>
+<li><strong>Generate Docs Locally</strong>: Run <code>.\generate-docs.ps1 -Serve</code> to preview at http://localhost:8080</li>
+</ul>
+<h2 id="quick-start">Quick Start</h2>
+<pre><code class="lang-bash"># Clone repository
+git clone https://github.com/hazina-ai/hazina.git
+cd hazina
+
+# Choose your solution file (see SOLUTIONS.md for guidance)
+# New to Hazina? Start with QuickStart.sln
+dotnet restore Hazina.QuickStart.sln
+dotnet build Hazina.QuickStart.sln
+
+# Working on a specific area?
+# dotnet build Hazina.AI.sln       # AI features
+# dotnet build Hazina.Core.sln     # Infrastructure
+# dotnet build Hazina.Tools.sln    # Tools &amp; services
+# dotnet build Hazina.Apps.sln     # Applications
+
+# Full build (all 62 projects)
+# dotnet build Hazina.sln
+
+# Run demos
+dotnet run --project apps/Demos/Hazina.Demo.Supabase
+</code></pre>
+<h2 id="definition-of-done-dod">Definition of Done (DoD)</h2>
+<p>All contributions to Hazina must meet the complete Definition of Done before being merged.</p>
+<p><strong>See:</strong> <code>C:\scripts\_machine\DEFINITION_OF_DONE.md</code> for the comprehensive checklist (Brand2Boost/client-manager project context).</p>
+<p><strong>Key Hazina-Specific DoD Requirements:</strong></p>
+<ol>
+<li>✅ Branch created from <code>develop</code> (or <code>main</code>)</li>
+<li>✅ Code implemented with tests (≥80% coverage for new code)</li>
+<li>✅ Example code updated to reflect new features</li>
+<li>✅ PR created, reviewed, and merged</li>
+<li>✅ NuGet package versioned (if public release)</li>
+<li>✅ Breaking changes documented in MIGRATION_GUIDE.md</li>
+<li>✅ Client-manager compatibility verified (if applicable)</li>
+<li>✅ Documentation updated (README, API docs, guides)</li>
+</ol>
+<p><strong>Key Principle:</strong> A contribution is NOT done until it's merged, deployed (if applicable), and documented.</p>
+<hr>
+<h2 id="documentation-1">Documentation</h2>
+<p>Hazina provides comprehensive documentation to help you get started and master the framework.</p>
+<h3 id="local-documentation-private-repositories">Local Documentation (Private Repositories)</h3>
+<p>Documentation is auto-generated and committed to the repository at <strong><code>docs/apidoc/</code></strong>:</p>
+<ul>
+<li>Open <code>docs/apidoc/index.html</code> in your browser for the full documentation</li>
+<li><strong>Getting Started</strong> - Quickstart guides and tutorials</li>
+<li><strong>API Reference</strong> - Complete API documentation at <code>docs/apidoc/api/index.html</code></li>
+<li><strong>Architecture</strong> - Design decisions and patterns</li>
+<li><strong>Guides</strong> - RAG, agents, context engineering, and more</li>
+</ul>
+<p><strong>Benefits for private repos:</strong> No external hosting needed - documentation is version-controlled alongside code.</p>
+<h3 id="regenerating-documentation-locally">Regenerating Documentation Locally</h3>
+<pre><code class="lang-bash"># Generate API documentation from source code
+.\generate-docs.ps1
+
+# Generate and preview in browser (http://localhost:8080)
+.\generate-docs.ps1 -Serve
+
+# Clean previous build and regenerate
+.\generate-docs.ps1 -Clean
+</code></pre>
+<p>Documentation is automatically regenerated by GitHub Actions on every push to develop/main.</p>
+<h3 id="documentation-standards">Documentation Standards</h3>
+<p>All public APIs must include XML documentation comments. See <a href="DOCUMENTATION_GUIDELINES.md">DOCUMENTATION_GUIDELINES.md</a> for details.</p>
+<p><strong>Before creating a PR:</strong></p>
+<ul>
+<li>✅ All public APIs have XML documentation</li>
+<li>✅ Complex features have usage examples</li>
+<li>✅ Documentation builds without errors: <code>.\generate-docs.ps1</code></li>
+<li>✅ No CS1591 warnings (missing XML comments)</li>
+</ul>
+<hr>
+<h2 id="contributing">Contributing</h2>
+<p>We welcome contributions! See <a href="CONTRIBUTING.md">CONTRIBUTING.md</a> for guidelines.</p>
+<p><strong>Before contributing:</strong></p>
+<ul>
+<li>Read the Definition of Done (see above)</li>
+<li>Ensure all DoD criteria can be met</li>
+<li>Create feature branches from <code>develop</code> (or <code>main</code>)</li>
+<li>Follow semantic versioning for breaking changes</li>
+</ul>
+<h2 id="license">License</h2>
+<p>MIT License - see <a href="LICENSE">LICENSE</a> for details.</p>
+<hr>
+<p><strong>Built for .NET developers who ship production AI.</strong></p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

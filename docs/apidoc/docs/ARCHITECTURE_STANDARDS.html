@@ -1,0 +1,413 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Hazina Framework - Architecture Standards and Guidelines | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Hazina Framework - Architecture Standards and Guidelines | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="hazina-framework---architecture-standards-and-guidelines">Hazina Framework - Architecture Standards and Guidelines</h1>
+
+<p>This document defines the mandatory architecture standards for the Hazina framework. All code contributions must follow these rules.</p>
+<hr>
+<h2 id="core-principles">Core Principles</h2>
+<h3 id="1-prompts-are-always-configurable---never-hardcoded">1. Prompts Are Always Configurable - NEVER Hardcoded</h3>
+<p><strong>MANDATORY</strong>: All prompts must be externally configurable. No prompt text should exist in compiled code.</p>
+<p><strong>Why</strong>:</p>
+<ul>
+<li>Prompts are the primary interface to AI behavior</li>
+<li>Iteration cycles must be fast (no recompile/redeploy)</li>
+<li>Different deployments need different prompts</li>
+<li>Prompt engineering is an ongoing process</li>
+</ul>
+<p><strong>Implementation Pattern</strong>:</p>
+<pre><code class="lang-csharp">public class AgentFactory
+{
+    // CORRECT: Load prompts from configuration
+    public async Task&lt;HazinaAgent&gt; CreateAgentAsync(AgentConfig config)
+    {
+        var systemPrompt = await _promptLoader.LoadAsync(config.PromptPath);
+        return new HazinaAgent(config.Name, systemPrompt, ...);
+    }
+}
+</code></pre>
+<p><strong>Anti-Pattern</strong>:</p>
+<pre><code class="lang-csharp">public class AgentFactory
+{
+    // WRONG: Hardcoded prompt
+    public HazinaAgent CreateAgent()
+    {
+        return new HazinaAgent(&quot;assistant&quot;,
+            &quot;You are a helpful coding assistant...&quot;, ...);
+    }
+}
+</code></pre>
+<p><strong>Prompt Sources</strong> (in order of precedence):</p>
+<ol>
+<li>Store-specific: <code>stores/{name}/prompts/*.txt</code></li>
+<li>Agent-specific: <code>agents.hazina</code> or <code>agents.json</code></li>
+<li>Flow-specific: <code>flows.hazina</code> or <code>flows.json</code></li>
+<li>Framework defaults: Should be minimal/generic</li>
+</ol>
+<hr>
+<h3 id="2-store-tools-are-always-configurable---never-hardcoded">2. Store Tools Are Always Configurable - NEVER Hardcoded</h3>
+<p><strong>MANDATORY</strong>: Tool availability must be explicitly configured per agent/store, not compiled into code.</p>
+<p><strong>Why</strong>:</p>
+<ul>
+<li>Security: Least-privilege access control</li>
+<li>Flexibility: Different contexts need different tools</li>
+<li>Auditability: Tool access should be traceable</li>
+<li>Extensibility: Custom tools without framework changes</li>
+</ul>
+<p><strong>Configuration Format</strong> (agents.hazina):</p>
+<pre><code>Name: code_assistant
+Prompt: prompts/code_assistant.txt
+Stores: source_code|True
+Functions: git,dotnet,npm,build
+CallsAgents:
+CallsFlows:
+</code></pre>
+<p><strong>Implementation Pattern</strong>:</p>
+<pre><code class="lang-csharp">public void ConfigureTools(HazinaAgent agent, AgentConfig config)
+{
+    // CORRECT: Tools from configuration
+    foreach (var toolName in config.Functions.Split(','))
+    {
+        var tool = _toolRegistry.Get(toolName.Trim());
+        if (tool != null)
+            agent.AddTool(tool);
+    }
+}
+</code></pre>
+<p><strong>Anti-Pattern</strong>:</p>
+<pre><code class="lang-csharp">public void ConfigureTools(HazinaAgent agent)
+{
+    // WRONG: Hardcoded tools
+    agent.AddTool(new GitTool());
+    agent.AddTool(new DotnetTool());
+    agent.AddTool(new FileReadTool());
+}
+</code></pre>
+<p><strong>Tool Registry Pattern</strong>:</p>
+<ul>
+<li>Register all available tools in <code>IToolRegistry</code></li>
+<li>Agents request tools by name</li>
+<li>Unknown tool names are logged and skipped</li>
+<li>No direct tool instantiation in agent code</li>
+</ul>
+<hr>
+<h3 id="3-knowledge-storage-is-metadata-first-embeddings-secondary">3. Knowledge Storage Is Metadata-First, Embeddings-Secondary</h3>
+<p><strong>MANDATORY</strong>: The knowledge database is the primary query layer. Embeddings are optional search accelerators.</p>
+<p><strong>Why</strong>:</p>
+<ul>
+<li>Agents need deterministic queries for structured information</li>
+<li>Semantic similarity is not the only measure of relevance</li>
+<li>Embedding providers may change; data must persist</li>
+<li>Offline/cost-sensitive scenarios require non-embedding search</li>
+</ul>
+<p><strong>Design Principles</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Principle</th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Database is truth</td>
+<td>SQLite (local) or PostgreSQL (production) stores all queryable data</td>
+</tr>
+<tr>
+<td>Metadata is primary</td>
+<td>Tags, properties, and structure are always indexed and queryable</td>
+</tr>
+<tr>
+<td>Embeddings are secondary</td>
+<td>Optional acceleration layer, not required for function</td>
+</tr>
+<tr>
+<td>Files are sources</td>
+<td>Documents and chunks are inputs, regenerated on demand</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Implementation Pattern</strong>:</p>
+<pre><code class="lang-csharp">public class KnowledgeService
+{
+    // CORRECT: Metadata-first search with optional embeddings
+    public async Task&lt;IEnumerable&lt;Chunk&gt;&gt; SearchAsync(SearchRequest request)
+    {
+        // Step 1: Filter by metadata (always)
+        var filtered = await _db.FilterAsync(request.MetadataFilters);
+
+        // Step 2: Optionally rank by embeddings
+        if (request.UseSemanticSearch &amp;&amp; _config.EmbeddingsEnabled)
+        {
+            filtered = await _embeddings.RankAsync(request.Query, filtered);
+        }
+
+        return filtered;
+    }
+}
+</code></pre>
+<p><strong>Anti-Pattern</strong>:</p>
+<pre><code class="lang-csharp">public class KnowledgeService
+{
+    // WRONG: Embeddings as primary (fails without vector store)
+    public async Task&lt;IEnumerable&lt;Chunk&gt;&gt; SearchAsync(string query)
+    {
+        var embedding = await _embedder.EmbedAsync(query);
+        return await _vectorStore.SearchAsync(embedding); // No metadata filtering
+    }
+}
+</code></pre>
+<p><strong>Guarantee</strong>:</p>
+<pre><code>If embeddings are disabled, Hazina must continue to function correctly.
+</code></pre>
+<p>See <a href="KNOWLEDGE_STORAGE.html">Knowledge Storage &amp; Search Model</a> for complete architecture.</p>
+<hr>
+<h3 id="4-llm-providers-and-data-storage-are-always-configurable">4. LLM Providers and Data Storage Are Always Configurable</h3>
+<p><strong>MANDATORY</strong>: Provider selection and storage backends must be runtime-configurable.</p>
+<p><strong>Why</strong>:</p>
+<ul>
+<li>Cost optimization: Switch providers based on task</li>
+<li>Reliability: Failover between providers</li>
+<li>Compliance: Data residency requirements</li>
+<li>Testing: Mock providers for unit tests</li>
+</ul>
+<p><strong>Provider Configuration</strong> (appsettings.json):</p>
+<pre><code class="lang-json">{
+  &quot;LLM&quot;: {
+    &quot;DefaultProvider&quot;: &quot;openai&quot;,
+    &quot;Providers&quot;: {
+      &quot;openai&quot;: {
+        &quot;ApiKey&quot;: &quot;${OPENAI_API_KEY}&quot;,
+        &quot;Model&quot;: &quot;gpt-4.1&quot;,
+        &quot;EmbeddingModel&quot;: &quot;text-embedding-ada-002&quot;
+      },
+      &quot;anthropic&quot;: {
+        &quot;ApiKey&quot;: &quot;${ANTHROPIC_API_KEY}&quot;,
+        &quot;Model&quot;: &quot;claude-sonnet-4-20250514&quot;
+      }
+    }
+  }
+}
+</code></pre>
+<p><strong>Storage Configuration</strong>:</p>
+<pre><code class="lang-json">{
+  &quot;Storage&quot;: {
+    &quot;Backend&quot;: &quot;supabase&quot;,
+    &quot;Embeddings&quot;: {
+      &quot;Provider&quot;: &quot;pgvector&quot;,
+      &quot;ConnectionString&quot;: &quot;${SUPABASE_CONNECTION_STRING}&quot;
+    },
+    &quot;Documents&quot;: {
+      &quot;Provider&quot;: &quot;filesystem&quot;,
+      &quot;BasePath&quot;: &quot;c:\\stores&quot;
+    }
+  }
+}
+</code></pre>
+<p><strong>Implementation Pattern</strong>:</p>
+<pre><code class="lang-csharp">public class LLMClientFactory
+{
+    // CORRECT: Factory pattern with configuration
+    public ILLMClient Create(string providerName)
+    {
+        var config = _configuration.GetSection($&quot;LLM:Providers:{providerName}&quot;);
+        return providerName switch
+        {
+            &quot;openai&quot; =&gt; new OpenAIClientWrapper(config.Get&lt;OpenAIConfig&gt;()),
+            &quot;anthropic&quot; =&gt; new AnthropicClient(config.Get&lt;AnthropicConfig&gt;()),
+            _ =&gt; throw new InvalidOperationException($&quot;Unknown provider: {providerName}&quot;)
+        };
+    }
+}
+</code></pre>
+<p><strong>Anti-Pattern</strong>:</p>
+<pre><code class="lang-csharp">// WRONG: Hardcoded provider
+var client = new OpenAIClientWrapper(new OpenAIConfig
+{
+    ApiKey = &quot;sk-...&quot;,
+    Model = &quot;gpt-4&quot;
+});
+</code></pre>
+<hr>
+<h2 id="configuration-file-formats">Configuration File Formats</h2>
+<h3 id="hazina-format">.hazina Format</h3>
+<p>Simple text format for human editing:</p>
+<pre><code>Name: my_agent
+Description: Does something useful
+Prompt: path/to/prompt.txt
+Stores: store1|False,store2|True
+Functions: tool1,tool2
+</code></pre>
+<h3 id="json-format">JSON Format</h3>
+<p>Structured format for programmatic access:</p>
+<pre><code class="lang-json">{
+  &quot;name&quot;: &quot;my_agent&quot;,
+  &quot;description&quot;: &quot;Does something useful&quot;,
+  &quot;promptPath&quot;: &quot;path/to/prompt.txt&quot;,
+  &quot;stores&quot;: [
+    { &quot;name&quot;: &quot;store1&quot;, &quot;writable&quot;: false },
+    { &quot;name&quot;: &quot;store2&quot;, &quot;writable&quot;: true }
+  ],
+  &quot;functions&quot;: [&quot;tool1&quot;, &quot;tool2&quot;]
+}
+</code></pre>
+<hr>
+<h2 id="environment-variable-pattern">Environment Variable Pattern</h2>
+<p>Sensitive values must use environment variables:</p>
+<pre><code class="lang-json">{
+  &quot;ApiKey&quot;: &quot;${OPENAI_API_KEY}&quot;,
+  &quot;ConnectionString&quot;: &quot;${DATABASE_URL}&quot;
+}
+</code></pre>
+<p>The framework resolves <code>${VAR_NAME}</code> syntax at runtime.</p>
+<hr>
+<h2 id="validation-requirements">Validation Requirements</h2>
+<h3 id="startup-validation">Startup Validation</h3>
+<ul>
+<li>All configured prompts must exist</li>
+<li>All configured stores must be accessible</li>
+<li>All configured tools must be registered</li>
+<li>Provider credentials must be valid</li>
+</ul>
+<h3 id="runtime-validation">Runtime Validation</h3>
+<ul>
+<li>Log warnings for missing optional configuration</li>
+<li>Fail fast for missing required configuration</li>
+<li>Never fall back to hardcoded defaults silently</li>
+</ul>
+<hr>
+<h2 id="code-review-checklist">Code Review Checklist</h2>
+<ul>
+<li>[ ] No prompt strings in C# code (except logging/errors)</li>
+<li>[ ] No tool instantiation outside factory/registry</li>
+<li>[ ] No direct provider instantiation (use factory)</li>
+<li>[ ] No hardcoded connection strings</li>
+<li>[ ] Configuration loading uses standard patterns</li>
+<li>[ ] Environment variables for secrets</li>
+<li>[ ] Knowledge queries work without embeddings enabled</li>
+<li>[ ] Metadata filtering precedes embedding search</li>
+<li>[ ] No assumptions that vector store is always available</li>
+</ul>
+<hr>
+<h2 id="related-files">Related Files</h2>
+<ul>
+<li><code>src/Core/Agents/Hazina.AgentFactory/</code> - Agent creation with configuration</li>
+<li><code>src/Core/Storage/Hazina.Store.EmbeddingStore/</code> - Embedding storage implementations</li>
+<li><code>src/Core/Storage/Hazina.Store.DocumentStore/</code> - Document and metadata storage</li>
+<li><code>src/Tools/Foundation/Hazina.Tools.Core/Config/</code> - Configuration classes</li>
+<li><code>src/Tools/Services/Hazina.Tools.Services.Prompts/</code> - Prompt loading services</li>
+<li><code>docs/KNOWLEDGE_STORAGE.md</code> - Knowledge storage architecture</li>
+<li><code>docs/README.md</code> - Framework overview</li>
+</ul>
+<hr>
+<p><em>Last updated: 2026-01-03</em></p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

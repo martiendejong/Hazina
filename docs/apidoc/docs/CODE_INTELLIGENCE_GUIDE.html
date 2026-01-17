@@ -1,0 +1,439 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Code Intelligence Guide | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Code Intelligence Guide | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="code-intelligence-guide">Code Intelligence Guide</h1>
+
+<h2 id="overview">Overview</h2>
+<p>Hazina's Code Intelligence provides AI-powered code analysis, refactoring, and pattern learning capabilities.</p>
+<h2 id="features">Features</h2>
+<h3 id="1-multi-file-refactoring">1. Multi-File Refactoring</h3>
+<p>Safely refactor code across multiple files with dependency analysis:</p>
+<pre><code class="lang-csharp">var orchestrator = new ProviderOrchestrator();
+var refactoringEngine = new MultiFileRefactoringEngine(orchestrator);
+
+// Build project context
+var context = new ProjectContext
+{
+    Name = &quot;MyProject&quot;,
+    Files = codeFiles,
+    Symbols = symbolDictionary,
+    DependencyGraph = dependencies
+};
+
+// Request refactoring
+var request = new RefactoringRequest
+{
+    Type = RefactoringType.RenameSymbol,
+    TargetSymbol = &quot;OldClassName&quot;,
+    NewName = &quot;NewClassName&quot;,
+    Scope = RefactoringScope.Project
+};
+
+// Analyze refactoring
+var plan = await refactoringEngine.AnalyzeRefactoringAsync(request, context);
+
+Console.WriteLine($&quot;Risk Level: {plan.RiskAssessment.RiskLevel}&quot;);
+Console.WriteLine($&quot;Affected Files: {plan.AffectedFiles.Count}&quot;);
+Console.WriteLine($&quot;Breaking Changes: {plan.RiskAssessment.BreakingChanges.Count}&quot;);
+
+// Review steps
+foreach (var step in plan.Steps)
+{
+    Console.WriteLine($&quot;- {step.Description}&quot;);
+}
+
+// Execute if acceptable
+if (plan.RiskAssessment.RiskLevel &lt;= RiskLevel.Medium)
+{
+    var result = await refactoringEngine.ExecuteRefactoringAsync(plan);
+    Console.WriteLine($&quot;Success: {result.Success}&quot;);
+}
+</code></pre>
+<h3 id="2-logical-inconsistency-detection">2. Logical Inconsistency Detection</h3>
+<p>Detect naming, architectural, and logical inconsistencies:</p>
+<pre><code class="lang-csharp">var detector = new LogicalInconsistencyDetector(orchestrator);
+
+// Detect all inconsistencies
+var report = await detector.DetectInconsistenciesAsync(context);
+
+Console.WriteLine($&quot;Consistency Score: {report.ConsistencyScore:P0}&quot;);
+Console.WriteLine($&quot;Naming Issues: {report.NamingInconsistencies.Count}&quot;);
+Console.WriteLine($&quot;Architecture Issues: {report.ArchitecturalInconsistencies.Count}&quot;);
+
+// Review issues
+foreach (var issue in report.NamingInconsistencies)
+{
+    Console.WriteLine($&quot;[{issue.Severity}] {issue.Description}&quot;);
+    Console.WriteLine($&quot;  Suggestion: {issue.Suggestion}&quot;);
+}
+
+// Analyze specific code
+var codeIssues = await detector.AnalyzeCodeAsync(
+    codeSnippet,
+    &quot;Authentication module&quot;
+);
+
+foreach (var issue in codeIssues)
+{
+    Console.WriteLine($&quot;{issue.Type}: {issue.Description}&quot;);
+}
+</code></pre>
+<h3 id="3-project-pattern-learning">3. Project Pattern Learning</h3>
+<p>Automatically learn and enforce project conventions:</p>
+<pre><code class="lang-csharp">var patternLearner = new ProjectPatternLearner(orchestrator);
+
+// Learn patterns from codebase
+var learningResult = await patternLearner.LearnPatternsAsync(context);
+
+Console.WriteLine($&quot;Patterns learned: {learningResult.PatternsLearned.Count}&quot;);
+
+// Review learned patterns
+foreach (var pattern in learningResult.PatternsLearned)
+{
+    Console.WriteLine($&quot;{pattern.Category}: {pattern.Name}&quot;);
+    Console.WriteLine($&quot;  Description: {pattern.Description}&quot;);
+    Console.WriteLine($&quot;  Confidence: {pattern.Confidence:P0}&quot;);
+    Console.WriteLine($&quot;  Rule: {pattern.Rule}&quot;);
+}
+
+// Get suggestions for a file
+var suggestions = patternLearner.SuggestImprovements(codeFile, context);
+
+foreach (var suggestion in suggestions)
+{
+    Console.WriteLine($&quot;[Priority {suggestion.Priority}] {suggestion.Pattern}&quot;);
+    Console.WriteLine($&quot;  File: {suggestion.File}:{suggestion.Location}&quot;);
+    Console.WriteLine($&quot;  Issue: {suggestion.Issue}&quot;);
+    Console.WriteLine($&quot;  Suggestion: {suggestion.Suggestion}&quot;);
+}
+</code></pre>
+<h2 id="refactoring-types">Refactoring Types</h2>
+<h3 id="supported-refactorings">Supported Refactorings</h3>
+<ul>
+<li><strong>RenameSymbol</strong>: Rename classes, methods, variables across entire project</li>
+<li><strong>ExtractMethod</strong>: Extract code into new method</li>
+<li><strong>InlineMethod</strong>: Inline method calls</li>
+<li><strong>MoveClass</strong>: Move class to different namespace/file</li>
+<li><strong>ExtractInterface</strong>: Extract interface from class</li>
+<li><strong>ChangeSignature</strong>: Modify method signatures safely</li>
+</ul>
+<h3 id="refactoring-example">Refactoring Example</h3>
+<pre><code class="lang-csharp">// Extract method refactoring
+var request = new RefactoringRequest
+{
+    Type = RefactoringType.ExtractMethod,
+    SourceFile = &quot;Services/UserService.cs&quot;,
+    StartLine = 45,
+    EndLine = 67,
+    NewName = &quot;ValidateUserCredentials&quot;,
+    Parameters = new Dictionary&lt;string, string&gt;
+    {
+        [&quot;username&quot;] = &quot;string&quot;,
+        [&quot;password&quot;] = &quot;string&quot;
+    }
+};
+
+var plan = await refactoringEngine.AnalyzeRefactoringAsync(request, context);
+
+// Check for issues
+if (plan.RiskAssessment.BreakingChanges.Any())
+{
+    Console.WriteLine(&quot;Warning: Breaking changes detected:&quot;);
+    foreach (var breaking in plan.RiskAssessment.BreakingChanges)
+    {
+        Console.WriteLine($&quot;  - {breaking}&quot;);
+    }
+}
+</code></pre>
+<h2 id="pattern-categories">Pattern Categories</h2>
+<h3 id="automatic-pattern-detection">Automatic Pattern Detection</h3>
+<p>The system can learn these pattern categories:</p>
+<ol>
+<li><p><strong>Naming Conventions</strong></p>
+<ul>
+<li>Class naming (PascalCase, prefixes)</li>
+<li>Method naming (verbs, conventions)</li>
+<li>Variable naming (camelCase, Hungarian notation)</li>
+<li>Constant naming (UPPER_CASE)</li>
+</ul>
+</li>
+<li><p><strong>Architectural Patterns</strong></p>
+<ul>
+<li>Layered architecture</li>
+<li>Clean architecture</li>
+<li>Microservices patterns</li>
+<li>Repository patterns</li>
+</ul>
+</li>
+<li><p><strong>Design Patterns</strong></p>
+<ul>
+<li>Factory, Singleton, Observer</li>
+<li>Dependency injection patterns</li>
+<li>SOLID principles adherence</li>
+</ul>
+</li>
+<li><p><strong>Coding Style</strong></p>
+<ul>
+<li>Error handling patterns</li>
+<li>Logging conventions</li>
+<li>Comment styles</li>
+<li>Code organization</li>
+</ul>
+</li>
+</ol>
+<h3 id="pattern-learning-example">Pattern Learning Example</h3>
+<pre><code class="lang-csharp">// Learn from specific category
+var namingPatterns = patternLearner.GetPatternsByCategory(PatternCategory.NamingConvention);
+
+foreach (var pattern in namingPatterns)
+{
+    Console.WriteLine($&quot;{pattern.Name}:&quot;);
+    Console.WriteLine($&quot;  Applies to: {pattern.Description}&quot;);
+    Console.WriteLine($&quot;  Examples:&quot;);
+    foreach (var example in pattern.Examples)
+    {
+        Console.WriteLine($&quot;    - {example}&quot;);
+    }
+}
+</code></pre>
+<h2 id="inconsistency-types">Inconsistency Types</h2>
+<h3 id="detection-examples">Detection Examples</h3>
+<pre><code class="lang-csharp">// Naming inconsistencies
+// Detects: mix of camelCase and PascalCase, inconsistent prefixes
+
+// Architectural inconsistencies
+// Detects: circular dependencies, layer violations, wrong dependencies
+
+// Logical inconsistencies
+// Detects: unreachable code, contradictory logic, type mismatches
+
+// Documentation inconsistencies
+// Detects: outdated comments, missing documentation, comment-code mismatch
+</code></pre>
+<h2 id="best-practices">Best Practices</h2>
+<h3 id="1-build-complete-context">1. Build Complete Context</h3>
+<pre><code class="lang-csharp">var context = new ProjectContext
+{
+    Name = projectName,
+    Files = await ScanAllFilesAsync(projectPath),
+    Symbols = await ExtractAllSymbolsAsync(files),
+    DependencyGraph = BuildDependencyGraph(files),
+    Architecture = AnalyzeArchitecture(files)
+};
+</code></pre>
+<h3 id="2-review-before-executing">2. Review Before Executing</h3>
+<pre><code class="lang-csharp">var plan = await refactoringEngine.AnalyzeRefactoringAsync(request, context);
+
+// Always review
+Console.WriteLine($&quot;Risk: {plan.RiskAssessment.RiskLevel}&quot;);
+Console.WriteLine($&quot;Estimated effort: {plan.EstimatedEffort}&quot;);
+
+// Get user confirmation for high-risk changes
+if (plan.RiskAssessment.RiskLevel &gt;= RiskLevel.High)
+{
+    if (!GetUserConfirmation())
+        return;
+}
+
+await refactoringEngine.ExecuteRefactoringAsync(plan);
+</code></pre>
+<h3 id="3-incremental-learning">3. Incremental Learning</h3>
+<pre><code class="lang-csharp">// Learn patterns incrementally as codebase evolves
+var existingPatterns = patternLearner.GetPatterns();
+
+// Add new files
+context.Files.AddRange(newFiles);
+
+// Re-learn
+var newPatterns = await patternLearner.LearnPatternsAsync(context);
+
+// Compare
+var changedPatterns = DetectPatternChanges(existingPatterns, newPatterns);
+</code></pre>
+<h3 id="4-continuous-monitoring">4. Continuous Monitoring</h3>
+<pre><code class="lang-csharp">// Run inconsistency detection on commits
+var report = await detector.DetectInconsistenciesAsync(context);
+
+if (report.ConsistencyScore &lt; 0.8)
+{
+    Console.WriteLine(&quot;Warning: Code consistency below threshold&quot;);
+    // Trigger review or block merge
+}
+</code></pre>
+<h2 id="integration-examples">Integration Examples</h2>
+<h3 id="pre-commit-hook">Pre-commit Hook</h3>
+<pre><code class="lang-csharp">// Check code before commit
+var changedFiles = GetChangedFiles();
+var context = BuildContextFromFiles(changedFiles);
+
+var issues = await detector.AnalyzeCodeAsync(
+    string.Join(&quot;\n&quot;, changedFiles.Select(f =&gt; f.Content)),
+    &quot;Pre-commit check&quot;
+);
+
+if (issues.Any(i =&gt; i.Severity == InconsistencySeverity.High))
+{
+    Console.WriteLine(&quot;High severity issues detected. Commit blocked.&quot;);
+    return false;
+}
+</code></pre>
+<h3 id="code-review-assistant">Code Review Assistant</h3>
+<pre><code class="lang-csharp">// Analyze pull request
+var prFiles = GetPullRequestFiles();
+var context = BuildContext(prFiles);
+
+// Check inconsistencies
+var report = await detector.DetectInconsistenciesAsync(context);
+
+// Check patterns
+var suggestions = patternLearner.SuggestImprovements(prFiles[0], context);
+
+// Generate review comments
+var comments = GenerateReviewComments(report, suggestions);
+PostReviewComments(pullRequestId, comments);
+</code></pre>
+<h2 id="performance-considerations">Performance Considerations</h2>
+<ul>
+<li><strong>Context Building</strong>: Cache parsed symbols and dependencies</li>
+<li><strong>Pattern Learning</strong>: Run periodically, not on every file change</li>
+<li><strong>Incremental Analysis</strong>: Only analyze changed files when possible</li>
+<li><strong>Parallel Processing</strong>: Analyze files in parallel for large codebases</li>
+</ul>
+<h2 id="error-handling">Error Handling</h2>
+<pre><code class="lang-csharp">try
+{
+    var plan = await refactoringEngine.AnalyzeRefactoringAsync(request, context);
+
+    if (!plan.IsSafe)
+    {
+        Console.WriteLine(&quot;Refactoring deemed unsafe:&quot;);
+        foreach (var risk in plan.RiskAssessment.Risks)
+        {
+            Console.WriteLine($&quot;  - {risk}&quot;);
+        }
+        return;
+    }
+
+    var result = await refactoringEngine.ExecuteRefactoringAsync(plan);
+
+    if (!result.Success)
+    {
+        Console.WriteLine($&quot;Refactoring failed: {result.Error}&quot;);
+        // Rollback if needed
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($&quot;Error: {ex.Message}&quot;);
+}
+</code></pre>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

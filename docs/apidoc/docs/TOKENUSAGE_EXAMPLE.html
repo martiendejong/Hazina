@@ -1,0 +1,259 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Token Usage Tracking - Usage Examples | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Token Usage Tracking - Usage Examples | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="token-usage-tracking---usage-examples">Token Usage Tracking - Usage Examples</h1>
+
+<h2 id="overview">Overview</h2>
+<p>Alle LLM client calls retourneren nu een <code>LLMResponse&lt;T&gt;</code> wrapper die zowel het resultaat als token usage informatie bevat.</p>
+<h2 id="data-structures">Data Structures</h2>
+<h3 id="tokenusageinfo">TokenUsageInfo</h3>
+<pre><code class="lang-csharp">public class TokenUsageInfo
+{
+    public int InputTokens { get; set; }
+    public int OutputTokens { get; set; }
+    public int TotalTokens =&gt; InputTokens + OutputTokens;
+    public decimal InputCost { get; set; }
+    public decimal OutputCost { get; set; }
+    public decimal TotalCost =&gt; InputCost + OutputCost;
+    public string ModelName { get; set; }
+}
+</code></pre>
+<h3 id="llmresponse">LLMResponse<t></t></h3>
+<pre><code class="lang-csharp">public class LLMResponse&lt;T&gt;
+{
+    public T Result { get; set; }
+    public TokenUsageInfo TokenUsage { get; set; }
+}
+</code></pre>
+<h2 id="usage-examples">Usage Examples</h2>
+<h3 id="basic-string-response">Basic String Response</h3>
+<pre><code class="lang-csharp">var response = await generator.GetResponse(
+    &quot;Write a hello world program&quot;,
+    cancellationToken
+);
+
+// Access the actual response
+Console.WriteLine(response.Result);
+
+// Access token usage
+Console.WriteLine($&quot;Tokens used: {response.TokenUsage.TotalTokens}&quot;);
+Console.WriteLine($&quot;Cost: ${response.TokenUsage.TotalCost:F4}&quot;);
+Console.WriteLine($&quot;Model: {response.TokenUsage.ModelName}&quot;);
+</code></pre>
+<h3 id="typed-response">Typed Response</h3>
+<pre><code class="lang-csharp">var response = await generator.GetResponse&lt;MyCustomResponse&gt;(
+    &quot;Generate structured data&quot;,
+    cancellationToken
+);
+
+// Access typed result
+var data = response.Result;
+Console.WriteLine($&quot;Message: {data?.Message}&quot;);
+
+// Track usage
+Console.WriteLine($&quot;Input tokens: {response.TokenUsage.InputTokens}&quot;);
+Console.WriteLine($&quot;Output tokens: {response.TokenUsage.OutputTokens}&quot;);
+Console.WriteLine($&quot;Cost: ${response.TokenUsage.TotalCost:F4}&quot;);
+</code></pre>
+<h3 id="multiple-calls---aggregating-costs">Multiple Calls - Aggregating Costs</h3>
+<pre><code class="lang-csharp">var totalUsage = new TokenUsageInfo();
+
+for (int i = 0; i &lt; 5; i++)
+{
+    var response = await generator.GetResponse($&quot;Request {i}&quot;, cancellationToken);
+
+    // Aggregate usage
+    totalUsage += response.TokenUsage;
+
+    Console.WriteLine($&quot;Call {i}: {response.TokenUsage.TotalCost:F4}&quot;);
+}
+
+Console.WriteLine($&quot;\nTotal tokens: {totalUsage.TotalTokens}&quot;);
+Console.WriteLine($&quot;Total cost: ${totalUsage.TotalCost:F4}&quot;);
+</code></pre>
+<h3 id="stream-response">Stream Response</h3>
+<pre><code class="lang-csharp">var response = await generator.StreamResponse(
+    &quot;Tell me a story&quot;,
+    cancellationToken,
+    chunk =&gt; Console.Write(chunk) // Handle each chunk
+);
+
+Console.WriteLine($&quot;\n\nTokens: {response.TokenUsage.TotalTokens}&quot;);
+Console.WriteLine($&quot;Cost: ${response.TokenUsage.TotalCost:F4}&quot;);
+</code></pre>
+<h3 id="image-generation">Image Generation</h3>
+<pre><code class="lang-csharp">var response = await generator.GetImage(
+    &quot;A red sunset over mountains&quot;,
+    cancellationToken
+);
+
+var image = response.Result;
+Console.WriteLine($&quot;Image URL: {image.Url}&quot;);
+Console.WriteLine($&quot;Cost: ${response.TokenUsage.TotalCost:F4}&quot;);
+</code></pre>
+<h3 id="agentmanager-usage">AgentManager Usage</h3>
+<pre><code class="lang-csharp">var agentManager = new AgentManager(
+    storesPath, agentsPath, flowsPath,
+    apiKey, logPath
+);
+await agentManager.LoadStoresAndAgents();
+
+// Send message and get result
+var result = await agentManager.SendMessage(&quot;Hello&quot;, cancellationToken);
+
+// Note: AgentManager wraps the response and returns just the string
+// To get token usage, you'd need to call agent.Generator directly:
+var agent = agentManager.GetAgent(&quot;myAgent&quot;);
+var response = await agent.Generator.GetResponse&lt;IsReadyResult&gt;(
+    &quot;Hello&quot;,
+    cancellationToken,
+    agentManager.History,
+    true, true,
+    agent.Tools, null
+);
+
+Console.WriteLine($&quot;Message: {response.Result.Message}&quot;);
+Console.WriteLine($&quot;Tokens: {response.TokenUsage.TotalTokens}&quot;);
+Console.WriteLine($&quot;Cost: ${response.TokenUsage.TotalCost:F4}&quot;);
+</code></pre>
+<h2 id="pricing-as-of-implementation">Pricing (as of implementation)</h2>
+<h3 id="openai-models-per-1m-tokens">OpenAI Models (per 1M tokens)</h3>
+<ul>
+<li>GPT-4o: $2.50 input / $10.00 output</li>
+<li>GPT-4 Turbo: $10.00 input / $30.00 output</li>
+<li>GPT-4: $30.00 input / $60.00 output</li>
+<li>GPT-3.5 Turbo: $0.50 input / $1.50 output</li>
+<li>O1 Preview: $15.00 input / $60.00 output</li>
+<li>O1 Mini: $3.00 input / $12.00 output</li>
+<li>O3 Mini: $1.10 input / $4.40 output</li>
+</ul>
+<h3 id="anthropic-models-per-1m-tokens">Anthropic Models (per 1M tokens)</h3>
+<ul>
+<li>Claude 3.5 Sonnet: $3.00 input / $15.00 output</li>
+<li>Claude 3 Opus: $15.00 input / $75.00 output</li>
+<li>Claude 3 Sonnet: $3.00 input / $15.00 output</li>
+<li>Claude 3 Haiku: $0.25 input / $1.25 output</li>
+</ul>
+<h3 id="image-generation-estimated-per-image">Image Generation (estimated, per image)</h3>
+<ul>
+<li>OpenAI DALL-E: ~$0.04</li>
+<li>HuggingFace Stable Diffusion: ~$0.05</li>
+</ul>
+<h2 id="benefits">Benefits</h2>
+<ol>
+<li><strong>Cost Tracking</strong>: Monitor exact costs per request</li>
+<li><strong>Budget Management</strong>: Track spending across multiple calls</li>
+<li><strong>Optimization</strong>: Identify expensive operations</li>
+<li><strong>Reporting</strong>: Generate usage reports for billing</li>
+<li><strong>Transparency</strong>: Users know exactly what each request costs</li>
+</ol>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

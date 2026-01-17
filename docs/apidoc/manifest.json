@@ -1,0 +1,542 @@
+{
+  "source_base_path": "C:/Projects/worker-agents/agent-002/hazina",
+  "xrefmap": "xrefmap.yml",
+  "files": [
+    {
+      "type": "Resource",
+      "output": {
+        "resource": {
+          "relative_path": "index.json"
+        }
+      }
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "README.md",
+      "output": {
+        ".html": {
+          "relative_path": "README.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/AGENTS_GUIDE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/AGENTS_GUIDE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/ANALYSIS_data-analytics-agent.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/ANALYSIS_data-analytics-agent.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/API_CHANGELOG.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/API_CHANGELOG.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/ARCHITECTURE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/ARCHITECTURE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/ARCHITECTURE_ANALYSIS_2026-01-05.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/ARCHITECTURE_ANALYSIS_2026-01-05.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/ARCHITECTURE_STANDARDS.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/ARCHITECTURE_STANDARDS.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/AUTO_TAGGING.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/AUTO_TAGGING.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/CLEAN_CODE_BACKLOG.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/CLEAN_CODE_BACKLOG.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/CLEAN_CODE_MASTERPLAN.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/CLEAN_CODE_MASTERPLAN.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/CLEAN_CODE_OPTION_B.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/CLEAN_CODE_OPTION_B.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/CODE_INTELLIGENCE_GUIDE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/CODE_INTELLIGENCE_GUIDE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/CONFIGURATION_GUIDE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/CONFIGURATION_GUIDE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/CONTEXT_COMPRESSION.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/CONTEXT_COMPRESSION.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/CONTEXT_ENGINEERING_ARCHITECTURE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/CONTEXT_ENGINEERING_ARCHITECTURE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/DEVGPT_VS_SEMANTIC_KERNEL_ANALYSIS.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/DEVGPT_VS_SEMANTIC_KERNEL_ANALYSIS.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/FIRECRAWL_INTEGRATION.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/FIRECRAWL_INTEGRATION.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/GOOGLE_DRIVE_INTEGRATION.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/GOOGLE_DRIVE_INTEGRATION.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/IMPLEMENTATION_ADVICE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/IMPLEMENTATION_ADVICE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/INTERVIEW_AGENT.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/INTERVIEW_AGENT.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/KNOWLEDGE_STORAGE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/KNOWLEDGE_STORAGE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/LLM-INSTRUCTIONS.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/LLM-INSTRUCTIONS.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/LOGGING_GUIDE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/LOGGING_GUIDE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/MIGRATION_GUIDE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/MIGRATION_GUIDE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/NEUROCHAIN_GUIDE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/NEUROCHAIN_GUIDE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/NUGET-PACKAGES-ANALYSIS.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/NUGET-PACKAGES-ANALYSIS.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/NUGET-VERSIONING.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/NUGET-VERSIONING.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/PROACTIVE_AGENT_ANALYSIS.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/PROACTIVE_AGENT_ANALYSIS.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/PROACTIVE_IMPLEMENTATION_PLAN.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/PROACTIVE_IMPLEMENTATION_PLAN.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/PRODUCTION_MONITORING_GUIDE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/PRODUCTION_MONITORING_GUIDE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/PROJECT-VALUE-ANALYSIS.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/PROJECT-VALUE-ANALYSIS.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/RAG_GUIDE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/RAG_GUIDE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/README.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/README.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/RELEASE_NOTES.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/RELEASE_NOTES.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/SEMANTIC_KERNEL_EXAMPLE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/SEMANTIC_KERNEL_EXAMPLE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/SQLITE_QUICKSTART.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/SQLITE_QUICKSTART.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/STORAGE_SEARCH_ARCHITECTURE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/STORAGE_SEARCH_ARCHITECTURE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/SUPABASE_SETUP.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/SUPABASE_SETUP.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/TESTING.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/TESTING.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/TOKENUSAGE_EXAMPLE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/TOKENUSAGE_EXAMPLE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/TOOL_AGENT_ARCHITECTURE.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/TOOL_AGENT_ARCHITECTURE.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/architecture-storage-analysis.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/architecture-storage-analysis.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Resource",
+      "source_relative_path": "docs/diagrams/AGENTS_DOMAIN.md",
+      "output": {
+        "resource": {
+          "relative_path": "docs/diagrams/AGENTS_DOMAIN.md"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Resource",
+      "source_relative_path": "docs/diagrams/AI_DOMAIN.md",
+      "output": {
+        "resource": {
+          "relative_path": "docs/diagrams/AI_DOMAIN.md"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Resource",
+      "source_relative_path": "docs/diagrams/RAG_DOMAIN.md",
+      "output": {
+        "resource": {
+          "relative_path": "docs/diagrams/RAG_DOMAIN.md"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Resource",
+      "source_relative_path": "docs/diagrams/STORAGE_DOMAIN.md",
+      "output": {
+        "resource": {
+          "relative_path": "docs/diagrams/STORAGE_DOMAIN.md"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/graph_construction.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/graph_construction.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/graph_model.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/graph_model.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/index.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/index.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "docs/quickstart.md",
+      "output": {
+        ".html": {
+          "relative_path": "docs/quickstart.html"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "docs/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "docs/toc.html"
+        },
+        ".json": {
+          "relative_path": "docs/toc.json"
+        }
+      },
+      "version": ""
+    },
+    {
+      "type": "Resource",
+      "source_relative_path": "icon.svg",
+      "output": {
+        "resource": {
+          "relative_path": "icon.svg"
+        }
+      },
+      "version": ""
+    }
+  ],
+  "groups": [
+    {
+      "xrefmap": "xrefmap.yml"
+    }
+  ]
+}

@@ -14,6 +14,8 @@
     <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>rag;document-generation;llm-orchestration;context-injection;streaming</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Storage\Hazina.Store.DocumentStore\Hazina.Store.DocumentStore.csproj" />

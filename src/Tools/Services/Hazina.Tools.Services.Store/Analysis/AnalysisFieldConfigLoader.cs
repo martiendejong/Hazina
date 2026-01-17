@@ -42,6 +42,15 @@ namespace Hazina.Tools.Services.Store
                             if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(file))
                                 continue;
 
+                            var componentName = el.TryGetProperty("componentName", out var cn) ? cn.GetString() : null;
+                            var chatComponentName = el.TryGetProperty("chatComponentName", out var ccn) ? ccn.GetString() : null;
+
+                            // Convention: if chatComponentName not specified, use {ComponentName}Chat
+                            if (string.IsNullOrWhiteSpace(chatComponentName) && !string.IsNullOrWhiteSpace(componentName))
+                            {
+                                chatComponentName = $"{componentName}Chat";
+                            }
+
                             var info = new AnalysisFieldInfo
                             {
                                 Key = key,
@@ -49,8 +58,9 @@ namespace Hazina.Tools.Services.Store
                                 DisplayName = el.TryGetProperty("displayName", out var d) ? d.GetString() ?? key : key,
                                 GenericType = el.TryGetProperty("genericType", out var gt) ? gt.GetString() : null,
                                 ConfigFileName = el.TryGetProperty("configFileName", out var cf) ? cf.GetString() : null,
-                                ComponentName = el.TryGetProperty("componentName", out var cn) ? cn.GetString() : null,
-                                RowComponentName = el.TryGetProperty("rowComponentName", out var rcn) ? rcn.GetString() : null
+                                ComponentName = componentName,
+                                RowComponentName = el.TryGetProperty("rowComponentName", out var rcn) ? rcn.GetString() : null,
+                                ChatComponentName = chatComponentName
                             };
 
                             if (!string.IsNullOrWhiteSpace(info.GenericType))
@@ -147,7 +157,8 @@ namespace Hazina.Tools.Services.Store
                         genericType = f.GenericType,
                         configFileName = f.ConfigFileName,
                         componentName = f.ComponentName,
-                        rowComponentName = f.RowComponentName
+                        rowComponentName = f.RowComponentName,
+                        chatComponentName = f.ChatComponentName
                     }).ToArray()
                 };
 

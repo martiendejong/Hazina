@@ -1,0 +1,243 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>LLM Instructions for HazinaTools Project | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="LLM Instructions for HazinaTools Project | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="llm-instructions-for-hazinatools-project">LLM Instructions for HazinaTools Project</h1>
+
+<p>This document contains important instructions for AI assistants (LLMs) working on this codebase.</p>
+<h2 id="project-overview">Project Overview</h2>
+<p>HazinaTools is a collection of .NET libraries for building AI-powered content generation tools. The solution consists of multiple projects organized into:</p>
+<ul>
+<li><strong>Common Libraries</strong>: Shared utilities, models, and infrastructure</li>
+<li><strong>Core Libraries</strong>: Core functionality and data access</li>
+<li><strong>Services</strong>: Specialized service libraries for various operations</li>
+<li><strong>Text Extraction</strong>: Tools for extracting text from various file formats</li>
+</ul>
+<h2 id="critical-requirements">Critical Requirements</h2>
+<h3 id="1-nuget-package-publishing">1. NuGet Package Publishing</h3>
+<p><strong>IMPORTANT</strong>: All projects in this solution are designed to be published as NuGet packages.</p>
+<p>When making changes to ANY project:</p>
+<ul>
+<li>Ensure the changes don't break the NuGet packaging process</li>
+<li>Update version numbers appropriately using semantic versioning</li>
+<li>Test the package build before committing</li>
+</ul>
+<h3 id="2-publishing-process">2. Publishing Process</h3>
+<p>The publish script automatically builds and publishes NuGet packages.</p>
+<p><strong>Setup (One-time):</strong>
+Set the NuGet API key environment variable:</p>
+<pre><code class="lang-powershell"># Windows
+setx NUGET_API_KEY &quot;your-api-key&quot;
+
+# Linux/macOS
+export NUGET_API_KEY=&quot;your-api-key&quot;
+</code></pre>
+<p><strong>Usage:</strong></p>
+<pre><code class="lang-powershell"># Windows
+./publish-nuget.ps1
+
+# Linux/macOS
+./publish-nuget.sh
+</code></pre>
+<p>The script will:</p>
+<ol>
+<li>Build all projects in Release mode</li>
+<li>Create packages in <code>./nupkgs</code></li>
+<li>Automatically publish to NuGet.org (if NUGET_API_KEY is set)</li>
+<li>Skip duplicates (won't fail if version already exists)</li>
+</ol>
+<h3 id="3-project-structure-guidelines">3. Project Structure Guidelines</h3>
+<ul>
+<li>All projects follow the naming convention: <code>Hazina.Tools.*</code></li>
+<li>Common libraries are in the <code>Common/</code> folder</li>
+<li>Service libraries follow the pattern: <code>Hazina.Tools.Services.*</code></li>
+<li>All projects target <code>.NET 8.0</code> (net8.0-windows)</li>
+</ul>
+<h3 id="4-before-making-changes">4. Before Making Changes</h3>
+<ol>
+<li><strong>Understand Dependencies</strong>: Review project references before modifying shared libraries</li>
+<li><strong>Test Builds</strong>: Run <code>dotnet build HazinaTools.sln</code> to ensure all projects compile</li>
+<li><strong>Check Package Configuration</strong>: Verify .csproj files have proper NuGet metadata if adding new projects</li>
+</ol>
+<h3 id="5-adding-new-projects">5. Adding New Projects</h3>
+<p>When adding a new project:</p>
+<ol>
+<li>Follow the naming convention: <code>Hazina.Tools.*</code></li>
+<li>Add the project to the solution:
+<pre><code class="lang-bash">dotnet sln add path/to/NewProject.csproj
+</code></pre>
+</li>
+<li>Ensure the .csproj has a <code>&lt;RootNamespace&gt;</code> matching the project name</li>
+<li>Configure NuGet package properties in the .csproj:
+<pre><code class="lang-xml">&lt;PropertyGroup&gt;
+  &lt;PackageId&gt;Hazina.Tools.YourProject&lt;/PackageId&gt;
+  &lt;Version&gt;1.0.0&lt;/Version&gt;
+  &lt;Authors&gt;Your Name&lt;/Authors&gt;
+  &lt;Company&gt;Your Company&lt;/Company&gt;
+  &lt;Description&gt;Description of your package&lt;/Description&gt;
+  &lt;PackageLicenseExpression&gt;MIT&lt;/PackageLicenseExpression&gt;
+  &lt;RepositoryUrl&gt;https://github.com/yourusername/HazinaTools&lt;/RepositoryUrl&gt;
+&lt;/PropertyGroup&gt;
+</code></pre>
+</li>
+<li>Test the publish script to ensure your project packages correctly</li>
+</ol>
+<h3 id="6-version-management">6. Version Management</h3>
+<ul>
+<li>Use semantic versioning (MAJOR.MINOR.PATCH)</li>
+<li>Increment PATCH for bug fixes</li>
+<li>Increment MINOR for new features (backwards compatible)</li>
+<li>Increment MAJOR for breaking changes</li>
+</ul>
+<h3 id="7-common-tasks">7. Common Tasks</h3>
+<p><strong>Build the entire solution:</strong></p>
+<pre><code class="lang-bash">dotnet build HazinaTools.sln
+</code></pre>
+<p><strong>Restore all dependencies:</strong></p>
+<pre><code class="lang-bash">dotnet restore HazinaTools.sln
+</code></pre>
+<p><strong>Clean build artifacts:</strong></p>
+<pre><code class="lang-bash">dotnet clean HazinaTools.sln
+</code></pre>
+<p><strong>Build in Release mode:</strong></p>
+<pre><code class="lang-bash">dotnet build HazinaTools.sln -c Release
+</code></pre>
+<h2 id="project-dependencies">Project Dependencies</h2>
+<p>Key dependency relationships:</p>
+<ul>
+<li>Most projects depend on <code>Hazina.Tools.Common.Models</code></li>
+<li>Service projects typically depend on:
+<ul>
+<li><code>Hazina.Tools.Models</code></li>
+<li><code>Hazina.Tools.Core</code></li>
+<li><code>Hazina.Tools.Data</code></li>
+</ul>
+</li>
+<li>Text extraction functionality is in <code>Hazina.Tools.TextExtraction</code></li>
+</ul>
+<h2 id="testing">Testing</h2>
+<p>Before committing changes:</p>
+<ol>
+<li>Build the solution: <code>dotnet build HazinaTools.sln</code></li>
+<li>Run the publish script: <code>./publish-nuget.ps1</code> or <code>./publish-nuget.sh</code></li>
+<li>Verify all packages are created in the <code>./nupkgs</code> directory</li>
+<li>Check for any build warnings or errors</li>
+</ol>
+<h2 id="questions">Questions?</h2>
+<p>If you're an LLM assistant and unsure about:</p>
+<ul>
+<li>Whether a change will affect NuGet packaging → Always test with the publish script</li>
+<li>Which project to modify → Check the existing project structure and dependencies</li>
+<li>Versioning strategy → Ask the developer for guidance</li>
+</ul>
+<h2 id="remember">Remember</h2>
+<p><strong>Every project must successfully build and package</strong>. Always run the publish script after making changes to verify everything still works correctly.</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

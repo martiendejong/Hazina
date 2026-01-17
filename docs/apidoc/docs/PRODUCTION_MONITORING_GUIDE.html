@@ -1,0 +1,568 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Production Monitoring Guide | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Production Monitoring Guide | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="production-monitoring-guide">Production Monitoring Guide</h1>
+
+<h2 id="overview">Overview</h2>
+<p>Hazina's production monitoring provides comprehensive metrics, performance profiling, and diagnostics for production deployments.</p>
+<h2 id="features">Features</h2>
+<ul>
+<li>Real-time metrics collection</li>
+<li>Performance profiling</li>
+<li>System diagnostics and health checks</li>
+<li>Prometheus-compatible exports</li>
+<li>Memory and CPU monitoring</li>
+<li>Garbage collection tracking</li>
+</ul>
+<h2 id="quick-start">Quick Start</h2>
+<pre><code class="lang-csharp">using Hazina.Production.Monitoring.Metrics;
+using Hazina.Production.Monitoring.Performance;
+using Hazina.Production.Monitoring.Diagnostics;
+
+// Setup collectors
+var metrics = new MetricsCollector();
+var profiler = new PerformanceProfiler();
+var diagnostics = new DiagnosticsCollector();
+
+// Collect metrics
+metrics.IncrementCounter(&quot;requests_total&quot;);
+metrics.SetGauge(&quot;active_connections&quot;, 42);
+
+// Profile operations
+await profiler.ProfileAsync(&quot;database_query&quot;, async () =&gt;
+{
+    return await ExecuteDatabaseQueryAsync();
+});
+
+// Get health check
+var health = diagnostics.GetHealthCheck();
+Console.WriteLine($&quot;Health: {health.Status}&quot;);
+</code></pre>
+<h2 id="metrics-collection">Metrics Collection</h2>
+<h3 id="counter-metrics">Counter Metrics</h3>
+<p>Track cumulative values:</p>
+<pre><code class="lang-csharp">var metrics = new MetricsCollector();
+
+// Simple counter
+metrics.IncrementCounter(&quot;requests_total&quot;);
+
+// Counter with value
+metrics.IncrementCounter(&quot;bytes_sent&quot;, 1024);
+
+// Counter with tags
+metrics.IncrementCounter(&quot;http_requests&quot;, 1, new Dictionary&lt;string, string&gt;
+{
+    [&quot;method&quot;] = &quot;GET&quot;,
+    [&quot;path&quot;] = &quot;/api/users&quot;,
+    [&quot;status&quot;] = &quot;200&quot;
+});
+</code></pre>
+<h3 id="gauge-metrics">Gauge Metrics</h3>
+<p>Track current values:</p>
+<pre><code class="lang-csharp">// Set gauge value
+metrics.SetGauge(&quot;memory_usage_mb&quot;, 512.5);
+
+// With tags
+metrics.SetGauge(&quot;queue_size&quot;, 150, new Dictionary&lt;string, string&gt;
+{
+    [&quot;queue_name&quot;] = &quot;processing&quot;,
+    [&quot;priority&quot;] = &quot;high&quot;
+});
+</code></pre>
+<h3 id="histogram-metrics">Histogram Metrics</h3>
+<p>Track distributions:</p>
+<pre><code class="lang-csharp">// Record values
+metrics.RecordHistogram(&quot;response_time_ms&quot;, 45.3);
+metrics.RecordHistogram(&quot;response_time_ms&quot;, 123.7);
+metrics.RecordHistogram(&quot;response_time_ms&quot;, 89.2);
+
+// With tags
+metrics.RecordHistogram(&quot;request_size_bytes&quot;, 2048, new Dictionary&lt;string, string&gt;
+{
+    [&quot;endpoint&quot;] = &quot;/api/upload&quot;
+});
+
+// Get statistics
+var snapshot = metrics.GetSnapshot();
+foreach (var histogram in snapshot.Histograms)
+{
+    Console.WriteLine($&quot;{histogram.Name}:&quot;);
+    Console.WriteLine($&quot;  Count: {histogram.Count}&quot;);
+    Console.WriteLine($&quot;  Mean: {histogram.Mean:F2}&quot;);
+    Console.WriteLine($&quot;  P95: {histogram.P95:F2}&quot;);
+    Console.WriteLine($&quot;  P99: {histogram.P99:F2}&quot;);
+}
+</code></pre>
+<h3 id="timer-metrics">Timer Metrics</h3>
+<p>Time operations:</p>
+<pre><code class="lang-csharp">// Manual timing
+metrics.StartTimer(&quot;operation_name&quot;);
+// ... do work ...
+var duration = metrics.StopTimer(&quot;operation_name&quot;);
+Console.WriteLine($&quot;Took: {duration.TotalMilliseconds}ms&quot;);
+
+// Automatic timing
+var result = await metrics.TimeOperationAsync(
+    &quot;api_call&quot;,
+    async () =&gt; await MakeApiCallAsync(),
+    tags: new Dictionary&lt;string, string&gt; { [&quot;endpoint&quot;] = &quot;/api/data&quot; }
+);
+
+// Records:
+// - api_call.duration_ms (histogram)
+// - api_call.total (counter)
+// - api_call.success (counter)
+// - api_call.failure (counter)
+</code></pre>
+<h2 id="performance-profiling">Performance Profiling</h2>
+<h3 id="basic-profiling">Basic Profiling</h3>
+<pre><code class="lang-csharp">var profiler = new PerformanceProfiler();
+
+// Start/stop profiling
+profiler.StartOperation(&quot;data_processing&quot;);
+// ... do work ...
+var metrics = profiler.EndOperation(&quot;data_processing&quot;, success: true);
+
+Console.WriteLine($&quot;Duration: {metrics.Duration.TotalMilliseconds}ms&quot;);
+Console.WriteLine($&quot;Memory: {metrics.MemoryUsedBytes / 1024}KB&quot;);
+</code></pre>
+<h3 id="automatic-profiling">Automatic Profiling</h3>
+<pre><code class="lang-csharp">// Profile with automatic tracking
+var result = await profiler.ProfileAsync(
+    &quot;complex_operation&quot;,
+    async () =&gt;
+    {
+        return await PerformComplexOperationAsync();
+    },
+    category: &quot;business_logic&quot;
+);
+</code></pre>
+<h3 id="get-profiling-report">Get Profiling Report</h3>
+<pre><code class="lang-csharp">var report = profiler.GetReport();
+
+Console.WriteLine($&quot;Total Operations: {report.TotalOperations}&quot;);
+Console.WriteLine($&quot;Success Rate: {report.SuccessRate:P2}&quot;);
+Console.WriteLine();
+Console.WriteLine(&quot;Slowest Operations:&quot;);
+
+foreach (var op in report.SlowestOperations)
+{
+    Console.WriteLine($&quot;  {op.OperationName}:&quot;);
+    Console.WriteLine($&quot;    Avg: {op.AverageDuration.TotalMilliseconds:F2}ms&quot;);
+    Console.WriteLine($&quot;    P95: {op.P95Duration.TotalMilliseconds:F2}ms&quot;);
+    Console.WriteLine($&quot;    Executions: {op.TotalExecutions}&quot;);
+    Console.WriteLine($&quot;    Success Rate: {op.SuccessRate:P2}&quot;);
+}
+
+// Export to markdown
+var markdown = report.ToMarkdown();
+File.WriteAllText(&quot;performance_report.md&quot;, markdown);
+</code></pre>
+<h3 id="profile-statistics">Profile Statistics</h3>
+<pre><code class="lang-csharp">var profile = profiler.GetProfile(&quot;operation_name&quot;, &quot;category&quot;);
+
+if (profile != null)
+{
+    Console.WriteLine($&quot;Min: {profile.MinDuration.TotalMilliseconds:F2}ms&quot;);
+    Console.WriteLine($&quot;Avg: {profile.AverageDuration.TotalMilliseconds:F2}ms&quot;);
+    Console.WriteLine($&quot;Max: {profile.MaxDuration.TotalMilliseconds:F2}ms&quot;);
+    Console.WriteLine($&quot;Median: {profile.MedianDuration.TotalMilliseconds:F2}ms&quot;);
+    Console.WriteLine($&quot;P95: {profile.P95Duration.TotalMilliseconds:F2}ms&quot;);
+    Console.WriteLine($&quot;Success Rate: {profile.SuccessRate:P2}&quot;);
+}
+</code></pre>
+<h2 id="system-diagnostics">System Diagnostics</h2>
+<h3 id="health-checks">Health Checks</h3>
+<pre><code class="lang-csharp">var diagnostics = new DiagnosticsCollector();
+
+// Get health check
+var health = diagnostics.GetHealthCheck(new HealthCheckConfig
+{
+    MaxMemoryMB = 1024,
+    MaxThreads = 100,
+    MaxGen2CollectionsPerMinute = 10
+});
+
+Console.WriteLine($&quot;Status: {health.Status}&quot;);
+Console.WriteLine($&quot;Healthy: {health.IsHealthy}&quot;);
+
+foreach (var check in health.Checks)
+{
+    Console.WriteLine($&quot;  {check.Name}: {check.Status}&quot;);
+    Console.WriteLine($&quot;    {check.Message}&quot;);
+}
+</code></pre>
+<h3 id="system-snapshot">System Snapshot</h3>
+<pre><code class="lang-csharp">var snapshot = diagnostics.GetSnapshot();
+
+Console.WriteLine($&quot;Process: {snapshot.ProcessName} (PID: {snapshot.ProcessId})&quot;);
+Console.WriteLine($&quot;Uptime: {snapshot.Uptime}&quot;);
+Console.WriteLine();
+Console.WriteLine(&quot;Memory:&quot;);
+Console.WriteLine($&quot;  Working Set: {snapshot.WorkingSetMB:F2} MB&quot;);
+Console.WriteLine($&quot;  Private: {snapshot.PrivateMemoryMB:F2} MB&quot;);
+Console.WriteLine($&quot;  GC Total: {snapshot.GCTotalMemoryMB:F2} MB&quot;);
+Console.WriteLine();
+Console.WriteLine(&quot;CPU:&quot;);
+Console.WriteLine($&quot;  Total Time: {snapshot.TotalProcessorTime}&quot;);
+Console.WriteLine($&quot;  User Time: {snapshot.UserProcessorTime}&quot;);
+Console.WriteLine();
+Console.WriteLine(&quot;Threads:&quot;);
+Console.WriteLine($&quot;  Count: {snapshot.ThreadCount}&quot;);
+Console.WriteLine();
+Console.WriteLine(&quot;GC:&quot;);
+Console.WriteLine($&quot;  Gen 0: {snapshot.Gen0Collections}&quot;);
+Console.WriteLine($&quot;  Gen 1: {snapshot.Gen1Collections}&quot;);
+Console.WriteLine($&quot;  Gen 2: {snapshot.Gen2Collections}&quot;);
+</code></pre>
+<h3 id="monitoring-over-time">Monitoring Over Time</h3>
+<pre><code class="lang-csharp">// Monitor for 5 minutes, snapshot every 30 seconds
+var snapshots = await diagnostics.MonitorAsync(
+    duration: TimeSpan.FromMinutes(5),
+    interval: TimeSpan.FromSeconds(30)
+);
+
+// Analyze trends
+var memoryTrend = snapshots.Select(s =&gt; s.WorkingSetMB).ToList();
+var avgMemory = memoryTrend.Average();
+var maxMemory = memoryTrend.Max();
+
+Console.WriteLine($&quot;Average Memory: {avgMemory:F2} MB&quot;);
+Console.WriteLine($&quot;Peak Memory: {maxMemory:F2} MB&quot;);
+</code></pre>
+<h3 id="force-garbage-collection">Force Garbage Collection</h3>
+<pre><code class="lang-csharp">var gcResult = diagnostics.ForceGarbageCollection();
+
+Console.WriteLine($&quot;Memory Before: {gcResult.MemoryBefore / (1024 * 1024):F2} MB&quot;);
+Console.WriteLine($&quot;Memory After: {gcResult.MemoryAfter / (1024 * 1024):F2} MB&quot;);
+Console.WriteLine($&quot;Memory Freed: {gcResult.MemoryFreedMB:F2} MB ({gcResult.MemoryFreedPercent:F1}%)&quot;);
+Console.WriteLine($&quot;Collections: Gen0={gcResult.Gen0Collections}, Gen1={gcResult.Gen1Collections}, Gen2={gcResult.Gen2Collections}&quot;);
+</code></pre>
+<h2 id="exporting-metrics">Exporting Metrics</h2>
+<h3 id="prometheus-format">Prometheus Format</h3>
+<pre><code class="lang-csharp">var snapshot = metrics.GetSnapshot();
+var prometheusFormat = snapshot.ToPrometheusFormat();
+
+// Expose via HTTP endpoint
+app.MapGet(&quot;/metrics&quot;, () =&gt; prometheusFormat);
+</code></pre>
+<p>Example output:</p>
+<pre><code># TYPE requests_total counter
+requests_total{method=&quot;GET&quot;,path=&quot;/api/users&quot;} 1523
+
+# TYPE memory_usage_mb gauge
+memory_usage_mb 512.5
+
+# TYPE response_time_ms histogram
+response_time_ms_count 1000
+response_time_ms_min 12.3
+response_time_ms_max 456.7
+response_time_ms_mean 89.4
+response_time_ms_median 78.2
+response_time_ms_p95 234.5
+response_time_ms_p99 345.6
+</code></pre>
+<h2 id="integration-examples">Integration Examples</h2>
+<h3 id="aspnet-core-middleware">ASP.NET Core Middleware</h3>
+<pre><code class="lang-csharp">public class MonitoringMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly MetricsCollector _metrics;
+    private readonly PerformanceProfiler _profiler;
+
+    public MonitoringMiddleware(RequestDelegate next, MetricsCollector metrics, PerformanceProfiler profiler)
+    {
+        _next = next;
+        _metrics = metrics;
+        _profiler = profiler;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        var path = context.Request.Path.Value ?? &quot;/&quot;;
+        var method = context.Request.Method;
+
+        var result = await _profiler.ProfileAsync(
+            &quot;http_request&quot;,
+            async () =&gt;
+            {
+                await _next(context);
+                return context.Response.StatusCode;
+            },
+            category: &quot;web&quot;
+        );
+
+        var tags = new Dictionary&lt;string, string&gt;
+        {
+            [&quot;method&quot;] = method,
+            [&quot;path&quot;] = path,
+            [&quot;status&quot;] = context.Response.StatusCode.ToString()
+        };
+
+        _metrics.IncrementCounter(&quot;http_requests_total&quot;, 1, tags);
+        _metrics.RecordHistogram(&quot;http_request_duration_ms&quot;, result.Duration.TotalMilliseconds, tags);
+    }
+}
+</code></pre>
+<h3 id="background-health-monitoring">Background Health Monitoring</h3>
+<pre><code class="lang-csharp">public class HealthMonitorService : BackgroundService
+{
+    private readonly DiagnosticsCollector _diagnostics;
+    private readonly ILogger _logger;
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var health = _diagnostics.GetHealthCheck();
+
+            if (!health.IsHealthy)
+            {
+                _logger.LogWarning(&quot;System unhealthy:&quot;);
+                foreach (var check in health.Checks.Where(c =&gt; c.Status != HealthStatus.Healthy))
+                {
+                    _logger.LogWarning($&quot;  {check.Name}: {check.Status} - {check.Message}&quot;);
+                }
+            }
+
+            await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+        }
+    }
+}
+</code></pre>
+<h3 id="automated-performance-reports">Automated Performance Reports</h3>
+<pre><code class="lang-csharp">public class PerformanceReportService
+{
+    private readonly PerformanceProfiler _profiler;
+
+    public async Task GenerateDailyReportAsync()
+    {
+        var report = _profiler.GetReport();
+        var markdown = report.ToMarkdown();
+
+        // Save to file
+        var filename = $&quot;performance_report_{DateTime.UtcNow:yyyy-MM-dd}.md&quot;;
+        await File.WriteAllTextAsync(filename, markdown);
+
+        // Send notification if performance degraded
+        if (report.SuccessRate &lt; 0.95)
+        {
+            await SendAlertAsync($&quot;Success rate below threshold: {report.SuccessRate:P2}&quot;);
+        }
+
+        // Reset for next period
+        _profiler.Reset();
+    }
+}
+</code></pre>
+<h2 id="best-practices">Best Practices</h2>
+<ol>
+<li><strong>Metric Naming</strong>: Use consistent naming conventions (e.g., <code>operation_noun_unit</code>)</li>
+<li><strong>Tags</strong>: Use tags for dimensions, but don't create too many unique combinations</li>
+<li><strong>Sampling</strong>: For high-frequency operations, consider sampling</li>
+<li><strong>Aggregation</strong>: Aggregate metrics before exporting to reduce overhead</li>
+<li><strong>Health Checks</strong>: Run health checks periodically, not on every request</li>
+<li><strong>Profiling</strong>: Profile in production, but be mindful of overhead</li>
+<li><strong>Alerts</strong>: Set up alerts for critical metrics (memory, error rates)</li>
+</ol>
+<h2 id="performance-considerations">Performance Considerations</h2>
+<pre><code class="lang-csharp">// Good: Measure at appropriate granularity
+await profiler.ProfileAsync(&quot;api_endpoint&quot;, async () =&gt; await ExecuteApi());
+
+// Avoid: Too fine-grained profiling
+// profiler.ProfileAsync(&quot;loop_iteration&quot;, ...) // Don't do this in tight loops
+
+// Good: Use tags for categorization
+metrics.IncrementCounter(&quot;requests&quot;, 1, tags: new Dictionary&lt;string, string&gt;
+{
+    [&quot;endpoint&quot;] = &quot;/api/users&quot;
+});
+
+// Avoid: Creating unique metric names for each value
+// metrics.IncrementCounter($&quot;requests_api_users_{userId}&quot;); // Don't do this
+
+// Good: Periodic snapshots
+var snapshot = metrics.GetSnapshot();  // Call every minute
+
+// Avoid: Snapshot on every request
+// app.Use(async (context, next) =&gt; {
+//     var snapshot = metrics.GetSnapshot();  // Don't do this
+// });
+</code></pre>
+<h2 id="complete-example">Complete Example</h2>
+<pre><code class="lang-csharp">// Setup
+var metrics = new MetricsCollector();
+var profiler = new PerformanceProfiler();
+var diagnostics = new DiagnosticsCollector();
+
+// Application code
+public async Task&lt;Result&gt; ProcessRequestAsync(Request request)
+{
+    // Profile the operation
+    return await profiler.ProfileAsync(
+        &quot;process_request&quot;,
+        async () =&gt;
+        {
+            // Track metrics
+            metrics.IncrementCounter(&quot;requests_received&quot;);
+
+            try
+            {
+                // Process
+                var result = await ActualProcessingAsync(request);
+
+                // Success metrics
+                metrics.IncrementCounter(&quot;requests_successful&quot;);
+                metrics.RecordHistogram(&quot;request_size_bytes&quot;, request.Size);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                // Error metrics
+                metrics.IncrementCounter(&quot;requests_failed&quot;, tags: new Dictionary&lt;string, string&gt;
+                {
+                    [&quot;error_type&quot;] = ex.GetType().Name
+                });
+                throw;
+            }
+        },
+        category: &quot;business_logic&quot;
+    );
+}
+
+// Monitoring endpoint
+app.MapGet(&quot;/health&quot;, () =&gt;
+{
+    var health = diagnostics.GetHealthCheck();
+    return health.IsHealthy ? Results.Ok(health) : Results.StatusCode(503);
+});
+
+app.MapGet(&quot;/metrics&quot;, () =&gt;
+{
+    var snapshot = metrics.GetSnapshot();
+    return Results.Text(snapshot.ToPrometheusFormat(), &quot;text/plain&quot;);
+});
+
+app.MapGet(&quot;/performance&quot;, () =&gt;
+{
+    var report = profiler.GetReport();
+    return Results.Text(report.ToMarkdown(), &quot;text/markdown&quot;);
+});
+
+app.MapGet(&quot;/diagnostics&quot;, () =&gt;
+{
+    var snapshot = diagnostics.GetSnapshot();
+    return Results.Ok(snapshot);
+});
+</code></pre>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,1155 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Hazina Clean Code Backlog | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Hazina Clean Code Backlog | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="hazina-clean-code-backlog">Hazina Clean Code Backlog</h1>
+
+<p><strong>Total Items</strong>: 50
+<strong>Generated</strong>: 2026-01-08
+<strong>Goal</strong>: Achieve &quot;30-60 second comprehension&quot; at every level</p>
+<hr>
+<h2 id="scoring-legend">Scoring Legend</h2>
+<ul>
+<li><strong>Value (V)</strong>: Impact on comprehension/quality (1-10)</li>
+<li><strong>Effort (E)</strong>: Time/complexity to implement (1-10, lower = easier)</li>
+<li><strong>Risk (R)</strong>: Breaking change potential (1-10, lower = safer)</li>
+<li><strong>Score</strong>: V / (E + R) - higher is better</li>
+</ul>
+<hr>
+<h2 id="category-a-instant-comprehension-architecture">Category A: Instant Comprehension Architecture</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Item</th>
+<th>Value</th>
+<th>Effort</th>
+<th>Risk</th>
+<th>Score</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A1</td>
+<td>SYSTEM_SNAPSHOT.md - Single-screen system overview</td>
+<td>10</td>
+<td>3</td>
+<td>1</td>
+<td><strong>2.50</strong></td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>A2</td>
+<td>Visual system maps - ASCII diagrams per domain</td>
+<td>9</td>
+<td>4</td>
+<td>1</td>
+<td><strong>1.80</strong></td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>A3</td>
+<td>Unified folder structure - Domain-first organization</td>
+<td>8</td>
+<td>7</td>
+<td>6</td>
+<td>0.62</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>A4</td>
+<td>ENTRYPOINT.md per domain - 5-10 line entry points</td>
+<td>9</td>
+<td>2</td>
+<td>1</td>
+<td><strong>3.00</strong></td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>A5</td>
+<td>FLOW.md per service - Flow documentation</td>
+<td>8</td>
+<td>3</td>
+<td>1</td>
+<td><strong>2.00</strong></td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>A6</td>
+<td>FAILURE_MODES.md - Traffic light failure docs</td>
+<td>8</td>
+<td>3</td>
+<td>1</td>
+<td><strong>2.00</strong></td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>A7</td>
+<td>Critical path markers - README badges</td>
+<td>7</td>
+<td>2</td>
+<td>1</td>
+<td><strong>2.33</strong></td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>A8</td>
+<td>Project categorization - CORE/EXTENDED/DEMO/DEPRECATED</td>
+<td>8</td>
+<td>3</td>
+<td>2</td>
+<td>1.60</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>A9</td>
+<td>BOOTSTRAP.md - Zero-to-running guide</td>
+<td>9</td>
+<td>2</td>
+<td>1</td>
+<td><strong>3.00</strong></td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>A10</td>
+<td>DEPENDENCIES.md - Dependency graphs</td>
+<td>7</td>
+<td>4</td>
+<td>1</td>
+<td>1.40</td>
+<td>BACKLOG</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="category-b-zero-interpretation-naming">Category B: Zero-Interpretation Naming</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Item</th>
+<th>Value</th>
+<th>Effort</th>
+<th>Risk</th>
+<th>Score</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B11</td>
+<td>Rename generic classes (Manager, Engine, Handler)</td>
+<td>7</td>
+<td>5</td>
+<td>4</td>
+<td>0.78</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>B12</td>
+<td>Unify agent naming (Hazina.Agents.* → Hazina.AI.Agents.*)</td>
+<td>6</td>
+<td>6</td>
+<td>5</td>
+<td>0.55</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>B13</td>
+<td>Base class to interface (ChatServiceBase → IChatCapable)</td>
+<td>6</td>
+<td>6</td>
+<td>5</td>
+<td>0.55</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>B14</td>
+<td>Explicit partial naming (ChatService.Streaming.cs)</td>
+<td>5</td>
+<td>3</td>
+<td>2</td>
+<td>1.00</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>B15</td>
+<td>Standardize namespace depth to 3-4 levels</td>
+<td>4</td>
+<td>5</td>
+<td>4</td>
+<td>0.44</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>B16</td>
+<td>Rename extension files (Extensions.cs → StringExtensions.cs)</td>
+<td>5</td>
+<td>2</td>
+<td>2</td>
+<td>1.25</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>B17</td>
+<td>Consolidate config classes by domain</td>
+<td>7</td>
+<td>5</td>
+<td>4</td>
+<td>0.78</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>B18</td>
+<td>Document ILLMClient interface thoroughly</td>
+<td>6</td>
+<td>2</td>
+<td>1</td>
+<td><strong>2.00</strong></td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>B19</td>
+<td>Model/DTO/Entity suffix convention</td>
+<td>5</td>
+<td>6</td>
+<td>5</td>
+<td>0.45</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>B20</td>
+<td>Behavior-based test names</td>
+<td>7</td>
+<td>4</td>
+<td>2</td>
+<td>1.17</td>
+<td>BACKLOG</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="category-c-architectural-purity">Category C: Architectural Purity</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Item</th>
+<th>Value</th>
+<th>Effort</th>
+<th>Risk</th>
+<th>Score</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C21</td>
+<td>Group tool services by domain</td>
+<td>6</td>
+<td>7</td>
+<td>6</td>
+<td>0.46</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>C22</td>
+<td>Composition over inheritance (ChatServiceBase)</td>
+<td>7</td>
+<td>8</td>
+<td>7</td>
+<td>0.47</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>C23</td>
+<td>Enforce dependency direction (Core ← Tools ← Apps)</td>
+<td>8</td>
+<td>5</td>
+<td>4</td>
+<td>0.89</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>C24</td>
+<td>Central IOptions pattern</td>
+<td>6</td>
+<td>5</td>
+<td>4</td>
+<td>0.67</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>C25</td>
+<td>Unified storage provider interface</td>
+<td>7</td>
+<td>6</td>
+<td>5</td>
+<td>0.64</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>C26</td>
+<td>Explicit prompt loading (IPromptLoader)</td>
+<td>6</td>
+<td>4</td>
+<td>3</td>
+<td>0.86</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>C27</td>
+<td>Extract Hazina.Resilience library</td>
+<td>6</td>
+<td>5</td>
+<td>4</td>
+<td>0.67</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>C28</td>
+<td>Extract ICostTracker interface</td>
+<td>5</td>
+<td>4</td>
+<td>3</td>
+<td>0.71</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>C29</td>
+<td>Separate Hazina.Health assembly</td>
+<td>5</td>
+<td>4</td>
+<td>3</td>
+<td>0.71</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>C30</td>
+<td>Unified ILogger<t> everywhere</t></td>
+<td>6</td>
+<td>3</td>
+<td>2</td>
+<td>1.20</td>
+<td>DONE</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="category-d-testing-excellence">Category D: Testing Excellence</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Item</th>
+<th>Value</th>
+<th>Effort</th>
+<th>Risk</th>
+<th>Score</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D31</td>
+<td>Behavior-focused test structure</td>
+<td>6</td>
+<td>6</td>
+<td>4</td>
+<td>0.60</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>D32</td>
+<td>Separate unit/integration tests</td>
+<td>6</td>
+<td>4</td>
+<td>3</td>
+<td>0.86</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>D33</td>
+<td>TestData folders</td>
+<td>5</td>
+<td>3</td>
+<td>1</td>
+<td>1.25</td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>D34</td>
+<td>Architectural tests (ArchUnit.NET)</td>
+<td>8</td>
+<td>4</td>
+<td>2</td>
+<td>1.33</td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>D35</td>
+<td>Mutation testing (Stryker.NET)</td>
+<td>5</td>
+<td>5</td>
+<td>2</td>
+<td>0.71</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>D36</td>
+<td>Zero flaky tests policy</td>
+<td>7</td>
+<td>6</td>
+<td>3</td>
+<td>0.78</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>D37</td>
+<td>TESTING.md strategy document</td>
+<td>6</td>
+<td>2</td>
+<td>1</td>
+<td><strong>2.00</strong></td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>D38</td>
+<td>Mock builder pattern</td>
+<td>5</td>
+<td>4</td>
+<td>2</td>
+<td>0.83</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>D39</td>
+<td>Contract tests (Pact)</td>
+<td>6</td>
+<td>6</td>
+<td>3</td>
+<td>0.67</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>D40</td>
+<td>Performance benchmarks (BenchmarkDotNet)</td>
+<td>6</td>
+<td>5</td>
+<td>2</td>
+<td>0.86</td>
+<td>BACKLOG</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="category-e-observability--production">Category E: Observability &amp; Production</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Item</th>
+<th>Value</th>
+<th>Effort</th>
+<th>Risk</th>
+<th>Score</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>E41</td>
+<td>OpenTelemetry standardization</td>
+<td>7</td>
+<td>6</td>
+<td>4</td>
+<td>0.70</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>E42</td>
+<td>Distributed tracing with correlation IDs</td>
+<td>7</td>
+<td>6</td>
+<td>4</td>
+<td>0.70</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>E43</td>
+<td>Structured logging with semantic fields</td>
+<td>6</td>
+<td>4</td>
+<td>3</td>
+<td>0.86</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>E44</td>
+<td>Deep health checks (dependencies, capacity)</td>
+<td>6</td>
+<td>4</td>
+<td>3</td>
+<td>0.86</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>E45</td>
+<td>RUNBOOK.md per service</td>
+<td>7</td>
+<td>3</td>
+<td>1</td>
+<td>1.75</td>
+<td>BACKLOG</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="category-f-developer-experience">Category F: Developer Experience</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Item</th>
+<th>Value</th>
+<th>Effort</th>
+<th>Risk</th>
+<th>Score</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F46</td>
+<td>WHICH_SOLUTION.md decision tree</td>
+<td>7</td>
+<td>1</td>
+<td>1</td>
+<td><strong>3.50</strong></td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>F47</td>
+<td>Dev container (.devcontainer/)</td>
+<td>6</td>
+<td>5</td>
+<td>2</td>
+<td>0.86</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>F48</td>
+<td>Build benchmarks (PERFORMANCE.md)</td>
+<td>5</td>
+<td>3</td>
+<td>1</td>
+<td>1.25</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>F49</td>
+<td>Central examples folder</td>
+<td>6</td>
+<td>4</td>
+<td>2</td>
+<td>1.00</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>F50</td>
+<td>hazina CLI for common tasks</td>
+<td>7</td>
+<td>7</td>
+<td>3</td>
+<td>0.70</td>
+<td>BACKLOG</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="prioritized-view-by-score">Prioritized View (By Score)</h2>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>ID</th>
+<th>Item</th>
+<th>Score</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>F46</td>
+<td>WHICH_SOLUTION.md</td>
+<td>3.50</td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>2</td>
+<td>A4</td>
+<td>ENTRYPOINT.md x5</td>
+<td>3.00</td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>3</td>
+<td>A9</td>
+<td>BOOTSTRAP.md</td>
+<td>3.00</td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>4</td>
+<td>A1</td>
+<td>SYSTEM_SNAPSHOT.md</td>
+<td>2.50</td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>5</td>
+<td>A7</td>
+<td>Critical path markers</td>
+<td>2.33</td>
+<td>DONE</td>
+</tr>
+<tr>
+<td>6</td>
+<td>A5</td>
+<td>FLOW.md per service</td>
+<td>2.00</td>
+<td>TODO</td>
+</tr>
+<tr>
+<td>7</td>
+<td>A6</td>
+<td>FAILURE_MODES.md</td>
+<td>2.00</td>
+<td>TODO</td>
+</tr>
+<tr>
+<td>8</td>
+<td>D37</td>
+<td>TESTING.md</td>
+<td>2.00</td>
+<td>TODO</td>
+</tr>
+<tr>
+<td>9</td>
+<td>B18</td>
+<td>ILLMClient docs</td>
+<td>2.00</td>
+<td>TODO</td>
+</tr>
+<tr>
+<td>10</td>
+<td>A2</td>
+<td>Visual system maps</td>
+<td>1.80</td>
+<td>TODO</td>
+</tr>
+<tr>
+<td>11</td>
+<td>E45</td>
+<td>RUNBOOK.md per service</td>
+<td>1.75</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>12</td>
+<td>A8</td>
+<td>Project categorization</td>
+<td>1.60</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>13</td>
+<td>A10</td>
+<td>DEPENDENCIES.md</td>
+<td>1.40</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>14</td>
+<td>D34</td>
+<td>Architectural tests</td>
+<td>1.33</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>15</td>
+<td>B16</td>
+<td>Rename extension files</td>
+<td>1.25</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>16</td>
+<td>D33</td>
+<td>TestData folders</td>
+<td>1.25</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>17</td>
+<td>F48</td>
+<td>Build benchmarks</td>
+<td>1.25</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>18</td>
+<td>C30</td>
+<td>Unified ILogger<t></t></td>
+<td>1.20</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>19</td>
+<td>B20</td>
+<td>Behavior-based test names</td>
+<td>1.17</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>20</td>
+<td>B14</td>
+<td>Explicit partial naming</td>
+<td>1.00</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>21</td>
+<td>F49</td>
+<td>Central examples folder</td>
+<td>1.00</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>22</td>
+<td>C23</td>
+<td>Enforce dependency direction</td>
+<td>0.89</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>23</td>
+<td>C26</td>
+<td>Explicit prompt loading</td>
+<td>0.86</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>24</td>
+<td>D32</td>
+<td>Separate unit/integration</td>
+<td>0.86</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>25</td>
+<td>D40</td>
+<td>Performance benchmarks</td>
+<td>0.86</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>26</td>
+<td>E43</td>
+<td>Structured logging</td>
+<td>0.86</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>27</td>
+<td>E44</td>
+<td>Deep health checks</td>
+<td>0.86</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>28</td>
+<td>F47</td>
+<td>Dev container</td>
+<td>0.86</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>29</td>
+<td>D38</td>
+<td>Mock builder pattern</td>
+<td>0.83</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>30</td>
+<td>B11</td>
+<td>Rename generic classes</td>
+<td>0.78</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>31</td>
+<td>B17</td>
+<td>Consolidate config</td>
+<td>0.78</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>32</td>
+<td>D36</td>
+<td>Zero flaky tests</td>
+<td>0.78</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>33</td>
+<td>C28</td>
+<td>Extract ICostTracker</td>
+<td>0.71</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>34</td>
+<td>C29</td>
+<td>Separate Hazina.Health</td>
+<td>0.71</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>35</td>
+<td>D35</td>
+<td>Mutation testing</td>
+<td>0.71</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>36</td>
+<td>E41</td>
+<td>OpenTelemetry</td>
+<td>0.70</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>37</td>
+<td>E42</td>
+<td>Distributed tracing</td>
+<td>0.70</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>38</td>
+<td>F50</td>
+<td>hazina CLI</td>
+<td>0.70</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>39</td>
+<td>C24</td>
+<td>Central IOptions</td>
+<td>0.67</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>40</td>
+<td>C27</td>
+<td>Extract Hazina.Resilience</td>
+<td>0.67</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>41</td>
+<td>D39</td>
+<td>Contract tests</td>
+<td>0.67</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>42</td>
+<td>C25</td>
+<td>Unified storage provider</td>
+<td>0.64</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>43</td>
+<td>A3</td>
+<td>Unified folder structure</td>
+<td>0.62</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>44</td>
+<td>D31</td>
+<td>Behavior-focused tests</td>
+<td>0.60</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>45</td>
+<td>B12</td>
+<td>Unify agent naming</td>
+<td>0.55</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>46</td>
+<td>B13</td>
+<td>Base class to interface</td>
+<td>0.55</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>47</td>
+<td>C22</td>
+<td>Composition over inheritance</td>
+<td>0.47</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>48</td>
+<td>C21</td>
+<td>Group tool services</td>
+<td>0.46</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>49</td>
+<td>B19</td>
+<td>Model/DTO/Entity suffix</td>
+<td>0.45</td>
+<td>BACKLOG</td>
+</tr>
+<tr>
+<td>50</td>
+<td>B15</td>
+<td>Standardize namespace depth</td>
+<td>0.44</td>
+<td>BACKLOG</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="status-summary">Status Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Count</th>
+<th>Percentage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DONE</td>
+<td>13</td>
+<td>26%</td>
+</tr>
+<tr>
+<td>N/A</td>
+<td>2</td>
+<td>4%</td>
+</tr>
+<tr>
+<td>BACKLOG</td>
+<td>35</td>
+<td>70%</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="implementation-phases">Implementation Phases</h2>
+<h3 id="phase-0-foundation-done">Phase 0: Foundation (DONE)</h3>
+<ul>
+<li>[x] F46: WHICH_SOLUTION.md</li>
+<li>[x] A4: ENTRYPOINT.md x5</li>
+<li>[x] A9: BOOTSTRAP.md</li>
+<li>[x] A1: SYSTEM_SNAPSHOT.md</li>
+<li>[x] A7: Critical path markers</li>
+</ul>
+<h3 id="phase-1-documentation-excellence-done">Phase 1: Documentation Excellence (DONE)</h3>
+<ul>
+<li>[x] A2: Visual system maps</li>
+<li>[x] A5: FLOW.md per service</li>
+<li>[x] A6: FAILURE_MODES.md</li>
+<li>[x] D37: TESTING.md</li>
+<li>[x] B18: ILLMClient docs</li>
+</ul>
+<h3 id="phase-2-quick-code-wins-done">Phase 2: Quick Code Wins (DONE)</h3>
+<ul>
+<li>[x] C30: Unified ILogger<t></t></li>
+<li>[x] B14: Explicit partial naming (N/A - no split partials exist)</li>
+<li>[x] B16: Rename extension files (N/A - already compliant)</li>
+<li>[x] D33: TestData folders</li>
+<li>[x] D34: Architectural tests (12 tests with ArchUnit.NET)</li>
+</ul>
+<h3 id="phase-3-testing-infrastructure">Phase 3: Testing Infrastructure</h3>
+<ul>
+<li>[ ] D32: Separate unit/integration</li>
+<li>[ ] D40: Performance benchmarks</li>
+<li>[ ] D38: Mock builder pattern</li>
+<li>[ ] B20: Behavior-based test names</li>
+<li>[ ] D36: Zero flaky tests</li>
+</ul>
+<h3 id="phase-4-observability">Phase 4: Observability</h3>
+<ul>
+<li>[ ] E45: RUNBOOK.md per service</li>
+<li>[ ] E43: Structured logging</li>
+<li>[ ] E44: Deep health checks</li>
+<li>[ ] E41: OpenTelemetry</li>
+<li>[ ] E42: Distributed tracing</li>
+</ul>
+<h3 id="phase-5-architectural-refinement">Phase 5: Architectural Refinement</h3>
+<ul>
+<li>[ ] C23: Enforce dependency direction</li>
+<li>[ ] C26: Explicit prompt loading</li>
+<li>[ ] C24: Central IOptions</li>
+<li>[ ] C28: Extract ICostTracker</li>
+<li>[ ] C29: Separate Hazina.Health</li>
+</ul>
+<h3 id="phase-6-major-refactoring-high-risk">Phase 6: Major Refactoring (High Risk)</h3>
+<ul>
+<li>[ ] B11: Rename generic classes</li>
+<li>[ ] B12: Unify agent naming</li>
+<li>[ ] B13: Base class to interface</li>
+<li>[ ] C22: Composition over inheritance</li>
+<li>[ ] A3: Unified folder structure</li>
+</ul>
+<hr>
+<h2 id="how-to-use-this-backlog">How to Use This Backlog</h2>
+<ol>
+<li><strong>Pick items by score</strong>: Higher score = better value/effort/risk ratio</li>
+<li><strong>Work in phases</strong>: Complete each phase before moving to next</li>
+<li><strong>Documentation first</strong>: Phases 0-1 are zero risk, do them first</li>
+<li><strong>Mark status</strong>: Update this file as items are completed</li>
+<li><strong>Review quarterly</strong>: Re-score items as codebase evolves</li>
+</ol>
+<hr>
+<h2 id="quick-filters">Quick Filters</h2>
+<h3 id="zero-risk-items-risk--1">Zero Risk Items (Risk = 1)</h3>
+<ul>
+<li>F46, A4, A9, A1, A7, A5, A6, D37, B18, A2, E45, A10, D33, F48</li>
+</ul>
+<h3 id="high-value-items-value--8">High Value Items (Value &gt;= 8)</h3>
+<ul>
+<li>A1, A2, A3, A4, A5, A6, A8, A9, C23, D34</li>
+</ul>
+<h3 id="quick-wins-effort--3">Quick Wins (Effort &lt;= 3)</h3>
+<ul>
+<li>F46, A4, A9, A7, D37, B18, E45, D33, F48, B14, B16</li>
+</ul>
+<hr>
+<p><em>Last Updated: 2026-01-08</em>
+<em>Maintainer: Clean Code Initiative</em></p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

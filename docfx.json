@@ -1,0 +1,80 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": [
+            "src/Core/**/*.csproj"
+          ],
+          "exclude": [
+            "**/bin/**",
+            "**/obj/**"
+          ]
+        }
+      ],
+      "dest": "docs/api",
+      "disableGitFeatures": false,
+      "disableDefaultFilter": false,
+      "properties": {
+        "TargetFramework": "net9.0"
+      }
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [
+          "docs/api/*.yml",
+          "docs/api/toc.yml"
+        ]
+      },
+      {
+        "files": [
+          "docs/*.md",
+          "docs/toc.yml",
+          "README.md"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [
+          "docs/diagrams/**",
+          "icon.svg"
+        ]
+      }
+    ],
+    "overwrite": [
+      {
+        "files": [
+          "docs/specs/*.md"
+        ]
+      }
+    ],
+    "dest": "docs/apidoc",
+    "globalMetadataFiles": [],
+    "fileMetadataFiles": [],
+    "template": [
+      "default",
+      "modern"
+    ],
+    "postProcessors": [],
+    "markdownEngineName": "markdig",
+    "noLangKeyword": false,
+    "keepFileLink": false,
+    "cleanupCacheHistory": false,
+    "disableGitFeatures": false,
+    "globalMetadata": {
+      "_appTitle": "Hazina Framework",
+      "_appName": "Hazina",
+      "_appLogoPath": "icon.svg",
+      "_enableSearch": true,
+      "_enableNewTab": true,
+      "_disableContribution": false,
+      "_gitContribute": {
+        "repo": "https://github.com/your-org/hazina",
+        "branch": "develop"
+      }
+    }
+  }
+}

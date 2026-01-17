@@ -1,0 +1,1674 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Hazina Clean Code Master Plan | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Hazina Clean Code Master Plan | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="hazina-clean-code-master-plan">Hazina Clean Code Master Plan</h1>
+
+<p><strong>Goal</strong>: Achieve &quot;30-60 second comprehension&quot; at every level of the codebase.</p>
+<p><strong>Guiding Principle</strong>:</p>
+<blockquote>
+<p>A new developer, architect, or AI agent must understand where they are, what they see, and where they can safely intervene within 30-60 seconds.</p>
+</blockquote>
+<hr>
+<h2 id="panel-of-50-world-class-experts">Panel of 50 World-Class Experts</h2>
+<h3 id="architecture--systems-design-1-10">Architecture &amp; Systems Design (1-10)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Expert</th>
+<th>Domain</th>
+<th>Philosophy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Martin Fowler</strong></td>
+<td>Enterprise Architecture</td>
+<td>&quot;Any fool can write code that a computer can understand. Good programmers write code that humans can understand.&quot;</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Robert C. Martin (Uncle Bob)</strong></td>
+<td>Clean Code</td>
+<td>&quot;The ratio of time spent reading versus writing is well over 10 to 1.&quot;</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Eric Evans</strong></td>
+<td>Domain-Driven Design</td>
+<td>&quot;Ubiquitous language is the foundation of all design.&quot;</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Gregor Hohpe</strong></td>
+<td>Integration Patterns</td>
+<td>&quot;Think about the conversations, not the data.&quot;</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Sam Newman</strong></td>
+<td>Microservices</td>
+<td>&quot;Boundaries define ownership. Ownership enables autonomy.&quot;</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Kevlin Henney</strong></td>
+<td>Software Craft</td>
+<td>&quot;Clean code is not about perfection—it's about communication.&quot;</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Michael Nygard</strong></td>
+<td>Release It!</td>
+<td>&quot;Design for failure. Everything fails eventually.&quot;</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Titus Winters</strong></td>
+<td>Google Monorepo</td>
+<td>&quot;Consistency beats local optimization at scale.&quot;</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Brendan Burns</strong></td>
+<td>Kubernetes/Cloud</td>
+<td>&quot;Declarative over imperative. State over process.&quot;</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>Werner Vogels</strong></td>
+<td>Amazon CTO</td>
+<td>&quot;Everything fails all the time. Build for it.&quot;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="code-quality--craftsmanship-11-20">Code Quality &amp; Craftsmanship (11-20)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Expert</th>
+<th>Domain</th>
+<th>Philosophy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>11</td>
+<td><strong>Kent Beck</strong></td>
+<td>TDD/XP</td>
+<td>&quot;Make it work, make it right, make it fast—in that order.&quot;</td>
+</tr>
+<tr>
+<td>12</td>
+<td><strong>Michael Feathers</strong></td>
+<td>Legacy Code</td>
+<td>&quot;Code without tests is legacy code.&quot;</td>
+</tr>
+<tr>
+<td>13</td>
+<td><strong>Sandi Metz</strong></td>
+<td>OOP/Ruby</td>
+<td>&quot;Duplication is far cheaper than the wrong abstraction.&quot;</td>
+</tr>
+<tr>
+<td>14</td>
+<td><strong>Ward Cunningham</strong></td>
+<td>Wiki/Patterns</td>
+<td>&quot;Technical debt is the gap between understanding and implementation.&quot;</td>
+</tr>
+<tr>
+<td>15</td>
+<td><strong>Joshua Kerievsky</strong></td>
+<td>Refactoring</td>
+<td>&quot;Refactoring is paying off technical debt.&quot;</td>
+</tr>
+<tr>
+<td>16</td>
+<td><strong>Steve McConnell</strong></td>
+<td>Code Complete</td>
+<td>&quot;Managing complexity is the most important technical topic in software development.&quot;</td>
+</tr>
+<tr>
+<td>17</td>
+<td><strong>Mark Seemann</strong></td>
+<td>Dependency Injection</td>
+<td>&quot;Compose, don't inherit.&quot;</td>
+</tr>
+<tr>
+<td>18</td>
+<td><strong>Gary Bernhardt</strong></td>
+<td>Boundaries</td>
+<td>&quot;Functional core, imperative shell.&quot;</td>
+</tr>
+<tr>
+<td>19</td>
+<td><strong>J.B. Rainsberger</strong></td>
+<td>Integration Tests</td>
+<td>&quot;Integration tests are a scam. Write more unit tests.&quot;</td>
+</tr>
+<tr>
+<td>20</td>
+<td><strong>Arlo Belshee</strong></td>
+<td>Naming</td>
+<td>&quot;Good names make code read like prose.&quot;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="net--c-specific-21-30">.NET &amp; C# Specific (21-30)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Expert</th>
+<th>Domain</th>
+<th>Philosophy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>21</td>
+<td><strong>Jon Skeet</strong></td>
+<td>C# Deep Dive</td>
+<td>&quot;Know your language intimately. Surprises are bugs waiting to happen.&quot;</td>
+</tr>
+<tr>
+<td>22</td>
+<td><strong>Nick Chapsas</strong></td>
+<td>Modern .NET</td>
+<td>&quot;Benchmark everything. Performance is a feature.&quot;</td>
+</tr>
+<tr>
+<td>23</td>
+<td><strong>David Fowler</strong></td>
+<td>ASP.NET Core</td>
+<td>&quot;Minimize allocations. GC is not free.&quot;</td>
+</tr>
+<tr>
+<td>24</td>
+<td><strong>Stephen Cleary</strong></td>
+<td>Async/Await</td>
+<td>&quot;Async all the way. Don't block.&quot;</td>
+</tr>
+<tr>
+<td>25</td>
+<td><strong>Steven Sanderson</strong></td>
+<td>Blazor</td>
+<td>&quot;Component boundaries define reuse potential.&quot;</td>
+</tr>
+<tr>
+<td>26</td>
+<td><strong>Jimmy Bogard</strong></td>
+<td>MediatR/AutoMapper</td>
+<td>&quot;Vertical slices over horizontal layers.&quot;</td>
+</tr>
+<tr>
+<td>27</td>
+<td><strong>Damian Edwards</strong></td>
+<td>.NET Team</td>
+<td>&quot;Configuration should be discoverable.&quot;</td>
+</tr>
+<tr>
+<td>28</td>
+<td><strong>Andrew Lock</strong></td>
+<td>ASP.NET Security</td>
+<td>&quot;Defense in depth. Trust nothing.&quot;</td>
+</tr>
+<tr>
+<td>29</td>
+<td><strong>Steve Smith (Ardalis)</strong></td>
+<td>Clean Architecture</td>
+<td>&quot;Screaming architecture tells you what the system does.&quot;</td>
+</tr>
+<tr>
+<td>30</td>
+<td><strong>Julie Lerman</strong></td>
+<td>Entity Framework</td>
+<td>&quot;Track only what you need. Queries shape performance.&quot;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="aiml-systems-31-40">AI/ML Systems (31-40)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Expert</th>
+<th>Domain</th>
+<th>Philosophy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>31</td>
+<td><strong>Andrej Karpathy</strong></td>
+<td>Neural Networks</td>
+<td>&quot;A lot of people are using neural networks wrong.&quot;</td>
+</tr>
+<tr>
+<td>32</td>
+<td><strong>Jeremy Howard</strong></td>
+<td>FastAI</td>
+<td>&quot;Make AI accessible. Complexity is the enemy.&quot;</td>
+</tr>
+<tr>
+<td>33</td>
+<td><strong>Harrison Chase</strong></td>
+<td>LangChain</td>
+<td>&quot;Composability is the key to AI applications.&quot;</td>
+</tr>
+<tr>
+<td>34</td>
+<td><strong>Simon Willison</strong></td>
+<td>LLM Applications</td>
+<td>&quot;LLMs are calculators for words. Treat them as tools, not oracles.&quot;</td>
+</tr>
+<tr>
+<td>35</td>
+<td><strong>Chip Huyen</strong></td>
+<td>ML Systems</td>
+<td>&quot;ML systems fail silently. Observability is non-negotiable.&quot;</td>
+</tr>
+<tr>
+<td>36</td>
+<td><strong>Eugene Yan</strong></td>
+<td>ML Engineering</td>
+<td>&quot;Start with the simplest thing that could possibly work.&quot;</td>
+</tr>
+<tr>
+<td>37</td>
+<td><strong>Rachel Thomas</strong></td>
+<td>FastAI Ethics</td>
+<td>&quot;AI should be explainable. Black boxes are dangerous.&quot;</td>
+</tr>
+<tr>
+<td>38</td>
+<td><strong>François Chollet</strong></td>
+<td>Keras</td>
+<td>&quot;The best model is the one you can debug.&quot;</td>
+</tr>
+<tr>
+<td>39</td>
+<td><strong>Aidan Gomez</strong></td>
+<td>Cohere</td>
+<td>&quot;Embeddings are the universal language of AI.&quot;</td>
+</tr>
+<tr>
+<td>40</td>
+<td><strong>Yoav Goldberg</strong></td>
+<td>NLP</td>
+<td>&quot;Understand your data before building models.&quot;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="developer-experience--documentation-41-50">Developer Experience &amp; Documentation (41-50)</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Expert</th>
+<th>Domain</th>
+<th>Philosophy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>41</td>
+<td><strong>Daniele Procida</strong></td>
+<td>Diátaxis</td>
+<td>&quot;Documentation has four distinct types. Don't mix them.&quot;</td>
+</tr>
+<tr>
+<td>42</td>
+<td><strong>Tom Preston-Werner</strong></td>
+<td>README Driven</td>
+<td>&quot;Write the README first. It forces you to think.&quot;</td>
+</tr>
+<tr>
+<td>43</td>
+<td><strong>Sarah Drasner</strong></td>
+<td>Developer Experience</td>
+<td>&quot;Great DX is invisible. Bad DX is a wall.&quot;</td>
+</tr>
+<tr>
+<td>44</td>
+<td><strong>Kelsey Hightower</strong></td>
+<td>No-Code Operations</td>
+<td>&quot;If it's not in the repo, it doesn't exist.&quot;</td>
+</tr>
+<tr>
+<td>45</td>
+<td><strong>Charity Majors</strong></td>
+<td>Observability</td>
+<td>&quot;Observability is about asking questions you didn't anticipate.&quot;</td>
+</tr>
+<tr>
+<td>46</td>
+<td><strong>Cindy Sridharan</strong></td>
+<td>Distributed Systems</td>
+<td>&quot;Testing in production is not optional.&quot;</td>
+</tr>
+<tr>
+<td>47</td>
+<td><strong>Liz Rice</strong></td>
+<td>Security</td>
+<td>&quot;Security is a quality. Not a feature.&quot;</td>
+</tr>
+<tr>
+<td>48</td>
+<td><strong>Jez Humble</strong></td>
+<td>Continuous Delivery</td>
+<td>&quot;If it hurts, do it more often.&quot;</td>
+</tr>
+<tr>
+<td>49</td>
+<td><strong>Nicole Forsgren</strong></td>
+<td>DORA Metrics</td>
+<td>&quot;Measure what matters. Speed and stability are not opposites.&quot;</td>
+</tr>
+<tr>
+<td>50</td>
+<td><strong>Dan Abramov</strong></td>
+<td>React/DX</td>
+<td>&quot;API surface area is a liability. Minimize it.&quot;</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="50-improvement-points">50 Improvement Points</h2>
+<h3 id="category-a-instant-comprehension-architecture-1-10">Category A: Instant Comprehension Architecture (1-10)</h3>
+<p><em>Goal: 30-60 second orientation at any level</em></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Issue</th>
+<th>Current State</th>
+<th>Target State</th>
+<th>Expert Ref</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A1</strong></td>
+<td>System overview requires reading CLAUDE.md</td>
+<td>2000+ lines, requires scrolling</td>
+<td>Single-screen SYSTEM_SNAPSHOT.md with ASCII diagram</td>
+<td>Fowler, Vogels</td>
+</tr>
+<tr>
+<td><strong>A2</strong></td>
+<td>No visual system map</td>
+<td>Text-only architecture docs</td>
+<td>ASCII/SVG diagrams per domain (RAG, Agents, Providers)</td>
+<td>Hohpe, Newman</td>
+</tr>
+<tr>
+<td><strong>A3</strong></td>
+<td>Folder structure has mixed patterns</td>
+<td><code>/src/Core/AI</code>, <code>/src/Core/Agents</code>, <code>/src/Hazina.Agents.*</code></td>
+<td>Unified domain-first structure</td>
+<td>Evans, Ardalis</td>
+</tr>
+<tr>
+<td><strong>A4</strong></td>
+<td>Entry points unclear</td>
+<td>Must read multiple files</td>
+<td>ENTRYPOINT.md per domain (5-10 lines)</td>
+<td>Procida</td>
+</tr>
+<tr>
+<td><strong>A5</strong></td>
+<td>Flow paths undocumented</td>
+<td>Hidden in code</td>
+<td>FLOW.md per service (1 diagram)</td>
+<td>Hohpe</td>
+</tr>
+<tr>
+<td><strong>A6</strong></td>
+<td>Failure modes invisible</td>
+<td>Scattered across code</td>
+<td>FAILURE_MODES.md per domain with traffic lights</td>
+<td>Nygard, Vogels</td>
+</tr>
+<tr>
+<td><strong>A7</strong></td>
+<td>Critical vs optional unclear</td>
+<td>All code looks equal</td>
+<td>Visual markers for critical paths (README badges)</td>
+<td>Majors</td>
+</tr>
+<tr>
+<td><strong>A8</strong></td>
+<td>108 projects overwhelming</td>
+<td>Must understand all</td>
+<td>Project categorization (CORE/EXTENDED/DEMO/DEPRECATED)</td>
+<td>Burns</td>
+</tr>
+<tr>
+<td><strong>A9</strong></td>
+<td>Startup sequence undocumented</td>
+<td>Trial and error</td>
+<td>BOOTSTRAP.md with numbered steps</td>
+<td>Hightower</td>
+</tr>
+<tr>
+<td><strong>A10</strong></td>
+<td>Inter-project dependencies unclear</td>
+<td>Must trace code</td>
+<td>DEPENDENCIES.md with directed graphs</td>
+<td>Fowler</td>
+</tr>
+</tbody>
+</table>
+<h3 id="category-b-zero-interpretation-naming-11-20">Category B: Zero-Interpretation Naming (11-20)</h3>
+<p><em>Goal: Names reveal intent without context</em></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Issue</th>
+<th>Current State</th>
+<th>Target State</th>
+<th>Expert Ref</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>B11</strong></td>
+<td>Generic names exist</td>
+<td><code>Manager</code>, <code>Engine</code>, <code>Handler</code></td>
+<td>Domain+Action+Scope: <code>RagDocumentIndexer</code></td>
+<td>Belshee, Evans</td>
+</tr>
+<tr>
+<td><strong>B12</strong></td>
+<td>Inconsistent naming</td>
+<td><code>Hazina.Agents.Coding</code> vs <code>Hazina.AI.Agents</code></td>
+<td>Unified: <code>Hazina.AI.Agents.Coding</code></td>
+<td>Titus Winters</td>
+</tr>
+<tr>
+<td><strong>B13</strong></td>
+<td>Base class naming</td>
+<td><code>ChatServiceBase</code> (7+ inheritors)</td>
+<td>Consider interfaces: <code>IChatCapable</code></td>
+<td>Metz</td>
+</tr>
+<tr>
+<td><strong>B14</strong></td>
+<td>Partial class confusion</td>
+<td><code>ChatService</code> split across files</td>
+<td>Single file or explicit partials: <code>ChatService.Streaming.cs</code></td>
+<td>Skeet</td>
+</tr>
+<tr>
+<td><strong>B15</strong></td>
+<td>Namespace depth inconsistent</td>
+<td><code>Hazina.Tools.Services.Chat</code> (4 levels) vs <code>Hazina.LLMs.Client</code> (3)</td>
+<td>Standardize to 3-4 levels</td>
+<td>Fowler</td>
+</tr>
+<tr>
+<td><strong>B16</strong></td>
+<td>Extension files named generically</td>
+<td><code>Extensions.cs</code></td>
+<td><code>StringExtensions.cs</code>, <code>IEnumerableExtensions.cs</code></td>
+<td>McConnell</td>
+</tr>
+<tr>
+<td><strong>B17</strong></td>
+<td>Config class proliferation</td>
+<td>10+ config classes</td>
+<td>Domain-specific: <code>RagConfig</code>, <code>AgentConfig</code>, <code>StorageConfig</code></td>
+<td>Damian Edwards</td>
+</tr>
+<tr>
+<td><strong>B18</strong></td>
+<td>Unclear interface purpose</td>
+<td><code>ILLMClient</code> (generic)</td>
+<td>Rename: <code>ILanguageModelClient</code> or document heavily</td>
+<td>Skeet</td>
+</tr>
+<tr>
+<td><strong>B19</strong></td>
+<td>Model vs DTO vs Entity confusion</td>
+<td>Mixed naming</td>
+<td>Suffix: <code>*Model</code> (domain), <code>*Dto</code> (transfer), <code>*Entity</code> (persistence)</td>
+<td>Bogard</td>
+</tr>
+<tr>
+<td><strong>B20</strong></td>
+<td>Test names describe code, not behavior</td>
+<td><code>ChatService_GetResponse_Works</code></td>
+<td><code>WhenUserAsksQuestion_ShouldReturnAnswer</code></td>
+<td>Beck</td>
+</tr>
+</tbody>
+</table>
+<h3 id="category-c-architectural-purity-21-30">Category C: Architectural Purity (21-30)</h3>
+<p><em>Goal: Clear boundaries, single responsibility</em></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Issue</th>
+<th>Current State</th>
+<th>Target State</th>
+<th>Expert Ref</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>C21</strong></td>
+<td>15+ tool services</td>
+<td>Single responsibility stretched</td>
+<td>Group by domain: <code>Hazina.Tools.Content</code>, <code>Hazina.Tools.Social</code></td>
+<td>Newman</td>
+</tr>
+<tr>
+<td><strong>C22</strong></td>
+<td>Deep inheritance (8+ services from base)</td>
+<td><code>ChatServiceBase</code> hierarchy</td>
+<td>Composition: <code>ChatCapabilities</code> injected</td>
+<td>Metz, Seemann</td>
+</tr>
+<tr>
+<td><strong>C23</strong></td>
+<td>AI layer references Tools layer</td>
+<td>Bidirectional coupling risk</td>
+<td>Strict dependency direction: Core &lt;- Tools &lt;- Apps</td>
+<td>Ardalis</td>
+</tr>
+<tr>
+<td><strong>C24</strong></td>
+<td>Configuration scattered</td>
+<td>Multiple config classes</td>
+<td>Central <code>IOptions&lt;HazinaOptions&gt;</code> pattern</td>
+<td>Lock</td>
+</tr>
+<tr>
+<td><strong>C25</strong></td>
+<td>Storage abstraction leaky</td>
+<td><code>SqliteSettings</code>, <code>SupabaseSettings</code> exposed</td>
+<td>Unified <code>IStorageProvider</code> with internal config</td>
+<td>Fowler</td>
+</tr>
+<tr>
+<td><strong>C26</strong></td>
+<td>Prompt loading implicit</td>
+<td>Magic file discovery</td>
+<td>Explicit <code>IPromptLoader</code> with clear paths</td>
+<td>Gary Bernhardt</td>
+</tr>
+<tr>
+<td><strong>C27</strong></td>
+<td>Circuit breaker in provider layer</td>
+<td>Cross-cutting concern mixed</td>
+<td>Extract to <code>Hazina.Resilience</code> library</td>
+<td>Nygard</td>
+</tr>
+<tr>
+<td><strong>C28</strong></td>
+<td>Cost tracking tightly coupled</td>
+<td>Inside <code>ProviderOrchestrator</code></td>
+<td>Extract to <code>ICostTracker</code> interface</td>
+<td>Seemann</td>
+</tr>
+<tr>
+<td><strong>C29</strong></td>
+<td>Health monitoring mixed with providers</td>
+<td>Same assembly</td>
+<td>Separate <code>Hazina.Health</code> assembly</td>
+<td>Nygard</td>
+</tr>
+<tr>
+<td><strong>C30</strong></td>
+<td>Logging approach inconsistent</td>
+<td>Some <code>ILogger</code>, some direct</td>
+<td>Unified <code>ILogger&lt;T&gt;</code> everywhere</td>
+<td>Lock</td>
+</tr>
+</tbody>
+</table>
+<h3 id="category-d-testing-excellence-31-40">Category D: Testing Excellence (31-40)</h3>
+<p><em>Goal: Tests as living documentation</em></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Issue</th>
+<th>Current State</th>
+<th>Target State</th>
+<th>Expert Ref</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>D31</strong></td>
+<td>Tests mirror code structure</td>
+<td><code>ProjectName.Tests</code></td>
+<td>Behavior-focused: <code>WhenIndexingDocument.Tests</code></td>
+<td>Rainsberger</td>
+</tr>
+<tr>
+<td><strong>D32</strong></td>
+<td>Integration tests mixed with unit</td>
+<td>Same project</td>
+<td>Separate: <code>*.UnitTests</code>, <code>*.IntegrationTests</code></td>
+<td>Feathers</td>
+</tr>
+<tr>
+<td><strong>D33</strong></td>
+<td>Test data unclear</td>
+<td>Inline magic strings</td>
+<td><code>TestData/</code> folders with descriptive files</td>
+<td>Beck</td>
+</tr>
+<tr>
+<td><strong>D34</strong></td>
+<td>Missing architectural tests</td>
+<td>Manual review only</td>
+<td>ArchUnit.NET: enforce dependency rules</td>
+<td>Fowler</td>
+</tr>
+<tr>
+<td><strong>D35</strong></td>
+<td>No mutation testing</td>
+<td>Line coverage only</td>
+<td>Stryker.NET for mutation analysis</td>
+<td>Beck</td>
+</tr>
+<tr>
+<td><strong>D36</strong></td>
+<td>Flaky test tolerance</td>
+<td>Some tests marked <code>[Skip]</code></td>
+<td>Zero flaky test policy</td>
+<td>Forsgren</td>
+</tr>
+<tr>
+<td><strong>D37</strong></td>
+<td>No test documentation</td>
+<td>Test code only</td>
+<td><code>TESTING.md</code> explaining strategy</td>
+<td>Procida</td>
+</tr>
+<tr>
+<td><strong>D38</strong></td>
+<td>Mock setup verbose</td>
+<td>20+ lines per test</td>
+<td>Builder pattern: <code>new MockBuilder().WithLLM().Build()</code></td>
+<td>Kerievsky</td>
+</tr>
+<tr>
+<td><strong>D39</strong></td>
+<td>No contract tests</td>
+<td>Manual API verification</td>
+<td>Pact tests for service boundaries</td>
+<td>Rainsberger</td>
+</tr>
+<tr>
+<td><strong>D40</strong></td>
+<td>Performance tests missing</td>
+<td>No baseline</td>
+<td>BenchmarkDotNet for critical paths</td>
+<td>Chapsas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="category-e-observability--production-41-45">Category E: Observability &amp; Production (41-45)</h3>
+<p><em>Goal: Real-time system comprehension</em></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Issue</th>
+<th>Current State</th>
+<th>Target State</th>
+<th>Expert Ref</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>E41</strong></td>
+<td>Metrics not standardized</td>
+<td>Custom <code>MetricsCollector</code></td>
+<td>OpenTelemetry standard</td>
+<td>Majors</td>
+</tr>
+<tr>
+<td><strong>E42</strong></td>
+<td>Traces not correlated</td>
+<td>Per-service tracing</td>
+<td>Distributed tracing with correlation IDs</td>
+<td>Sridharan</td>
+</tr>
+<tr>
+<td><strong>E43</strong></td>
+<td>Logs unstructured</td>
+<td>Mixed formats</td>
+<td>Structured logging with semantic fields</td>
+<td>Majors</td>
+</tr>
+<tr>
+<td><strong>E44</strong></td>
+<td>Health checks incomplete</td>
+<td>Basic checks only</td>
+<td>Deep health: dependencies, capacity, liveness</td>
+<td>Nygard</td>
+</tr>
+<tr>
+<td><strong>E45</strong></td>
+<td>No runbooks</td>
+<td>Tribal knowledge</td>
+<td><code>RUNBOOK.md</code> per service with failure scenarios</td>
+<td>Hightower</td>
+</tr>
+</tbody>
+</table>
+<h3 id="category-f-developer-experience-46-50">Category F: Developer Experience (46-50)</h3>
+<p><em>Goal: Friction-free onboarding and development</em></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Issue</th>
+<th>Current State</th>
+<th>Target State</th>
+<th>Expert Ref</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>F46</strong></td>
+<td>7 solution files confusing</td>
+<td>Decision paralysis</td>
+<td><code>WHICH_SOLUTION.md</code> decision tree</td>
+<td>Drasner</td>
+</tr>
+<tr>
+<td><strong>F47</strong></td>
+<td>No dev container</td>
+<td>Manual setup</td>
+<td><code>.devcontainer/</code> with all tools</td>
+<td>Hightower</td>
+</tr>
+<tr>
+<td><strong>F48</strong></td>
+<td>Build time unknown</td>
+<td>No metrics</td>
+<td><code>PERFORMANCE.md</code> with build benchmarks</td>
+<td>Forsgren</td>
+</tr>
+<tr>
+<td><strong>F49</strong></td>
+<td>Code examples scattered</td>
+<td>In README files</td>
+<td>Central <code>examples/</code> folder with runnable code</td>
+<td>Chollet</td>
+</tr>
+<tr>
+<td><strong>F50</strong></td>
+<td>No CLI tooling</td>
+<td>Manual operations</td>
+<td><code>hazina</code> CLI for common tasks</td>
+<td>Drasner</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="scoring-matrix">Scoring Matrix</h2>
+<p>Each improvement scored on:</p>
+<ul>
+<li><strong>Value (V)</strong>: Impact on comprehension/quality (1-10)</li>
+<li><strong>Effort (E)</strong>: Time/complexity to implement (1-10, lower = easier)</li>
+<li><strong>Risk (R)</strong>: Breaking change potential (1-10, lower = safer)</li>
+<li><strong>Score</strong>: V / (E + R) - higher is better</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Improvement</th>
+<th>Value</th>
+<th>Effort</th>
+<th>Risk</th>
+<th>Score</th>
+<th>Category</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A1</td>
+<td>System Snapshot</td>
+<td>10</td>
+<td>3</td>
+<td>1</td>
+<td><strong>2.50</strong></td>
+<td>Docs</td>
+</tr>
+<tr>
+<td>A2</td>
+<td>Visual System Map</td>
+<td>9</td>
+<td>4</td>
+<td>1</td>
+<td><strong>1.80</strong></td>
+<td>Docs</td>
+</tr>
+<tr>
+<td>A3</td>
+<td>Unified Folder Structure</td>
+<td>8</td>
+<td>7</td>
+<td>6</td>
+<td>0.62</td>
+<td>Refactor</td>
+</tr>
+<tr>
+<td>A4</td>
+<td>ENTRYPOINT.md per domain</td>
+<td>9</td>
+<td>2</td>
+<td>1</td>
+<td><strong>3.00</strong></td>
+<td>Docs</td>
+</tr>
+<tr>
+<td>A5</td>
+<td>FLOW.md per service</td>
+<td>8</td>
+<td>3</td>
+<td>1</td>
+<td><strong>2.00</strong></td>
+<td>Docs</td>
+</tr>
+<tr>
+<td>A6</td>
+<td>FAILURE_MODES.md</td>
+<td>8</td>
+<td>3</td>
+<td>1</td>
+<td><strong>2.00</strong></td>
+<td>Docs</td>
+</tr>
+<tr>
+<td>A7</td>
+<td>Critical path markers</td>
+<td>7</td>
+<td>2</td>
+<td>1</td>
+<td><strong>2.33</strong></td>
+<td>Docs</td>
+</tr>
+<tr>
+<td>A8</td>
+<td>Project categorization</td>
+<td>8</td>
+<td>3</td>
+<td>2</td>
+<td>1.60</td>
+<td>Docs</td>
+</tr>
+<tr>
+<td>A9</td>
+<td>BOOTSTRAP.md</td>
+<td>9</td>
+<td>2</td>
+<td>1</td>
+<td><strong>3.00</strong></td>
+<td>Docs</td>
+</tr>
+<tr>
+<td>A10</td>
+<td>DEPENDENCIES.md</td>
+<td>7</td>
+<td>4</td>
+<td>1</td>
+<td>1.40</td>
+<td>Docs</td>
+</tr>
+<tr>
+<td>B11</td>
+<td>Rename generic classes</td>
+<td>7</td>
+<td>5</td>
+<td>4</td>
+<td>0.78</td>
+<td>Naming</td>
+</tr>
+<tr>
+<td>B12</td>
+<td>Unify agent naming</td>
+<td>6</td>
+<td>6</td>
+<td>5</td>
+<td>0.55</td>
+<td>Naming</td>
+</tr>
+<tr>
+<td>B13</td>
+<td>Base class to interface</td>
+<td>6</td>
+<td>6</td>
+<td>5</td>
+<td>0.55</td>
+<td>Refactor</td>
+</tr>
+<tr>
+<td>B14</td>
+<td>Explicit partial naming</td>
+<td>5</td>
+<td>3</td>
+<td>2</td>
+<td>1.00</td>
+<td>Naming</td>
+</tr>
+<tr>
+<td>B15</td>
+<td>Standardize namespace depth</td>
+<td>4</td>
+<td>5</td>
+<td>4</td>
+<td>0.44</td>
+<td>Naming</td>
+</tr>
+<tr>
+<td>B16</td>
+<td>Rename extension files</td>
+<td>5</td>
+<td>2</td>
+<td>2</td>
+<td>1.25</td>
+<td>Naming</td>
+</tr>
+<tr>
+<td>B17</td>
+<td>Consolidate config</td>
+<td>7</td>
+<td>5</td>
+<td>4</td>
+<td>0.78</td>
+<td>Refactor</td>
+</tr>
+<tr>
+<td>B18</td>
+<td>Document ILLMClient</td>
+<td>6</td>
+<td>2</td>
+<td>1</td>
+<td><strong>2.00</strong></td>
+<td>Docs</td>
+</tr>
+<tr>
+<td>B19</td>
+<td>Model/DTO/Entity suffix</td>
+<td>5</td>
+<td>6</td>
+<td>5</td>
+<td>0.45</td>
+<td>Naming</td>
+</tr>
+<tr>
+<td>B20</td>
+<td>Behavior-based test names</td>
+<td>7</td>
+<td>4</td>
+<td>2</td>
+<td>1.17</td>
+<td>Testing</td>
+</tr>
+<tr>
+<td>C21</td>
+<td>Group tool services</td>
+<td>6</td>
+<td>7</td>
+<td>6</td>
+<td>0.46</td>
+<td>Refactor</td>
+</tr>
+<tr>
+<td>C22</td>
+<td>Composition over inheritance</td>
+<td>7</td>
+<td>8</td>
+<td>7</td>
+<td>0.47</td>
+<td>Refactor</td>
+</tr>
+<tr>
+<td>C23</td>
+<td>Enforce dependency direction</td>
+<td>8</td>
+<td>5</td>
+<td>4</td>
+<td>0.89</td>
+<td>Arch</td>
+</tr>
+<tr>
+<td>C24</td>
+<td>Central IOptions pattern</td>
+<td>6</td>
+<td>5</td>
+<td>4</td>
+<td>0.67</td>
+<td>Refactor</td>
+</tr>
+<tr>
+<td>C25</td>
+<td>Unified storage provider</td>
+<td>7</td>
+<td>6</td>
+<td>5</td>
+<td>0.64</td>
+<td>Refactor</td>
+</tr>
+<tr>
+<td>C26</td>
+<td>Explicit prompt loading</td>
+<td>6</td>
+<td>4</td>
+<td>3</td>
+<td>0.86</td>
+<td>Refactor</td>
+</tr>
+<tr>
+<td>C27</td>
+<td>Extract Hazina.Resilience</td>
+<td>6</td>
+<td>5</td>
+<td>4</td>
+<td>0.67</td>
+<td>Refactor</td>
+</tr>
+<tr>
+<td>C28</td>
+<td>Extract ICostTracker</td>
+<td>5</td>
+<td>4</td>
+<td>3</td>
+<td>0.71</td>
+<td>Refactor</td>
+</tr>
+<tr>
+<td>C29</td>
+<td>Separate Hazina.Health</td>
+<td>5</td>
+<td>4</td>
+<td>3</td>
+<td>0.71</td>
+<td>Refactor</td>
+</tr>
+<tr>
+<td>C30</td>
+<td>Unified ILogger<t></t></td>
+<td>6</td>
+<td>3</td>
+<td>2</td>
+<td>1.20</td>
+<td>Code</td>
+</tr>
+<tr>
+<td>D31</td>
+<td>Behavior-focused test structure</td>
+<td>6</td>
+<td>6</td>
+<td>4</td>
+<td>0.60</td>
+<td>Testing</td>
+</tr>
+<tr>
+<td>D32</td>
+<td>Separate unit/integration</td>
+<td>6</td>
+<td>4</td>
+<td>3</td>
+<td>0.86</td>
+<td>Testing</td>
+</tr>
+<tr>
+<td>D33</td>
+<td>TestData folders</td>
+<td>5</td>
+<td>3</td>
+<td>1</td>
+<td>1.25</td>
+<td>Testing</td>
+</tr>
+<tr>
+<td>D34</td>
+<td>Architectural tests</td>
+<td>8</td>
+<td>4</td>
+<td>2</td>
+<td>1.33</td>
+<td>Testing</td>
+</tr>
+<tr>
+<td>D35</td>
+<td>Mutation testing</td>
+<td>5</td>
+<td>5</td>
+<td>2</td>
+<td>0.71</td>
+<td>Testing</td>
+</tr>
+<tr>
+<td>D36</td>
+<td>Zero flaky tests</td>
+<td>7</td>
+<td>6</td>
+<td>3</td>
+<td>0.78</td>
+<td>Testing</td>
+</tr>
+<tr>
+<td>D37</td>
+<td>TESTING.md</td>
+<td>6</td>
+<td>2</td>
+<td>1</td>
+<td><strong>2.00</strong></td>
+<td>Docs</td>
+</tr>
+<tr>
+<td>D38</td>
+<td>Mock builder pattern</td>
+<td>5</td>
+<td>4</td>
+<td>2</td>
+<td>0.83</td>
+<td>Testing</td>
+</tr>
+<tr>
+<td>D39</td>
+<td>Contract tests</td>
+<td>6</td>
+<td>6</td>
+<td>3</td>
+<td>0.67</td>
+<td>Testing</td>
+</tr>
+<tr>
+<td>D40</td>
+<td>Performance benchmarks</td>
+<td>6</td>
+<td>5</td>
+<td>2</td>
+<td>0.86</td>
+<td>Testing</td>
+</tr>
+<tr>
+<td>E41</td>
+<td>OpenTelemetry</td>
+<td>7</td>
+<td>6</td>
+<td>4</td>
+<td>0.70</td>
+<td>Observability</td>
+</tr>
+<tr>
+<td>E42</td>
+<td>Distributed tracing</td>
+<td>7</td>
+<td>6</td>
+<td>4</td>
+<td>0.70</td>
+<td>Observability</td>
+</tr>
+<tr>
+<td>E43</td>
+<td>Structured logging</td>
+<td>6</td>
+<td>4</td>
+<td>3</td>
+<td>0.86</td>
+<td>Observability</td>
+</tr>
+<tr>
+<td>E44</td>
+<td>Deep health checks</td>
+<td>6</td>
+<td>4</td>
+<td>3</td>
+<td>0.86</td>
+<td>Observability</td>
+</tr>
+<tr>
+<td>E45</td>
+<td>RUNBOOK.md per service</td>
+<td>7</td>
+<td>3</td>
+<td>1</td>
+<td>1.75</td>
+<td>Docs</td>
+</tr>
+<tr>
+<td>F46</td>
+<td>WHICH_SOLUTION.md</td>
+<td>7</td>
+<td>1</td>
+<td>1</td>
+<td><strong>3.50</strong></td>
+<td>Docs</td>
+</tr>
+<tr>
+<td>F47</td>
+<td>Dev container</td>
+<td>6</td>
+<td>5</td>
+<td>2</td>
+<td>0.86</td>
+<td>DX</td>
+</tr>
+<tr>
+<td>F48</td>
+<td>Build benchmarks</td>
+<td>5</td>
+<td>3</td>
+<td>1</td>
+<td>1.25</td>
+<td>DX</td>
+</tr>
+<tr>
+<td>F49</td>
+<td>Central examples folder</td>
+<td>6</td>
+<td>4</td>
+<td>2</td>
+<td>1.00</td>
+<td>DX</td>
+</tr>
+<tr>
+<td>F50</td>
+<td>hazina CLI</td>
+<td>7</td>
+<td>7</td>
+<td>3</td>
+<td>0.70</td>
+<td>DX</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="top-5-best-value-for-effort-risk-ratio">TOP 5: Best Value-for-Effort-Risk Ratio</h2>
+<h3 id="rank-1-f46---which_solutionmd-score-350">Rank 1: F46 - WHICH_SOLUTION.md (Score: 3.50)</h3>
+<p><strong>Value: 7 | Effort: 1 | Risk: 1</strong></p>
+<p><strong>What</strong>: Create a single-page decision tree for choosing which solution file to open.</p>
+<p><strong>Why</strong>:</p>
+<ul>
+<li>7 solution files create decision paralysis</li>
+<li>New developers waste time choosing wrong solution</li>
+<li>5 minutes to write, saves hours of confusion</li>
+</ul>
+<p><strong>Deliverable</strong>:</p>
+<pre><code class="lang-markdown"># Which Solution Should I Open?
+
+START HERE
+    |
+    v
+What are you doing?
+    |
+    +---&gt; &quot;Just exploring/learning&quot; --&gt; Hazina.QuickStart.sln (10 projects)
+    |
+    +---&gt; &quot;Building an AI app&quot; --&gt; Hazina.AI.sln
+    |
+    +---&gt; &quot;Working on tools/services&quot; --&gt; Hazina.Tools.sln
+    |
+    +---&gt; &quot;Building full apps&quot; --&gt; Hazina.Apps.sln
+    |
+    +---&gt; &quot;Everything/CI&quot; --&gt; Hazina.sln
+</code></pre>
+<p><strong>Expert backing</strong>: Sarah Drasner - &quot;Great DX is invisible. Bad DX is a wall.&quot;</p>
+<hr>
+<h3 id="rank-2-a4---entrypointmd-per-domain-score-300">Rank 2: A4 - ENTRYPOINT.md per domain (Score: 3.00)</h3>
+<p><strong>Value: 9 | Effort: 2 | Risk: 1</strong></p>
+<p><strong>What</strong>: Create 5-10 line ENTRYPOINT.md in each major domain folder.</p>
+<p><strong>Why</strong>:</p>
+<ul>
+<li>Current entry point discovery requires code archaeology</li>
+<li>&quot;Where do I start?&quot; is the #1 question</li>
+<li>Template-based, low effort</li>
+</ul>
+<p><strong>Deliverable</strong> (example for RAG):</p>
+<pre><code class="lang-markdown"># RAG Domain Entry Point
+
+## Start Here
+- Main orchestrator: `RAGEngine.cs`
+- Configuration: `RAGConfig.cs`
+
+## Key Flows
+1. Index documents: `RAGEngine.IndexDocumentsAsync()`
+2. Search: `RAGEngine.SearchAsync()`
+3. Ask with context: `RAGEngine.AskWithContextAsync()`
+
+## Dependencies
+- Requires: Hazina.AI.Providers (for LLM)
+- Requires: Storage backend (SQLite or PostgreSQL)
+</code></pre>
+<p><strong>Expert backing</strong>: Daniele Procida - &quot;Documentation has four distinct types.&quot;</p>
+<hr>
+<h3 id="rank-3-a9---bootstrapmd-score-300">Rank 3: A9 - BOOTSTRAP.md (Score: 3.00)</h3>
+<p><strong>Value: 9 | Effort: 2 | Risk: 1</strong></p>
+<p><strong>What</strong>: Single document explaining startup sequence from zero.</p>
+<p><strong>Why</strong>:</p>
+<ul>
+<li>Currently scattered across README files</li>
+<li>&quot;How do I run this?&quot; should have one answer</li>
+<li>Numbered steps eliminate ambiguity</li>
+</ul>
+<p><strong>Deliverable</strong>:</p>
+<pre><code class="lang-markdown"># Bootstrap Hazina from Zero
+
+## Prerequisites
+- .NET 9.0 SDK
+- API keys (OPENAI_API_KEY or ANTHROPIC_API_KEY)
+
+## 5-Minute Start
+1. Clone: `git clone https://github.com/...`
+2. Open: `Hazina.QuickStart.sln`
+3. Set env: `set OPENAI_API_KEY=sk-...`
+4. Run: `dotnet run --project apps/Demos/Hazina.Demo.Supabase`
+
+## First Code
+```csharp
+var result = await Hazina.AskAsync(&quot;Hello!&quot;);
+</code></pre>
+<pre><code>
+**Expert backing**: Kelsey Hightower - &quot;If it's not in the repo, it doesn't exist.&quot;
+
+---
+
+### Rank 4: A1 - SYSTEM_SNAPSHOT.md (Score: 2.50)
+**Value: 10 | Effort: 3 | Risk: 1**
+
+**What**: Single-screen system overview with ASCII diagram.
+
+**Why**:
+- CLAUDE.md is 2000+ lines (information overload)
+- System map should fit on one screen
+- 30-second comprehension goal requires visual
+
+**Deliverable**:
+</code></pre>
+<h1 id="hazina-system-snapshot">Hazina System Snapshot</h1>
+<h2 id="what-is-hazina">What is Hazina?</h2>
+<p>AI framework for .NET: multi-provider LLM, RAG, agents, resilience.</p>
+<h2 id="architecture-30-seconds">Architecture (30 seconds)</h2>
+<pre><code>[Your App]
+     |
+[Fluent API] -----&gt; Quick start: Hazina.AskAsync()
+     |
+[Orchestration] --&gt; Multi-layer reasoning, context
+     |
+[Providers] ------&gt; OpenAI | Anthropic | Local | Gemini
+     |
+[Storage] --------&gt; SQLite | PostgreSQL | Supabase | Files
+     |
+[Tools] ----------&gt; RAG | Agents | Code Intelligence
+</code></pre>
+<h2 id="5-domains">5 Domains</h2>
+<ol>
+<li>AI (Providers, Fault Detection, Orchestration)</li>
+<li>RAG (Indexing, Search, Reranking)</li>
+<li>Agents (Tools, Workflows, Multi-agent)</li>
+<li>Storage (Documents, Embeddings, Metadata)</li>
+<li>Production (Metrics, Health, Diagnostics)</li>
+</ol>
+<h2 id="start-here">Start Here</h2>
+<ul>
+<li>New developer: <code>Hazina.QuickStart.sln</code> + <code>BOOTSTRAP.md</code></li>
+<li>Understanding system: <code>docs/ARCHITECTURE.md</code></li>
+<li>Adding features: <code>CONTRIBUTING.md</code></li>
+</ul>
+<pre><code>
+**Expert backing**: Martin Fowler - &quot;Code that humans can understand.&quot;
+
+---
+
+### Rank 5: A7 - Critical Path Markers (Score: 2.33)
+**Value: 7 | Effort: 2 | Risk: 1**
+
+**What**: Add badges/markers to README files indicating criticality.
+
+**Why**:
+- All 108 projects look equal in importance
+- Breaking critical code has outsized impact
+- Visual markers enable instant triage
+
+**Deliverable** (README badge system):
+```markdown
+&lt;!-- Add to critical project READMEs --&gt;
+![Critical](https://img.shields.io/badge/criticality-CRITICAL-red)
+
+&lt;!-- Add to important project READMEs --&gt;
+![Important](https://img.shields.io/badge/criticality-IMPORTANT-orange)
+
+&lt;!-- Add to optional/demo project READMEs --&gt;
+![Optional](https://img.shields.io/badge/criticality-OPTIONAL-green)
+</code></pre>
+<p>Categories:</p>
+<ul>
+<li><strong>CRITICAL</strong> (red): Hazina.AI.Providers, Hazina.LLMs.Client, Hazina.Store.*</li>
+<li><strong>IMPORTANT</strong> (orange): Hazina.AI.<em>, Hazina.Neurochain.</em>, Hazina.CodeIntelligence</li>
+<li><strong>OPTIONAL</strong> (green): Demos, Desktop apps, Integration tests</li>
+</ul>
+<p><strong>Expert backing</strong>: Charity Majors - &quot;Observability is about asking questions you didn't anticipate.&quot;</p>
+<hr>
+<h2 id="honorable-mentions-scores-175-200">Honorable Mentions (Scores 1.75-2.00)</h2>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>#</th>
+<th>Improvement</th>
+<th>Score</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6</td>
+<td>A5</td>
+<td>FLOW.md per service</td>
+<td>2.00</td>
+<td>High value but more effort</td>
+</tr>
+<tr>
+<td>7</td>
+<td>A6</td>
+<td>FAILURE_MODES.md</td>
+<td>2.00</td>
+<td>Critical for production</td>
+</tr>
+<tr>
+<td>8</td>
+<td>D37</td>
+<td>TESTING.md</td>
+<td>2.00</td>
+<td>Important for contributors</td>
+</tr>
+<tr>
+<td>9</td>
+<td>B18</td>
+<td>Document ILLMClient</td>
+<td>2.00</td>
+<td>Core interface clarity</td>
+</tr>
+<tr>
+<td>10</td>
+<td>E45</td>
+<td>RUNBOOK.md per service</td>
+<td>1.75</td>
+<td>Production operations</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="implementation-proposal">Implementation Proposal</h2>
+<h3 id="phase-0-foundation-days-1-2">Phase 0: Foundation (Days 1-2)</h3>
+<p><em>Goal: Enable 30-second orientation</em></p>
+<ol>
+<li><strong>F46</strong>: Create <code>WHICH_SOLUTION.md</code> (30 min)</li>
+<li><strong>A9</strong>: Create <code>BOOTSTRAP.md</code> (1 hour)</li>
+<li><strong>A1</strong>: Create <code>SYSTEM_SNAPSHOT.md</code> (2 hours)</li>
+<li><strong>A7</strong>: Add criticality badges to top 20 READMEs (1 hour)</li>
+<li><strong>A4</strong>: Create ENTRYPOINT.md for 5 core domains (2 hours)</li>
+</ol>
+<p><strong>Deliverables</strong>: 5 new markdown files, 20 updated READMEs
+<strong>Risk</strong>: Zero (documentation only)
+<strong>Time</strong>: 1-2 days</p>
+<h3 id="phase-1-documentation-excellence-days-3-5">Phase 1: Documentation Excellence (Days 3-5)</h3>
+<p><em>Goal: Complete comprehension at all levels</em></p>
+<ol start="6">
+<li><strong>A2</strong>: Visual system maps (ASCII diagrams) for each domain</li>
+<li><strong>A5</strong>: FLOW.md for critical services (Providers, RAG, Agents)</li>
+<li><strong>A6</strong>: FAILURE_MODES.md for production services</li>
+<li><strong>D37</strong>: TESTING.md strategy document</li>
+<li><strong>B18</strong>: Document ILLMClient interface thoroughly</li>
+</ol>
+<p><strong>Deliverables</strong>: 15+ new/updated markdown files
+<strong>Risk</strong>: Zero (documentation only)
+<strong>Time</strong>: 2-3 days</p>
+<h3 id="phase-2-quick-code-wins-days-6-10">Phase 2: Quick Code Wins (Days 6-10)</h3>
+<p><em>Goal: Naming and convention improvements</em></p>
+<ol start="11">
+<li><strong>C30</strong>: Unified ILogger<t> across codebase</t></li>
+<li><strong>B14</strong>: Explicit partial class naming</li>
+<li><strong>B16</strong>: Rename generic extension files</li>
+<li><strong>D33</strong>: Add TestData folders</li>
+<li><strong>D34</strong>: Add architectural tests (ArchUnit.NET)</li>
+</ol>
+<p><strong>Deliverables</strong>: Code changes, test infrastructure
+<strong>Risk</strong>: Low (backwards compatible)
+<strong>Time</strong>: 3-5 days</p>
+<h3 id="phase-3-structural-improvements-days-11-20">Phase 3: Structural Improvements (Days 11-20)</h3>
+<p><em>Goal: Architectural purity</em></p>
+<p>16-25. Select from remaining items based on priority</p>
+<p><strong>Risk</strong>: Medium (requires careful migration)
+<strong>Time</strong>: 5-10 days</p>
+<hr>
+<h2 id="decision-required">Decision Required</h2>
+<p>Before proceeding, please confirm:</p>
+<ol>
+<li><strong>Scope</strong>: Start with TOP 5 only, or include Phase 0+1 (10 items)?</li>
+<li><strong>Format</strong>: Create actual files, or just detailed specifications?</li>
+<li><strong>Timing</strong>: Implement now, or create as a tracked plan?</li>
+<li><strong>Review</strong>: Should each deliverable be reviewed before committing?</li>
+</ol>
+<hr>
+<p><em>Generated: 2026-01-08</em>
+<em>Expert Panel: 50 world-class practitioners</em>
+<em>Improvements Identified: 50</em>
+<em>TOP 5 Score Range: 2.33 - 3.50</em></p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

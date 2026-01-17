@@ -1,0 +1,667 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Hazina Architecture | Hazina Framework </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Hazina Architecture | Hazina Framework ">
+      
+      
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../icon.svg" alt="Hazina">
+            Hazina
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled="" placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="hazina-architecture">Hazina Architecture</h1>
+
+<p><strong>Updated for Hazina v2.0</strong></p>
+<p>This document provides a comprehensive overview of Hazina's architecture, design principles, and component interactions.</p>
+<hr>
+<h2 id="-whats-new-in-v20">⚠️ What's New in v2.0</h2>
+<h3 id="architectural-improvements">Architectural Improvements</h3>
+<ul>
+<li><p>✅ <strong>Clean Code Architecture (PR #5)</strong> - &quot;30-Second Comprehension&quot; design</p>
+<ul>
+<li>Architectural tests (D34)</li>
+<li>ILogger standardization (C30)</li>
+<li>TestData patterns (D33)</li>
+<li>See <a href=".">CLEAN_CODE_*.md</a> files</li>
+</ul>
+</li>
+<li><p>✅ <strong>Code Deduplication (PR #6)</strong> - ~750 LOC eliminated</p>
+<ul>
+<li><code>HazinaConfigBase</code> - Base for all provider configs (~400 LOC)</li>
+<li><code>HazinaServiceBase</code> - Base for all services (~200 LOC)</li>
+<li><code>LLMProviderBase</code> - Base for all providers (~150 LOC)</li>
+</ul>
+</li>
+</ul>
+<h3 id="new-features">New Features</h3>
+<ul>
+<li>✅ <strong><a href="TOOL_AGENT_ARCHITECTURE.html">3-Layer Tool Agent Architecture</a></strong> - 90% cost savings</li>
+<li>✅ <strong><a href="CONTEXT_COMPRESSION.html">Context Compression Module</a></strong> - 87% token reduction</li>
+<li>✅ <strong><a href="GOOGLE_DRIVE_INTEGRATION.html">Google Drive Integration</a></strong> - Cloud storage</li>
+</ul>
+<p>See <a href="../IMPLEMENTATION-STATUS.md">IMPLEMENTATION-STATUS.md</a> for complete feature list.</p>
+<hr>
+<h2 id="-design-principles">🎯 Design Principles</h2>
+<h3 id="1-developer-first-experience">1. <strong>Developer-First Experience</strong></h3>
+<ul>
+<li>4 lines to production</li>
+<li>Fluent API for discoverability</li>
+<li>Zero-config defaults with full customization</li>
+</ul>
+<h3 id="2-production-ready-by-default">2. <strong>Production-Ready by Default</strong></h3>
+<ul>
+<li>Built-in monitoring and metrics</li>
+<li>Automatic cost tracking</li>
+<li>Health checks and circuit breakers</li>
+<li>Fault detection and recovery</li>
+</ul>
+<h3 id="3-no-vendor-lock-in">3. <strong>No Vendor Lock-In</strong></h3>
+<ul>
+<li>Provider-agnostic abstraction</li>
+<li>Seamless provider switching</li>
+<li>Unified API across all LLMs</li>
+</ul>
+<h3 id="4-monorepo-with-modularity">4. <strong>Monorepo with Modularity</strong></h3>
+<ul>
+<li>Focused solution files for different workflows</li>
+<li>Clear dependency boundaries</li>
+<li>Independent package deployments</li>
+</ul>
+<hr>
+<h2 id="-system-architecture">📐 System Architecture</h2>
+<h3 id="high-level-overview">High-Level Overview</h3>
+<pre><code>┌─────────────────────────────────────────────────────────────────────┐
+│                        Application Layer                             │
+│                    (Your AI Application)                             │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  │ Uses
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Hazina.AI.FluentAPI                               │
+│                    (Developer Interface)                             │
+│                                                                       │
+│  QuickSetup ─→ Hazina.AI() ─→ WithProvider() ─→ Ask() ─→ Execute() │
+└─────────────────────────────────────────────────────────────────────┘
+        │              │              │              │              │
+        │              │              │              │              │
+        ▼              ▼              ▼              ▼              ▼
+┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
+│Providers │   │   RAG    │   │ Agents   │   │Neurochain│   │ Fault    │
+│          │   │          │   │          │   │          │   │Detection │
+│OpenAI    │   │Indexing  │   │Tools     │   │3-Layer   │   │Halluc.   │
+│Anthropic │   │Retrieval │   │Workflows │   │Reasoning │   │Detector  │
+│Local LLMs│   │Reranking │   │Coord.    │   │Consensus │   │Validator │
+└──────────┘   └──────────┘   └──────────┘   └──────────┘   └──────────┘
+        │              │              │              │              │
+        └──────────────┴──────────────┴──────────────┴──────────────┘
+                                  │
+                                  ▼
+        ┌───────────────────────────────────────────────────────┐
+        │           Infrastructure Layer                         │
+        │                                                        │
+        │  Storage  │  Security  │  Observability  │  Monitoring│
+        │  Embeddings│  Auth     │  Logging        │  Metrics   │
+        │  Documents │  Encryption│  Tracing        │  Health    │
+        └───────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2 id="-core-components">🧩 Core Components</h2>
+<h3 id="1-hazinaaifluentapi">1. Hazina.AI.FluentAPI</h3>
+<p><strong>Purpose</strong>: Developer-first interface for all Hazina capabilities</p>
+<p><strong>Key Classes</strong>:</p>
+<ul>
+<li><code>Hazina</code> - Static entry point</li>
+<li><code>HazinaBuilder</code> - Fluent builder pattern</li>
+<li><code>QuickSetup</code> - One-line setup helpers</li>
+</ul>
+<p><strong>Example</strong>:</p>
+<pre><code class="lang-csharp">await Hazina.AI()
+    .WithProvider(&quot;openai&quot;)
+    .WithFaultDetection(0.9)
+    .Ask(&quot;Question&quot;)
+    .ExecuteAsync();
+</code></pre>
+<p><strong>Dependencies</strong>:</p>
+<ul>
+<li>Hazina.AI.Providers</li>
+<li>Hazina.AI.FaultDetection</li>
+<li>Hazina.AI.Orchestration</li>
+</ul>
+<hr>
+<h3 id="2-hazinaaiproviders">2. Hazina.AI.Providers</h3>
+<p><strong>Purpose</strong>: Multi-provider abstraction with automatic failover</p>
+<p><strong>Key Components</strong>:</p>
+<pre><code>ProviderOrchestrator
+    │
+    ├─► ProviderRegistry (manages providers)
+    ├─► ProviderHealthMonitor (health checks)
+    ├─► CostTracker (cost tracking)
+    ├─► BudgetManager (budget alerts)
+    ├─► ProviderSelector (selection strategies)
+    ├─► CircuitBreaker (failure protection)
+    └─► FailoverHandler (automatic failover)
+</code></pre>
+<p><strong>Selection Strategies</strong>:</p>
+<ol>
+<li><code>Priority</code> - Ordered list</li>
+<li><code>LeastCost</code> - Cheapest option</li>
+<li><code>FastestResponse</code> - Fastest provider</li>
+<li><code>RoundRobin</code> - Load balancing</li>
+<li><code>Random</code> - Random selection</li>
+<li><code>Specific</code> - Named provider</li>
+</ol>
+<p><strong>Health States</strong>:</p>
+<ul>
+<li><code>Healthy</code> - Operating normally</li>
+<li><code>Degraded</code> - Increased latency/errors</li>
+<li><code>Unhealthy</code> - Circuit open, unavailable</li>
+</ul>
+<hr>
+<h3 id="3-hazinaneurochaincore">3. Hazina.Neurochain.Core</h3>
+<p><strong>Purpose</strong>: Multi-layer reasoning with cross-validation</p>
+<p><strong>Architecture</strong>:</p>
+<pre><code>ReasoningContext
+     │
+     ▼
+NeuroChainOrchestrator
+     │
+     ├─► FastReasoningLayer (GPT-3.5/Haiku)
+     │      │
+     │      └─► Quick analysis (&lt;2s, 70-80% confidence)
+     │
+     ├─► DeepReasoningLayer (GPT-4/Sonnet)
+     │      │
+     │      └─► Thorough analysis (2-10s, 90-95% confidence)
+     │
+     └─► VerificationLayer (Independent model)
+            │
+            └─► Cross-validation (95-99% consensus)
+</code></pre>
+<p><strong>Execution Modes</strong>:</p>
+<ul>
+<li><strong>Fast Only</strong>: Single layer, &lt;1s, 70-80% confidence</li>
+<li><strong>Early Stopping</strong>: Stop when threshold reached</li>
+<li><strong>Parallel</strong>: All layers simultaneously (60% faster)</li>
+<li><strong>Sequential</strong>: Layer by layer (most thorough)</li>
+</ul>
+<p><strong>Output</strong>:</p>
+<pre><code class="lang-csharp">NeuroChainResult
+{
+    FinalAnswer: string
+    FinalConfidence: double (0-1)
+    LayerResults: List&lt;ReasoningResult&gt;
+    CrossValidation: CrossValidationResult
+    TotalCost: decimal
+    TotalDurationMs: long
+}
+</code></pre>
+<hr>
+<h3 id="4-hazinaairag">4. Hazina.AI.RAG</h3>
+<p><strong>Purpose</strong>: Retrieval-Augmented Generation</p>
+<p><strong>Pipeline</strong>:</p>
+<pre><code>Document
+    │
+    ├─► TextChunker (4 strategies)
+    │      └─► Chunks with metadata
+    │
+    ├─► EmbeddingStore
+    │      └─► Vector embeddings
+    │
+    └─► RAGEngine
+           │
+           ├─► Query → Semantic Search
+           ├─► Retrieve → Top-K documents
+           ├─► Rerank → Relevance scoring
+           └─► Generate → LLM with context
+</code></pre>
+<p><strong>Chunking Strategies</strong>:</p>
+<ol>
+<li><code>FixedSize</code> - Fixed character count</li>
+<li><code>Sentence</code> - Sentence boundaries</li>
+<li><code>Paragraph</code> - Paragraph boundaries</li>
+<li><code>Semantic</code> - Semantic coherence</li>
+</ol>
+<p><strong>Reranking Strategies</strong>:</p>
+<ol>
+<li><code>Similarity</code> - Cosine similarity only</li>
+<li><code>LLMBased</code> - LLM relevance scoring</li>
+<li><code>Hybrid</code> - Combined approach</li>
+</ol>
+<hr>
+<h3 id="5-hazinaaiagents">5. Hazina.AI.Agents</h3>
+<p><strong>Purpose</strong>: Agentic workflows and tool calling</p>
+<p><strong>Architecture</strong>:</p>
+<pre><code>Agent
+  │
+  ├─► Tools (extensible)
+  │      └─► AgentTool implementations
+  │
+  ├─► WorkflowEngine
+  │      │
+  │      ├─► AgentTask
+  │      ├─► Parallel (concurrent tasks)
+  │      ├─► Conditional (if/then)
+  │      └─► Loop (iterative refinement)
+  │
+  └─► MultiAgentCoordinator
+         │
+         ├─► Sequential (pipeline)
+         ├─► Parallel (independent)
+         ├─► Debate (discussion)
+         └─► Hierarchical (manager-worker)
+</code></pre>
+<p><strong>Tool Calling</strong>:</p>
+<pre><code class="lang-csharp">// Agent detects tool calls
+TOOL: CalculatorTool(expression=2+2)
+
+// Tool executed
+var result = tool.Execute(parameters);
+
+// Result injected back to agent
+Tool CalculatorTool returned: 4
+</code></pre>
+<hr>
+<h3 id="6-hazinaaifaultdetection">6. Hazina.AI.FaultDetection</h3>
+<p><strong>Purpose</strong>: Automatic validation and hallucination detection</p>
+<p><strong>Components</strong>:</p>
+<pre><code>AdaptiveFaultHandler
+    │
+    ├─► BasicResponseValidator
+    │      └─► JSON, XML, Code format validation
+    │
+    ├─► BasicHallucinationDetector
+    │      │
+    │      ├─► FabricatedFact
+    │      ├─► Contradiction
+    │      ├─► ContextMismatch
+    │      ├─► UnsupportedClaim
+    │      ├─► AttributionError
+    │      ├─► TemporalError
+    │      └─► QuantitativeError
+    │
+    ├─► BasicErrorPatternRecognizer
+    │      └─► Pattern learning from failures
+    │
+    └─► BasicConfidenceScorer
+           │
+           ├─► Length analysis
+           ├─► Hedging detection
+           ├─► Specificity scoring
+           ├─► Consistency check
+           └─► Format compliance
+</code></pre>
+<p><strong>Auto-Retry Flow</strong>:</p>
+<pre><code>Response → Validate → Hallucination Check → Confidence Score
+    │           │              │                    │
+    OK          OK             OK                   OK → Return
+    │           │              │                    │
+    Fail        Fail           Fail                 Low
+    │           │              │                    │
+    └───────────┴──────────────┴────────────────────┘
+                         │
+                         ▼
+              Refine Prompt → Retry (max 3x)
+</code></pre>
+<hr>
+<h3 id="7-hazinacodeintelligence">7. Hazina.CodeIntelligence</h3>
+<p><strong>Purpose</strong>: Multi-file refactoring with architectural awareness</p>
+<p><strong>Components</strong>:</p>
+<pre><code>MultiFileRefactoringEngine
+    │
+    ├─► Dependency Analysis
+    │      └─► Impact graph, circular detection
+    │
+    ├─► Risk Assessment
+    │      └─► VeryLow → Critical
+    │
+    └─► Breaking Change Detection
+</code></pre>
+<pre><code>LogicalInconsistencyDetector
+    │
+    ├─► NamingConvention
+    ├─► Logic
+    ├─► Architecture
+    └─► Documentation
+</code></pre>
+<pre><code>ProjectPatternLearner
+    │
+    ├─► Convention Discovery (70%+ consistency)
+    ├─► Violation Detection
+    └─► Improvement Suggestions
+</code></pre>
+<hr>
+<h2 id="-storage-layer">🗄️ Storage Layer</h2>
+<h3 id="document-store">Document Store</h3>
+<pre><code>IDocumentStore
+    │
+    ├─► FileDocumentStore (local files)
+    ├─► PostgresChunkStore (PostgreSQL)
+    └─► SupabaseStoreProvider (cloud)
+</code></pre>
+<h3 id="embedding-store">Embedding Store</h3>
+<pre><code>ITextEmbeddingStore
+    │
+    ├─► InMemoryVectorStore (testing)
+    ├─► FileEmbeddingStore (local persistence)
+    ├─► PgVectorStore (PostgreSQL + pgvector)
+    └─► SupabaseEmbeddingStore (Supabase)
+</code></pre>
+<p><strong>Hybrid Mode</strong>:</p>
+<ul>
+<li>Documents: Local file system</li>
+<li>Embeddings: Cloud database (Supabase/PostgreSQL)</li>
+<li>Best of both worlds: fast files + scalable search</li>
+</ul>
+<hr>
+<h2 id="-production-layer">📊 Production Layer</h2>
+<h3 id="hazinaproductionmonitoring">Hazina.Production.Monitoring</h3>
+<pre><code>MetricsCollector
+    │
+    ├─► Counter (increment only)
+    ├─► Gauge (current value)
+    └─► Histogram (distribution)
+
+PerformanceProfiler
+    │
+    ├─► Operation tracking
+    ├─► Statistics (Min, Max, Mean, P95, P99)
+    └─► Markdown reports
+
+DiagnosticsCollector
+    │
+    ├─► Health checks
+    ├─► Memory monitoring
+    ├─► CPU tracking
+    └─► GC metrics
+</code></pre>
+<h3 id="hazinaobservabilitycore">Hazina.Observability.Core</h3>
+<pre><code>Structured Logging
+    │
+    ├─► Request/Response logging
+    ├─► LLM-specific logs
+    └─► Serilog integration
+
+OpenTelemetry
+    │
+    ├─► Traces
+    ├─► Metrics
+    └─► Logs
+</code></pre>
+<hr>
+<h2 id="-security-layer">🔒 Security Layer</h2>
+<h3 id="hazinasecuritycore">Hazina.Security.Core</h3>
+<pre><code>Security Features
+    │
+    ├─► Input validation
+    ├─► Rate limiting
+    ├─► API key management
+    ├─► Prompt injection detection
+    └─► Output sanitization
+</code></pre>
+<hr>
+<h2 id="-component-dependencies">🔗 Component Dependencies</h2>
+<h3 id="dependency-graph">Dependency Graph</h3>
+<pre><code>Hazina.AI.FluentAPI
+    │
+    ├─► Hazina.AI.Providers
+    │       │
+    │       ├─► Hazina.LLMs.OpenAI
+    │       ├─► Hazina.LLMs.Anthropic
+    │       └─► Hazina.LLMs.Client (interface)
+    │
+    ├─► Hazina.AI.FaultDetection
+    ├─► Hazina.AI.Orchestration
+    ├─► Hazina.Neurochain.Core
+    ├─► Hazina.AI.RAG
+    │       │
+    │       ├─► Hazina.Store.EmbeddingStore
+    │       └─► Hazina.Store.DocumentStore
+    │
+    └─► Hazina.AI.Agents
+</code></pre>
+<h3 id="zero-dependency-packages">Zero-Dependency Packages</h3>
+<p>These can be used standalone:</p>
+<ul>
+<li><code>Hazina.LLMs.OpenAI</code></li>
+<li><code>Hazina.LLMs.Anthropic</code></li>
+<li><code>Hazina.Store.EmbeddingStore</code></li>
+<li><code>Hazina.Store.DocumentStore</code></li>
+<li><code>Hazina.Production.Monitoring</code></li>
+</ul>
+<hr>
+<h2 id="-scaling-strategy">🚀 Scaling Strategy</h2>
+<h3 id="horizontal-scaling">Horizontal Scaling</h3>
+<pre><code>Load Balancer
+    │
+    ├─► Instance 1 (ProviderOrchestrator)
+    ├─► Instance 2 (ProviderOrchestrator)
+    └─► Instance 3 (ProviderOrchestrator)
+            │
+            └─► Shared PostgreSQL/Supabase
+</code></pre>
+<h3 id="vertical-scaling">Vertical Scaling</h3>
+<ul>
+<li>Parallel layer execution (Neurochain)</li>
+<li>Concurrent agent workflows</li>
+<li>Batch embedding generation</li>
+<li>Connection pooling</li>
+</ul>
+<h3 id="cost-optimization">Cost Optimization</h3>
+<ol>
+<li><strong>Early Stopping</strong>: Skip expensive layers when confidence sufficient</li>
+<li><strong>Provider Selection</strong>: Use <code>LeastCost</code> strategy</li>
+<li><strong>Budget Limits</strong>: Set hard caps with alerts</li>
+<li><strong>Caching</strong>: Reuse embeddings and responses</li>
+</ol>
+<hr>
+<h2 id="-testing-strategy">🧪 Testing Strategy</h2>
+<h3 id="test-pyramid">Test Pyramid</h3>
+<pre><code>    ┌───────────┐
+    │    E2E    │  ← Integration tests
+    ├───────────┤
+    │   Unit    │  ← Component tests
+    └───────────┘
+</code></pre>
+<h3 id="test-organization">Test Organization</h3>
+<pre><code>Tests/
+├── Core/
+│   ├── AI/
+│   │   ├── Hazina.AI.Providers.Tests/
+│   │   ├── Hazina.Neurochain.Core.Tests/
+│   │   └── Hazina.AI.RAG.Tests/
+│   └── LLMs/
+│       └── Hazina.LLMs.OpenAI.Tests/
+└── Tools/
+    └── Hazina.Production.Monitoring.Tests/
+</code></pre>
+<hr>
+<h2 id="-deployment-options">📦 Deployment Options</h2>
+<h3 id="nuget-packages">NuGet Packages</h3>
+<pre><code class="lang-bash"># Minimal
+dotnet add package Hazina.AI.FluentAPI
+
+# Full stack
+dotnet add package Hazina.AI.FluentAPI
+dotnet add package Hazina.AI.RAG
+dotnet add package Hazina.AI.Agents
+dotnet add package Hazina.Production.Monitoring
+</code></pre>
+<h3 id="docker">Docker</h3>
+<pre><code class="lang-dockerfile">FROM mcr.microsoft.com/dotnet/aspnet:9.0
+COPY bin/Release/net9.0/publish/ /app
+ENTRYPOINT [&quot;dotnet&quot;, &quot;YourApp.dll&quot;]
+</code></pre>
+<h3 id="cloud-deployment">Cloud Deployment</h3>
+<ul>
+<li><strong>Azure</strong>: App Service, Container Apps</li>
+<li><strong>AWS</strong>: ECS, Lambda</li>
+<li><strong>GCP</strong>: Cloud Run, GKE</li>
+<li><strong>Supabase</strong>: Database + Auth + Storage</li>
+</ul>
+<hr>
+<h2 id="-development-workflow">🔄 Development Workflow</h2>
+<h3 id="solution-files-for-different-workflows">Solution Files for Different Workflows</h3>
+<table>
+<thead>
+<tr>
+<th>Workflow</th>
+<th>Solution</th>
+<th>Projects</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Getting started</td>
+<td><code>Hazina.QuickStart.sln</code></td>
+<td>10</td>
+</tr>
+<tr>
+<td>AI development</td>
+<td><code>Hazina.AI.sln</code></td>
+<td>~15</td>
+</tr>
+<tr>
+<td>Infrastructure</td>
+<td><code>Hazina.Core.sln</code></td>
+<td>~20</td>
+</tr>
+<tr>
+<td>Tools/Services</td>
+<td><code>Hazina.Tools.sln</code></td>
+<td>~20</td>
+</tr>
+<tr>
+<td>Applications</td>
+<td><code>Hazina.Apps.sln</code></td>
+<td>14</td>
+</tr>
+<tr>
+<td>Full build</td>
+<td><code>Hazina.sln</code></td>
+<td>62</td>
+</tr>
+</tbody>
+</table>
+<h3 id="build-optimization">Build Optimization</h3>
+<p><strong>Directory.Build.props</strong> enables:</p>
+<ul>
+<li>Incremental builds (only rebuild changed projects)</li>
+<li>Parallel builds (multi-threaded compilation)</li>
+<li>Shared compilation (reuse compiler processes)</li>
+<li>Reference assemblies (faster dependent builds)</li>
+</ul>
+<p><strong>Result</strong>: 83-95% faster incremental builds</p>
+<hr>
+<h2 id="-further-reading">📚 Further Reading</h2>
+<ul>
+<li><a href="../SOLUTIONS.md">SOLUTIONS.md</a> - Solution file guide</li>
+<li><a href="RAG_GUIDE.html">RAG_GUIDE.md</a> - RAG implementation</li>
+<li><a href="AGENTS_GUIDE.html">AGENTS_GUIDE.md</a> - Agentic workflows</li>
+<li><a href="NEUROCHAIN_GUIDE.html">NEUROCHAIN_GUIDE.md</a> - Multi-layer reasoning</li>
+<li><a href="PRODUCTION_MONITORING_GUIDE.html">PRODUCTION_MONITORING_GUIDE.md</a> - Monitoring</li>
+</ul>
+<hr>
+<p><strong>Last Updated</strong>: 2026-01-05</p>
+
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          <span>Made with <a href="https://dotnet.github.io/docfx">docfx</a></span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
