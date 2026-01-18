@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Agents\Hazina.AgentFactory\Hazina.AgentFactory.csproj" />
+    <ProjectReference Include="..\Hazina.AI.Agents\Hazina.AI.Agents.csproj" />
+    <ProjectReference Include="..\Hazina.AI.Guardrails\Hazina.AI.Guardrails.csproj" />
+  </ItemGroup>
+</Project>
