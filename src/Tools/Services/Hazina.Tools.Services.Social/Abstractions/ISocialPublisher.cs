@@ -177,4 +177,9 @@ public class PostMetrics
     /// Platform-specific metrics not covered by standard fields.
     /// </summary>
     public Dictionary<string, int> AdditionalMetrics { get; set; } = new();
+
+    /// <summary>
+    /// Additional metadata from the platform (non-numeric data).
+    /// </summary>
+    public Dictionary<string, string> Metadata { get; set; } = new();
 }
