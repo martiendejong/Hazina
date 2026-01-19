@@ -260,9 +260,9 @@ public class SnapchatPublisher : ISocialPublisher
             return new PostMetrics
             {
                 ExternalPostId = externalPostId,
-                Views = stats?.impressions ?? 0,
-                Likes = stats?.swipes ?? 0,
-                Shares = stats?.shares ?? 0,
+                Views = (int)(stats?.impressions ?? 0),
+                Likes = (int)(stats?.swipes ?? 0),
+                Shares = (int)(stats?.shares ?? 0),
                 Comments = 0, // Snapchat doesn't provide comment count via API
                 FetchedAt = DateTime.UtcNow,
                 Metadata = new Dictionary<string, string>
