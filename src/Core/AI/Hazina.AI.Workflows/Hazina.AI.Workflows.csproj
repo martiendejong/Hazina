@@ -10,5 +10,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Agents\Hazina.AgentFactory\Hazina.AgentFactory.csproj" />
     <ProjectReference Include="..\Hazina.AI.Agents\Hazina.AI.Agents.csproj" />
+    <ProjectReference Include="..\Hazina.AI.Guardrails\Hazina.AI.Guardrails.csproj" />
   </ItemGroup>
 </Project>

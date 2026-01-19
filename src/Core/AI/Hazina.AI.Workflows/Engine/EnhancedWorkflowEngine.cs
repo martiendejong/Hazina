@@ -1,3 +1,4 @@
+using Hazina.AI.Guardrails;
 using Hazina.AI.Providers.Core;
 using Hazina.AI.RAG.Core;
 using Hazina.AI.Workflows.Configuration;
@@ -13,6 +14,7 @@ public class EnhancedWorkflowEngine
 {
     private readonly IProviderOrchestrator _llmOrchestrator;
     private readonly Dictionary<string, RAGEngine> _ragEngines;
+    private readonly IGuardrailPipeline _guardrailPipeline;
     private readonly ILogger<EnhancedWorkflowEngine> _logger;
 
     // Events for real-time monitoring
@@ -24,10 +26,12 @@ public class EnhancedWorkflowEngine
     public EnhancedWorkflowEngine(
         IProviderOrchestrator llmOrchestrator,
         Dictionary<string, RAGEngine> ragEngines,
+        IGuardrailPipeline guardrailPipeline,
         ILogger<EnhancedWorkflowEngine> logger)
     {
         _llmOrchestrator = llmOrchestrator ?? throw new ArgumentNullException(nameof(llmOrchestrator));
         _ragEngines = ragEngines ?? throw new ArgumentNullException(nameof(ragEngines));
+        _guardrailPipeline = guardrailPipeline ?? throw new ArgumentNullException(nameof(guardrailPipeline));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -136,7 +140,23 @@ public class EnhancedWorkflowEngine
                 ? $"Context:\n{ragContext}\n\nQuery: {processedInput}"
                 : processedInput;
 
-            // TODO: Execute guardrails (pre-execution) - Week 3
+            // Execute guardrails (pre-execution)
+            if (step.Guardrails.Any())
+            {
+                var preGuardrailResult = await _guardrailPipeline.ExecuteAsync(
+                    finalPrompt,
+                    step.Guardrails,
+                    GuardrailStage.PreExecution,
+                    cancellationToken);
+
+                if (!preGuardrailResult.Passed)
+                {
+                    stepResult.Success = false;
+                    stepResult.Error = $"Pre-execution guardrail failed: {preGuardrailResult.FailureReason}";
+                    StepFailed?.Invoke(this, new StepFailedEventArgs(step.Name, stepResult.Error));
+                    return stepResult;
+                }
+            }
 
             // Execute LLM with step-specific configuration
             var llmResponse = await ExecuteLLMCallAsync(
@@ -148,7 +168,23 @@ public class EnhancedWorkflowEngine
             stepResult.TokensUsed = EstimateTokens(finalPrompt) + EstimateTokens(llmResponse);
             stepResult.EstimatedCost = EstimateCost(step.LLMConfig?.Model ?? "gpt-3.5-turbo", stepResult.TokensUsed);
 
-            // TODO: Execute guardrails (post-execution) - Week 3
+            // Execute guardrails (post-execution)
+            if (step.Guardrails.Any())
+            {
+                var postGuardrailResult = await _guardrailPipeline.ExecuteAsync(
+                    llmResponse,
+                    step.Guardrails,
+                    GuardrailStage.PostExecution,
+                    cancellationToken);
+
+                if (!postGuardrailResult.Passed)
+                {
+                    stepResult.Success = false;
+                    stepResult.Error = $"Post-execution guardrail failed: {postGuardrailResult.FailureReason}";
+                    StepFailed?.Invoke(this, new StepFailedEventArgs(step.Name, stepResult.Error));
+                    return stepResult;
+                }
+            }
 
             stepResult.Success = true;
             StepCompleted?.Invoke(this, new StepCompletedEventArgs(step.Name, stepResult));
