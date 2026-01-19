@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Hazina.Tools.Services.Social.Abstractions;
+using Hazina.Tools.Services.Social.Models;
 
 namespace Hazina.Tools.Services.Social.Providers;
 
@@ -568,6 +569,306 @@ public class WordPressProvider : ISocialProvider
         }
 
         return products;
+    }
+
+    /// <summary>
+    /// Fetches WordPress content as UnifiedContent (new unified format).
+    /// </summary>
+    public async Task<List<UnifiedContent>> FetchContentAsUnifiedAsync(
+        string accessToken,
+        string contentType,
+        string projectId,
+        string accountId,
+        int maxItems = 1000,
+        CancellationToken cancellationToken = default)
+    {
+        var (websiteUrl, credentials) = ParseAccessToken(accessToken);
+
+        return contentType.ToLower() switch
+        {
+            "post" or "posts" or "blogs" => await FetchPostsAsUnifiedAsync(websiteUrl, credentials, projectId, accountId, maxItems, cancellationToken),
+            "page" or "pages" => await FetchPagesAsUnifiedAsync(websiteUrl, credentials, projectId, accountId, maxItems, cancellationToken),
+            "product" or "products" => await FetchProductsAsUnifiedAsync(websiteUrl, credentials, projectId, accountId, maxItems, cancellationToken),
+            _ => throw new ArgumentException($"Unknown content type: {contentType}")
+        };
+    }
+
+    private async Task<List<UnifiedContent>> FetchPostsAsUnifiedAsync(
+        string websiteUrl,
+        string credentials,
+        string projectId,
+        string accountId,
+        int maxItems,
+        CancellationToken cancellationToken)
+    {
+        var content = new List<UnifiedContent>();
+        var page = 1;
+        var perPage = Math.Min(maxItems, 100);
+
+        try
+        {
+            while (content.Count < maxItems)
+            {
+                var request = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    $"{websiteUrl}/wp-json/wp/v2/posts?per_page={perPage}&page={page}&_embed");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+
+                var response = await _httpClient.SendAsync(request, cancellationToken);
+                if (!response.IsSuccessStatusCode) break;
+
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+                var wpPosts = JsonSerializer.Deserialize<List<WordPressPost>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (wpPosts == null || wpPosts.Count == 0) break;
+
+                foreach (var wpPost in wpPosts)
+                {
+                    content.Add(MapPostToUnifiedContent(wpPost, websiteUrl, projectId, accountId));
+                    if (content.Count >= maxItems) break;
+                }
+
+                page++;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching WordPress posts as UnifiedContent");
+        }
+
+        return content;
+    }
+
+    private async Task<List<UnifiedContent>> FetchPagesAsUnifiedAsync(
+        string websiteUrl,
+        string credentials,
+        string projectId,
+        string accountId,
+        int maxItems,
+        CancellationToken cancellationToken)
+    {
+        var content = new List<UnifiedContent>();
+        var page = 1;
+        var perPage = 100;
+
+        try
+        {
+            while (content.Count < maxItems)
+            {
+                var request = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    $"{websiteUrl}/wp-json/wp/v2/pages?per_page={perPage}&page={page}&_embed");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+
+                var response = await _httpClient.SendAsync(request, cancellationToken);
+                if (!response.IsSuccessStatusCode) break;
+
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+                var wpPages = JsonSerializer.Deserialize<List<WordPressPage>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (wpPages == null || wpPages.Count == 0) break;
+
+                foreach (var wpPage in wpPages)
+                {
+                    content.Add(MapPageToUnifiedContent(wpPage, websiteUrl, projectId, accountId));
+                    if (content.Count >= maxItems) break;
+                }
+
+                page++;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching WordPress pages as UnifiedContent");
+        }
+
+        return content;
+    }
+
+    private async Task<List<UnifiedContent>> FetchProductsAsUnifiedAsync(
+        string websiteUrl,
+        string credentials,
+        string projectId,
+        string accountId,
+        int maxItems,
+        CancellationToken cancellationToken)
+    {
+        var content = new List<UnifiedContent>();
+        var page = 1;
+        var perPage = 100;
+
+        try
+        {
+            while (content.Count < maxItems)
+            {
+                var request = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    $"{websiteUrl}/wp-json/wc/v3/products?per_page={perPage}&page={page}");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+
+                var response = await _httpClient.SendAsync(request, cancellationToken);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    _logger.LogInformation("WooCommerce not installed, skipping products import");
+                    break;
+                }
+
+                if (!response.IsSuccessStatusCode) break;
+
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+                var wcProducts = JsonSerializer.Deserialize<List<WooCommerceProduct>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (wcProducts == null || wcProducts.Count == 0) break;
+
+                foreach (var wcProduct in wcProducts)
+                {
+                    content.Add(MapProductToUnifiedContent(wcProduct, websiteUrl, projectId, accountId));
+                    if (content.Count >= maxItems) break;
+                }
+
+                page++;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error fetching WooCommerce products as UnifiedContent");
+        }
+
+        return content;
+    }
+
+    private UnifiedContent MapPostToUnifiedContent(WordPressPost wpPost, string websiteUrl, string projectId, string accountId)
+    {
+        var contentHtml = wpPost.Content?.Rendered ?? "";
+        var contentPlain = StripHtml(contentHtml);
+
+        return new UnifiedContent
+        {
+            Id = $"wordpress-{wpPost.Id}",
+            ProjectId = projectId,
+            AccountId = accountId,
+            SourceType = "wordpress",
+            SourceId = wpPost.Id.ToString(),
+            SourceUrl = wpPost.Link,
+            ContentType = "post",
+            Title = StripHtml(wpPost.Title?.Rendered ?? ""),
+            Content = contentPlain,
+            Summary = StripHtml(wpPost.Excerpt?.Rendered ?? ""),
+            ContentHtml = contentHtml,
+            ContentPlainText = contentPlain,
+            FeaturedImageUrl = ExtractFeaturedImageFromPost(wpPost),
+            PublishedAt = wpPost.Date ?? DateTime.UtcNow,
+            UpdatedAt = wpPost.Modified,
+            ImportedAt = DateTime.UtcNow,
+            Status = wpPost.Status ?? "published",
+            IsHistorical = true,
+            DisplayOnCalendar = true,
+            PlatformMetadata = new Dictionary<string, object>
+            {
+                ["wordpress_id"] = wpPost.Id,
+                ["slug"] = wpPost.Slug ?? "",
+                ["type"] = "post",
+                ["website_url"] = websiteUrl
+            }
+        };
+    }
+
+    private UnifiedContent MapPageToUnifiedContent(WordPressPage wpPage, string websiteUrl, string projectId, string accountId)
+    {
+        var contentHtml = wpPage.Content?.Rendered ?? "";
+        var contentPlain = StripHtml(contentHtml);
+
+        return new UnifiedContent
+        {
+            Id = $"wordpress-{wpPage.Id}",
+            ProjectId = projectId,
+            AccountId = accountId,
+            SourceType = "wordpress",
+            SourceId = wpPage.Id.ToString(),
+            SourceUrl = wpPage.Link,
+            ContentType = "page",
+            Title = StripHtml(wpPage.Title?.Rendered ?? ""),
+            Content = contentPlain,
+            Summary = StripHtml(wpPage.Excerpt?.Rendered ?? ""),
+            ContentHtml = contentHtml,
+            ContentPlainText = contentPlain,
+            FeaturedImageUrl = ExtractFeaturedImage(wpPage),
+            PublishedAt = wpPage.Date ?? DateTime.UtcNow,
+            UpdatedAt = wpPage.Modified,
+            ImportedAt = DateTime.UtcNow,
+            Status = wpPage.Status ?? "published",
+            IsHistorical = true,
+            DisplayOnCalendar = true,
+            PlatformMetadata = new Dictionary<string, object>
+            {
+                ["wordpress_id"] = wpPage.Id,
+                ["slug"] = wpPage.Slug ?? "",
+                ["type"] = "page",
+                ["parent_id"] = wpPage.Parent ?? 0,
+                ["website_url"] = websiteUrl
+            }
+        };
+    }
+
+    private UnifiedContent MapProductToUnifiedContent(WooCommerceProduct wcProduct, string websiteUrl, string projectId, string accountId)
+    {
+        var contentHtml = wcProduct.Description ?? "";
+        var contentPlain = StripHtml(contentHtml);
+
+        return new UnifiedContent
+        {
+            Id = $"wordpress-{wcProduct.Id}",
+            ProjectId = projectId,
+            AccountId = accountId,
+            SourceType = "wordpress",
+            SourceId = wcProduct.Id.ToString(),
+            SourceUrl = wcProduct.Permalink,
+            ContentType = "product",
+            Title = wcProduct.Name ?? "",
+            Content = contentPlain,
+            Summary = StripHtml(wcProduct.ShortDescription ?? ""),
+            ContentHtml = contentHtml,
+            ContentPlainText = contentPlain,
+            FeaturedImageUrl = wcProduct.Images?.FirstOrDefault()?.Src,
+            PublishedAt = wcProduct.DateCreated ?? DateTime.UtcNow,
+            UpdatedAt = wcProduct.DateModified,
+            ImportedAt = DateTime.UtcNow,
+            Status = wcProduct.Status ?? "published",
+            Tags = wcProduct.Tags?.Select(t => t.Name ?? "").ToList() ?? new List<string>(),
+            Categories = wcProduct.Categories?.Select(c => c.Name ?? "").ToList() ?? new List<string>(),
+            IsHistorical = true,
+            DisplayOnCalendar = true,
+            PlatformMetadata = new Dictionary<string, object>
+            {
+                ["wordpress_id"] = wcProduct.Id,
+                ["sku"] = wcProduct.Sku ?? "",
+                ["price"] = wcProduct.Price ?? "",
+                ["regular_price"] = wcProduct.RegularPrice ?? "",
+                ["type"] = "product",
+                ["stock_status"] = wcProduct.StockStatus ?? "",
+                ["website_url"] = websiteUrl
+            }
+        };
+    }
+
+    private static string? ExtractFeaturedImageFromPost(WordPressPost post)
+    {
+        if (post.FeaturedMedia > 0 && post.Embedded?.WpFeaturedmedia != null)
+        {
+            var media = post.Embedded.WpFeaturedmedia.FirstOrDefault();
+            return media?.SourceUrl;
+        }
+        return null;
     }
 
     private static string StripHtml(string html)
