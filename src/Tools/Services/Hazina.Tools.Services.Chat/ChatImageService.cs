@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace Hazina.Tools.Services.Chat
 {
@@ -649,6 +650,31 @@ namespace Hazina.Tools.Services.Chat
                 ContentType = contentType;
                 SourceUrl = sourceUrl;
             }
+        }
+
+        /// <summary>
+        /// Generates an image from a prompt and returns the raw bytes.
+        /// Used by LayeredImageService for generating individual layers.
+        /// </summary>
+        public async Task<byte[]> GenerateImageBytesAsync(string prompt, ImageModel imageModel, int width, int height, CancellationToken cancel)
+        {
+            // Generate the image using the existing OpenAI method
+            var imageSource = await GenerateOpenAIImage(prompt, imageModel, cancel);
+
+            // Resolve the image data
+            var resolved = await ResolveImageDataAsync(imageSource, cancel);
+
+            // Resize if needed to match requested dimensions
+            using var image = SixLabors.ImageSharp.Image.Load<Rgba32>(resolved.Data);
+
+            if (image.Width != width || image.Height != height)
+            {
+                image.Mutate(ctx => ctx.Resize(width, height));
+            }
+
+            using var output = new MemoryStream();
+            await image.SaveAsPngAsync(output, cancel);
+            return output.ToArray();
         }
     }
 }
