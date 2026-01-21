@@ -7,6 +7,8 @@ using Hazina.AgentFactory.Services.Tools;
 using Hazina.LLMs;
 using Hazina.LLMs.OpenAI;
 
+namespace Hazina.AgentFactory.Core;
+
 /// <summary>
 /// Factory for creating and managing Hazina agents and flows.
 /// Refactored from 1,088 lines to follow Single Responsibility Principle.

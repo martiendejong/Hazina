@@ -1,3 +1,5 @@
+namespace Hazina.AgentFactory.Core;
+
 public class StoresAndAgentsAndFlowLoader
 {
     public List<IDocumentStore> _stores = new List<IDocumentStore>();
