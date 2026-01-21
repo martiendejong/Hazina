@@ -43,6 +43,8 @@ class HazinaCoderCLI
     private List<HazinaChatMessage> _context = new();
     private decimal _sessionCost = 0m;
     private int _sessionTokens = 0;
+    private string? _claudeMdContent;
+    private List<SkillInfo> _skills = new();
 
     public HazinaCoderCLI(string provider, string? model, string workingDir, bool verbose)
     {
@@ -69,6 +71,12 @@ class HazinaCoderCLI
             AnsiConsole.MarkupLine($"[red]Error:[/] Working directory does not exist: {Markup.Escape(_workingDirectory)}");
             return;
         }
+
+        // Load CLAUDE.md if present
+        _claudeMdContent = LoadClaudeMd();
+
+        // Load skills from .claude/skills/
+        _skills = LoadSkills();
 
         // Detect provider from environment if auto
         if (_providerName == "auto")
@@ -119,49 +127,8 @@ class HazinaCoderCLI
             }
         };
 
-        // System prompt
-        var systemPreamble = $@"You are HazinaCoder: a powerful autonomous coding assistant with full file system access and command execution capabilities.
-Provider: {_providerName} | Model: {_model}
-
-AVAILABLE TOOLS:
-- read_file: Read file contents with optional line ranges (offset, limit)
-- write_file: Create or overwrite files
-- edit_file: Make precise string replacements in existing files
-- bash: Execute PowerShell/bash commands - UNRESTRICTED ACCESS
-- glob: Find files by pattern (e.g., '**/*.cs', '*.json')
-- grep: Search file contents with regex patterns
-- list_directory: List directory contents with details (files, sizes, dates)
-- git_status: Get structured git status (branch, changes, recent commits)
-- web_fetch: Fetch content from URLs (strips HTML for readability)
-
-TOOL USAGE PHILOSOPHY:
-1. ALWAYS use tools to inspect before modifying - never guess file contents
-2. Use read_file FIRST to understand existing code before making changes
-3. Use edit_file for surgical modifications to existing files (preserves formatting)
-4. Use write_file only for creating NEW files
-5. Use bash to run builds, tests, and verify changes
-6. Use glob/grep to explore unfamiliar codebases
-7. Use list_directory for structured directory exploration
-8. Use git_status to understand repository state
-9. Work AUTONOMOUSLY - use tools proactively without asking permission
-
-WORKFLOW FOR TASKS:
-1. UNDERSTAND: Read relevant files, explore structure with glob/grep/list_directory
-2. PLAN: Think through changes needed
-3. EXECUTE: Make precise edits or create files
-4. VERIFY: Run commands to test changes (build, run tests, etc.)
-
-SURGICAL FILE EDITS:
-- When editing files, read them first to get exact strings
-- Match whitespace and indentation EXACTLY in old_string
-- Use read_file with line ranges to focus on specific sections
-
-COMMAND EXECUTION:
-- You have UNRESTRICTED command access
-- Run any commands needed (build, test, deploy, etc.)
-- Always verify your changes by running appropriate commands
-
-Be concise in explanations. Focus on getting work done autonomously with tools.";
+        // System prompt - Claude Code style
+        var systemPreamble = BuildSystemPrompt();
 
         _context = new List<HazinaChatMessage>
         {
@@ -180,7 +147,15 @@ Be concise in explanations. Focus on getting work done autonomously with tools."
         rule.Justification = Justify.Left;
         AnsiConsole.Write(rule);
         AnsiConsole.MarkupLine($"[dim]Working Directory:[/] {_workingDirectory}");
-        AnsiConsole.MarkupLine("[dim]Commands: /help, /provider, /model, /cost, /clear, /exit[/]");
+        if (_claudeMdContent != null)
+        {
+            AnsiConsole.MarkupLine("[green]✓[/] [dim]CLAUDE.md loaded[/]");
+        }
+        if (_skills.Count > 0)
+        {
+            AnsiConsole.MarkupLine($"[green]✓[/] [dim]{_skills.Count} skill(s) loaded[/]");
+        }
+        AnsiConsole.MarkupLine("[dim]Commands: /help, /tools, /skills, /cost, /clear, /exit[/]");
         AnsiConsole.WriteLine();
 
         while (true)
@@ -407,6 +382,24 @@ Be concise in explanations. Focus on getting work done autonomously with tools."
                 AnsiConsole.MarkupLine("    git_status     - Get repository status and commits");
                 AnsiConsole.MarkupLine("  [yellow]Web:[/]");
                 AnsiConsole.MarkupLine("    web_fetch      - Fetch and parse web content");
+                AnsiConsole.MarkupLine("  [yellow]Task Management:[/]");
+                AnsiConsole.MarkupLine("    todo_write     - Track tasks during coding session");
+                return CommandResult.Handled;
+
+            case "/skills":
+                if (_skills.Count == 0)
+                {
+                    AnsiConsole.MarkupLine("[dim]No skills loaded. Add skills to .claude/skills/<name>/SKILL.md[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[cyan]Loaded Skills ({_skills.Count}):[/]");
+                    foreach (var skill in _skills)
+                    {
+                        AnsiConsole.MarkupLine($"  [yellow]{skill.Name}[/]");
+                        AnsiConsole.MarkupLine($"    [dim]{skill.Description}[/]");
+                    }
+                }
                 return CommandResult.Handled;
 
             case "/context":
@@ -432,13 +425,240 @@ Be concise in explanations. Focus on getting work done autonomously with tools."
         table.AddRow("/provider <name>", "Switch provider (openai, anthropic, ollama)");
         table.AddRow("/model <name>", "Switch model");
         table.AddRow("/tools", "List available tools");
+        table.AddRow("/skills", "List loaded skills from .claude/skills/");
         table.AddRow("/cost", "Show session cost and token usage");
         table.AddRow("/context", "Show context size");
         table.AddRow("/clear", "Clear conversation history");
         table.AddRow("/exit", "Exit HazinaCoder");
 
         AnsiConsole.Write(table);
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[dim]HazinaCoder automatically loads:[/]");
+        AnsiConsole.MarkupLine("[dim]  - CLAUDE.md from working directory (project instructions)[/]");
+        AnsiConsole.MarkupLine("[dim]  - Skills from .claude/skills/<name>/SKILL.md[/]");
     }
 
     private enum CommandResult { Handled, NotHandled, Exit }
+
+    private string? LoadClaudeMd()
+    {
+        // Search for CLAUDE.md in working directory and parent directories
+        var searchPaths = new[]
+        {
+            Path.Combine(_workingDirectory, "CLAUDE.md"),
+            Path.Combine(_workingDirectory, "claude.md"),
+            Path.Combine(_workingDirectory, ".claude", "CLAUDE.md"),
+        };
+
+        foreach (var path in searchPaths)
+        {
+            if (File.Exists(path))
+            {
+                try
+                {
+                    var content = File.ReadAllText(path);
+                    if (_verbose)
+                    {
+                        AnsiConsole.MarkupLine($"[dim]Loaded: {path}[/]");
+                    }
+                    return content;
+                }
+                catch
+                {
+                    // Ignore read errors
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private List<SkillInfo> LoadSkills()
+    {
+        var skills = new List<SkillInfo>();
+        var skillsDir = Path.Combine(_workingDirectory, ".claude", "skills");
+
+        if (!Directory.Exists(skillsDir))
+            return skills;
+
+        try
+        {
+            foreach (var dir in Directory.GetDirectories(skillsDir))
+            {
+                var skillFile = Path.Combine(dir, "SKILL.md");
+                if (File.Exists(skillFile))
+                {
+                    try
+                    {
+                        var content = File.ReadAllText(skillFile);
+                        var name = Path.GetFileName(dir);
+                        var description = ExtractSkillDescription(content);
+
+                        skills.Add(new SkillInfo
+                        {
+                            Name = name,
+                            Description = description,
+                            Content = content,
+                            Path = skillFile
+                        });
+
+                        if (_verbose)
+                        {
+                            AnsiConsole.MarkupLine($"[dim]Loaded skill: {name}[/]");
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore individual skill load errors
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Ignore directory enumeration errors
+        }
+
+        return skills;
+    }
+
+    private static string ExtractSkillDescription(string content)
+    {
+        // Try to extract description from YAML frontmatter or first paragraph
+        var lines = content.Split('\n');
+        foreach (var line in lines)
+        {
+            if (line.StartsWith("description:", StringComparison.OrdinalIgnoreCase))
+            {
+                return line.Substring("description:".Length).Trim().Trim('"', '\'');
+            }
+        }
+
+        // Fall back to first non-empty, non-header line
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+            if (!string.IsNullOrEmpty(trimmed) && !trimmed.StartsWith("#") && !trimmed.StartsWith("---"))
+            {
+                return trimmed.Length > 100 ? trimmed.Substring(0, 100) + "..." : trimmed;
+            }
+        }
+
+        return "No description available";
+    }
+
+    private string BuildSystemPrompt()
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine($@"You are HazinaCoder, an autonomous coding assistant powered by the Hazina AI framework.
+Provider: {_providerName} | Model: {_model}
+Working Directory: {_workingDirectory}
+
+You are an interactive CLI tool that helps users with software engineering tasks. Use the tools available to you to assist the user.
+
+# Core Principles
+
+1. **Read Before Edit**: NEVER propose changes to code you haven't read. Always use read_file first.
+2. **Autonomous Execution**: Execute tasks without asking for permission unless destructive/irreversible.
+3. **Verify Changes**: Always run builds, tests, or other verification after making changes.
+4. **Be Concise**: Focus on getting work done. Explanations should be brief and actionable.
+
+# Available Tools
+
+## File Operations
+- **read_file**: Read file contents with optional line ranges (offset, limit)
+- **write_file**: Create or overwrite files (use only for NEW files)
+- **edit_file**: Make precise string replacements in existing files
+- **glob**: Find files by pattern (e.g., '**/*.cs', '*.json')
+- **grep**: Search file contents with regex patterns
+- **list_directory**: List directory contents with details
+
+## Execution
+- **bash**: Execute shell commands (PowerShell on Windows, bash on Unix)
+
+## Git
+- **git_status**: Get structured git status (branch, changes, recent commits)
+
+## Web
+- **web_fetch**: Fetch content from URLs (strips HTML for readability)
+
+## Task Management
+- **todo_write**: Track tasks during your coding session. Use this for complex multi-step tasks.
+
+# Task Management Guidelines
+
+Use the todo_write tool when:
+- Task requires 3+ distinct steps
+- User provides multiple tasks
+- You need to track progress on complex work
+
+Mark todos as completed IMMEDIATELY after finishing each task.
+
+# Workflow
+
+1. **UNDERSTAND**: Read relevant files, explore with glob/grep
+2. **PLAN**: Use todo_write to break down complex tasks
+3. **EXECUTE**: Make precise edits, create files as needed
+4. **VERIFY**: Run builds, tests, verify changes work
+
+# File Editing
+
+- Read the file FIRST to get exact strings
+- Match whitespace and indentation EXACTLY
+- The edit will FAIL if old_string is not unique - provide more context if needed
+- Prefer editing existing files over creating new ones");
+
+        // Add CLAUDE.md content if present
+        if (!string.IsNullOrEmpty(_claudeMdContent))
+        {
+            sb.AppendLine();
+            sb.AppendLine("# Project Instructions (from CLAUDE.md)");
+            sb.AppendLine();
+            sb.AppendLine(_claudeMdContent);
+        }
+
+        // Add skills if present
+        if (_skills.Count > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine("# Available Skills");
+            sb.AppendLine();
+            sb.AppendLine("The following skills are available. When a task matches a skill's description, follow its instructions:");
+            sb.AppendLine();
+
+            foreach (var skill in _skills)
+            {
+                sb.AppendLine($"## Skill: {skill.Name}");
+                sb.AppendLine($"Description: {skill.Description}");
+                sb.AppendLine();
+                sb.AppendLine("```markdown");
+                // Truncate very long skills
+                var content = skill.Content.Length > 3000
+                    ? skill.Content.Substring(0, 3000) + "\n... (truncated)"
+                    : skill.Content;
+                sb.AppendLine(content);
+                sb.AppendLine("```");
+                sb.AppendLine();
+            }
+        }
+
+        // Add environment info
+        sb.AppendLine();
+        sb.AppendLine("# Environment");
+        sb.AppendLine();
+        sb.AppendLine($"- Platform: {Environment.OSVersion.Platform}");
+        sb.AppendLine($"- Working Directory: {_workingDirectory}");
+        sb.AppendLine($"- Date: {DateTime.Now:yyyy-MM-dd}");
+
+        return sb.ToString();
+    }
+}
+
+class SkillInfo
+{
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public string Content { get; set; } = "";
+    public string Path { get; set; } = "";
 }

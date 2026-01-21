@@ -33,6 +33,9 @@ public class HazinaCoderToolsContext : IToolsContext
 
         // Web tools
         Tools.Add(WebFetchTool.Create(workingDirectory));
+
+        // Task management tools
+        Tools.Add(TodoWriteTool.Create(workingDirectory));
     }
 
     public void Add(HazinaChatTool tool)
