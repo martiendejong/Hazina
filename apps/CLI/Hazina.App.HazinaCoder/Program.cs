@@ -45,6 +45,14 @@ class HazinaCoderCLI
     private int _sessionTokens = 0;
     private string? _claudeMdContent;
     private List<SkillInfo> _skills = new();
+    private OutputMode _outputMode = OutputMode.Full; // Default to full output like Claude Code
+
+    private enum OutputMode
+    {
+        Full,      // Show everything
+        Compact,   // Show up to 2000 chars
+        Minimal    // Show up to 400 chars
+    }
 
     public HazinaCoderCLI(string provider, string? model, string workingDir, bool verbose)
     {
@@ -105,25 +113,7 @@ class HazinaCoderCLI
             SendMessage = (id, toolName, message) =>
             {
                 AnsiConsole.MarkupLine($"\n[cyan][[Tool: {Markup.Escape(toolName)}]][/]");
-
-                if (toolName == "grep" || toolName == "glob")
-                {
-                    AnsiConsole.MarkupLine("[dim](output sent to LLM)[/]");
-                }
-                else if (_verbose)
-                {
-                    var preview = message.Length > 1000
-                        ? message.Substring(0, 1000) + "\n... (truncated)"
-                        : message;
-                    AnsiConsole.WriteLine(preview);
-                }
-                else
-                {
-                    var preview = message.Length > 400
-                        ? message.Substring(0, 400) + "\n... (truncated)"
-                        : message;
-                    AnsiConsole.WriteLine(preview);
-                }
+                DisplayToolOutput(toolName, message);
             }
         };
 
@@ -155,7 +145,8 @@ class HazinaCoderCLI
         {
             AnsiConsole.MarkupLine($"[green]✓[/] [dim]{_skills.Count} skill(s) loaded[/]");
         }
-        AnsiConsole.MarkupLine("[dim]Commands: /help, /tools, /skills, /cost, /clear, /exit[/]");
+        AnsiConsole.MarkupLine($"[dim]Output: {_outputMode} (use /output to cycle)[/]");
+        AnsiConsole.MarkupLine("[dim]Commands: /help, /output, /tools, /skills, /cost, /clear, /exit[/]");
         AnsiConsole.WriteLine();
 
         while (true)
@@ -232,6 +223,54 @@ class HazinaCoderCLI
         }
 
         Console.WriteLine();
+    }
+
+    private void DisplayToolOutput(string toolName, string message)
+    {
+        // For search tools, always show summary in non-full modes
+        var isSearchTool = toolName == "grep" || toolName == "glob";
+
+        switch (_outputMode)
+        {
+            case OutputMode.Full:
+                // Show everything
+                AnsiConsole.WriteLine(message);
+                break;
+
+            case OutputMode.Compact:
+                if (isSearchTool && message.Length > 2000)
+                {
+                    // For search tools, show count and preview
+                    var lines = message.Split('\n');
+                    AnsiConsole.MarkupLine($"[dim]({lines.Length} lines, showing first 2000 chars)[/]");
+                    AnsiConsole.WriteLine(message.Substring(0, 2000) + "\n...");
+                }
+                else if (message.Length > 2000)
+                {
+                    AnsiConsole.WriteLine(message.Substring(0, 2000) + "\n... (truncated, use /full for complete output)");
+                }
+                else
+                {
+                    AnsiConsole.WriteLine(message);
+                }
+                break;
+
+            case OutputMode.Minimal:
+                if (isSearchTool)
+                {
+                    var lines = message.Split('\n');
+                    AnsiConsole.MarkupLine($"[dim]({lines.Length} results - use /output to see more)[/]");
+                }
+                else if (message.Length > 400)
+                {
+                    AnsiConsole.WriteLine(message.Substring(0, 400) + "\n... (truncated, use /output to cycle modes)");
+                }
+                else
+                {
+                    AnsiConsole.WriteLine(message);
+                }
+                break;
+        }
     }
 
     private string DetectProvider()
@@ -408,6 +447,41 @@ class HazinaCoderCLI
                 AnsiConsole.MarkupLine($"[dim]~{totalChars:N0} characters[/]");
                 return CommandResult.Handled;
 
+            case "/output":
+            case "/o":
+                // Cycle through output modes: Full -> Compact -> Minimal -> Full
+                _outputMode = _outputMode switch
+                {
+                    OutputMode.Full => OutputMode.Compact,
+                    OutputMode.Compact => OutputMode.Minimal,
+                    OutputMode.Minimal => OutputMode.Full,
+                    _ => OutputMode.Full
+                };
+                var modeDesc = _outputMode switch
+                {
+                    OutputMode.Full => "Full (show all tool output)",
+                    OutputMode.Compact => "Compact (up to 2000 chars)",
+                    OutputMode.Minimal => "Minimal (up to 400 chars)",
+                    _ => _outputMode.ToString()
+                };
+                AnsiConsole.MarkupLine($"[green]Output mode:[/] {modeDesc}");
+                return CommandResult.Handled;
+
+            case "/full":
+                _outputMode = OutputMode.Full;
+                AnsiConsole.MarkupLine("[green]Output mode:[/] Full (show all tool output)");
+                return CommandResult.Handled;
+
+            case "/compact":
+                _outputMode = OutputMode.Compact;
+                AnsiConsole.MarkupLine("[green]Output mode:[/] Compact (up to 2000 chars)");
+                return CommandResult.Handled;
+
+            case "/minimal":
+                _outputMode = OutputMode.Minimal;
+                AnsiConsole.MarkupLine("[green]Output mode:[/] Minimal (up to 400 chars)");
+                return CommandResult.Handled;
+
             default:
                 // Not a recognized command, treat as regular input
                 return CommandResult.NotHandled;
@@ -422,6 +496,10 @@ class HazinaCoderCLI
         table.Border = TableBorder.Rounded;
 
         table.AddRow("/help", "Show this help");
+        table.AddRow("/output, /o", "Cycle output mode: Full → Compact → Minimal");
+        table.AddRow("/full", "Show full tool output (no truncation)");
+        table.AddRow("/compact", "Show up to 2000 chars per tool");
+        table.AddRow("/minimal", "Show up to 400 chars per tool");
         table.AddRow("/provider <name>", "Switch provider (openai, anthropic, ollama)");
         table.AddRow("/model <name>", "Switch model");
         table.AddRow("/tools", "List available tools");
