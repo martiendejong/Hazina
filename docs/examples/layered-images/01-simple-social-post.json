@@ -1,0 +1,52 @@
+{
+  "format": "pdn",
+  "canvas": {
+    "width": 1080,
+    "height": 1080
+  },
+  "useVisionContext": true,
+  "layers": [
+    {
+      "name": "Background",
+      "type": "SolidColor",
+      "content": "#6366F1",
+      "size": { "width": 1080, "height": 1080 },
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "name": "Decorative Pattern",
+      "type": "Generated",
+      "shouldGenerate": true,
+      "content": "Abstract wavy lines pattern in lighter purple shades, modern minimalist design",
+      "size": { "width": 1080, "height": 1080 },
+      "position": { "x": 0, "y": 0 },
+      "opacity": 0.3,
+      "blendMode": "Overlay"
+    },
+    {
+      "name": "Main Title",
+      "type": "Text",
+      "content": "NEW PRODUCT LAUNCH",
+      "fontFamily": "Arial",
+      "fontSize": 72,
+      "fontColor": "#FFFFFF",
+      "size": { "width": 900, "height": 100 },
+      "position": { "x": 90, "y": 400 }
+    },
+    {
+      "name": "Subtitle",
+      "type": "Text",
+      "content": "Coming Soon 2026",
+      "fontFamily": "Arial",
+      "fontSize": 36,
+      "fontColor": "#E0E7FF",
+      "size": { "width": 600, "height": 60 },
+      "position": { "x": 240, "y": 520 }
+    }
+  ],
+  "metadata": {
+    "title": "Product Launch Social Post",
+    "description": "Simple social media post for product announcement",
+    "tags": ["social-media", "product-launch", "instagram"]
+  }
+}

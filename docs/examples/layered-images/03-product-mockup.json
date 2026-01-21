@@ -1,0 +1,59 @@
+{
+  "format": "pdn",
+  "canvas": {
+    "width": 1920,
+    "height": 1080
+  },
+  "useVisionContext": true,
+  "layers": [
+    {
+      "name": "Studio Background",
+      "type": "Generated",
+      "shouldGenerate": true,
+      "content": "Professional photography studio with soft gray gradient backdrop, subtle lighting from top-left, photorealistic",
+      "size": { "width": 1920, "height": 1080 },
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "name": "Display Pedestal",
+      "type": "Generated",
+      "shouldGenerate": true,
+      "content": "Minimalist white cylinder pedestal on gray studio floor, modern and clean design, centered in frame",
+      "size": { "width": 800, "height": 700 },
+      "position": { "x": 560, "y": 300 }
+    },
+    {
+      "name": "Product Placeholder",
+      "type": "SolidColor",
+      "content": "#E5E7EB",
+      "size": { "width": 400, "height": 400 },
+      "position": { "x": 760, "y": 200 },
+      "opacity": 0.8
+    },
+    {
+      "name": "Soft Shadow",
+      "type": "Generated",
+      "shouldGenerate": true,
+      "content": "Realistic soft shadow beneath pedestal, matching studio lighting direction from top-left, subtle and natural",
+      "size": { "width": 900, "height": 300 },
+      "position": { "x": 510, "y": 750 },
+      "opacity": 0.5,
+      "blendMode": "Multiply"
+    },
+    {
+      "name": "Ambient Glow",
+      "type": "Generated",
+      "shouldGenerate": true,
+      "content": "Subtle warm ambient light glow around product area, enhancing focus on center",
+      "size": { "width": 1000, "height": 1000 },
+      "position": { "x": 460, "y": 40 },
+      "opacity": 0.3,
+      "blendMode": "Screen"
+    }
+  ],
+  "metadata": {
+    "title": "Product Photography Mockup",
+    "description": "Professional product photography setup with realistic lighting and shadows",
+    "tags": ["product-photography", "mockup", "studio"]
+  }
+}

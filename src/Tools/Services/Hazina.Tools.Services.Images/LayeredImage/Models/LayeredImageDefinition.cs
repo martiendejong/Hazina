@@ -32,6 +32,14 @@ public class LayeredImageDefinition
     public ImageMetadata? Metadata { get; set; }
 
     /// <summary>
+    /// Whether to use vision-enhanced context generation.
+    /// When true, GPT-4 Vision analyzes previous layers to create better context.
+    /// Default: true (recommended for best results, but adds cost/latency).
+    /// </summary>
+    [JsonPropertyName("useVisionContext")]
+    public bool UseVisionContext { get; set; } = true;
+
+    /// <summary>
     /// Parses the format string to the enum value.
     /// </summary>
     public LayeredImageFormat GetFormat()
@@ -74,6 +82,14 @@ public class LayerDefinition
     /// </summary>
     [JsonPropertyName("type")]
     public string Type { get; set; } = "Generated";
+
+    /// <summary>
+    /// Whether this layer should be AI-generated (true) or use existing content (false).
+    /// When false for Generated type, the Content field should contain a path to an existing image.
+    /// Default is true for Generated type, false for all other types.
+    /// </summary>
+    [JsonPropertyName("shouldGenerate")]
+    public bool? ShouldGenerate { get; set; }
 
     /// <summary>
     /// Position on the canvas.
@@ -163,6 +179,24 @@ public class LayerDefinition
             "lighten" => LayerBlendMode.Lighten,
             _ => LayerBlendMode.Normal
         };
+    }
+
+    /// <summary>
+    /// Determines if this layer should be AI-generated.
+    /// Returns true if type is Generated and shouldGenerate is not explicitly false.
+    /// </summary>
+    public bool ShouldGenerateLayer()
+    {
+        var layerType = GetLayerType();
+
+        // For Generated type: default to true unless explicitly set to false
+        if (layerType == LayerType.Generated)
+        {
+            return ShouldGenerate ?? true;
+        }
+
+        // For other types: only generate if explicitly requested
+        return ShouldGenerate ?? false;
     }
 }
 

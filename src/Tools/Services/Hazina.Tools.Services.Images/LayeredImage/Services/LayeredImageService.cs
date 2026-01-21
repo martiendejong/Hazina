@@ -123,13 +123,29 @@ public class LayeredImageService : ILayeredImageService
                 format = LayeredImageFormat.Ora;
             }
 
-            // Generate each layer
+            // Generate each layer SEQUENTIALLY from bottom to top
+            // Each layer generation gets context from all previously generated layers
             var layers = new List<LayerGenerationResult>();
-            foreach (var layerDef in definition.Layers)
+
+            for (int i = 0; i < definition.Layers.Count; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var layerResult = await GenerateLayerAsync(projectId, userId, layerDef, cancellationToken);
+                var layerDef = definition.Layers[i];
+
+                // Build context descriptions for this layer
+                var contextDescription = BuildLayerContext(definition, i, layers);
+
+                // Generate layer with context from previously generated layers
+                var layerResult = await GenerateLayerAsync(
+                    projectId,
+                    userId,
+                    layerDef,
+                    layers,
+                    contextDescription,
+                    definition.UseVisionContext,
+                    cancellationToken);
+
                 layers.Add(layerResult);
 
                 result.Layers.Add(new LayerResultInfo
@@ -217,10 +233,61 @@ public class LayeredImageService : ILayeredImageService
         }
     }
 
+    /// <summary>
+    /// Builds context description for a layer based on canvas and previously generated layers.
+    /// </summary>
+    private string BuildLayerContext(
+        LayeredImageDefinition definition,
+        int currentLayerIndex,
+        List<LayerGenerationResult> previousLayers)
+    {
+        var context = new System.Text.StringBuilder();
+
+        // Canvas context
+        context.AppendLine($"Canvas: {definition.Canvas.Width}x{definition.Canvas.Height}px");
+
+        // All layers overview (helps understand the full composition)
+        context.AppendLine($"\nTotal layers: {definition.Layers.Count}");
+        context.AppendLine("Layer stack (bottom to top):");
+
+        for (int i = 0; i < definition.Layers.Count; i++)
+        {
+            var layer = definition.Layers[i];
+            var status = i < currentLayerIndex ? "✓ Generated" : (i == currentLayerIndex ? "➤ Current" : "⧖ Pending");
+            context.AppendLine($"  {i + 1}. [{status}] {layer.Name} ({layer.Type}) - {layer.Content}");
+        }
+
+        // Previous layers details
+        if (previousLayers.Count > 0)
+        {
+            context.AppendLine($"\nPreviously generated layers ({previousLayers.Count}):");
+            for (int i = 0; i < previousLayers.Count; i++)
+            {
+                var prevLayer = previousLayers[i];
+                var prevDef = definition.Layers[i];
+                context.AppendLine($"  - {prevLayer.Name}: {prevDef.Content} ({prevLayer.Width}x{prevLayer.Height}px at {prevLayer.PositionX},{prevLayer.PositionY})");
+            }
+        }
+
+        // Current layer instructions
+        var currentLayer = definition.Layers[currentLayerIndex];
+        context.AppendLine($"\nCurrent layer '{currentLayer.Name}':");
+        context.AppendLine($"  Type: {currentLayer.Type}");
+        context.AppendLine($"  Position: ({currentLayer.Position.X}, {currentLayer.Position.Y})");
+        context.AppendLine($"  Size: {currentLayer.Size.Width}x{currentLayer.Size.Height}px");
+        context.AppendLine($"  Blend mode: {currentLayer.BlendMode}");
+        context.AppendLine($"  Opacity: {currentLayer.Opacity * 100}%");
+
+        return context.ToString();
+    }
+
     private async Task<LayerGenerationResult> GenerateLayerAsync(
         string projectId,
         string? userId,
         LayerDefinition layerDef,
+        List<LayerGenerationResult> previousLayers,
+        string contextDescription,
+        bool useVisionContext,
         CancellationToken cancellationToken)
     {
         var result = new LayerGenerationResult
@@ -239,14 +306,26 @@ public class LayeredImageService : ILayeredImageService
         {
             var layerType = layerDef.GetLayerType();
 
-            byte[] imageData = layerType switch
+            byte[] imageData;
+
+            // Check if layer should be generated or use existing content
+            if (layerType == LayerType.Generated && !layerDef.ShouldGenerateLayer())
             {
-                LayerType.Generated => await GenerateAiLayerAsync(layerDef, cancellationToken),
-                LayerType.Uploaded => await LoadUploadedLayerAsync(projectId, layerDef, cancellationToken),
-                LayerType.SolidColor => GenerateSolidColorLayer(layerDef),
-                LayerType.Text => GenerateTextLayer(layerDef),
-                _ => throw new NotSupportedException($"Layer type {layerType} not supported")
-            };
+                // Type is Generated but shouldGenerate=false → load existing image
+                imageData = await LoadUploadedLayerAsync(projectId, layerDef, cancellationToken);
+            }
+            else
+            {
+                // Generate or load based on layer type
+                imageData = layerType switch
+                {
+                    LayerType.Generated => await GenerateAiLayerAsync(layerDef, previousLayers, contextDescription, useVisionContext, cancellationToken),
+                    LayerType.Uploaded => await LoadUploadedLayerAsync(projectId, layerDef, cancellationToken),
+                    LayerType.SolidColor => GenerateSolidColorLayer(layerDef),
+                    LayerType.Text => GenerateTextLayer(layerDef),
+                    _ => throw new NotSupportedException($"Layer type {layerType} not supported")
+                };
+            }
 
             result.ImageData = imageData;
             result.Success = true;
@@ -266,15 +345,43 @@ public class LayeredImageService : ILayeredImageService
         return result;
     }
 
-    private async Task<byte[]> GenerateAiLayerAsync(LayerDefinition layerDef, CancellationToken cancellationToken)
+    private async Task<byte[]> GenerateAiLayerAsync(
+        LayerDefinition layerDef,
+        List<LayerGenerationResult> previousLayers,
+        string contextDescription,
+        bool useVisionContext,
+        CancellationToken cancellationToken)
     {
-        // Use the ChatImageService to generate the image
-        return await _imageService.GenerateImageBytesAsync(
-            layerDef.Content,
-            ImageModel.GptImage, // Default to GPT Image
-            layerDef.Size.Width,
-            layerDef.Size.Height,
-            cancellationToken);
+        // Extract context images from previously generated layers (only if vision context is enabled)
+        var contextImages = useVisionContext
+            ? previousLayers
+                .Where(l => l.Success && l.ImageData != null)
+                .Select(l => l.ImageData!)
+                .ToList()
+            : new List<byte[]>();
+
+        // Use context-aware generation if we have previous layers
+        if (previousLayers.Count > 0)
+        {
+            return await _imageService.GenerateImageBytesWithContextAsync(
+                layerDef.Content,
+                ImageModel.GptImage, // Default to GPT Image
+                layerDef.Size.Width,
+                layerDef.Size.Height,
+                contextImages, // Empty list if useVisionContext=false (text-only context)
+                contextDescription,
+                cancellationToken);
+        }
+        else
+        {
+            // First layer - no context available, use standard generation
+            return await _imageService.GenerateImageBytesAsync(
+                layerDef.Content,
+                ImageModel.GptImage,
+                layerDef.Size.Width,
+                layerDef.Size.Height,
+                cancellationToken);
+        }
     }
 
     private async Task<byte[]> LoadUploadedLayerAsync(string projectId, LayerDefinition layerDef, CancellationToken cancellationToken)
