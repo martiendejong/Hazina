@@ -415,8 +415,11 @@ class HazinaCoderCLI
                 AnsiConsole.MarkupLine("    glob           - Find files by pattern");
                 AnsiConsole.MarkupLine("    grep           - Search file contents with regex");
                 AnsiConsole.MarkupLine("    list_directory - List directory contents with details");
+                AnsiConsole.MarkupLine("    notebook_edit  - Edit Jupyter notebook cells");
                 AnsiConsole.MarkupLine("  [yellow]Execution:[/]");
                 AnsiConsole.MarkupLine("    bash           - Execute shell commands (with permission checks)");
+                AnsiConsole.MarkupLine("    bash_background- Run commands in background");
+                AnsiConsole.MarkupLine("    task_output    - Get background task status/output");
                 AnsiConsole.MarkupLine("  [yellow]Git:[/]");
                 AnsiConsole.MarkupLine("    git_status     - Get repository status and commits");
                 AnsiConsole.MarkupLine("  [yellow]Web:[/]");
@@ -426,6 +429,9 @@ class HazinaCoderCLI
                 AnsiConsole.MarkupLine("    todo_write     - Track tasks during coding session");
                 AnsiConsole.MarkupLine("  [yellow]User Interaction:[/]");
                 AnsiConsole.MarkupLine("    ask_user       - Ask user for clarification or decisions");
+                AnsiConsole.MarkupLine("  [yellow]Plan Mode:[/]");
+                AnsiConsole.MarkupLine("    enter_plan_mode- Start structured planning before implementation");
+                AnsiConsole.MarkupLine("    exit_plan_mode - Present plan for user approval");
                 return CommandResult.Handled;
 
             case "/skills":
@@ -668,9 +674,12 @@ You are an interactive CLI tool that helps users with software engineering tasks
 - **glob**: Find files by pattern (e.g., '**/*.cs', '*.json')
 - **grep**: Search file contents with regex patterns
 - **list_directory**: List directory contents with details
+- **notebook_edit**: Edit Jupyter notebook (.ipynb) cells - replace, insert, or delete cells
 
 ## Execution
 - **bash**: Execute shell commands (PowerShell on Windows, bash on Unix)
+- **bash_background**: Run a command in the background. Returns a task ID immediately. Use task_output to check progress.
+- **task_output**: Get output/status from background tasks. Can also list all tasks or kill a running task.
 
 ## Git
 - **git_status**: Get structured git status (branch, changes, recent commits)
@@ -684,6 +693,24 @@ You are an interactive CLI tool that helps users with software engineering tasks
 
 ## User Interaction
 - **ask_user**: Ask the user a question when you need clarification or a decision. Can present options for the user to choose from.
+
+## Plan Mode
+- **enter_plan_mode**: Enter structured planning mode before non-trivial implementation. Use this to design approaches and get user approval.
+- **exit_plan_mode**: Exit plan mode and present your plan for approval. The plan should include summary and steps.
+
+# Plan Mode Guidelines
+
+Use plan mode when:
+- Task requires architectural decisions
+- Multiple valid approaches exist
+- Changes affect many files
+- Requirements are unclear
+
+In plan mode:
+1. Explore codebase with read_file, glob, grep
+2. Design your approach
+3. Use exit_plan_mode to present plan for approval
+4. Only proceed with implementation after approval
 
 # Task Management Guidelines
 

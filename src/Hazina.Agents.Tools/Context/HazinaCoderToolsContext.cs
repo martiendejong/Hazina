@@ -45,6 +45,17 @@ public class HazinaCoderToolsContext : IToolsContext
 
         // User interaction tools
         Tools.Add(AskUserQuestionTool.Create(workingDirectory));
+
+        // Background task tools
+        Tools.Add(BackgroundBashTool.Create(workingDirectory));
+        Tools.Add(TaskOutputTool.Create(workingDirectory));
+
+        // Notebook editing
+        Tools.Add(NotebookEditTool.Create(workingDirectory));
+
+        // Plan mode tools
+        Tools.Add(PlanModeTool.CreateEnterPlanMode(workingDirectory));
+        Tools.Add(PlanModeTool.CreateExitPlanMode(workingDirectory));
     }
 
     public void Add(HazinaChatTool tool)
