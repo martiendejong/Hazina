@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>Hazina.AI.Vision</RootNamespace>
+    <Version>1.0.0</Version>
+    <Authors>Prospergenics</Authors>
+    <Description>Vision and video understanding pipelines for Hazina. Includes support for V-JEPA 2 video embeddings, image encoding, and multi-modal AI integration.</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Image processing -->
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
+    <!-- Video frame extraction -->
+    <PackageReference Include="FFMpegCore" Version="5.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Hazina.AI.Core\Hazina.AI.Core.csproj" />
+    <ProjectReference Include="..\Hazina.AI.Inference\Hazina.AI.Inference.csproj" />
+  </ItemGroup>
+</Project>
