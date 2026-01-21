@@ -51,14 +51,33 @@ public static class ListDirectoryTool
                     using JsonDocument argsJson = JsonDocument.Parse(call.FunctionArguments);
                     var root = argsJson.RootElement;
 
-                    string dirPath = workingDirectory;
+                    // Ensure working directory is valid
+                    var safeWorkingDir = string.IsNullOrWhiteSpace(workingDirectory)
+                        ? Directory.GetCurrentDirectory()
+                        : workingDirectory;
+
+                    string dirPath = safeWorkingDir;
                     if (root.TryGetProperty("path", out var pathElement))
                     {
                         var p = pathElement.GetString();
-                        if (!string.IsNullOrWhiteSpace(p))
+                        if (!string.IsNullOrWhiteSpace(p) && p != ".")
                         {
-                            dirPath = Path.IsPathRooted(p) ? p : Path.GetFullPath(Path.Combine(workingDirectory, p));
+                            // Normalize the path and handle relative paths safely
+                            if (Path.IsPathRooted(p))
+                            {
+                                dirPath = Path.GetFullPath(p);
+                            }
+                            else
+                            {
+                                dirPath = Path.GetFullPath(Path.Combine(safeWorkingDir, p));
+                            }
                         }
+                    }
+
+                    // Additional validation to prevent device paths
+                    if (dirPath.StartsWith(@"\\.\") || dirPath.Contains("nul") || dirPath.Contains("con") || dirPath.Contains("prn"))
+                    {
+                        return $"Error: Invalid path detected: {dirPath}";
                     }
 
                     bool recursive = false;

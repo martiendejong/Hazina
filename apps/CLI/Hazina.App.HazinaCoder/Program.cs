@@ -54,6 +54,22 @@ class HazinaCoderCLI
 
     public async Task Run(string[] promptArgs)
     {
+        // Validate and normalize working directory
+        if (string.IsNullOrWhiteSpace(_workingDirectory))
+        {
+            _workingDirectory = Directory.GetCurrentDirectory();
+        }
+        else
+        {
+            _workingDirectory = Path.GetFullPath(_workingDirectory);
+        }
+
+        if (!Directory.Exists(_workingDirectory))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Working directory does not exist: {Markup.Escape(_workingDirectory)}");
+            return;
+        }
+
         // Detect provider from environment if auto
         if (_providerName == "auto")
         {
