@@ -15,6 +15,11 @@ public class HazinaCoderToolsContext : IToolsContext
     public string? ProjectId { get; set; }
     public Action<string, int, int, string>? OnTokensUsed { get; set; }
 
+    /// <summary>
+    /// Enable permission checks for dangerous commands (default: true)
+    /// </summary>
+    public bool EnablePermissions { get; set; } = true;
+
     public HazinaCoderToolsContext(string workingDirectory)
     {
         // Core file system tools
@@ -25,17 +30,21 @@ public class HazinaCoderToolsContext : IToolsContext
         Tools.Add(GrepTool.Create(workingDirectory));
         Tools.Add(ListDirectoryTool.Create(workingDirectory));
 
-        // Execution tools
-        Tools.Add(BashTool.Create(workingDirectory));
+        // Execution tools - with permission checking wrapper
+        Tools.Add(SecureBashTool.Create(workingDirectory, () => EnablePermissions));
 
         // Git tools
         Tools.Add(GitStatusTool.Create(workingDirectory));
 
         // Web tools
         Tools.Add(WebFetchTool.Create(workingDirectory));
+        Tools.Add(WebSearchTool.Create(workingDirectory));
 
         // Task management tools
         Tools.Add(TodoWriteTool.Create(workingDirectory));
+
+        // User interaction tools
+        Tools.Add(AskUserQuestionTool.Create(workingDirectory));
     }
 
     public void Add(HazinaChatTool tool)

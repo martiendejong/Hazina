@@ -39,7 +39,7 @@ class HazinaCoderCLI
     private bool _verbose;
     private ILLMClient _client = null!;
     private string _model = "";
-    private IToolsContext _toolsContext = null!;
+    private HazinaCoderToolsContext _toolsContext = null!;
     private List<HazinaChatMessage> _context = new();
     private decimal _sessionCost = 0m;
     private int _sessionTokens = 0;
@@ -145,8 +145,8 @@ class HazinaCoderCLI
         {
             AnsiConsole.MarkupLine($"[green]✓[/] [dim]{_skills.Count} skill(s) loaded[/]");
         }
-        AnsiConsole.MarkupLine($"[dim]Output: {_outputMode} (use /output to cycle)[/]");
-        AnsiConsole.MarkupLine("[dim]Commands: /help, /output, /tools, /skills, /cost, /clear, /exit[/]");
+        AnsiConsole.MarkupLine($"[dim]Output: {_outputMode} | Permissions: {(_toolsContext.EnablePermissions ? "ON" : "OFF")}[/]");
+        AnsiConsole.MarkupLine("[dim]Commands: /help, /output, /permissions, /tools, /skills, /clear, /exit[/]");
         AnsiConsole.WriteLine();
 
         while (true)
@@ -416,13 +416,16 @@ class HazinaCoderCLI
                 AnsiConsole.MarkupLine("    grep           - Search file contents with regex");
                 AnsiConsole.MarkupLine("    list_directory - List directory contents with details");
                 AnsiConsole.MarkupLine("  [yellow]Execution:[/]");
-                AnsiConsole.MarkupLine("    bash           - Execute shell commands");
+                AnsiConsole.MarkupLine("    bash           - Execute shell commands (with permission checks)");
                 AnsiConsole.MarkupLine("  [yellow]Git:[/]");
                 AnsiConsole.MarkupLine("    git_status     - Get repository status and commits");
                 AnsiConsole.MarkupLine("  [yellow]Web:[/]");
                 AnsiConsole.MarkupLine("    web_fetch      - Fetch and parse web content");
+                AnsiConsole.MarkupLine("    web_search     - Search the web (DuckDuckGo)");
                 AnsiConsole.MarkupLine("  [yellow]Task Management:[/]");
                 AnsiConsole.MarkupLine("    todo_write     - Track tasks during coding session");
+                AnsiConsole.MarkupLine("  [yellow]User Interaction:[/]");
+                AnsiConsole.MarkupLine("    ask_user       - Ask user for clarification or decisions");
                 return CommandResult.Handled;
 
             case "/skills":
@@ -482,6 +485,19 @@ class HazinaCoderCLI
                 AnsiConsole.MarkupLine("[green]Output mode:[/] Minimal (up to 400 chars)");
                 return CommandResult.Handled;
 
+            case "/permissions":
+            case "/perm":
+                _toolsContext.EnablePermissions = !_toolsContext.EnablePermissions;
+                if (_toolsContext.EnablePermissions)
+                {
+                    AnsiConsole.MarkupLine("[green]Permissions:[/] ON - Dangerous commands require approval");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[yellow]Permissions:[/] OFF - All commands run without approval");
+                }
+                return CommandResult.Handled;
+
             default:
                 // Not a recognized command, treat as regular input
                 return CommandResult.NotHandled;
@@ -500,9 +516,10 @@ class HazinaCoderCLI
         table.AddRow("/full", "Show full tool output (no truncation)");
         table.AddRow("/compact", "Show up to 2000 chars per tool");
         table.AddRow("/minimal", "Show up to 400 chars per tool");
+        table.AddRow("/permissions, /perm", "Toggle permission checks for dangerous commands");
         table.AddRow("/provider <name>", "Switch provider (openai, anthropic, ollama)");
         table.AddRow("/model <name>", "Switch model");
-        table.AddRow("/tools", "List available tools");
+        table.AddRow("/tools", "List available tools (13 total)");
         table.AddRow("/skills", "List loaded skills from .claude/skills/");
         table.AddRow("/cost", "Show session cost and token usage");
         table.AddRow("/context", "Show context size");
@@ -660,9 +677,13 @@ You are an interactive CLI tool that helps users with software engineering tasks
 
 ## Web
 - **web_fetch**: Fetch content from URLs (strips HTML for readability)
+- **web_search**: Search the web for current information (uses DuckDuckGo)
 
 ## Task Management
 - **todo_write**: Track tasks during your coding session. Use this for complex multi-step tasks.
+
+## User Interaction
+- **ask_user**: Ask the user a question when you need clarification or a decision. Can present options for the user to choose from.
 
 # Task Management Guidelines
 
