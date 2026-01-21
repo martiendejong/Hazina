@@ -1,63 +1,205 @@
-# Top-most EditorConfig file
+# Hazina Framework - EditorConfig
+# Coding Standards Compliance Configuration
+# Generated: 2026-01-21
+
 root = true
+
+# All files
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
 
 # C# files
 [*.cs]
-# Charset
-charset = utf-8
-
-# Newline
-end_of_line = crlf
-insert_final_newline = true
-trim_trailing_whitespace = true
-
-# Indentation
-indent_style = space
 indent_size = 4
 
-# Microsoft recommended C# code style:
-dotnet_sort_system_directives_first = true
-dotnet_separate_import_directive_groups = true
+# =============================================================================
+# COMPLEXITY METRICS (Hazina Coding Standards)
+# =============================================================================
 
-# Naming conventions
-dotnet_naming_rule.private_fields_should_be_camel_case.severity = suggestion
+# Cyclomatic Complexity: Target ≤10 (suggestion for now, will escalate)
+dotnet_diagnostic.CA1502.severity = suggestion
+
+# Maintainability Index: Target ≥20
+dotnet_diagnostic.CA1505.severity = suggestion
+
+# Class Coupling: Avoid excessive coupling
+dotnet_diagnostic.CA1506.severity = suggestion
+
+# =============================================================================
+# SONARANALYZER RULES
+# =============================================================================
+
+# Cognitive Complexity (S3776): Target ≤15
+dotnet_diagnostic.S3776.severity = suggestion
+
+# Methods should not have too many lines (S138): Target ≤30
+dotnet_diagnostic.S138.severity = suggestion
+
+# Files should not have too many lines (S104)
+dotnet_diagnostic.S104.severity = suggestion
+
+# Methods should not have too many parameters (S107): Target ≤4
+dotnet_diagnostic.S107.severity = suggestion
+
+# Nested blocks depth (S134): Target ≤3
+dotnet_diagnostic.S134.severity = suggestion
+
+# =============================================================================
+# CODE QUALITY RULES
+# =============================================================================
+
+# Naming Conventions
+dotnet_naming_rule.private_fields_should_be_camel_case.severity = warning
 dotnet_naming_rule.private_fields_should_be_camel_case.symbols = private_fields
-dotnet_naming_rule.private_fields_should_be_camel_case.style = camel_case_style
+dotnet_naming_rule.private_fields_should_be_camel_case.style = camel_case_underscore
 
 dotnet_naming_symbols.private_fields.applicable_kinds = field
 dotnet_naming_symbols.private_fields.applicable_accessibilities = private
 
-dotnet_naming_style.camel_case_style.capitalization = camel_case
+dotnet_naming_style.camel_case_underscore.required_prefix = _
+dotnet_naming_style.camel_case_underscore.capitalization = camel_case
 
-dotnet_naming_rule.private_constants_should_be_camel_case.severity = suggestion
-dotnet_naming_rule.private_constants_should_be_camel_case.symbols = private_constants
-dotnet_naming_rule.private_constants_should_be_camel_case.style = camel_case_style
+# Constants should be PascalCase
+dotnet_naming_rule.constants_should_be_pascal_case.severity = warning
+dotnet_naming_rule.constants_should_be_pascal_case.symbols = constants
+dotnet_naming_rule.constants_should_be_pascal_case.style = pascal_case
 
-dotnet_naming_symbols.private_constants.applicable_kinds = field
-# constant fields
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.required_modifiers = const
 
-dotnet_naming_symbols.private_constants.required_modifiers = const
+dotnet_naming_style.pascal_case.capitalization = pascal_case
 
-dotnet_naming_symbols.private_constants.applicable_accessibilities = private
+# =============================================================================
+# STYLECOP RULES
+# =============================================================================
 
+# Documentation Rules (SA1600-SA1651) - suggestion for now
+dotnet_diagnostic.SA1600.severity = suggestion  # Elements should be documented
+dotnet_diagnostic.SA1601.severity = suggestion  # Partial elements should be documented
+dotnet_diagnostic.SA1602.severity = suggestion  # Enumeration items should be documented
+dotnet_diagnostic.SA1611.severity = suggestion  # Element parameters should be documented
+dotnet_diagnostic.SA1615.severity = suggestion  # Element return value should be documented
+dotnet_diagnostic.SA1618.severity = suggestion  # Generic type parameters should be documented
+
+# Layout Rules
+dotnet_diagnostic.SA1500.severity = warning     # Braces should not be omitted
+dotnet_diagnostic.SA1501.severity = warning     # Statement should not be on a single line
+dotnet_diagnostic.SA1502.severity = suggestion  # Element should not be on a single line
+dotnet_diagnostic.SA1503.severity = warning     # Braces should not be omitted
+
+# Ordering Rules
+dotnet_diagnostic.SA1200.severity = none        # Using directives inside namespace (disabled)
+dotnet_diagnostic.SA1201.severity = suggestion  # Elements should appear in correct order
+dotnet_diagnostic.SA1202.severity = suggestion  # Elements should be ordered by access
+dotnet_diagnostic.SA1203.severity = suggestion  # Constants should appear before fields
+dotnet_diagnostic.SA1204.severity = suggestion  # Static elements should appear before instance
+
+# Readability Rules
+dotnet_diagnostic.SA1101.severity = none        # Prefix local calls with this (disabled)
+dotnet_diagnostic.SA1309.severity = none        # Field names should not begin with underscore (we use _)
+dotnet_diagnostic.SA1413.severity = none        # Use trailing comma (disabled)
+
+# Spacing Rules
+dotnet_diagnostic.SA1000.severity = warning     # Keywords should be spaced correctly
+dotnet_diagnostic.SA1001.severity = warning     # Commas should be spaced correctly
+dotnet_diagnostic.SA1003.severity = warning     # Symbols should be spaced correctly
+dotnet_diagnostic.SA1008.severity = warning     # Opening parenthesis should be spaced correctly
+
+# =============================================================================
+# BUILT-IN .NET ANALYZERS (CA RULES) - Key Rules
+# =============================================================================
+
+# Performance Rules
+dotnet_diagnostic.CA1806.severity = warning     # Do not ignore method results
+dotnet_diagnostic.CA1822.severity = suggestion  # Mark members as static
+dotnet_diagnostic.CA1823.severity = warning     # Avoid unused private fields
+dotnet_diagnostic.CA1849.severity = warning     # Call async methods when in an async method
+dotnet_diagnostic.CA1851.severity = warning     # Possible multiple enumerations of IEnumerable
+
+# Reliability Rules
+dotnet_diagnostic.CA2000.severity = warning     # Dispose objects before losing scope
+dotnet_diagnostic.CA2007.severity = none        # ConfigureAwait (disabled - not needed in ASP.NET Core)
+dotnet_diagnostic.CA2016.severity = warning     # Forward the CancellationToken parameter
+
+# Security Rules
+dotnet_diagnostic.CA2100.severity = warning     # Review SQL queries for security vulnerabilities
+dotnet_diagnostic.CA5350.severity = warning     # Do not use weak cryptographic algorithms
+dotnet_diagnostic.CA5351.severity = warning     # Do not use broken cryptographic algorithms
+
+# Usage Rules
+dotnet_diagnostic.CA2200.severity = warning     # Rethrow to preserve stack details
+dotnet_diagnostic.CA2208.severity = warning     # Instantiate argument exceptions correctly
+dotnet_diagnostic.CA2213.severity = warning     # Disposable fields should be disposed
+
+# =============================================================================
+# C# COMPILER WARNINGS
+# =============================================================================
+
+dotnet_diagnostic.CS1591.severity = suggestion  # Missing XML comment for publicly visible type
+
+# =============================================================================
+# CODE STYLE PREFERENCES
+# =============================================================================
+
+# var preferences
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+# Expression-bodied members
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion
+
+# Pattern matching
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+
+# Namespace declarations
+csharp_style_namespace_declarations = file_scoped:suggestion
+
+# Using directives
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# Newline preferences
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+
+# Qualification preferences
 dotnet_style_qualification_for_field = false:suggestion
 dotnet_style_qualification_for_property = false:suggestion
 dotnet_style_qualification_for_method = false:suggestion
 dotnet_style_qualification_for_event = false:suggestion
 
-# var preferences
-csharp_style_var_for_built_in_types = true:suggestion
-csharp_style_var_when_type_is_apparent = true:suggestion
-csharp_style_var_elsewhere = false:suggestion
+# =============================================================================
+# JSON FILES
+# =============================================================================
+[*.json]
+indent_size = 2
 
-# Expression-bodied members
-csharp_style_expression_bodied_methods = false:warning
-csharp_style_expression_bodied_properties = false:warning
+# =============================================================================
+# XML FILES
+# =============================================================================
+[*.{xml,csproj,props,targets}]
+indent_size = 2
 
-# Braces and new lines
-csharp_new_line_before_open_brace = all
-csharp_else_on_new_line = true
+# =============================================================================
+# YAML FILES
+# =============================================================================
+[*.{yml,yaml}]
+indent_size = 2
 
-# StyleCopAnalyzers compatibility
-# (Most settings are set by StyleCop, use for fine-tuning)
-
+# =============================================================================
+# MARKDOWN FILES
+# =============================================================================
+[*.md]
+trim_trailing_whitespace = false
