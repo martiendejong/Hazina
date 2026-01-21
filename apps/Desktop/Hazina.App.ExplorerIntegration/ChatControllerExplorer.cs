@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
+using Hazina.AgentFactory.Core;
 using Hazina.ChatShared;
 
 namespace Hazina.App.ExplorerIntegration

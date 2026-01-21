@@ -1,3 +1,5 @@
+namespace Hazina.AgentFactory.Core;
+
 public class HazinaFlow
 {
     public string Name { get; set; }

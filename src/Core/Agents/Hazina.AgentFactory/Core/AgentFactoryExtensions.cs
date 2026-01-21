@@ -1,5 +1,7 @@
 using Hazina.LLMs;
 
+namespace Hazina.AgentFactory.Core;
+
 /// <summary>
 /// Extension methods for AgentFactory to support Semantic Kernel
 /// </summary>

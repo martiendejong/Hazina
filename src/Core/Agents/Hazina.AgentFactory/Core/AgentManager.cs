@@ -6,6 +6,8 @@ using Hazina.LLMs.OpenAI;
 
 using static Google.Apis.Requests.BatchRequest;
 
+namespace Hazina.AgentFactory.Core;
+
 /// <summary>
 /// AgentManager encapsulates all logic for agent and store initialization, configuration,
 /// and provides interfaces for agent interaction. It loads configuration from paths provided

@@ -1,3 +1,4 @@
+using Hazina.AgentFactory.Core;
 using Hazina.LLMs.OpenAI;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
@@ -26,14 +27,14 @@ namespace Hazina.App.ExplorerIntegration
 
             var config = new OpenAIConfig(apiKey);
             var llm = new OpenAIClientWrapper(config);
-            var factory = new AgentFactory(apiKey, config.LogPath);
+            var factory = new Hazina.AgentFactory.Core.AgentFactory(apiKey, config.LogPath);
             var creator = new QuickAgentCreator(factory, llm);
             var store = creator.CreateStore(new StorePaths(folder), new System.IO.DirectoryInfo(folder).Name);
             var agent = await factory.CreateUnregisteredAgent(
                 name: "ExplorerAgent",
                 systemPrompt: "You are a helpful coding assistant. Use tools to read files and, when appropriate, modify them using full-file updates only.",
                 stores: new[] { (store as IDocumentStore, true) },
-                function: new[] { "git", "dotnet" },
+                functions: new[] { "git", "dotnet" },
                 agents: System.Array.Empty<string>(),
                 flows: System.Array.Empty<string>(),
                 isCoder: true
