@@ -1,0 +1,85 @@
+{
+  "format": "psd",
+  "canvas": {
+    "width": 1920,
+    "height": 1080
+  },
+  "useVisionContext": true,
+  "layers": [
+    {
+      "name": "Gradient Background",
+      "type": "SolidColor",
+      "content": "#1E293B",
+      "size": { "width": 1920, "height": 1080 },
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "name": "Hero Image",
+      "type": "Generated",
+      "shouldGenerate": true,
+      "content": "Modern workspace with laptop, coffee cup, and notebook, flat lay photography style, warm natural lighting",
+      "size": { "width": 1200, "height": 800 },
+      "position": { "x": 100, "y": 140 },
+      "opacity": 0.9
+    },
+    {
+      "name": "Color Overlay",
+      "type": "SolidColor",
+      "content": "#3B82F680",
+      "size": { "width": 1920, "height": 1080 },
+      "position": { "x": 0, "y": 0 },
+      "opacity": 0.4,
+      "blendMode": "Overlay"
+    },
+    {
+      "name": "Logo",
+      "type": "Generated",
+      "shouldGenerate": false,
+      "content": "company-logo.png",
+      "size": { "width": 180, "height": 60 },
+      "position": { "x": 1650, "y": 50 }
+    },
+    {
+      "name": "Headline",
+      "type": "Text",
+      "content": "Productivity Reimagined",
+      "fontFamily": "Arial",
+      "fontSize": 84,
+      "fontColor": "#FFFFFF",
+      "size": { "width": 1000, "height": 120 },
+      "position": { "x": 460, "y": 400 }
+    },
+    {
+      "name": "Subtitle",
+      "type": "Text",
+      "content": "Tools for modern teams",
+      "fontFamily": "Arial",
+      "fontSize": 42,
+      "fontColor": "#CBD5E1",
+      "size": { "width": 700, "height": 70 },
+      "position": { "x": 610, "y": 540 }
+    },
+    {
+      "name": "CTA Button Background",
+      "type": "SolidColor",
+      "content": "#3B82F6",
+      "size": { "width": 300, "height": 80 },
+      "position": { "x": 810, "y": 650 }
+    },
+    {
+      "name": "CTA Text",
+      "type": "Text",
+      "content": "Learn More",
+      "fontFamily": "Arial",
+      "fontSize": 32,
+      "fontColor": "#FFFFFF",
+      "size": { "width": 260, "height": 60 },
+      "position": { "x": 830, "y": 660 }
+    }
+  ],
+  "metadata": {
+    "title": "Hero Banner with CTA",
+    "description": "Complex hero banner mixing generated content, uploaded assets, and text",
+    "tags": ["hero-banner", "landing-page", "marketing"]
+  }
+}
