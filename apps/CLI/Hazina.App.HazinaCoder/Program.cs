@@ -15,18 +15,20 @@ var rootCommand = new RootCommand("HazinaCoder - Multi-provider coding assistant
     new Option<string>("--model", "Model override (provider-specific)"),
     new Option<string>("--working-dir", () => Directory.GetCurrentDirectory(), "Working directory for file operations"),
     new Option<bool>("--verbose", () => false, "Enable verbose output"),
+    new Option<int>("--max-turns", () => 50, "Maximum tool calls per conversation turn (default: 50)"),
     new Argument<string[]>("prompt", () => Array.Empty<string>(), "Direct prompt (non-interactive mode)")
 };
 
-rootCommand.SetHandler(async (string provider, string? model, string workingDir, bool verbose, string[] promptArgs) =>
+rootCommand.SetHandler(async (string provider, string? model, string workingDir, bool verbose, int maxTurns, string[] promptArgs) =>
 {
-    var cli = new HazinaCoderCLI(provider, model, workingDir, verbose);
+    var cli = new HazinaCoderCLI(provider, model, workingDir, verbose, maxTurns);
     await cli.Run(promptArgs);
 },
 rootCommand.Options.OfType<Option<string>>().First(o => o.Name == "provider"),
 rootCommand.Options.OfType<Option<string>>().First(o => o.Name == "model"),
 rootCommand.Options.OfType<Option<string>>().First(o => o.Name == "working-dir"),
 rootCommand.Options.OfType<Option<bool>>().First(o => o.Name == "verbose"),
+rootCommand.Options.OfType<Option<int>>().First(o => o.Name == "max-turns"),
 rootCommand.Arguments.OfType<Argument<string[]>>().First());
 
 return await rootCommand.InvokeAsync(args);
@@ -37,6 +39,8 @@ class HazinaCoderCLI
     private string? _modelOverride;
     private string _workingDirectory;
     private bool _verbose;
+    private int _maxTurns;
+    private int _currentTurnCount = 0;
     private ILLMClient _client = null!;
     private string _model = "";
     private HazinaCoderToolsContext _toolsContext = null!;
@@ -54,12 +58,13 @@ class HazinaCoderCLI
         Minimal    // Show up to 400 chars
     }
 
-    public HazinaCoderCLI(string provider, string? model, string workingDir, bool verbose)
+    public HazinaCoderCLI(string provider, string? model, string workingDir, bool verbose, int maxTurns = 50)
     {
         _providerName = provider;
         _modelOverride = model;
         _workingDirectory = workingDir;
         _verbose = verbose;
+        _maxTurns = maxTurns;
     }
 
     public async Task Run(string[] promptArgs)
@@ -112,7 +117,9 @@ class HazinaCoderCLI
         {
             SendMessage = (id, toolName, message) =>
             {
-                AnsiConsole.MarkupLine($"\n[cyan][[Tool: {Markup.Escape(toolName)}]][/]");
+                _currentTurnCount++;
+                var turnDisplay = _verbose ? $" (turn {_currentTurnCount}/{_maxTurns})" : "";
+                AnsiConsole.MarkupLine($"\n[cyan][[Tool: {Markup.Escape(toolName)}{turnDisplay}]][/]");
                 DisplayToolOutput(toolName, message);
             }
         };
@@ -173,6 +180,9 @@ class HazinaCoderCLI
 
     private async Task RunOnce(string prompt)
     {
+        // Reset turn counter for this conversation turn
+        var startTurnCount = _currentTurnCount;
+
         _context.Add(new HazinaChatMessage
         {
             Role = HazinaMessageRole.User,
@@ -215,6 +225,13 @@ class HazinaCoderCLI
                     Role = HazinaMessageRole.Assistant,
                     Text = assistantMessage
                 });
+            }
+
+            // Show summary of tool calls made
+            var toolCallsThisTurn = _currentTurnCount - startTurnCount;
+            if (toolCallsThisTurn > 0 && _verbose)
+            {
+                AnsiConsole.MarkupLine($"\n[dim]({toolCallsThisTurn} tool call(s) | ${_sessionCost:F4} | {_sessionTokens:N0} tokens)[/]");
             }
         }
         catch (Exception ex)
@@ -353,9 +370,15 @@ class HazinaCoderCLI
                 return CommandResult.Handled;
 
             case "/cost":
+            case "/status":
                 AnsiConsole.MarkupLine($"[cyan]Session Stats:[/]");
+                AnsiConsole.MarkupLine($"  Provider: {_providerName}/{_model}");
+                AnsiConsole.MarkupLine($"  Tool Calls: {_currentTurnCount} (max: {_maxTurns})");
                 AnsiConsole.MarkupLine($"  Tokens: {_sessionTokens:N0}");
                 AnsiConsole.MarkupLine($"  Cost: ${_sessionCost:F4}");
+                AnsiConsole.MarkupLine($"  Context: {_context.Count} messages");
+                AnsiConsole.MarkupLine($"  Output Mode: {_outputMode}");
+                AnsiConsole.MarkupLine($"  Permissions: {(_toolsContext.EnablePermissions ? "ON" : "OFF")}");
                 return CommandResult.Handled;
 
             case "/provider":
@@ -652,11 +675,38 @@ class HazinaCoderCLI
     {
         var sb = new StringBuilder();
 
-        sb.AppendLine($@"You are HazinaCoder, an autonomous coding assistant powered by the Hazina AI framework.
+        sb.AppendLine($@"You are HazinaCoder, an AUTONOMOUS coding assistant powered by the Hazina AI framework.
 Provider: {_providerName} | Model: {_model}
 Working Directory: {_workingDirectory}
 
-You are an interactive CLI tool that helps users with software engineering tasks. Use the tools available to you to assist the user.
+You are an agentic CLI tool that helps users with software engineering tasks. You have access to powerful tools and MUST use them to complete tasks autonomously.
+
+# CRITICAL: Autonomous Behavior
+
+**YOU MUST KEEP WORKING UNTIL THE TASK IS COMPLETE.**
+
+- DO NOT stop after reading a file - continue with the next step
+- DO NOT stop after searching - analyze results and take action
+- DO NOT ask for permission unless the action is destructive or irreversible
+- DO NOT explain what you're going to do - JUST DO IT
+- DO call multiple tools in sequence to complete complex tasks
+- DO verify your changes work by running builds/tests
+- DO continue working through errors - fix them and proceed
+
+When given a task:
+1. Understand the goal
+2. Use tools to gather information (read files, search, etc.)
+3. Make changes or create files as needed
+4. Verify the changes work
+5. Report completion with results
+
+**Example of GOOD autonomous behavior:**
+User: ""Add a new endpoint to the API""
+You: [use glob to find API files] → [read relevant file] → [edit to add endpoint] → [run build] → [report success]
+
+**Example of BAD behavior (DO NOT DO THIS):**
+User: ""Add a new endpoint to the API""
+You: ""I'll need to first look at the API structure. Let me search for API files..."" [stops and waits]
 
 # Core Principles
 
@@ -664,6 +714,7 @@ You are an interactive CLI tool that helps users with software engineering tasks
 2. **Autonomous Execution**: Execute tasks without asking for permission unless destructive/irreversible.
 3. **Verify Changes**: Always run builds, tests, or other verification after making changes.
 4. **Be Concise**: Focus on getting work done. Explanations should be brief and actionable.
+5. **Keep Going**: After each tool call, evaluate if the task is complete. If not, continue with the next step.
 
 # Available Tools
 
