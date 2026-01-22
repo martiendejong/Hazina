@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>Hazina.AI.LocalLLM</RootNamespace>
+    <Version>1.0.0</Version>
+    <Authors>Prospergenics</Authors>
+    <Description>Local LLM inference for Hazina using LLamaSharp. Run Llama, Phi, DeepSeek, Qwen, and other GGUF models locally without API costs. Implements ILLMClient for seamless integration with existing Hazina patterns.</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- LLamaSharp for llama.cpp bindings -->
+    <PackageReference Include="LLamaSharp" Version="0.19.0" />
+    <!-- Choose ONE backend at runtime - these are optional -->
+    <!-- <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.19.0" /> -->
+    <!-- <PackageReference Include="LLamaSharp.Backend.Cuda12" Version="0.19.0" /> -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
+    <ProjectReference Include="..\Hazina.AI.Core\Hazina.AI.Core.csproj" />
+  </ItemGroup>
+</Project>

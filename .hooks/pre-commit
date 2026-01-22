@@ -1,0 +1,35 @@
+#!/bin/sh
+# Hazina Pre-Commit Hook - Local Quality Gate
+# Runs build and tests before allowing commits
+#
+# Installation:
+#   git config core.hooksPath .hooks
+# Or run .hooks/setup.ps1
+
+echo "🔍 Running pre-commit quality checks..."
+
+# Find repo root
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+if [ -z "$REPO_ROOT" ]; then
+    echo "❌ Could not find repository root"
+    exit 1
+fi
+
+cd "$REPO_ROOT"
+
+# Run build
+echo "📦 Building AgentFactory..."
+if ! dotnet build src/Core/Agents/Hazina.AgentFactory/ --no-restore -v quiet 2>&1; then
+    echo "❌ Build failed. Please fix errors before committing."
+    exit 1
+fi
+
+# Run tests
+echo "🧪 Running AgentFactory tests..."
+if ! dotnet test Tests/Core/Hazina.AgentFactory.Tests/ --no-build -v quiet 2>&1; then
+    echo "❌ Tests failed. Please fix failing tests before committing."
+    exit 1
+fi
+
+echo "✅ All quality checks passed!"
+exit 0

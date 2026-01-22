@@ -1,5 +1,7 @@
 using Hazina.LLMs;
 
+namespace Hazina.AgentFactory.Core;
+
 public class QuickAgentCreator
 {
     public QuickAgentCreator(AgentFactory f, ILLMClient client)

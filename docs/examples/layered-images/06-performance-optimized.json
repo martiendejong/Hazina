@@ -1,0 +1,42 @@
+{
+  "format": "ora",
+  "canvas": {
+    "width": 1024,
+    "height": 1024
+  },
+  "useVisionContext": false,
+  "layers": [
+    {
+      "name": "Base Layer",
+      "type": "Generated",
+      "shouldGenerate": false,
+      "content": "cached-background-layer.png",
+      "size": { "width": 1024, "height": 1024 },
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "name": "New Content",
+      "type": "Generated",
+      "shouldGenerate": true,
+      "content": "Colorful abstract watercolor splash, vibrant and energetic",
+      "size": { "width": 600, "height": 600 },
+      "position": { "x": 212, "y": 212 },
+      "blendMode": "Screen"
+    },
+    {
+      "name": "Effects Layer",
+      "type": "Generated",
+      "shouldGenerate": false,
+      "content": "cached-effects-layer.png",
+      "size": { "width": 1024, "height": 1024 },
+      "position": { "x": 0, "y": 0 },
+      "opacity": 0.7,
+      "blendMode": "Overlay"
+    }
+  ],
+  "metadata": {
+    "title": "Performance Optimized - Layer Reuse",
+    "description": "Only regenerate specific layers, reuse cached content for faster generation",
+    "tags": ["optimization", "caching", "iterative-design"]
+  }
+}

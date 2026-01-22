@@ -1,0 +1,257 @@
+{
+  "$schema": "https://hazina.dev/schemas/providers.json",
+  "version": "1.0",
+  "providers": [
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "clientKind": "openai",
+      "configType": "Hazina.LLMs.OpenAI.OpenAIConfig, Hazina.LLMs.OpenAI",
+      "clientType": "OpenAIClientWrapper, Hazina.LLMs.OpenAI",
+      "endpoint": "https://api.openai.com/v1",
+      "requiresApiKey": true,
+      "isLocal": false,
+      "version": "1.0",
+      "capabilities": {
+        "chat": true,
+        "streaming": true,
+        "embeddings": true,
+        "imageGeneration": true,
+        "vision": true,
+        "tts": true,
+        "tools": true,
+        "jsonMode": true
+      },
+      "models": [
+        { "id": "gpt-4o", "name": "GPT-4o", "isDefault": true, "contextWindow": 128000, "capabilities": ["chat", "vision", "tools"], "inputCostPerMillion": 2.50, "outputCostPerMillion": 10.00 },
+        { "id": "gpt-4o-mini", "name": "GPT-4o Mini", "contextWindow": 128000, "capabilities": ["chat", "vision", "tools"], "inputCostPerMillion": 0.15, "outputCostPerMillion": 0.60 },
+        { "id": "gpt-4.1", "name": "GPT-4.1", "contextWindow": 1000000, "capabilities": ["chat", "vision", "tools"], "inputCostPerMillion": 2.00, "outputCostPerMillion": 8.00 },
+        { "id": "gpt-4.1-mini", "name": "GPT-4.1 Mini", "contextWindow": 1000000, "capabilities": ["chat", "vision", "tools"], "inputCostPerMillion": 0.40, "outputCostPerMillion": 1.60 },
+        { "id": "o1", "name": "o1 (Reasoning)", "contextWindow": 200000, "capabilities": ["chat"], "inputCostPerMillion": 15.00, "outputCostPerMillion": 60.00 },
+        { "id": "o3-mini", "name": "o3 Mini (Reasoning)", "contextWindow": 200000, "capabilities": ["chat"], "inputCostPerMillion": 1.10, "outputCostPerMillion": 4.40 },
+        { "id": "text-embedding-3-small", "name": "Embedding Small", "capabilities": ["embedding"], "inputCostPerMillion": 0.02 },
+        { "id": "text-embedding-3-large", "name": "Embedding Large", "capabilities": ["embedding"], "inputCostPerMillion": 0.13 },
+        { "id": "gpt-image-1", "name": "GPT Image", "capabilities": ["image"] },
+        { "id": "dall-e-3", "name": "DALL-E 3", "capabilities": ["image"] },
+        { "id": "gpt-4o-mini-tts", "name": "TTS", "capabilities": ["tts"] }
+      ],
+      "metadata": {
+        "website": "https://openai.com",
+        "docs": "https://platform.openai.com/docs"
+      }
+    },
+    {
+      "id": "anthropic",
+      "name": "Anthropic Claude",
+      "clientKind": "anthropic",
+      "configType": "Hazina.LLMs.Anthropic.AnthropicConfig, Hazina.LLMs.Anthropic",
+      "clientType": "ClaudeClientWrapper, Hazina.LLMs.Anthropic",
+      "endpoint": "https://api.anthropic.com",
+      "requiresApiKey": true,
+      "isLocal": false,
+      "version": "1.0",
+      "capabilities": {
+        "chat": true,
+        "streaming": true,
+        "embeddings": false,
+        "imageGeneration": false,
+        "vision": true,
+        "tts": false,
+        "tools": true,
+        "jsonMode": true
+      },
+      "models": [
+        { "id": "claude-opus-4-5-20251101", "name": "Claude Opus 4.5", "contextWindow": 200000, "capabilities": ["chat", "vision", "tools"], "inputCostPerMillion": 15.00, "outputCostPerMillion": 75.00 },
+        { "id": "claude-sonnet-4-20250514", "name": "Claude Sonnet 4", "isDefault": true, "contextWindow": 200000, "capabilities": ["chat", "vision", "tools"], "inputCostPerMillion": 3.00, "outputCostPerMillion": 15.00 },
+        { "id": "claude-3-5-sonnet-latest", "name": "Claude 3.5 Sonnet", "contextWindow": 200000, "capabilities": ["chat", "vision", "tools"], "inputCostPerMillion": 3.00, "outputCostPerMillion": 15.00 },
+        { "id": "claude-3-5-haiku-latest", "name": "Claude 3.5 Haiku", "contextWindow": 200000, "capabilities": ["chat", "vision", "tools"], "inputCostPerMillion": 0.80, "outputCostPerMillion": 4.00 }
+      ],
+      "metadata": {
+        "website": "https://anthropic.com",
+        "docs": "https://docs.anthropic.com"
+      }
+    },
+    {
+      "id": "gemini",
+      "name": "Google Gemini",
+      "clientKind": "gemini",
+      "configType": "Hazina.LLMs.Gemini.GeminiConfig, Hazina.LLMs.Gemini",
+      "clientType": "GeminiClientWrapper, Hazina.LLMs.Gemini",
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta",
+      "requiresApiKey": true,
+      "isLocal": false,
+      "version": "1.0",
+      "capabilities": {
+        "chat": true,
+        "streaming": true,
+        "embeddings": true,
+        "imageGeneration": true,
+        "vision": true,
+        "tts": false,
+        "tools": true,
+        "jsonMode": true
+      },
+      "models": [
+        { "id": "gemini-2.0-flash", "name": "Gemini 2.0 Flash", "isDefault": true, "contextWindow": 1000000, "capabilities": ["chat", "vision", "tools"] },
+        { "id": "gemini-2.5-pro-preview", "name": "Gemini 2.5 Pro", "contextWindow": 1000000, "capabilities": ["chat", "vision", "tools"] },
+        { "id": "gemini-1.5-pro", "name": "Gemini 1.5 Pro", "contextWindow": 2000000, "capabilities": ["chat", "vision", "tools"] },
+        { "id": "text-embedding-004", "name": "Embedding", "capabilities": ["embedding"] },
+        { "id": "imagen-3.0-generate-002", "name": "Imagen 3", "capabilities": ["image"] }
+      ],
+      "metadata": {
+        "website": "https://ai.google.dev",
+        "docs": "https://ai.google.dev/docs"
+      }
+    },
+    {
+      "id": "ollama",
+      "name": "Ollama (Local)",
+      "clientKind": "ollama",
+      "configType": "Hazina.LLMs.Ollama.OllamaConfig, Hazina.LLMs.Ollama",
+      "clientType": "OllamaClientWrapper, Hazina.LLMs.Ollama",
+      "endpoint": "http://localhost:11434",
+      "requiresApiKey": false,
+      "isLocal": true,
+      "version": "1.0",
+      "capabilities": {
+        "chat": true,
+        "streaming": true,
+        "embeddings": true,
+        "imageGeneration": false,
+        "vision": true,
+        "tts": false,
+        "tools": true,
+        "jsonMode": true
+      },
+      "models": [
+        { "id": "llama3.2", "name": "Llama 3.2", "isDefault": true, "contextWindow": 128000, "capabilities": ["chat", "vision"] },
+        { "id": "qwen2.5", "name": "Qwen 2.5", "contextWindow": 32768, "capabilities": ["chat", "tools"] },
+        { "id": "deepseek-r1", "name": "DeepSeek R1", "contextWindow": 65536, "capabilities": ["chat"] },
+        { "id": "phi4", "name": "Phi-4", "contextWindow": 16384, "capabilities": ["chat"] },
+        { "id": "nomic-embed-text", "name": "Nomic Embed", "capabilities": ["embedding"] },
+        { "id": "llava", "name": "LLaVA", "capabilities": ["chat", "vision"] }
+      ],
+      "metadata": {
+        "website": "https://ollama.com",
+        "docs": "https://github.com/ollama/ollama"
+      }
+    },
+    {
+      "id": "mistral",
+      "name": "Mistral AI",
+      "clientKind": "mistral",
+      "configType": "Hazina.LLMs.Mistral.MistralConfig, Hazina.LLMs.Mistral",
+      "clientType": "MistralClientWrapper, Hazina.LLMs.Mistral",
+      "endpoint": "https://api.mistral.ai/v1",
+      "requiresApiKey": true,
+      "isLocal": false,
+      "version": "1.0",
+      "capabilities": {
+        "chat": true,
+        "streaming": true,
+        "embeddings": true,
+        "imageGeneration": false,
+        "vision": true,
+        "tts": false,
+        "tools": true,
+        "jsonMode": true
+      },
+      "models": [
+        { "id": "mistral-large-latest", "name": "Mistral Large", "isDefault": true, "contextWindow": 128000, "capabilities": ["chat", "vision", "tools"], "inputCostPerMillion": 2.00, "outputCostPerMillion": 6.00 },
+        { "id": "mistral-small-latest", "name": "Mistral Small", "contextWindow": 128000, "capabilities": ["chat", "tools"], "inputCostPerMillion": 0.10, "outputCostPerMillion": 0.30 },
+        { "id": "codestral-latest", "name": "Codestral", "contextWindow": 256000, "capabilities": ["chat", "tools"], "inputCostPerMillion": 0.30, "outputCostPerMillion": 0.90 },
+        { "id": "mistral-embed", "name": "Mistral Embed", "capabilities": ["embedding"], "inputCostPerMillion": 0.10 }
+      ],
+      "metadata": {
+        "website": "https://mistral.ai",
+        "docs": "https://docs.mistral.ai"
+      }
+    },
+    {
+      "id": "huggingface",
+      "name": "Hugging Face",
+      "clientKind": "huggingface",
+      "configType": "Hazina.LLMs.HuggingFace.HuggingFaceConfig, Hazina.LLMs.HuggingFace",
+      "clientType": "HuggingFaceClientWrapper, Hazina.LLMs.HuggingFace",
+      "endpoint": "https://api-inference.huggingface.co",
+      "requiresApiKey": true,
+      "isLocal": false,
+      "version": "1.0",
+      "capabilities": {
+        "chat": true,
+        "streaming": true,
+        "embeddings": true,
+        "imageGeneration": true,
+        "vision": false,
+        "tts": true,
+        "tools": false,
+        "jsonMode": false
+      },
+      "models": [
+        { "id": "meta-llama/Llama-3.3-70B-Instruct", "name": "Llama 3.3 70B", "isDefault": true, "contextWindow": 128000, "capabilities": ["chat"] },
+        { "id": "Qwen/Qwen2.5-72B-Instruct", "name": "Qwen 2.5 72B", "contextWindow": 32768, "capabilities": ["chat"] },
+        { "id": "sentence-transformers/all-MiniLM-L6-v2", "name": "MiniLM Embedding", "capabilities": ["embedding"] }
+      ],
+      "metadata": {
+        "website": "https://huggingface.co",
+        "docs": "https://huggingface.co/docs"
+      }
+    },
+    {
+      "id": "local-llm",
+      "name": "Local LLM (LLamaSharp)",
+      "clientKind": "local-llm",
+      "configType": "Hazina.AI.LocalLLM.Configuration.LocalLLMConfig, Hazina.AI.LocalLLM",
+      "clientType": "LocalLLMClient, Hazina.AI.LocalLLM",
+      "endpoint": null,
+      "requiresApiKey": false,
+      "isLocal": true,
+      "version": "1.0",
+      "capabilities": {
+        "chat": true,
+        "streaming": true,
+        "embeddings": true,
+        "imageGeneration": false,
+        "vision": false,
+        "tts": false,
+        "tools": false,
+        "jsonMode": true
+      },
+      "models": [
+        { "id": "gguf", "name": "GGUF Model File", "isDefault": true, "capabilities": ["chat", "embedding"] }
+      ],
+      "metadata": {
+        "description": "Run GGUF models locally using LLamaSharp/llama.cpp",
+        "configNotes": "Set ModelPath in settings to the path of your .gguf file"
+      }
+    },
+    {
+      "id": "semantic-kernel",
+      "name": "Semantic Kernel",
+      "clientKind": "semantic-kernel",
+      "configType": "Hazina.LLMs.SemanticKernel.SemanticKernelConfig, Hazina.LLMs.SemanticKernel",
+      "clientType": "SemanticKernelClientWrapper, Hazina.LLMs.SemanticKernel",
+      "endpoint": null,
+      "requiresApiKey": false,
+      "isLocal": false,
+      "version": "1.0",
+      "capabilities": {
+        "chat": true,
+        "streaming": true,
+        "embeddings": true,
+        "imageGeneration": false,
+        "vision": false,
+        "tts": false,
+        "tools": true,
+        "jsonMode": true
+      },
+      "models": [
+        { "id": "default", "name": "Configured Backend", "isDefault": true, "capabilities": ["chat", "tools"] }
+      ],
+      "metadata": {
+        "description": "Microsoft Semantic Kernel orchestration layer",
+        "configNotes": "Configure the underlying provider (OpenAI, Azure OpenAI, etc.) in Semantic Kernel settings"
+      }
+    }
+  ]
+}

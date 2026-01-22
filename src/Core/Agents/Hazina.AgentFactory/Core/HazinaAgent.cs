@@ -1,5 +1,7 @@
 using Hazina.LLMs;
 
+namespace Hazina.AgentFactory.Core;
+
 public class HazinaAgent
 {
     public string Name { get; set; }
