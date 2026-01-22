@@ -20,12 +20,15 @@ var reflectionLogOpt = new Option<string?>("--reflection-log", "Path to reflecti
 var loadGitOpt = new Option<bool>("--load-git", () => true, "Load git status at startup (default: true)");
 var loadMcpOpt = new Option<bool>("--load-mcp", () => true, "Load MCP servers from settings (default: true)");
 var mcpSettingsOpt = new Option<string?>("--mcp-settings", "Path to MCP settings file (default: auto-discover)");
+var maxContinuationsOpt = new Option<int>("--max-continuations", () => 5, "Maximum continuation prompts when model stops early (default: 5)");
+var continuationPromptOpt = new Option<string?>("--continuation-prompt", "Custom prompt to inject for continuations");
 var promptArg = new Argument<string[]>("prompt", () => Array.Empty<string>(), "Direct prompt (non-interactive mode)");
 
 var rootCommand = new RootCommand("HazinaCoder - Multi-provider coding assistant powered by Hazina AI")
 {
     providerOpt, modelOpt, workingDirOpt, verboseOpt, maxTurnsOpt,
-    machineContextOpt, reflectionLogOpt, loadGitOpt, loadMcpOpt, mcpSettingsOpt, promptArg
+    machineContextOpt, reflectionLogOpt, loadGitOpt, loadMcpOpt, mcpSettingsOpt,
+    maxContinuationsOpt, continuationPromptOpt, promptArg
 };
 
 rootCommand.SetHandler(async (context) =>
@@ -40,9 +43,11 @@ rootCommand.SetHandler(async (context) =>
     var loadGit = context.ParseResult.GetValueForOption(loadGitOpt);
     var loadMcp = context.ParseResult.GetValueForOption(loadMcpOpt);
     var mcpSettings = context.ParseResult.GetValueForOption(mcpSettingsOpt);
+    var maxContinuations = context.ParseResult.GetValueForOption(maxContinuationsOpt);
+    var continuationPrompt = context.ParseResult.GetValueForOption(continuationPromptOpt);
     var promptArgs = context.ParseResult.GetValueForArgument(promptArg);
 
-    var cli = new HazinaCoderCLI(provider, model, workingDir, verbose, maxTurns, machineContext, reflectionLog, loadGit, loadMcp, mcpSettings);
+    var cli = new HazinaCoderCLI(provider, model, workingDir, verbose, maxTurns, machineContext, reflectionLog, loadGit, loadMcp, mcpSettings, maxContinuations, continuationPrompt);
     await cli.Run(promptArgs);
 });
 
@@ -61,6 +66,8 @@ class HazinaCoderCLI : IDisposable
     private bool _loadGit;
     private bool _loadMcp;
     private string? _mcpSettingsPath;
+    private int _maxContinuations;
+    private string? _continuationPrompt;
     private string? _gitStatusInfo;
     private string? _machineContextContent;
     private string? _reflectionLogContent;
@@ -84,7 +91,7 @@ class HazinaCoderCLI : IDisposable
 
     public HazinaCoderCLI(string provider, string? model, string workingDir, bool verbose, int maxTurns = 50,
         string? machineContext = null, string? reflectionLog = null, bool loadGit = true,
-        bool loadMcp = true, string? mcpSettings = null)
+        bool loadMcp = true, string? mcpSettings = null, int maxContinuations = 5, string? continuationPrompt = null)
     {
         _providerName = provider;
         _modelOverride = model;
@@ -96,6 +103,8 @@ class HazinaCoderCLI : IDisposable
         _loadGit = loadGit;
         _loadMcp = loadMcp;
         _mcpSettingsPath = mcpSettings;
+        _maxContinuations = maxContinuations;
+        _continuationPrompt = continuationPrompt;
     }
 
     public void Dispose()
@@ -162,6 +171,64 @@ class HazinaCoderCLI : IDisposable
                 var turnDisplay = _verbose ? $" (turn {_currentTurnCount}/{_maxTurns})" : "";
                 AnsiConsole.MarkupLine($"\n[cyan][[Tool: {Markup.Escape(toolName)}{turnDisplay}]][/]");
                 DisplayToolOutput(toolName, message);
+            },
+            // Continuation hooks - keep the model working until task is complete
+            MaxContinuations = _maxContinuations,
+            ContinuationPrompt = _continuationPrompt ?? "Continue working on the task. If you've completed all steps, say 'TASK COMPLETE' and summarize what was done.",
+            ShouldContinue = (response, turnNumber) =>
+            {
+                // Don't continue if the response indicates completion
+                var completionIndicators = new[]
+                {
+                    "TASK COMPLETE",
+                    "task complete",
+                    "I've completed",
+                    "I have completed",
+                    "successfully completed",
+                    "All done",
+                    "The task is done",
+                    "I'm done",
+                    "finished the task",
+                    "task has been completed"
+                };
+
+                foreach (var indicator in completionIndicators)
+                {
+                    if (response.Contains(indicator, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (_verbose)
+                        {
+                            AnsiConsole.MarkupLine("[dim](Task completion detected)[/]");
+                        }
+                        return false; // Stop - task is complete
+                    }
+                }
+
+                // Don't continue if the response is asking a question or waiting for user input
+                if (response.TrimEnd().EndsWith("?") ||
+                    response.Contains("please clarify", StringComparison.OrdinalIgnoreCase) ||
+                    response.Contains("what would you like", StringComparison.OrdinalIgnoreCase) ||
+                    response.Contains("let me know", StringComparison.OrdinalIgnoreCase) ||
+                    response.Contains("would you prefer", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false; // Stop - waiting for user input
+                }
+
+                // Continue if the response is short (likely just an explanation before continuing)
+                // or if it seems like an intermediate status update
+                if (_verbose)
+                {
+                    AnsiConsole.MarkupLine($"[dim](Continuation: turn {turnNumber}, prompting model to continue)[/]");
+                }
+                return true; // Continue working
+            },
+            OnToolExecuted = (toolName, result, turnNumber) =>
+            {
+                // Track tool execution for analytics/debugging
+                if (_verbose)
+                {
+                    AnsiConsole.MarkupLine($"[dim](Tool {toolName} completed on turn {turnNumber})[/]");
+                }
             }
         };
 
