@@ -574,21 +574,29 @@ public class WordPressProvider : ISocialProvider
     /// <summary>
     /// Fetches WordPress content as UnifiedContent (new unified format).
     /// </summary>
+    /// <param name="accessToken">WordPress access token</param>
+    /// <param name="contentType">Type of content to fetch (post, page, product)</param>
+    /// <param name="projectId">Project ID</param>
+    /// <param name="accountId">Account ID</param>
+    /// <param name="maxItems">Maximum items to fetch</param>
+    /// <param name="modifiedAfter">Only fetch content modified after this date (for incremental sync)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
     public async Task<List<UnifiedContent>> FetchContentAsUnifiedAsync(
         string accessToken,
         string contentType,
         string projectId,
         string accountId,
         int maxItems = 1000,
+        DateTime? modifiedAfter = null,
         CancellationToken cancellationToken = default)
     {
         var (websiteUrl, credentials) = ParseAccessToken(accessToken);
 
         return contentType.ToLower() switch
         {
-            "post" or "posts" or "blogs" => await FetchPostsAsUnifiedAsync(websiteUrl, credentials, projectId, accountId, maxItems, cancellationToken),
-            "page" or "pages" => await FetchPagesAsUnifiedAsync(websiteUrl, credentials, projectId, accountId, maxItems, cancellationToken),
-            "product" or "products" => await FetchProductsAsUnifiedAsync(websiteUrl, credentials, projectId, accountId, maxItems, cancellationToken),
+            "post" or "posts" or "blogs" => await FetchPostsAsUnifiedAsync(websiteUrl, credentials, projectId, accountId, maxItems, modifiedAfter, cancellationToken),
+            "page" or "pages" => await FetchPagesAsUnifiedAsync(websiteUrl, credentials, projectId, accountId, maxItems, modifiedAfter, cancellationToken),
+            "product" or "products" => await FetchProductsAsUnifiedAsync(websiteUrl, credentials, projectId, accountId, maxItems, modifiedAfter, cancellationToken),
             _ => throw new ArgumentException($"Unknown content type: {contentType}")
         };
     }
@@ -599,6 +607,7 @@ public class WordPressProvider : ISocialProvider
         string projectId,
         string accountId,
         int maxItems,
+        DateTime? modifiedAfter,
         CancellationToken cancellationToken)
     {
         var content = new List<UnifiedContent>();
@@ -609,9 +618,15 @@ public class WordPressProvider : ISocialProvider
         {
             while (content.Count < maxItems)
             {
-                var request = new HttpRequestMessage(
-                    HttpMethod.Get,
-                    $"{websiteUrl}/wp-json/wp/v2/posts?per_page={perPage}&page={page}&_embed");
+                // Build URL with optional modified_after for incremental sync
+                var url = $"{websiteUrl}/wp-json/wp/v2/posts?per_page={perPage}&page={page}&_embed";
+                if (modifiedAfter.HasValue)
+                {
+                    url += $"&modified_after={modifiedAfter.Value:yyyy-MM-ddTHH:mm:ss}";
+                    _logger.LogDebug("Fetching posts modified after {ModifiedAfter}", modifiedAfter.Value);
+                }
+
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
                 var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -648,6 +663,7 @@ public class WordPressProvider : ISocialProvider
         string projectId,
         string accountId,
         int maxItems,
+        DateTime? modifiedAfter,
         CancellationToken cancellationToken)
     {
         var content = new List<UnifiedContent>();
@@ -658,9 +674,15 @@ public class WordPressProvider : ISocialProvider
         {
             while (content.Count < maxItems)
             {
-                var request = new HttpRequestMessage(
-                    HttpMethod.Get,
-                    $"{websiteUrl}/wp-json/wp/v2/pages?per_page={perPage}&page={page}&_embed");
+                // Build URL with optional modified_after for incremental sync
+                var url = $"{websiteUrl}/wp-json/wp/v2/pages?per_page={perPage}&page={page}&_embed";
+                if (modifiedAfter.HasValue)
+                {
+                    url += $"&modified_after={modifiedAfter.Value:yyyy-MM-ddTHH:mm:ss}";
+                    _logger.LogDebug("Fetching pages modified after {ModifiedAfter}", modifiedAfter.Value);
+                }
+
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
                 var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -697,6 +719,7 @@ public class WordPressProvider : ISocialProvider
         string projectId,
         string accountId,
         int maxItems,
+        DateTime? modifiedAfter,
         CancellationToken cancellationToken)
     {
         var content = new List<UnifiedContent>();
@@ -707,9 +730,15 @@ public class WordPressProvider : ISocialProvider
         {
             while (content.Count < maxItems)
             {
-                var request = new HttpRequestMessage(
-                    HttpMethod.Get,
-                    $"{websiteUrl}/wp-json/wc/v3/products?per_page={perPage}&page={page}");
+                // Build URL with optional modified_after for incremental sync
+                var url = $"{websiteUrl}/wp-json/wc/v3/products?per_page={perPage}&page={page}";
+                if (modifiedAfter.HasValue)
+                {
+                    url += $"&modified_after={modifiedAfter.Value:yyyy-MM-ddTHH:mm:ss}";
+                    _logger.LogDebug("Fetching products modified after {ModifiedAfter}", modifiedAfter.Value);
+                }
+
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
                 var response = await _httpClient.SendAsync(request, cancellationToken);
