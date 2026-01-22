@@ -9,27 +9,37 @@ using Hazina.Agents.Tools.Context;
 // HazinaCoder - Multi-provider coding assistant CLI
 // Supports: OpenAI, Anthropic Claude, Ollama (local), and more
 
+var providerOpt = new Option<string>("--provider", () => "auto", "LLM provider: openai, anthropic, ollama, or auto");
+var modelOpt = new Option<string?>("--model", "Model override (provider-specific)");
+var workingDirOpt = new Option<string>("--working-dir", () => Directory.GetCurrentDirectory(), "Working directory for file operations");
+var verboseOpt = new Option<bool>("--verbose", () => false, "Enable verbose output");
+var maxTurnsOpt = new Option<int>("--max-turns", () => 50, "Maximum tool calls per conversation turn (default: 50)");
+var machineContextOpt = new Option<string?>("--machine-context", "Path to machine context directory (e.g., C:\\scripts\\_machine)");
+var reflectionLogOpt = new Option<string?>("--reflection-log", "Path to reflection log file for learned patterns");
+var loadGitOpt = new Option<bool>("--load-git", () => true, "Load git status at startup (default: true)");
+var promptArg = new Argument<string[]>("prompt", () => Array.Empty<string>(), "Direct prompt (non-interactive mode)");
+
 var rootCommand = new RootCommand("HazinaCoder - Multi-provider coding assistant powered by Hazina AI")
 {
-    new Option<string>("--provider", () => "auto", "LLM provider: openai, anthropic, ollama, or auto"),
-    new Option<string>("--model", "Model override (provider-specific)"),
-    new Option<string>("--working-dir", () => Directory.GetCurrentDirectory(), "Working directory for file operations"),
-    new Option<bool>("--verbose", () => false, "Enable verbose output"),
-    new Option<int>("--max-turns", () => 50, "Maximum tool calls per conversation turn (default: 50)"),
-    new Argument<string[]>("prompt", () => Array.Empty<string>(), "Direct prompt (non-interactive mode)")
+    providerOpt, modelOpt, workingDirOpt, verboseOpt, maxTurnsOpt,
+    machineContextOpt, reflectionLogOpt, loadGitOpt, promptArg
 };
 
-rootCommand.SetHandler(async (string provider, string? model, string workingDir, bool verbose, int maxTurns, string[] promptArgs) =>
+rootCommand.SetHandler(async (context) =>
 {
-    var cli = new HazinaCoderCLI(provider, model, workingDir, verbose, maxTurns);
+    var provider = context.ParseResult.GetValueForOption(providerOpt)!;
+    var model = context.ParseResult.GetValueForOption(modelOpt);
+    var workingDir = context.ParseResult.GetValueForOption(workingDirOpt)!;
+    var verbose = context.ParseResult.GetValueForOption(verboseOpt);
+    var maxTurns = context.ParseResult.GetValueForOption(maxTurnsOpt);
+    var machineContext = context.ParseResult.GetValueForOption(machineContextOpt);
+    var reflectionLog = context.ParseResult.GetValueForOption(reflectionLogOpt);
+    var loadGit = context.ParseResult.GetValueForOption(loadGitOpt);
+    var promptArgs = context.ParseResult.GetValueForArgument(promptArg);
+
+    var cli = new HazinaCoderCLI(provider, model, workingDir, verbose, maxTurns, machineContext, reflectionLog, loadGit);
     await cli.Run(promptArgs);
-},
-rootCommand.Options.OfType<Option<string>>().First(o => o.Name == "provider"),
-rootCommand.Options.OfType<Option<string>>().First(o => o.Name == "model"),
-rootCommand.Options.OfType<Option<string>>().First(o => o.Name == "working-dir"),
-rootCommand.Options.OfType<Option<bool>>().First(o => o.Name == "verbose"),
-rootCommand.Options.OfType<Option<int>>().First(o => o.Name == "max-turns"),
-rootCommand.Arguments.OfType<Argument<string[]>>().First());
+});
 
 return await rootCommand.InvokeAsync(args);
 
@@ -41,6 +51,12 @@ class HazinaCoderCLI
     private bool _verbose;
     private int _maxTurns;
     private int _currentTurnCount = 0;
+    private string? _machineContextPath;
+    private string? _reflectionLogPath;
+    private bool _loadGit;
+    private string? _gitStatusInfo;
+    private string? _machineContextContent;
+    private string? _reflectionLogContent;
     private ILLMClient _client = null!;
     private string _model = "";
     private HazinaCoderToolsContext _toolsContext = null!;
@@ -58,13 +74,17 @@ class HazinaCoderCLI
         Minimal    // Show up to 400 chars
     }
 
-    public HazinaCoderCLI(string provider, string? model, string workingDir, bool verbose, int maxTurns = 50)
+    public HazinaCoderCLI(string provider, string? model, string workingDir, bool verbose, int maxTurns = 50,
+        string? machineContext = null, string? reflectionLog = null, bool loadGit = true)
     {
         _providerName = provider;
         _modelOverride = model;
         _workingDirectory = workingDir;
         _verbose = verbose;
         _maxTurns = maxTurns;
+        _machineContextPath = machineContext;
+        _reflectionLogPath = reflectionLog;
+        _loadGit = loadGit;
     }
 
     public async Task Run(string[] promptArgs)
@@ -90,6 +110,11 @@ class HazinaCoderCLI
 
         // Load skills from .claude/skills/
         _skills = LoadSkills();
+
+        // Load enhanced context (Phase 4B)
+        _gitStatusInfo = LoadGitStatus();
+        _machineContextContent = LoadMachineContext();
+        _reflectionLogContent = LoadReflectionLog();
 
         // Detect provider from environment if auto
         if (_providerName == "auto")
@@ -151,6 +176,18 @@ class HazinaCoderCLI
         if (_skills.Count > 0)
         {
             AnsiConsole.MarkupLine($"[green]✓[/] [dim]{_skills.Count} skill(s) loaded[/]");
+        }
+        if (_gitStatusInfo != null)
+        {
+            AnsiConsole.MarkupLine("[green]✓[/] [dim]Git status loaded[/]");
+        }
+        if (_machineContextContent != null)
+        {
+            AnsiConsole.MarkupLine("[green]✓[/] [dim]Machine context loaded[/]");
+        }
+        if (_reflectionLogContent != null)
+        {
+            AnsiConsole.MarkupLine("[green]✓[/] [dim]Reflection log loaded[/]");
         }
         AnsiConsole.MarkupLine($"[dim]Output: {_outputMode} | Permissions: {(_toolsContext.EnablePermissions ? "ON" : "OFF")}[/]");
         AnsiConsole.MarkupLine("[dim]Commands: /help, /output, /permissions, /tools, /skills, /clear, /exit[/]");
@@ -597,6 +634,213 @@ class HazinaCoderCLI
         return null;
     }
 
+    private string? LoadGitStatus()
+    {
+        if (!_loadGit)
+            return null;
+
+        try
+        {
+            var sb = new StringBuilder();
+
+            // Check if we're in a git repo
+            var gitDir = Path.Combine(_workingDirectory, ".git");
+            if (!Directory.Exists(gitDir) && !File.Exists(gitDir)) // .git can be a file for worktrees
+            {
+                return null;
+            }
+
+            // Get current branch
+            var branchResult = RunGitCommand("rev-parse --abbrev-ref HEAD");
+            if (branchResult != null)
+            {
+                sb.AppendLine($"Current Branch: {branchResult.Trim()}");
+            }
+
+            // Get status
+            var statusResult = RunGitCommand("status --porcelain");
+            if (!string.IsNullOrWhiteSpace(statusResult))
+            {
+                var lines = statusResult.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                sb.AppendLine($"Changed Files: {lines.Length}");
+                if (lines.Length <= 10)
+                {
+                    foreach (var line in lines)
+                    {
+                        sb.AppendLine($"  {line.Trim()}");
+                    }
+                }
+                else
+                {
+                    foreach (var line in lines.Take(10))
+                    {
+                        sb.AppendLine($"  {line.Trim()}");
+                    }
+                    sb.AppendLine($"  ... and {lines.Length - 10} more");
+                }
+            }
+            else
+            {
+                sb.AppendLine("Working tree clean");
+            }
+
+            // Get recent commits
+            var logResult = RunGitCommand("log --oneline -5");
+            if (!string.IsNullOrWhiteSpace(logResult))
+            {
+                sb.AppendLine("\nRecent Commits:");
+                foreach (var line in logResult.Split('\n', StringSplitOptions.RemoveEmptyEntries).Take(5))
+                {
+                    sb.AppendLine($"  {line.Trim()}");
+                }
+            }
+
+            if (_verbose)
+            {
+                AnsiConsole.MarkupLine("[dim]Loaded: git status[/]");
+            }
+
+            return sb.ToString();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private string? RunGitCommand(string args)
+    {
+        try
+        {
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "git",
+                Arguments = args,
+                WorkingDirectory = _workingDirectory,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = System.Diagnostics.Process.Start(startInfo);
+            if (process == null) return null;
+
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit(5000);
+
+            return process.ExitCode == 0 ? output : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private string? LoadMachineContext()
+    {
+        if (string.IsNullOrWhiteSpace(_machineContextPath) || !Directory.Exists(_machineContextPath))
+            return null;
+
+        try
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("# Machine Context");
+            sb.AppendLine();
+
+            // Load key files from machine context
+            var importantFiles = new[]
+            {
+                "worktrees.pool.md",
+                "pr-dependencies.md",
+                "DEFINITION_OF_DONE.md",
+                "SOFTWARE_DEVELOPMENT_PRINCIPLES.md",
+                "PERSONAL_INSIGHTS.md"
+            };
+
+            foreach (var fileName in importantFiles)
+            {
+                var filePath = Path.Combine(_machineContextPath, fileName);
+                if (File.Exists(filePath))
+                {
+                    try
+                    {
+                        var content = File.ReadAllText(filePath);
+                        // Truncate large files
+                        if (content.Length > 5000)
+                        {
+                            content = content.Substring(0, 5000) + "\n... (truncated)";
+                        }
+                        sb.AppendLine($"## {fileName}");
+                        sb.AppendLine(content);
+                        sb.AppendLine();
+                    }
+                    catch
+                    {
+                        // Skip files that can't be read
+                    }
+                }
+            }
+
+            if (_verbose)
+            {
+                AnsiConsole.MarkupLine($"[dim]Loaded: machine context from {_machineContextPath}[/]");
+            }
+
+            return sb.Length > 20 ? sb.ToString() : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private string? LoadReflectionLog()
+    {
+        var path = _reflectionLogPath;
+
+        // Try default location if not specified
+        if (string.IsNullOrWhiteSpace(path) && !string.IsNullOrWhiteSpace(_machineContextPath))
+        {
+            path = Path.Combine(_machineContextPath, "reflection.log.md");
+        }
+
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            return null;
+
+        try
+        {
+            var content = File.ReadAllText(path);
+
+            // Get last ~50 entries or 10KB, whichever is smaller
+            if (content.Length > 10000)
+            {
+                // Find a good cutoff point
+                var cutoff = content.Length - 10000;
+                var newlinePos = content.IndexOf('\n', cutoff);
+                if (newlinePos > 0)
+                {
+                    content = "... (earlier entries truncated)\n\n" + content.Substring(newlinePos + 1);
+                }
+                else
+                {
+                    content = content.Substring(cutoff);
+                }
+            }
+
+            if (_verbose)
+            {
+                AnsiConsole.MarkupLine($"[dim]Loaded: reflection log[/]");
+            }
+
+            return content;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private List<SkillInfo> LoadSkills()
     {
         var skills = new List<SkillInfo>();
@@ -822,6 +1066,33 @@ Mark todos as completed IMMEDIATELY after finishing each task.
 
         // Add environment info
         sb.AppendLine();
+        // Add git status if available
+        if (!string.IsNullOrEmpty(_gitStatusInfo))
+        {
+            sb.AppendLine();
+            sb.AppendLine("# Git Repository Status");
+            sb.AppendLine();
+            sb.AppendLine(_gitStatusInfo);
+        }
+
+        // Add machine context if available
+        if (!string.IsNullOrEmpty(_machineContextContent))
+        {
+            sb.AppendLine();
+            sb.AppendLine(_machineContextContent);
+        }
+
+        // Add reflection log if available
+        if (!string.IsNullOrEmpty(_reflectionLogContent))
+        {
+            sb.AppendLine();
+            sb.AppendLine("# Learned Patterns (from reflection log)");
+            sb.AppendLine();
+            sb.AppendLine("The following are lessons learned from previous sessions. Apply these patterns when relevant:");
+            sb.AppendLine();
+            sb.AppendLine(_reflectionLogContent);
+        }
+
         sb.AppendLine("# Environment");
         sb.AppendLine();
         sb.AppendLine($"- Platform: {Environment.OSVersion.Platform}");
