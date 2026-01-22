@@ -1,12 +1,20 @@
+using System.Text;
 using System.Text.Json;
 
 namespace Hazina.Agents.Tools.FileSystem;
 
 /// <summary>
 /// Tool for making surgical edits to files with exact string replacement
+/// Improvements: Backup files before edit, diff preview in output
 /// </summary>
 public static class EditFileTool
 {
+    // Improvement #4: Enable backups by default (can be disabled via config)
+    public static bool EnableBackups { get; set; } = true;
+
+    // Improvement #3: Enable diff preview in output
+    public static bool ShowDiffPreview { get; set; } = true;
+
     public static HazinaChatTool Create(string workingDirectory)
     {
         return new HazinaChatTool(
@@ -93,6 +101,22 @@ public static class EditFileTool
                         return $"Error: old_string not found in file. Make sure the string matches exactly including whitespace.";
                     }
 
+                    // Improvement #4: Create backup before editing
+                    string? backupPath = null;
+                    if (EnableBackups)
+                    {
+                        backupPath = resolvedPath + ".bak";
+                        try
+                        {
+                            await File.WriteAllTextAsync(backupPath, content, cancel);
+                        }
+                        catch
+                        {
+                            // Non-fatal: continue without backup if it fails
+                            backupPath = null;
+                        }
+                    }
+
                     // Perform replacement
                     string newContent;
                     int replacementCount;
@@ -118,9 +142,25 @@ public static class EditFileTool
                     // Write back
                     await File.WriteAllTextAsync(resolvedPath, newContent, cancel);
 
-                    return $"Success: Replaced {replacementCount} occurrence(s) in {resolvedPath}\n" +
-                           $"Old string length: {oldString.Length} chars\n" +
-                           $"New string length: {newString.Length} chars";
+                    // Improvement #3: Build diff preview
+                    var result = new StringBuilder();
+                    result.AppendLine($"Success: Replaced {replacementCount} occurrence(s) in {resolvedPath}");
+                    result.AppendLine($"Old string length: {oldString.Length} chars");
+                    result.AppendLine($"New string length: {newString.Length} chars");
+
+                    if (backupPath != null)
+                    {
+                        result.AppendLine($"Backup created: {backupPath}");
+                    }
+
+                    if (ShowDiffPreview)
+                    {
+                        result.AppendLine();
+                        result.AppendLine("--- Diff Preview ---");
+                        result.AppendLine(GenerateDiffPreview(oldString, newString));
+                    }
+
+                    return result.ToString();
                 }
                 catch (Exception ex)
                 {
@@ -140,5 +180,43 @@ public static class EditFileTool
             index += pattern.Length;
         }
         return count;
+    }
+
+    /// <summary>
+    /// Improvement #3: Generate a simple diff preview showing old vs new content
+    /// </summary>
+    private static string GenerateDiffPreview(string oldString, string newString)
+    {
+        var sb = new StringBuilder();
+
+        // Split into lines for comparison
+        var oldLines = oldString.Split('\n');
+        var newLines = newString.Split('\n');
+
+        // Show removed lines (from old)
+        foreach (var line in oldLines.Take(10)) // Limit to 10 lines
+        {
+            var trimmedLine = line.Length > 80 ? line.Substring(0, 77) + "..." : line;
+            sb.AppendLine($"- {trimmedLine.TrimEnd('\r')}");
+        }
+        if (oldLines.Length > 10)
+        {
+            sb.AppendLine($"  ... ({oldLines.Length - 10} more lines removed)");
+        }
+
+        sb.AppendLine();
+
+        // Show added lines (from new)
+        foreach (var line in newLines.Take(10)) // Limit to 10 lines
+        {
+            var trimmedLine = line.Length > 80 ? line.Substring(0, 77) + "..." : line;
+            sb.AppendLine($"+ {trimmedLine.TrimEnd('\r')}");
+        }
+        if (newLines.Length > 10)
+        {
+            sb.AppendLine($"  ... ({newLines.Length - 10} more lines added)");
+        }
+
+        return sb.ToString();
     }
 }

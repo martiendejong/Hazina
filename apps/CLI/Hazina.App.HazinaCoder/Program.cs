@@ -1,11 +1,13 @@
 using System.CommandLine;
 using System.Text;
+using System.Text.Json;
 using Spectre.Console;
 using Hazina.LLMs;
 using Hazina.LLMs.OpenAI;
 using Hazina.LLMs.Anthropic;
 using Hazina.Agents.Tools.Context;
 using Hazina.Agents.Tools.Mcp;
+using SharpToken;
 
 // HazinaCoder - Multi-provider coding assistant CLI
 // Supports: OpenAI, Anthropic Claude, Ollama (local), and more
@@ -82,6 +84,18 @@ class HazinaCoderCLI : IDisposable
     private List<SkillInfo> _skills = new();
     private OutputMode _outputMode = OutputMode.Full; // Default to full output like Claude Code
 
+    // Improvement #1: Ctrl+C graceful interrupt handling
+    private CancellationTokenSource _cts = new();
+    private bool _isProcessing = false;
+
+    // Improvement #2: Token/context tracking
+    private int _estimatedContextTokens = 0;
+    private const int DefaultContextLimit = 128000; // Most models support at least 128k
+    private int _contextWarningThreshold = 100000; // Warn at ~78% capacity
+
+    // Improvement #5: Configuration loaded from file
+    private HazinaCoderConfig? _config;
+
     private enum OutputMode
     {
         Full,      // Show everything
@@ -110,10 +124,27 @@ class HazinaCoderCLI : IDisposable
     public void Dispose()
     {
         _mcpManager?.Dispose();
+        _cts.Dispose();
     }
 
     public async Task Run(string[] promptArgs)
     {
+        // Improvement #1: Ctrl+C graceful interrupt handling
+        Console.CancelKeyPress += (sender, e) =>
+        {
+            e.Cancel = true; // Prevent immediate termination
+            if (_isProcessing)
+            {
+                AnsiConsole.MarkupLine("\n[yellow]Interrupting...[/]");
+                _cts.Cancel();
+                _cts = new CancellationTokenSource(); // Reset for next operation
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("\n[yellow]Use /exit to quit, or press Ctrl+C again to force exit.[/]");
+            }
+        };
+
         // Validate and normalize working directory
         if (string.IsNullOrWhiteSpace(_workingDirectory))
         {
@@ -129,6 +160,10 @@ class HazinaCoderCLI : IDisposable
             AnsiConsole.MarkupLine($"[red]Error:[/] Working directory does not exist: {Markup.Escape(_workingDirectory)}");
             return;
         }
+
+        // Improvement #5: Load configuration file
+        _config = LoadConfiguration();
+        ApplyConfiguration();
 
         // Load CLAUDE.md if present
         _claudeMdContent = LoadClaudeMd();
@@ -282,8 +317,12 @@ class HazinaCoderCLI : IDisposable
         {
             AnsiConsole.MarkupLine($"[green]✓[/] [dim]{_mcpManager.ConnectedServers} MCP server(s), {_mcpManager.Tools.Count} tools[/]");
         }
-        AnsiConsole.MarkupLine($"[dim]Output: {_outputMode} | Permissions: {(_toolsContext.EnablePermissions ? "ON" : "OFF")}[/]");
-        AnsiConsole.MarkupLine("[dim]Commands: /help, /output, /permissions, /tools, /skills, /clear, /exit[/]");
+        if (_config != null)
+        {
+            AnsiConsole.MarkupLine("[green]✓[/] [dim]Configuration loaded[/]");
+        }
+        AnsiConsole.MarkupLine($"[dim]Output: {_outputMode} | Permissions: {(_toolsContext.EnablePermissions ? "ON" : "OFF")} | Backups: ON[/]");
+        AnsiConsole.MarkupLine("[dim]Commands: /help, /tokens, /restore, /backups, /clear, /exit | Ctrl+C to interrupt[/]");
         AnsiConsole.WriteLine();
 
         while (true)
@@ -319,6 +358,18 @@ class HazinaCoderCLI : IDisposable
             Text = prompt
         });
 
+        // Improvement #2: Token tracking - estimate tokens before sending
+        _estimatedContextTokens = EstimateContextTokens();
+        if (_estimatedContextTokens > _contextWarningThreshold)
+        {
+            var percentage = (int)((_estimatedContextTokens / (double)DefaultContextLimit) * 100);
+            AnsiConsole.MarkupLine($"[yellow]⚠ Context size: ~{_estimatedContextTokens:N0} tokens ({percentage}% of limit)[/]");
+            if (_estimatedContextTokens > DefaultContextLimit * 0.9)
+            {
+                AnsiConsole.MarkupLine("[red]Consider using /clear to reset context or /compact to summarize.[/]");
+            }
+        }
+
         var sb = new StringBuilder();
         void OnChunk(string chunk)
         {
@@ -327,6 +378,7 @@ class HazinaCoderCLI : IDisposable
         }
 
         Console.OutputEncoding = Encoding.UTF8;
+        _isProcessing = true;
 
         try
         {
@@ -336,7 +388,7 @@ class HazinaCoderCLI : IDisposable
                 HazinaChatResponseFormat.Text,
                 _toolsContext,
                 images: null,
-                CancellationToken.None
+                _cts.Token // Improvement #1: Use cancellation token
             );
 
             // Track usage
@@ -344,6 +396,7 @@ class HazinaCoderCLI : IDisposable
             {
                 _sessionCost += response.TokenUsage.TotalCost;
                 _sessionTokens += response.TokenUsage.TotalTokens;
+                _estimatedContextTokens = response.TokenUsage.TotalTokens; // Update with actual count
             }
 
             // Add assistant response to context
@@ -364,9 +417,22 @@ class HazinaCoderCLI : IDisposable
                 AnsiConsole.MarkupLine($"\n[dim]({toolCallsThisTurn} tool call(s) | ${_sessionCost:F4} | {_sessionTokens:N0} tokens)[/]");
             }
         }
+        catch (OperationCanceledException)
+        {
+            AnsiConsole.MarkupLine("\n[yellow]Operation cancelled.[/]");
+            // Remove the last user message since it wasn't processed
+            if (_context.Count > 0 && _context[^1].Role == HazinaMessageRole.User)
+            {
+                _context.RemoveAt(_context.Count - 1);
+            }
+        }
         catch (Exception ex)
         {
             AnsiConsole.MarkupLine($"\n[red]Error:[/] {Markup.Escape(ex.Message)}");
+        }
+        finally
+        {
+            _isProcessing = false;
         }
 
         Console.WriteLine();
@@ -501,10 +567,13 @@ class HazinaCoderCLI : IDisposable
 
             case "/cost":
             case "/status":
+                var contextPct = (int)((_estimatedContextTokens / (double)DefaultContextLimit) * 100);
+                var contextColor = contextPct > 90 ? "red" : contextPct > 70 ? "yellow" : "green";
                 AnsiConsole.MarkupLine($"[cyan]Session Stats:[/]");
                 AnsiConsole.MarkupLine($"  Provider: {_providerName}/{_model}");
                 AnsiConsole.MarkupLine($"  Tool Calls: {_currentTurnCount} (max: {_maxTurns})");
-                AnsiConsole.MarkupLine($"  Tokens: {_sessionTokens:N0}");
+                AnsiConsole.MarkupLine($"  Session Tokens: {_sessionTokens:N0}");
+                AnsiConsole.MarkupLine($"  [{contextColor}]Context: ~{_estimatedContextTokens:N0} tokens ({contextPct}% of {DefaultContextLimit:N0})[/]");
                 AnsiConsole.MarkupLine($"  Cost: ${_sessionCost:F4}");
                 AnsiConsole.MarkupLine($"  Context: {_context.Count} messages");
                 AnsiConsole.MarkupLine($"  Output Mode: {_outputMode}");
@@ -678,6 +747,80 @@ class HazinaCoderCLI : IDisposable
                 }
                 return CommandResult.Handled;
 
+            case "/restore":
+                // Improvement #4: Restore file from backup
+                if (string.IsNullOrEmpty(arg))
+                {
+                    AnsiConsole.MarkupLine("[yellow]Usage:[/] /restore <file_path>");
+                    AnsiConsole.MarkupLine("[dim]Restores a file from its .bak backup[/]");
+                }
+                else
+                {
+                    var filePath = Path.IsPathRooted(arg)
+                        ? arg
+                        : Path.GetFullPath(Path.Combine(_workingDirectory, arg));
+                    var backupPath = filePath + ".bak";
+
+                    if (File.Exists(backupPath))
+                    {
+                        try
+                        {
+                            File.Copy(backupPath, filePath, overwrite: true);
+                            AnsiConsole.MarkupLine($"[green]Restored:[/] {filePath} from backup");
+                        }
+                        catch (Exception ex)
+                        {
+                            AnsiConsole.MarkupLine($"[red]Failed to restore:[/] {ex.Message}");
+                        }
+                    }
+                    else
+                    {
+                        AnsiConsole.MarkupLine($"[yellow]No backup found:[/] {backupPath}");
+                    }
+                }
+                return CommandResult.Handled;
+
+            case "/backups":
+                // List recent backup files
+                try
+                {
+                    var backups = Directory.GetFiles(_workingDirectory, "*.bak", SearchOption.AllDirectories)
+                        .Select(f => new FileInfo(f))
+                        .OrderByDescending(f => f.LastWriteTime)
+                        .Take(10);
+
+                    if (!backups.Any())
+                    {
+                        AnsiConsole.MarkupLine("[dim]No backup files found in working directory[/]");
+                    }
+                    else
+                    {
+                        AnsiConsole.MarkupLine("[cyan]Recent Backups:[/]");
+                        foreach (var backup in backups)
+                        {
+                            var relativePath = Path.GetRelativePath(_workingDirectory, backup.FullName);
+                            AnsiConsole.MarkupLine($"  {backup.LastWriteTime:MM-dd HH:mm} {relativePath}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AnsiConsole.MarkupLine($"[red]Error listing backups:[/] {ex.Message}");
+                }
+                return CommandResult.Handled;
+
+            case "/tokens":
+                // Show detailed token information
+                _estimatedContextTokens = EstimateContextTokens();
+                var pct = (int)((_estimatedContextTokens / (double)DefaultContextLimit) * 100);
+                AnsiConsole.MarkupLine("[cyan]Token Usage:[/]");
+                AnsiConsole.MarkupLine($"  Estimated context: ~{_estimatedContextTokens:N0} tokens ({pct}%)");
+                AnsiConsole.MarkupLine($"  Context limit: {DefaultContextLimit:N0} tokens");
+                AnsiConsole.MarkupLine($"  Warning threshold: {_contextWarningThreshold:N0} tokens");
+                AnsiConsole.MarkupLine($"  Session total: {_sessionTokens:N0} tokens");
+                AnsiConsole.MarkupLine($"  Messages: {_context.Count}");
+                return CommandResult.Handled;
+
             default:
                 // Not a recognized command, treat as regular input
                 return CommandResult.NotHandled;
@@ -701,8 +844,11 @@ class HazinaCoderCLI : IDisposable
         table.AddRow("/model <name>", "Switch model");
         table.AddRow("/tools", "List available tools (13 total)");
         table.AddRow("/skills", "List loaded skills from .claude/skills/");
-        table.AddRow("/cost", "Show session cost and token usage");
+        table.AddRow("/cost, /status", "Show session stats and token usage");
+        table.AddRow("/tokens", "Show detailed token/context info");
         table.AddRow("/context", "Show context size");
+        table.AddRow("/restore <file>", "Restore file from .bak backup");
+        table.AddRow("/backups", "List recent backup files");
         table.AddRow("/clear", "Clear conversation history");
         table.AddRow("/exit", "Exit HazinaCoder");
 
@@ -711,6 +857,8 @@ class HazinaCoderCLI : IDisposable
         AnsiConsole.MarkupLine("[dim]HazinaCoder automatically loads:[/]");
         AnsiConsole.MarkupLine("[dim]  - CLAUDE.md from working directory (project instructions)[/]");
         AnsiConsole.MarkupLine("[dim]  - Skills from .claude/skills/<name>/SKILL.md[/]");
+        AnsiConsole.MarkupLine("[dim]  - Config from .hazinacoderrc or .hazinacoder.json[/]");
+        AnsiConsole.MarkupLine("[dim]Press Ctrl+C to interrupt running operations[/]");
     }
 
     private enum CommandResult { Handled, NotHandled, Exit }
@@ -1262,6 +1410,143 @@ Mark todos as completed IMMEDIATELY after finishing each task.
 
         return sb.ToString();
     }
+
+    // Improvement #2: Token estimation using SharpToken
+    private int EstimateContextTokens()
+    {
+        try
+        {
+            // Use cl100k_base encoding (used by GPT-4, Claude approximation)
+            var encoding = GptEncoding.GetEncoding("cl100k_base");
+            var totalTokens = 0;
+
+            foreach (var message in _context)
+            {
+                if (!string.IsNullOrEmpty(message.Text))
+                {
+                    totalTokens += encoding.Encode(message.Text).Count;
+                }
+            }
+
+            // Add ~4 tokens per message for role/formatting overhead
+            totalTokens += _context.Count * 4;
+
+            return totalTokens;
+        }
+        catch
+        {
+            // Fallback to rough estimate: ~4 chars per token
+            return _context.Sum(m => (m.Text?.Length ?? 0) / 4);
+        }
+    }
+
+    // Improvement #5: Configuration file support
+    private HazinaCoderConfig? LoadConfiguration()
+    {
+        var configPaths = new[]
+        {
+            Path.Combine(_workingDirectory, ".hazinacoderrc"),
+            Path.Combine(_workingDirectory, ".hazinacoder.json"),
+            Path.Combine(_workingDirectory, "hazinacoder.json"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".hazinacoderrc"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".hazinacoder.json"),
+        };
+
+        foreach (var path in configPaths)
+        {
+            if (File.Exists(path))
+            {
+                try
+                {
+                    var json = File.ReadAllText(path);
+                    var config = JsonSerializer.Deserialize<HazinaCoderConfig>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (_verbose)
+                    {
+                        AnsiConsole.MarkupLine($"[dim]Loaded config: {path}[/]");
+                    }
+
+                    return config;
+                }
+                catch (Exception ex)
+                {
+                    if (_verbose)
+                    {
+                        AnsiConsole.MarkupLine($"[yellow]Warning: Failed to load config {path}: {ex.Message}[/]");
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private void ApplyConfiguration()
+    {
+        if (_config == null) return;
+
+        // Apply config values only if not overridden by CLI
+        if (_providerName == "auto" && !string.IsNullOrEmpty(_config.Provider))
+        {
+            _providerName = _config.Provider;
+        }
+
+        if (_modelOverride == null && !string.IsNullOrEmpty(_config.Model))
+        {
+            _modelOverride = _config.Model;
+        }
+
+        if (_config.MaxTurns.HasValue && _maxTurns == 50) // 50 is default
+        {
+            _maxTurns = _config.MaxTurns.Value;
+        }
+
+        if (_config.MaxContinuations.HasValue && _maxContinuations == 5) // 5 is default
+        {
+            _maxContinuations = _config.MaxContinuations.Value;
+        }
+
+        if (_config.Verbose.HasValue)
+        {
+            _verbose = _config.Verbose.Value;
+        }
+
+        if (!string.IsNullOrEmpty(_config.OutputMode))
+        {
+            if (Enum.TryParse<OutputMode>(_config.OutputMode, true, out var mode))
+            {
+                _outputMode = mode;
+            }
+        }
+
+        if (_config.ContextWarningThreshold.HasValue)
+        {
+            _contextWarningThreshold = _config.ContextWarningThreshold.Value;
+        }
+    }
+}
+
+// Improvement #5: Configuration class
+class HazinaCoderConfig
+{
+    public string? Provider { get; set; }
+    public string? Model { get; set; }
+    public int? MaxTurns { get; set; }
+    public int? MaxContinuations { get; set; }
+    public bool? Verbose { get; set; }
+    public string? OutputMode { get; set; }
+    public int? ContextWarningThreshold { get; set; }
+    public string? MachineContext { get; set; }
+    public string? ReflectionLog { get; set; }
+    public bool? LoadGit { get; set; }
+    public bool? LoadMcp { get; set; }
+    public string? McpSettings { get; set; }
+    public string? ContinuationPrompt { get; set; }
+    public bool? EnableBackups { get; set; }
+    public bool? ShowDiffPreview { get; set; }
 }
 
 class SkillInfo
