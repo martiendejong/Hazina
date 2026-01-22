@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Tools\Services\Hazina.Tools.Services.Images\Hazina.Tools.Services.Images.csproj" />
+    <ProjectReference Include="..\..\..\src\Tools\Services\Hazina.Tools.Services.Chat\Hazina.Tools.Services.Chat.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\LLMs.Providers\Hazina.LLMs.OpenAI\Hazina.LLMs.OpenAI.csproj" />
+    <ProjectReference Include="..\..\..\src\Tools\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
+  </ItemGroup>
+
+</Project>
