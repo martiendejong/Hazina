@@ -5,6 +5,7 @@ using Hazina.LLMs;
 using Hazina.LLMs.OpenAI;
 using Hazina.LLMs.Anthropic;
 using Hazina.Agents.Tools.Context;
+using Hazina.Agents.Tools.Mcp;
 
 // HazinaCoder - Multi-provider coding assistant CLI
 // Supports: OpenAI, Anthropic Claude, Ollama (local), and more
@@ -17,12 +18,14 @@ var maxTurnsOpt = new Option<int>("--max-turns", () => 50, "Maximum tool calls p
 var machineContextOpt = new Option<string?>("--machine-context", "Path to machine context directory (e.g., C:\\scripts\\_machine)");
 var reflectionLogOpt = new Option<string?>("--reflection-log", "Path to reflection log file for learned patterns");
 var loadGitOpt = new Option<bool>("--load-git", () => true, "Load git status at startup (default: true)");
+var loadMcpOpt = new Option<bool>("--load-mcp", () => true, "Load MCP servers from settings (default: true)");
+var mcpSettingsOpt = new Option<string?>("--mcp-settings", "Path to MCP settings file (default: auto-discover)");
 var promptArg = new Argument<string[]>("prompt", () => Array.Empty<string>(), "Direct prompt (non-interactive mode)");
 
 var rootCommand = new RootCommand("HazinaCoder - Multi-provider coding assistant powered by Hazina AI")
 {
     providerOpt, modelOpt, workingDirOpt, verboseOpt, maxTurnsOpt,
-    machineContextOpt, reflectionLogOpt, loadGitOpt, promptArg
+    machineContextOpt, reflectionLogOpt, loadGitOpt, loadMcpOpt, mcpSettingsOpt, promptArg
 };
 
 rootCommand.SetHandler(async (context) =>
@@ -35,15 +38,17 @@ rootCommand.SetHandler(async (context) =>
     var machineContext = context.ParseResult.GetValueForOption(machineContextOpt);
     var reflectionLog = context.ParseResult.GetValueForOption(reflectionLogOpt);
     var loadGit = context.ParseResult.GetValueForOption(loadGitOpt);
+    var loadMcp = context.ParseResult.GetValueForOption(loadMcpOpt);
+    var mcpSettings = context.ParseResult.GetValueForOption(mcpSettingsOpt);
     var promptArgs = context.ParseResult.GetValueForArgument(promptArg);
 
-    var cli = new HazinaCoderCLI(provider, model, workingDir, verbose, maxTurns, machineContext, reflectionLog, loadGit);
+    var cli = new HazinaCoderCLI(provider, model, workingDir, verbose, maxTurns, machineContext, reflectionLog, loadGit, loadMcp, mcpSettings);
     await cli.Run(promptArgs);
 });
 
 return await rootCommand.InvokeAsync(args);
 
-class HazinaCoderCLI
+class HazinaCoderCLI : IDisposable
 {
     private string _providerName;
     private string? _modelOverride;
@@ -54,12 +59,15 @@ class HazinaCoderCLI
     private string? _machineContextPath;
     private string? _reflectionLogPath;
     private bool _loadGit;
+    private bool _loadMcp;
+    private string? _mcpSettingsPath;
     private string? _gitStatusInfo;
     private string? _machineContextContent;
     private string? _reflectionLogContent;
     private ILLMClient _client = null!;
     private string _model = "";
     private HazinaCoderToolsContext _toolsContext = null!;
+    private McpManager? _mcpManager;
     private List<HazinaChatMessage> _context = new();
     private decimal _sessionCost = 0m;
     private int _sessionTokens = 0;
@@ -75,7 +83,8 @@ class HazinaCoderCLI
     }
 
     public HazinaCoderCLI(string provider, string? model, string workingDir, bool verbose, int maxTurns = 50,
-        string? machineContext = null, string? reflectionLog = null, bool loadGit = true)
+        string? machineContext = null, string? reflectionLog = null, bool loadGit = true,
+        bool loadMcp = true, string? mcpSettings = null)
     {
         _providerName = provider;
         _modelOverride = model;
@@ -85,6 +94,13 @@ class HazinaCoderCLI
         _machineContextPath = machineContext;
         _reflectionLogPath = reflectionLog;
         _loadGit = loadGit;
+        _loadMcp = loadMcp;
+        _mcpSettingsPath = mcpSettings;
+    }
+
+    public void Dispose()
+    {
+        _mcpManager?.Dispose();
     }
 
     public async Task Run(string[] promptArgs)
@@ -149,6 +165,12 @@ class HazinaCoderCLI
             }
         };
 
+        // Load MCP servers (Phase 4C)
+        if (_loadMcp)
+        {
+            await LoadMcpServersAsync();
+        }
+
         // System prompt - Claude Code style
         var systemPreamble = BuildSystemPrompt();
 
@@ -188,6 +210,10 @@ class HazinaCoderCLI
         if (_reflectionLogContent != null)
         {
             AnsiConsole.MarkupLine("[green]✓[/] [dim]Reflection log loaded[/]");
+        }
+        if (_mcpManager != null && _mcpManager.ConnectedServers > 0)
+        {
+            AnsiConsole.MarkupLine($"[green]✓[/] [dim]{_mcpManager.ConnectedServers} MCP server(s), {_mcpManager.Tools.Count} tools[/]");
         }
         AnsiConsole.MarkupLine($"[dim]Output: {_outputMode} | Permissions: {(_toolsContext.EnablePermissions ? "ON" : "OFF")}[/]");
         AnsiConsole.MarkupLine("[dim]Commands: /help, /output, /permissions, /tools, /skills, /clear, /exit[/]");
@@ -506,6 +532,27 @@ class HazinaCoderCLI
                     {
                         AnsiConsole.MarkupLine($"  [yellow]{skill.Name}[/]");
                         AnsiConsole.MarkupLine($"    [dim]{skill.Description}[/]");
+                    }
+                }
+                return CommandResult.Handled;
+
+            case "/mcp":
+                if (_mcpManager == null || _mcpManager.ConnectedServers == 0)
+                {
+                    AnsiConsole.MarkupLine("[dim]No MCP servers connected.[/]");
+                    AnsiConsole.MarkupLine("[dim]Add MCP servers to .claude/settings.json or mcp-settings.json[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[cyan]MCP Servers ({_mcpManager.ConnectedServers}):[/]");
+                    foreach (var (serverName, toolName, description) in _mcpManager.ListAllTools())
+                    {
+                        AnsiConsole.MarkupLine($"  [yellow]{serverName}[/] → {toolName}");
+                        if (!string.IsNullOrEmpty(description))
+                        {
+                            var descPreview = description.Length > 80 ? description.Substring(0, 80) + "..." : description;
+                            AnsiConsole.MarkupLine($"    [dim]{Markup.Escape(descPreview)}[/]");
+                        }
                     }
                 }
                 return CommandResult.Handled;
@@ -838,6 +885,53 @@ class HazinaCoderCLI
         catch
         {
             return null;
+        }
+    }
+
+    private async Task LoadMcpServersAsync()
+    {
+        try
+        {
+            // Find MCP settings
+            McpSettings? settings = null;
+
+            if (!string.IsNullOrWhiteSpace(_mcpSettingsPath))
+            {
+                settings = McpSettings.LoadFromFile(_mcpSettingsPath);
+            }
+            else
+            {
+                settings = McpSettings.FindSettings(_workingDirectory);
+            }
+
+            if (settings == null || settings.McpServers.Count == 0)
+            {
+                if (_verbose)
+                {
+                    AnsiConsole.MarkupLine("[dim]No MCP servers configured[/]");
+                }
+                return;
+            }
+
+            // Create MCP manager and connect to servers
+            _mcpManager = new McpManager(_verbose);
+            await _mcpManager.LoadServersAsync(settings);
+
+            // Add MCP tools to the tools context
+            if (_mcpManager.ConnectedServers > 0)
+            {
+                foreach (var tool in _mcpManager.Tools)
+                {
+                    _toolsContext.Add(tool);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            if (_verbose)
+            {
+                AnsiConsole.MarkupLine($"[yellow]Warning: Failed to load MCP servers: {Markup.Escape(ex.Message)}[/]");
+            }
         }
     }
 
