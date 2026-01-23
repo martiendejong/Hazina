@@ -321,6 +321,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.API.Generic", "src\C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Demo.GenericApi", "apps\Demos\Hazina.Demo.GenericApi\Hazina.Demo.GenericApi.csproj", "{D2434FDB-5A31-4916-9593-7EF5804F583F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Demo.ZeroCode", "apps\Demos\Hazina.Demo.ZeroCode\Hazina.Demo.ZeroCode.csproj", "{35487F76-6177-4371-886D-477D5B18A5C0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1783,6 +1785,18 @@ Global
 		{D2434FDB-5A31-4916-9593-7EF5804F583F}.Release|x64.Build.0 = Release|Any CPU
 		{D2434FDB-5A31-4916-9593-7EF5804F583F}.Release|x86.ActiveCfg = Release|Any CPU
 		{D2434FDB-5A31-4916-9593-7EF5804F583F}.Release|x86.Build.0 = Release|Any CPU
+		{35487F76-6177-4371-886D-477D5B18A5C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35487F76-6177-4371-886D-477D5B18A5C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35487F76-6177-4371-886D-477D5B18A5C0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{35487F76-6177-4371-886D-477D5B18A5C0}.Debug|x64.Build.0 = Debug|Any CPU
+		{35487F76-6177-4371-886D-477D5B18A5C0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{35487F76-6177-4371-886D-477D5B18A5C0}.Debug|x86.Build.0 = Debug|Any CPU
+		{35487F76-6177-4371-886D-477D5B18A5C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35487F76-6177-4371-886D-477D5B18A5C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35487F76-6177-4371-886D-477D5B18A5C0}.Release|x64.ActiveCfg = Release|Any CPU
+		{35487F76-6177-4371-886D-477D5B18A5C0}.Release|x64.Build.0 = Release|Any CPU
+		{35487F76-6177-4371-886D-477D5B18A5C0}.Release|x86.ActiveCfg = Release|Any CPU
+		{35487F76-6177-4371-886D-477D5B18A5C0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1912,5 +1926,6 @@ Global
 		{F5290FE7-31D9-9D48-A01E-5E5821C7D975} = {8D626EA8-CB54-BC41-363A-217881BEBA6E}
 		{59572E6C-B06C-4C5B-B8B2-6C40839C15C0} = {F5290FE7-31D9-9D48-A01E-5E5821C7D975}
 		{D2434FDB-5A31-4916-9593-7EF5804F583F} = {FAF4AD4C-132B-52FD-BD75-7A18FE032290}
+		{35487F76-6177-4371-886D-477D5B18A5C0} = {FAF4AD4C-132B-52FD-BD75-7A18FE032290}
 	EndGlobalSection
 EndGlobal
