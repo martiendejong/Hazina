@@ -1,0 +1,227 @@
+# Example Entity Configuration
+# This file shows how to define entities without writing C# code.
+# Copy this to your project and customize.
+
+entities:
+  # Simple product entity
+  - name: Product
+    description: A product in the catalog
+    fields:
+      - name: name
+        type: string
+        required: true
+        maxLength: 200
+        searchable: true
+        indexed: true
+
+      - name: description
+        type: text
+        searchable: true
+
+      - name: price
+        type: decimal
+        required: true
+        minValue: 0
+
+      - name: sku
+        type: string
+        maxLength: 50
+        indexed: true
+
+      - name: categoryId
+        type: reference
+        referencesEntity: Category
+
+      - name: isActive
+        type: bool
+        defaultValue: "true"
+
+      - name: metadata
+        type: json
+        description: Flexible JSON data for custom attributes
+
+    features:
+      crud: true
+      search: true
+      embedding: true  # Enable RAG search
+      softDelete: true
+      pagination: true
+      filtering: true
+      sorting: true
+      bulkOperations: true
+
+    access:
+      requiresAuth: true
+      readRoles: []  # All authenticated users can read
+      createRoles: ["Admin", "ProductManager"]
+      updateRoles: ["Admin", "ProductManager"]
+      deleteRoles: ["Admin"]
+
+  # Category for organizing products
+  - name: Category
+    description: Product category
+    fields:
+      - name: name
+        type: string
+        required: true
+        maxLength: 100
+        searchable: true
+
+      - name: parentId
+        type: guid
+        description: Self-reference for subcategories
+
+      - name: displayOrder
+        type: int
+        defaultValue: "0"
+
+    features:
+      crud: true
+      softDelete: true
+
+  # Blog post with full-text search
+  - name: BlogPost
+    description: A blog article
+    fields:
+      - name: title
+        type: string
+        required: true
+        maxLength: 200
+        searchable: true
+
+      - name: slug
+        type: string
+        maxLength: 200
+        indexed: true
+
+      - name: content
+        type: text
+        required: true
+        searchable: true
+
+      - name: excerpt
+        type: string
+        maxLength: 500
+
+      - name: publishedAt
+        type: dateTime
+
+      - name: status
+        type: enum
+        defaultValue: "Draft"
+        description: "Draft, Published, Archived"
+
+      - name: authorId
+        type: reference
+        referencesEntity: User
+
+      - name: tags
+        type: list
+        description: JSON array of tag strings
+
+      - name: featuredImage
+        type: string
+        maxLength: 500
+
+    features:
+      crud: true
+      search: true
+      embedding: true
+      softDelete: true
+      realtime: true  # Push updates via SignalR
+
+    access:
+      requiresAuth: false  # Public can read
+      createRoles: ["Admin", "Author"]
+      updateRoles: ["Admin", "Author"]
+      deleteRoles: ["Admin"]
+      ownerOnly: true  # Authors can only edit their own posts
+
+  # Customer with multi-tenant support
+  - name: Customer
+    description: A customer record
+    fields:
+      - name: firstName
+        type: string
+        required: true
+        maxLength: 100
+
+      - name: lastName
+        type: string
+        required: true
+        maxLength: 100
+
+      - name: email
+        type: string
+        required: true
+        maxLength: 255
+        indexed: true
+
+      - name: phone
+        type: string
+        maxLength: 20
+
+      - name: notes
+        type: text
+        searchable: true
+
+      - name: totalOrders
+        type: int
+        defaultValue: "0"
+
+      - name: totalSpent
+        type: decimal
+        defaultValue: "0"
+
+    features:
+      crud: true
+      search: true
+      softDelete: true
+      export: true  # Enable CSV/Excel export
+
+    access:
+      requiresAuth: true
+      tenantScoped: true  # Each tenant sees only their customers
+
+  # RAG-enabled document
+  - name: Document
+    description: A searchable document for RAG
+    fields:
+      - name: title
+        type: string
+        required: true
+        maxLength: 500
+        searchable: true
+
+      - name: content
+        type: text
+        required: true
+        searchable: true
+
+      - name: source
+        type: string
+        maxLength: 255
+        description: Where this document came from
+
+      - name: documentType
+        type: enum
+        description: "PDF, Word, HTML, Markdown"
+
+      - name: fileUrl
+        type: string
+        maxLength: 1000
+
+      - name: chunkIndex
+        type: int
+        defaultValue: "0"
+        description: For large documents split into chunks
+
+    features:
+      crud: true
+      search: true
+      embedding: true  # This is the key for RAG
+      softDelete: true
+
+    access:
+      requiresAuth: true
+      tenantScoped: true
