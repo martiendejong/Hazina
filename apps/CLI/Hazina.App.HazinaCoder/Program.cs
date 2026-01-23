@@ -96,6 +96,14 @@ class HazinaCoderCLI : IDisposable
     // Improvement #5: Configuration loaded from file
     private HazinaCoderConfig? _config;
 
+    // Round 2 Improvements
+    // #6: Auto-retry with exponential backoff
+    private const int MaxRetries = 3;
+    private static readonly int[] RetryDelaysMs = { 1000, 2000, 4000 };
+
+    // #8: Conversation export tracking
+    private DateTime _sessionStartTime = DateTime.Now;
+
     private enum OutputMode
     {
         Full,      // Show everything
@@ -380,60 +388,103 @@ class HazinaCoderCLI : IDisposable
         Console.OutputEncoding = Encoding.UTF8;
         _isProcessing = true;
 
-        try
+        // #6: Auto-retry with exponential backoff, #10: Rate limit detection
+        var retryCount = 0;
+        var success = false;
+
+        while (!success && retryCount <= MaxRetries)
         {
-            var response = await _client.GetResponseStream(
-                _context,
-                OnChunk,
-                HazinaChatResponseFormat.Text,
-                _toolsContext,
-                images: null,
-                _cts.Token // Improvement #1: Use cancellation token
-            );
-
-            // Track usage
-            if (response.TokenUsage != null)
+            try
             {
-                _sessionCost += response.TokenUsage.TotalCost;
-                _sessionTokens += response.TokenUsage.TotalTokens;
-                _estimatedContextTokens = response.TokenUsage.TotalTokens; // Update with actual count
-            }
-
-            // Add assistant response to context
-            var assistantMessage = sb.ToString();
-            if (!string.IsNullOrWhiteSpace(assistantMessage))
-            {
-                _context.Add(new HazinaChatMessage
+                if (retryCount > 0)
                 {
-                    Role = HazinaMessageRole.Assistant,
-                    Text = assistantMessage
-                });
-            }
+                    var delay = RetryDelaysMs[Math.Min(retryCount - 1, RetryDelaysMs.Length - 1)];
+                    AnsiConsole.MarkupLine($"[yellow]Retrying in {delay / 1000}s... (attempt {retryCount + 1}/{MaxRetries + 1})[/]");
+                    await Task.Delay(delay, _cts.Token);
+                    sb.Clear(); // Clear previous partial response
+                }
 
-            // Show summary of tool calls made
-            var toolCallsThisTurn = _currentTurnCount - startTurnCount;
-            if (toolCallsThisTurn > 0 && _verbose)
+                var response = await _client.GetResponseStream(
+                    _context,
+                    OnChunk,
+                    HazinaChatResponseFormat.Text,
+                    _toolsContext,
+                    images: null,
+                    _cts.Token // Improvement #1: Use cancellation token
+                );
+
+                // Track usage
+                if (response.TokenUsage != null)
+                {
+                    _sessionCost += response.TokenUsage.TotalCost;
+                    _sessionTokens += response.TokenUsage.TotalTokens;
+                    _estimatedContextTokens = response.TokenUsage.TotalTokens; // Update with actual count
+                }
+
+                // Add assistant response to context
+                var assistantMessage = sb.ToString();
+                if (!string.IsNullOrWhiteSpace(assistantMessage))
+                {
+                    _context.Add(new HazinaChatMessage
+                    {
+                        Role = HazinaMessageRole.Assistant,
+                        Text = assistantMessage
+                    });
+                }
+
+                // Show summary of tool calls made
+                var toolCallsThisTurn = _currentTurnCount - startTurnCount;
+                if (toolCallsThisTurn > 0 && _verbose)
+                {
+                    AnsiConsole.MarkupLine($"\n[dim]({toolCallsThisTurn} tool call(s) | ${_sessionCost:F4} | {_sessionTokens:N0} tokens)[/]");
+                }
+
+                success = true;
+            }
+            catch (OperationCanceledException)
             {
-                AnsiConsole.MarkupLine($"\n[dim]({toolCallsThisTurn} tool call(s) | ${_sessionCost:F4} | {_sessionTokens:N0} tokens)[/]");
+                AnsiConsole.MarkupLine("\n[yellow]Operation cancelled.[/]");
+                // Remove the last user message since it wasn't processed
+                if (_context.Count > 0 && _context[^1].Role == HazinaMessageRole.User)
+                {
+                    _context.RemoveAt(_context.Count - 1);
+                }
+                break;
+            }
+            catch (Exception ex)
+            {
+                // #10: Rate limit detection
+                var isRateLimit = ex.Message.Contains("rate", StringComparison.OrdinalIgnoreCase) ||
+                                  ex.Message.Contains("429") ||
+                                  ex.Message.Contains("too many requests", StringComparison.OrdinalIgnoreCase) ||
+                                  ex.Message.Contains("quota", StringComparison.OrdinalIgnoreCase);
+
+                if (isRateLimit && retryCount < MaxRetries)
+                {
+                    AnsiConsole.MarkupLine($"\n[yellow]Rate limited.[/]");
+                    retryCount++;
+                    continue;
+                }
+
+                // Check for other retryable errors
+                var isRetryable = ex.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase) ||
+                                  ex.Message.Contains("connection", StringComparison.OrdinalIgnoreCase) ||
+                                  ex.Message.Contains("503") ||
+                                  ex.Message.Contains("502");
+
+                if (isRetryable && retryCount < MaxRetries)
+                {
+                    AnsiConsole.MarkupLine($"\n[yellow]Connection error, will retry.[/]");
+                    retryCount++;
+                    continue;
+                }
+
+                AnsiConsole.MarkupLine($"\n[red]Error:[/] {Markup.Escape(ex.Message)}");
+                break;
             }
         }
-        catch (OperationCanceledException)
-        {
-            AnsiConsole.MarkupLine("\n[yellow]Operation cancelled.[/]");
-            // Remove the last user message since it wasn't processed
-            if (_context.Count > 0 && _context[^1].Role == HazinaMessageRole.User)
-            {
-                _context.RemoveAt(_context.Count - 1);
-            }
-        }
-        catch (Exception ex)
-        {
-            AnsiConsole.MarkupLine($"\n[red]Error:[/] {Markup.Escape(ex.Message)}");
-        }
-        finally
-        {
-            _isProcessing = false;
-        }
+
+        _isProcessing = false;
 
         Console.WriteLine();
     }
@@ -821,6 +872,48 @@ class HazinaCoderCLI : IDisposable
                 AnsiConsole.MarkupLine($"  Messages: {_context.Count}");
                 return CommandResult.Handled;
 
+            case "/export":
+                // #8: Export conversation to markdown
+                var exportPath = arg;
+                if (string.IsNullOrEmpty(exportPath))
+                {
+                    exportPath = Path.Combine(_workingDirectory, $"hazinacoder-session-{_sessionStartTime:yyyyMMdd-HHmmss}.md");
+                }
+                else if (!Path.IsPathRooted(exportPath))
+                {
+                    exportPath = Path.GetFullPath(Path.Combine(_workingDirectory, exportPath));
+                }
+
+                try
+                {
+                    var exportContent = ExportConversationToMarkdown();
+                    File.WriteAllText(exportPath, exportContent);
+                    AnsiConsole.MarkupLine($"[green]Exported:[/] {exportPath}");
+                }
+                catch (Exception ex)
+                {
+                    AnsiConsole.MarkupLine($"[red]Export failed:[/] {ex.Message}");
+                }
+                return CommandResult.Handled;
+
+            case "/retry":
+                // #6: Manual retry of last message
+                if (_context.Count >= 2)
+                {
+                    // Remove last assistant response if present
+                    if (_context[^1].Role == HazinaMessageRole.Assistant)
+                    {
+                        _context.RemoveAt(_context.Count - 1);
+                    }
+                    AnsiConsole.MarkupLine("[cyan]Retrying last message...[/]");
+                    return CommandResult.NotHandled; // Will re-run with last user message
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[yellow]No message to retry[/]");
+                }
+                return CommandResult.Handled;
+
             default:
                 // Not a recognized command, treat as regular input
                 return CommandResult.NotHandled;
@@ -847,6 +940,8 @@ class HazinaCoderCLI : IDisposable
         table.AddRow("/cost, /status", "Show session stats and token usage");
         table.AddRow("/tokens", "Show detailed token/context info");
         table.AddRow("/context", "Show context size");
+        table.AddRow("/export [file]", "Export conversation to markdown");
+        table.AddRow("/retry", "Retry the last message");
         table.AddRow("/restore <file>", "Restore file from .bak backup");
         table.AddRow("/backups", "List recent backup files");
         table.AddRow("/clear", "Clear conversation history");
@@ -1438,6 +1533,47 @@ Mark todos as completed IMMEDIATELY after finishing each task.
             // Fallback to rough estimate: ~4 chars per token
             return _context.Sum(m => (m.Text?.Length ?? 0) / 4);
         }
+    }
+
+    // #8: Export conversation to markdown
+    private string ExportConversationToMarkdown()
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"# HazinaCoder Session Export");
+        sb.AppendLine();
+        sb.AppendLine($"- **Date:** {_sessionStartTime:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"- **Provider:** {_providerName}");
+        sb.AppendLine($"- **Model:** {_model}");
+        sb.AppendLine($"- **Working Directory:** {_workingDirectory}");
+        sb.AppendLine($"- **Total Tokens:** {_sessionTokens:N0}");
+        sb.AppendLine($"- **Estimated Cost:** ${_sessionCost:F4}");
+        sb.AppendLine();
+        sb.AppendLine("---");
+        sb.AppendLine();
+
+        foreach (var message in _context.Skip(1)) // Skip system prompt
+        {
+            string role;
+            if (message.Role == HazinaMessageRole.User)
+                role = "User";
+            else if (message.Role == HazinaMessageRole.Assistant)
+                role = "Assistant";
+            else if (message.Role == HazinaMessageRole.System)
+                role = "System";
+            else
+                role = message.Role.ToString() ?? "Unknown";
+
+            sb.AppendLine($"## {role}");
+            sb.AppendLine();
+            sb.AppendLine(message.Text ?? "(empty)");
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("---");
+        sb.AppendLine();
+        sb.AppendLine($"*Exported at {DateTime.Now:yyyy-MM-dd HH:mm:ss}*");
+
+        return sb.ToString();
     }
 
     // Improvement #5: Configuration file support
