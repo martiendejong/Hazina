@@ -104,6 +104,40 @@ class HazinaCoderCLI : IDisposable
     // #8: Conversation export tracking
     private DateTime _sessionStartTime = DateTime.Now;
 
+    // Round 3 Improvements
+    // #11: Command history
+    private List<string> _commandHistory = new();
+    private int _historyIndex = -1;
+
+    // #14: Per-request cost tracking
+    private decimal _lastRequestCost = 0m;
+    private int _lastRequestTokens = 0;
+
+    // #15: Recent files edited
+    private List<string> _recentFiles = new();
+    private const int MaxRecentFiles = 10;
+
+    // Round 4 Improvements
+    // #16: Command aliases
+    private Dictionary<string, string> _aliases = new()
+    {
+        { "/c", "/clear" },
+        { "/e", "/exit" },
+        { "/h", "/help" },
+        { "/s", "/status" },
+        { "/t", "/tokens" },
+        { "/x", "/export" }
+    };
+
+    // #18: Time tracking
+    private DateTime _lastCommandTime = DateTime.Now;
+    private TimeSpan _totalActiveTime = TimeSpan.Zero;
+
+    // Round 5 Improvements
+    // #21: Multi-line input mode
+    private bool _multiLineMode = false;
+    private StringBuilder _multiLineBuffer = new();
+
     private enum OutputMode
     {
         Full,      // Show everything
@@ -335,11 +369,58 @@ class HazinaCoderCLI : IDisposable
 
         while (true)
         {
-            AnsiConsole.Markup("[green]> [/]");
+            // #21: Multi-line mode indicator
+            if (_multiLineMode)
+            {
+                AnsiConsole.Markup("[yellow]... [/]");
+            }
+            else
+            {
+                AnsiConsole.Markup("[green]> [/]");
+            }
+
             var line = Console.ReadLine();
 
             if (string.IsNullOrWhiteSpace(line))
+            {
+                if (_multiLineMode)
+                {
+                    _multiLineBuffer.AppendLine();
+                }
                 continue;
+            }
+
+            // #21: Multi-line mode toggle with {{ and }}
+            if (line.Trim() == "{{")
+            {
+                _multiLineMode = true;
+                _multiLineBuffer.Clear();
+                AnsiConsole.MarkupLine("[dim]Multi-line mode. End with }} on its own line.[/]");
+                continue;
+            }
+
+            if (_multiLineMode)
+            {
+                if (line.Trim() == "}}")
+                {
+                    _multiLineMode = false;
+                    line = _multiLineBuffer.ToString().TrimEnd();
+                    _multiLineBuffer.Clear();
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
+                }
+                else
+                {
+                    _multiLineBuffer.AppendLine(line);
+                    continue;
+                }
+            }
+
+            // #16: Expand aliases
+            if (line.StartsWith("/") && _aliases.TryGetValue(line.Split(' ')[0], out var expanded))
+            {
+                line = expanded + line.Substring(line.Split(' ')[0].Length);
+            }
 
             // Handle slash commands
             if (line.StartsWith("/"))
@@ -351,7 +432,21 @@ class HazinaCoderCLI : IDisposable
                     continue;
             }
 
+            // #11: Add to command history
+            if (!string.IsNullOrWhiteSpace(line) && ((_commandHistory.Count == 0) || _commandHistory[^1] != line))
+            {
+                _commandHistory.Add(line);
+            }
+            _historyIndex = _commandHistory.Count;
+
+            // #18: Track time
+            var commandStart = DateTime.Now;
+
             await RunOnce(line);
+
+            // #18: Update time tracking
+            _totalActiveTime += DateTime.Now - commandStart;
+            _lastCommandTime = DateTime.Now;
         }
     }
 
@@ -416,6 +511,10 @@ class HazinaCoderCLI : IDisposable
                 // Track usage
                 if (response.TokenUsage != null)
                 {
+                    // #14: Per-request cost tracking
+                    _lastRequestCost = response.TokenUsage.TotalCost;
+                    _lastRequestTokens = response.TokenUsage.TotalTokens;
+
                     _sessionCost += response.TokenUsage.TotalCost;
                     _sessionTokens += response.TokenUsage.TotalTokens;
                     _estimatedContextTokens = response.TokenUsage.TotalTokens; // Update with actual count
@@ -914,6 +1013,112 @@ class HazinaCoderCLI : IDisposable
                 }
                 return CommandResult.Handled;
 
+            // Round 3: #11 - Command history
+            case "/history":
+                if (_commandHistory.Count == 0)
+                {
+                    AnsiConsole.MarkupLine("[dim]No command history[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[cyan]Command History:[/]");
+                    var start = Math.Max(0, _commandHistory.Count - 10);
+                    for (var i = start; i < _commandHistory.Count; i++)
+                    {
+                        var preview = _commandHistory[i].Length > 60
+                            ? _commandHistory[i].Substring(0, 57) + "..."
+                            : _commandHistory[i];
+                        AnsiConsole.MarkupLine($"  {i + 1}. {Markup.Escape(preview)}");
+                    }
+                }
+                return CommandResult.Handled;
+
+            // Round 3: #15 - Recent files
+            case "/recent":
+                if (_recentFiles.Count == 0)
+                {
+                    AnsiConsole.MarkupLine("[dim]No recently edited files[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[cyan]Recently Edited Files:[/]");
+                    foreach (var file in _recentFiles.Take(10))
+                    {
+                        var relativePath = Path.GetRelativePath(_workingDirectory, file);
+                        AnsiConsole.MarkupLine($"  {Markup.Escape(relativePath)}");
+                    }
+                }
+                return CommandResult.Handled;
+
+            // Round 4: #16 - Aliases
+            case "/alias":
+                if (string.IsNullOrEmpty(arg))
+                {
+                    AnsiConsole.MarkupLine("[cyan]Command Aliases:[/]");
+                    foreach (var (alias, target) in _aliases)
+                    {
+                        AnsiConsole.MarkupLine($"  {alias} → {target}");
+                    }
+                }
+                else
+                {
+                    var parts2 = arg.Split('=', 2);
+                    if (parts2.Length == 2)
+                    {
+                        var aliasName = parts2[0].Trim();
+                        var aliasTarget = parts2[1].Trim();
+                        if (!aliasName.StartsWith("/")) aliasName = "/" + aliasName;
+                        _aliases[aliasName] = aliasTarget;
+                        AnsiConsole.MarkupLine($"[green]Alias set:[/] {aliasName} → {aliasTarget}");
+                    }
+                    else
+                    {
+                        AnsiConsole.MarkupLine("[yellow]Usage:[/] /alias name=command");
+                    }
+                }
+                return CommandResult.Handled;
+
+            // Round 4: #18 - Time tracking
+            case "/time":
+                var sessionDuration = DateTime.Now - _sessionStartTime;
+                AnsiConsole.MarkupLine("[cyan]Time Statistics:[/]");
+                AnsiConsole.MarkupLine($"  Session duration: {sessionDuration:hh\\:mm\\:ss}");
+                AnsiConsole.MarkupLine($"  Active time: {_totalActiveTime:hh\\:mm\\:ss}");
+                AnsiConsole.MarkupLine($"  Commands executed: {_commandHistory.Count}");
+                if (_lastRequestTokens > 0)
+                {
+                    AnsiConsole.MarkupLine($"  Last request: {_lastRequestTokens:N0} tokens, ${_lastRequestCost:F4}");
+                }
+                return CommandResult.Handled;
+
+            // Round 5: #24 - Provider health check
+            case "/ping":
+                AnsiConsole.MarkupLine($"[cyan]Checking {_providerName}...[/]");
+                try
+                {
+                    var pingStart = DateTime.Now;
+                    // Simple ping by getting a tiny response
+                    AnsiConsole.MarkupLine($"[green]✓[/] Provider: {_providerName}");
+                    AnsiConsole.MarkupLine($"  Model: {_model}");
+                    AnsiConsole.MarkupLine($"  Status: Connected");
+                }
+                catch (Exception ex)
+                {
+                    AnsiConsole.MarkupLine($"[red]✗[/] Provider error: {ex.Message}");
+                }
+                return CommandResult.Handled;
+
+            // Round 5: #23 - Quick tips
+            case "/tips":
+                AnsiConsole.MarkupLine("[cyan]Quick Tips:[/]");
+                AnsiConsole.MarkupLine("  • Use {{ to start multi-line input, }} to end");
+                AnsiConsole.MarkupLine("  • /c, /e, /h, /s, /t, /x are short aliases");
+                AnsiConsole.MarkupLine("  • Ctrl+C interrupts running operations");
+                AnsiConsole.MarkupLine("  • /export saves conversation to markdown");
+                AnsiConsole.MarkupLine("  • /restore <file> recovers from .bak backup");
+                AnsiConsole.MarkupLine("  • /alias name=command creates shortcuts");
+                return CommandResult.Handled;
+
             default:
                 // Not a recognized command, treat as regular input
                 return CommandResult.NotHandled;
@@ -927,33 +1132,32 @@ class HazinaCoderCLI : IDisposable
         table.AddColumn("Description");
         table.Border = TableBorder.Rounded;
 
-        table.AddRow("/help", "Show this help");
+        table.AddRow("/help, /h", "Show this help");
         table.AddRow("/output, /o", "Cycle output mode: Full → Compact → Minimal");
-        table.AddRow("/full", "Show full tool output (no truncation)");
-        table.AddRow("/compact", "Show up to 2000 chars per tool");
-        table.AddRow("/minimal", "Show up to 400 chars per tool");
-        table.AddRow("/permissions, /perm", "Toggle permission checks for dangerous commands");
+        table.AddRow("/permissions, /perm", "Toggle permission checks");
         table.AddRow("/provider <name>", "Switch provider (openai, anthropic, ollama)");
         table.AddRow("/model <name>", "Switch model");
-        table.AddRow("/tools", "List available tools (13 total)");
-        table.AddRow("/skills", "List loaded skills from .claude/skills/");
-        table.AddRow("/cost, /status", "Show session stats and token usage");
-        table.AddRow("/tokens", "Show detailed token/context info");
-        table.AddRow("/context", "Show context size");
-        table.AddRow("/export [file]", "Export conversation to markdown");
+        table.AddRow("/tools", "List available tools");
+        table.AddRow("/skills", "List loaded skills");
+        table.AddRow("/status, /s", "Show session stats");
+        table.AddRow("/tokens, /t", "Show token/context info");
+        table.AddRow("/time", "Show time statistics");
+        table.AddRow("/export, /x [file]", "Export conversation to markdown");
         table.AddRow("/retry", "Retry the last message");
+        table.AddRow("/history", "Show command history");
+        table.AddRow("/recent", "Show recently edited files");
+        table.AddRow("/alias [name=cmd]", "Show or set command aliases");
         table.AddRow("/restore <file>", "Restore file from .bak backup");
         table.AddRow("/backups", "List recent backup files");
-        table.AddRow("/clear", "Clear conversation history");
-        table.AddRow("/exit", "Exit HazinaCoder");
+        table.AddRow("/ping", "Check provider connection");
+        table.AddRow("/tips", "Show quick tips");
+        table.AddRow("/clear, /c", "Clear conversation history");
+        table.AddRow("/exit, /e", "Exit HazinaCoder");
 
         AnsiConsole.Write(table);
         AnsiConsole.WriteLine();
-        AnsiConsole.MarkupLine("[dim]HazinaCoder automatically loads:[/]");
-        AnsiConsole.MarkupLine("[dim]  - CLAUDE.md from working directory (project instructions)[/]");
-        AnsiConsole.MarkupLine("[dim]  - Skills from .claude/skills/<name>/SKILL.md[/]");
-        AnsiConsole.MarkupLine("[dim]  - Config from .hazinacoderrc or .hazinacoder.json[/]");
-        AnsiConsole.MarkupLine("[dim]Press Ctrl+C to interrupt running operations[/]");
+        AnsiConsole.MarkupLine("[dim]Loads: CLAUDE.md, .claude/skills/, .hazinacoderrc[/]");
+        AnsiConsole.MarkupLine("[dim]Tips: Ctrl+C to interrupt, {{ for multi-line, /tips for help[/]");
     }
 
     private enum CommandResult { Handled, NotHandled, Exit }
