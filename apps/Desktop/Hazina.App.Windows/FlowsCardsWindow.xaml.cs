@@ -28,15 +28,15 @@ public partial class FlowsCardsWindow : System.Windows.Window
         Model.HookCardPropertyChangedHandlers();
         this.Closing += FlowsCardsWindow_Closing;
     }
-    public List<FlowConfig> ResultFlows { get; set; } = null;
+    public List<FlowConfig>? ResultFlows { get; set; } = null;
 
     // ------------ DRAG & DROP Logica voor CallsAgents (herordening binnen 1 card) ------------
 
     // Houdt de drag-context vast per ListView (1 tegelijk per window)
     private System.Windows.Point? _dragStartPoint = null;
-    private WpfListView _activeDragListView = null;
-    private string _draggedAgent = null;
-    private FlowCardModel _draggedCard = null;
+    private WpfListView? _activeDragListView = null;
+    private string? _draggedAgent = null;
+    private FlowCardModel? _draggedCard = null;
 
     /// <summary>
     /// Detecteert de start van een drag: bewaar initi+�le muispositie en listview. 
@@ -97,7 +97,10 @@ public partial class FlowsCardsWindow : System.Windows.Window
         }
 
         // VISUELE FEEDBACK: highlight doel item (zie ook attached property!)
-        HighlightListViewItemOnDragOver(listView, e.GetPosition(listView));
+        if (listView != null)
+        {
+            HighlightListViewItemOnDragOver(listView, e.GetPosition(listView));
+        }
     }
 
     /// <summary>
@@ -109,7 +112,7 @@ public partial class FlowsCardsWindow : System.Windows.Window
         if (listView == null || !_dragStartPoint.HasValue) return;
         if (!e.Data.GetDataPresent("DGPT_FLOW_DRAGCALLAGENT")) return;
 
-        string agent = e.Data.GetData("DGPT_FLOW_DRAGCALLAGENT") as string;
+        string? agent = e.Data.GetData("DGPT_FLOW_DRAGCALLAGENT") as string;
         var card = listView.DataContext as FlowCardModel;
         if (card == null || agent == null) return;
 
@@ -171,11 +174,11 @@ public partial class FlowsCardsWindow : System.Windows.Window
     /// <summary>
     /// Vind ListViewItem bij mousepositie (helper method)
     /// </summary>
-    private WpfListViewItem GetListViewItemAt(System.Windows.Point pt, WpfListView lv)
+    private WpfListViewItem? GetListViewItemAt(System.Windows.Point pt, WpfListView lv)
     {
         var hit = VisualTreeHelper.HitTest(lv, pt);
         if (hit == null) return null;
-        DependencyObject obj = hit.VisualHit;
+        DependencyObject? obj = hit.VisualHit;
         while (obj != null && !(obj is WpfListViewItem))
             obj = VisualTreeHelper.GetParent(obj);
         return obj as WpfListViewItem;
@@ -328,9 +331,9 @@ public partial class FlowsCardsWindow : System.Windows.Window
         }
     }
 
-    private static T FindParent<T>(DependencyObject child) where T : DependencyObject
+    private static T? FindParent<T>(DependencyObject child) where T : DependencyObject
     {
-        DependencyObject parentObject = VisualTreeHelper.GetParent(child);
+        DependencyObject? parentObject = VisualTreeHelper.GetParent(child);
         if (parentObject == null) return null;
         return parentObject is T parent ? parent : FindParent<T>(parentObject);
     }
