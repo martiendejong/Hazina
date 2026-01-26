@@ -270,7 +270,7 @@ namespace HazinaStore.Core
                     }
                     return; // Success
                 }
-                catch (IOException ex) when (retryCount < maxRetries - 1)
+                catch (IOException) when (retryCount < maxRetries - 1)
                 {
                     // File is locked by another process, wait and retry
                     retryCount++;
