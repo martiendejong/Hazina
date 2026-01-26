@@ -8,9 +8,13 @@ using Hazina.LLMs.Anthropic;
 using Hazina.Agents.Tools.Context;
 using Hazina.Agents.Tools.Mcp;
 using SharpToken;
+using Hazina.App.HazinaCoder.Core.Identity;
+using Hazina.App.HazinaCoder.Core.Memory;
+using Hazina.App.HazinaCoder.Core.State;
 
-// HazinaCoder - Multi-provider coding assistant CLI
+// HazinaCoder - Multi-provider coding assistant CLI with cognitive architecture
 // Supports: OpenAI, Anthropic Claude, Ollama (local), and more
+// Features: Persistent identity, memory systems, continuous learning
 
 var providerOpt = new Option<string>("--provider", () => "auto", "LLM provider: openai, anthropic, ollama, or auto");
 var modelOpt = new Option<string?>("--model", "Model override (provider-specific)");
@@ -95,6 +99,9 @@ class HazinaCoderCLI : IDisposable
 
     // Improvement #5: Configuration loaded from file
     private HazinaCoderConfig? _config;
+
+    // ⭐ COGNITIVE ARCHITECTURE: Persistent identity, memory, learning
+    private AgentIdentity? _identity;
 
     // Round 2 Improvements
     // #6: Auto-retry with exponential backoff
@@ -206,6 +213,19 @@ class HazinaCoderCLI : IDisposable
         // Improvement #5: Load configuration file
         _config = LoadConfiguration();
         ApplyConfiguration();
+
+        // 🧠 COGNITIVE ARCHITECTURE: Load identity (persistent self across sessions)
+        var identityBasePath = Path.Combine(Path.GetDirectoryName(typeof(HazinaCoderCLI).Assembly.Location) ?? ".", "..");
+        _identity = new AgentIdentity(identityBasePath);
+        try
+        {
+            await _identity.LoadIdentityAsync();
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[yellow]Warning:[/] Could not load identity: {Markup.Escape(ex.Message)}");
+            AnsiConsole.MarkupLine("[dim]Will continue with default identity[/]");
+        }
 
         // Load CLAUDE.md if present
         _claudeMdContent = LoadClaudeMd();
@@ -702,6 +722,18 @@ class HazinaCoderCLI : IDisposable
             case "/exit":
             case "/quit":
             case "/q":
+                // 💾 Save identity before exit
+                if (_identity != null)
+                {
+                    try
+                    {
+                        await _identity.SaveIdentityAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.MarkupLine($"[yellow]Warning:[/] Could not save identity: {Markup.Escape(ex.Message)}");
+                    }
+                }
                 AnsiConsole.MarkupLine("[yellow]Goodbye![/]");
                 return CommandResult.Exit;
 
