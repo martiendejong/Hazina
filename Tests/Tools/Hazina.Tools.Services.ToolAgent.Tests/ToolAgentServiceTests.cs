@@ -114,7 +114,7 @@ public class ToolAgentServiceTests
     public async Task ExecuteActionAsync_CallsClientFactory_WithCorrectTaskName()
     {
         // Arrange
-        string capturedTaskName = null;
+        string? capturedTaskName = null;
         _clientFactory = taskName =>
         {
             capturedTaskName = taskName;
@@ -185,7 +185,7 @@ public class ToolAgentServiceTests
             ChatId = "test-chat"
         };
 
-        List<HazinaChatMessage> capturedMessages = null;
+        List<HazinaChatMessage>? capturedMessages = null;
         _llmClientMock
             .Setup(x => x.GetResponse(
                 It.IsAny<List<HazinaChatMessage>>(),

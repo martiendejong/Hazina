@@ -75,8 +75,8 @@ namespace HazinaStore.Core
                 counter++;
             }
 
-            // Save file
-            File.WriteAllBytes(filePath, content);
+            // Save file with retry logic for file locking issues
+            SaveFileWithRetry(filePath, content);
 
             var mimeType = GetMimeType(filename);
 
@@ -248,6 +248,39 @@ namespace HazinaStore.Core
             var metadataPath = Path.Combine(_projectPath, UploadedFilesMetadataFile);
             var json = JsonSerializer.Serialize(documents, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(metadataPath, json);
+        }
+
+        /// <summary>
+        /// Save file with retry logic to handle file locking issues
+        /// Retries up to 3 times with 100ms delay between attempts
+        /// </summary>
+        private void SaveFileWithRetry(string filePath, byte[] content, int maxRetries = 3)
+        {
+            int retryCount = 0;
+            while (retryCount < maxRetries)
+            {
+                try
+                {
+                    // Use FileStream with explicit FileShare.None to ensure exclusive write access
+                    // This helps detect if another process has the file locked
+                    using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
+                    {
+                        stream.Write(content, 0, content.Length);
+                        stream.Flush();
+                    }
+                    return; // Success
+                }
+                catch (IOException) when (retryCount < maxRetries - 1)
+                {
+                    // File is locked by another process, wait and retry
+                    retryCount++;
+                    System.Threading.Thread.Sleep(100); // Wait 100ms before retry
+                    Console.WriteLine($"[SaveFileWithRetry] File locked, retry {retryCount}/{maxRetries}: {filePath}");
+                }
+            }
+
+            // If we get here, all retries failed
+            throw new IOException($"Failed to save file after {maxRetries} retries. The file may be locked by another process: {filePath}");
         }
 
         #endregion

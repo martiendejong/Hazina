@@ -1,0 +1,98 @@
+# Hazina Zero-Code Entity Definitions
+# No C# code needed! Just define your entities here and run the API.
+
+entities:
+  # A Document entity for storing searchable documents
+  - name: Document
+    description: A document that can be searched semantically
+    pluralName: Documents
+    fields:
+      - name: title
+        type: String
+        required: true
+        maxLength: 200
+        searchable: true
+        description: The document title
+      - name: content
+        type: Text
+        required: true
+        searchable: true
+        description: The main document content
+      - name: category
+        type: String
+        maxLength: 50
+        searchable: true
+        description: Category for organization
+      - name: tags
+        type: Json
+        description: Array of tags as JSON
+      - name: author
+        type: String
+        maxLength: 100
+        description: Author name
+    features:
+      crud: true
+      search: true
+      embedding: true
+      softDelete: true
+      pagination: true
+
+  # A Task entity for a simple todo list
+  - name: Task
+    description: A task or todo item
+    pluralName: Tasks
+    fields:
+      - name: title
+        type: String
+        required: true
+        maxLength: 200
+        searchable: true
+      - name: description
+        type: Text
+        searchable: true
+      - name: priority
+        type: Enum
+        description: Task priority (low, medium, high)
+      - name: dueDate
+        type: DateTime
+      - name: completed
+        type: Bool
+        description: Whether the task is done
+    features:
+      crud: true
+      search: true
+      softDelete: true
+
+  # A Contact entity for storing people
+  - name: Contact
+    description: Contact information for a person
+    pluralName: Contacts
+    fields:
+      - name: firstName
+        type: String
+        required: true
+        maxLength: 100
+        searchable: true
+      - name: lastName
+        type: String
+        required: true
+        maxLength: 100
+        searchable: true
+      - name: email
+        type: String
+        maxLength: 255
+        searchable: true
+      - name: phone
+        type: String
+        maxLength: 50
+      - name: company
+        type: String
+        maxLength: 200
+        searchable: true
+      - name: notes
+        type: Text
+    features:
+      crud: true
+      search: true
+      softDelete: true
+      pagination: true

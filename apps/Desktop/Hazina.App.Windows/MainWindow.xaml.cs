@@ -70,7 +70,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             try
             {
                 appConfig = File.Exists(configFilePath)
-                    ? JsonSerializer.Deserialize<UserAppConfig>(File.ReadAllText(configFilePath))
+                    ? JsonSerializer.Deserialize<UserAppConfig>(File.ReadAllText(configFilePath)) ?? new UserAppConfig()
                     : new UserAppConfig();
             }
             catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or UnauthorizedAccessException)
@@ -465,8 +465,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             // Het inlezen van OpenAI/Google config kan op sommige systemen trage disk I/O veroorzaken (b.v. als netwerk-drive, USB, virusscanner, etc.)
             // - Dit blokkeerde in eerdere versies de zichtbaarheid van de laad-animatie: de animatie kwam pas na de disk-IO!
             // - Daarom laden we deze configs nu asynchroon, v+ï¿½+ï¿½r de rest van de logica, ZODAT de animatie altijd zichtbaar is v+ï¿½+ï¿½rdat prijzige disk reads starten.
-            GoogleConfig googleSettings = null;
-            OpenAIConfig openAISettings = null;
+            GoogleConfig? googleSettings = null;
+            OpenAIConfig? openAISettings = null;
             try
             {
                 googleSettings = await Task.Run(() => GoogleConfig.Load());
@@ -599,7 +599,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             var allAgents = new HashSet<string>();
             var allFlows = new HashSet<string>();
 
-            foreach (var agent in parsedAgents)
+            foreach (var agent in parsedAgents ?? Enumerable.Empty<AgentConfig>())
             {
                 foreach (var store in agent.Stores ?? Enumerable.Empty<StoreRef>())
                     if (!string.IsNullOrEmpty(store.Name)) allStores.Add(store.Name);
