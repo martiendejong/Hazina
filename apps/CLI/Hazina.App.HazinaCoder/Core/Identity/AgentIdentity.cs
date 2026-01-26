@@ -36,7 +36,7 @@ public class AgentIdentity
     public CoreIdentity Core { get; private set; } = new();
     public CognitiveArchitecture Cognition { get; private set; } = new();
     public StateManager CurrentState { get; private set; } = new();
-    public ReflectionLog ReflectionMemory { get; private set; } = new();
+    public ReflectionLog? ReflectionMemory { get; private set; }
 
     /// <summary>
     /// Load identity from disk - called at startup
@@ -123,6 +123,12 @@ public class AgentIdentity
     /// </summary>
     public async Task ReflectOnSessionAsync(string learnings)
     {
+        if (ReflectionMemory == null)
+        {
+            Console.WriteLine("⚠️ ReflectionMemory not initialized");
+            return;
+        }
+
         var entry = new ReflectionEntry
         {
             Timestamp = DateTime.Now,

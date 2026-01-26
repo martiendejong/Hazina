@@ -233,7 +233,7 @@ public class ExperienceRetrieval
 
         var experience = new Experience
         {
-            Id = Guid.Parse(scoredPoint.Id.Uuid),
+            Id = Guid.Parse(GetPayloadString(payload, "id")), // Retrieve Guid from payload
             Timestamp = DateTime.Parse(GetPayloadString(payload, "timestamp")),
             Type = Enum.Parse<ExperienceType>(GetPayloadString(payload, "type")),
             Content = GetPayloadString(payload, "content"),

@@ -33,7 +33,7 @@ public class ExperienceStorage
         {
             // Check if collection exists
             var collections = await _qdrant.ListCollectionsAsync();
-            var collectionExists = collections.Any(c => c.Name == COLLECTION_NAME);
+            var collectionExists = collections.Any(c => c == COLLECTION_NAME);
 
             if (!collectionExists)
             {
@@ -77,6 +77,7 @@ public class ExperienceStorage
             // Prepare payload for Qdrant
             var payload = new Dictionary<string, Value>
             {
+                ["id"] = experience.Id.ToString(), // Store Guid as string in payload
                 ["timestamp"] = experience.Timestamp.ToString("o"),
                 ["type"] = experience.Type.ToString(),
                 ["content"] = experience.Content,
@@ -104,14 +105,16 @@ public class ExperienceStorage
                 ["outcome_satisfaction"] = experience.Outcome?.Satisfaction ?? 0.0
             };
 
-            // Store in Qdrant
+            // Store in Qdrant (convert Guid to numeric ID)
+            var numericId = BitConverter.ToUInt64(experience.Id.ToByteArray(), 0);
+
             await _qdrant.UpsertAsync(
                 collectionName: COLLECTION_NAME,
                 points: new List<PointStruct>
                 {
                     new()
                     {
-                        Id = new PointId { Uuid = experience.Id.ToString() },
+                        Id = new PointId { Num = numericId },
                         Vectors = experience.Embedding,
                         Payload = { payload }
                     }
@@ -165,13 +168,13 @@ public class ExperienceStorage
                 ["last_retrieved"] = experience.Metadata.LastRetrieved?.ToString("o") ?? ""
             };
 
+            // Convert Guid to numeric ID for Qdrant
+            var numericId = BitConverter.ToUInt64(experience.Id.ToByteArray(), 0);
+
             await _qdrant.SetPayloadAsync(
                 collectionName: COLLECTION_NAME,
                 payload: payload,
-                pointsSelector: new PointsSelector
-                {
-                    Points = { new PointId { Uuid = experience.Id.ToString() } }
-                }
+                ids: new List<ulong> { numericId }
             );
         }
         catch (Exception ex)
@@ -188,11 +191,11 @@ public class ExperienceStorage
         try
         {
             var info = await _qdrant.GetCollectionInfoAsync(COLLECTION_NAME);
-            return info.PointsCount ?? 0;
+            return info.PointsCount;
         }
         catch
         {
-            return 0;
+            return 0UL;
         }
     }
 
@@ -203,12 +206,12 @@ public class ExperienceStorage
     {
         try
         {
+            // Convert Guid to numeric ID for Qdrant
+            var numericId = BitConverter.ToUInt64(id.ToByteArray(), 0);
+
             await _qdrant.DeleteAsync(
                 collectionName: COLLECTION_NAME,
-                pointsSelector: new PointsSelector
-                {
-                    Points = { new PointId { Uuid = id.ToString() } }
-                }
+                ids: new List<ulong> { numericId }
             );
         }
         catch (Exception ex)

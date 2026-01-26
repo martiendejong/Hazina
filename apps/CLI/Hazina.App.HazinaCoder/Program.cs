@@ -445,7 +445,7 @@ class HazinaCoderCLI : IDisposable
             // Handle slash commands
             if (line.StartsWith("/"))
             {
-                var result = HandleCommand(line);
+                var result = await HandleCommand(line);
                 if (result == CommandResult.Exit)
                     break;
                 if (result == CommandResult.Handled)
@@ -711,7 +711,7 @@ class HazinaCoderCLI : IDisposable
         }
     }
 
-    private CommandResult HandleCommand(string line)
+    private async Task<CommandResult> HandleCommand(string line)
     {
         var parts = line.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
         var command = parts[0].ToLower();
