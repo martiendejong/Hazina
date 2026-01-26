@@ -25,6 +25,10 @@ public partial class SimpleOpenAIClientChatInteraction
 
     public string LogPath { get; set; }
 
+    // Continuation tracking
+    private int _turnNumber = 0;
+    private int _continuationCount = 0;
+
     public SimpleOpenAIClientChatInteraction(IToolsContext? context, OpenAIClient api, OpenAIClientWrapper wrapper, string apiKey, string model, string logPath, ChatClient chatClient, ImageClient imageClient, List<ChatMessage> messages, List<ImageData>? images, ChatResponseFormat responseFormat, bool useWebSerach, bool useReasoning)
     {
         ToolsContext = context;
@@ -305,13 +309,36 @@ public partial class SimpleOpenAIClientChatInteraction
 
     private async Task<bool> HandleFinishReason(bool requiresAction, AssistantChatMessage? finishMessage, IEnumerable<ChatToolCall> toolCalls, ChatFinishReason? finishReason, CancellationToken cancellationToken)
     {
-        Log(finishMessage?.Content?.FirstOrDefault()?.ToString());
+        var responseContent = finishMessage?.Content?.FirstOrDefault()?.ToString() ?? "";
+        Log(responseContent);
 
         cancellationToken.ThrowIfCancellationRequested();
         switch (finishReason)
         {
             case ChatFinishReason.Stop:
                 {
+                    // Check if we should continue via continuation hooks
+                    if (ToolsContext?.ShouldContinue != null &&
+                        _continuationCount < (ToolsContext.MaxContinuations > 0 ? ToolsContext.MaxContinuations : 5))
+                    {
+                        if (ToolsContext.ShouldContinue(responseContent, _turnNumber))
+                        {
+                            // Add the assistant's response to messages
+                            if (finishMessage != null)
+                            {
+                                Messages.Add(finishMessage);
+                            }
+
+                            // Inject continuation prompt
+                            var continuationPrompt = ToolsContext.ContinuationPrompt ?? "Please continue with your task. If you're done, say 'TASK COMPLETE'.";
+                            Messages.Add(new UserChatMessage(continuationPrompt));
+
+                            _continuationCount++;
+                            Console.WriteLine($"[Continuation {_continuationCount}/{ToolsContext.MaxContinuations}] Prompting model to continue...");
+
+                            requiresAction = true;
+                        }
+                    }
                     break;
                 }
 
@@ -335,6 +362,7 @@ public partial class SimpleOpenAIClientChatInteraction
                 throw new NotImplementedException(finishReason.ToString());
         }
 
+        _turnNumber++;
         return requiresAction;
     }
 
@@ -370,14 +398,20 @@ public partial class SimpleOpenAIClientChatInteraction
                     }
 
                     // END PATCH
-                    //if (!(tool.FunctionName.Contains("_read") || tool.FunctionName.Contains("_write") || tool.FunctionName.Contains("_list") || tool.FunctionName.Contains("_relevancy") || tool.FunctionName == "build" || tool.FunctionName == "git"))
-                    //{
-                    //    Console.WriteLine($"Result:\n{result}\n");
-                    //    if (ToolsContext.SendMessage != null)
-                    //    {
-                    //        ToolsContext.SendMessage($"{result}\n");
-                    //    }
-                    //}
+
+                    // Invoke OnToolExecuted callback if defined
+                    if (ToolsContext.OnToolExecuted != null)
+                    {
+                        try
+                        {
+                            ToolsContext.OnToolExecuted(tool.FunctionName, result, _turnNumber);
+                        }
+                        catch
+                        {
+                            // Silently fail callback to not disrupt main flow
+                        }
+                    }
+
                     toolResults.Add(new ToolChatMessage(toolCall.Id, result));
                 }
             }

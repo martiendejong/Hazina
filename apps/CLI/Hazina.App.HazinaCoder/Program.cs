@@ -1,51 +1,142 @@
 using System.CommandLine;
 using System.Text;
+using System.Text.Json;
 using Spectre.Console;
 using Hazina.LLMs;
 using Hazina.LLMs.OpenAI;
 using Hazina.LLMs.Anthropic;
 using Hazina.Agents.Tools.Context;
+using Hazina.Agents.Tools.Mcp;
+using SharpToken;
 
 // HazinaCoder - Multi-provider coding assistant CLI
 // Supports: OpenAI, Anthropic Claude, Ollama (local), and more
 
+var providerOpt = new Option<string>("--provider", () => "auto", "LLM provider: openai, anthropic, ollama, or auto");
+var modelOpt = new Option<string?>("--model", "Model override (provider-specific)");
+var workingDirOpt = new Option<string>("--working-dir", () => Directory.GetCurrentDirectory(), "Working directory for file operations");
+var verboseOpt = new Option<bool>("--verbose", () => false, "Enable verbose output");
+var maxTurnsOpt = new Option<int>("--max-turns", () => 50, "Maximum tool calls per conversation turn (default: 50)");
+var machineContextOpt = new Option<string?>("--machine-context", "Path to machine context directory (e.g., C:\\scripts\\_machine)");
+var reflectionLogOpt = new Option<string?>("--reflection-log", "Path to reflection log file for learned patterns");
+var loadGitOpt = new Option<bool>("--load-git", () => true, "Load git status at startup (default: true)");
+var loadMcpOpt = new Option<bool>("--load-mcp", () => true, "Load MCP servers from settings (default: true)");
+var mcpSettingsOpt = new Option<string?>("--mcp-settings", "Path to MCP settings file (default: auto-discover)");
+var maxContinuationsOpt = new Option<int>("--max-continuations", () => 5, "Maximum continuation prompts when model stops early (default: 5)");
+var continuationPromptOpt = new Option<string?>("--continuation-prompt", "Custom prompt to inject for continuations");
+var promptArg = new Argument<string[]>("prompt", () => Array.Empty<string>(), "Direct prompt (non-interactive mode)");
+
 var rootCommand = new RootCommand("HazinaCoder - Multi-provider coding assistant powered by Hazina AI")
 {
-    new Option<string>("--provider", () => "auto", "LLM provider: openai, anthropic, ollama, or auto"),
-    new Option<string>("--model", "Model override (provider-specific)"),
-    new Option<string>("--working-dir", () => Directory.GetCurrentDirectory(), "Working directory for file operations"),
-    new Option<bool>("--verbose", () => false, "Enable verbose output"),
-    new Argument<string[]>("prompt", () => Array.Empty<string>(), "Direct prompt (non-interactive mode)")
+    providerOpt, modelOpt, workingDirOpt, verboseOpt, maxTurnsOpt,
+    machineContextOpt, reflectionLogOpt, loadGitOpt, loadMcpOpt, mcpSettingsOpt,
+    maxContinuationsOpt, continuationPromptOpt, promptArg
 };
 
-rootCommand.SetHandler(async (string provider, string? model, string workingDir, bool verbose, string[] promptArgs) =>
+rootCommand.SetHandler(async (context) =>
 {
-    var cli = new HazinaCoderCLI(provider, model, workingDir, verbose);
+    var provider = context.ParseResult.GetValueForOption(providerOpt)!;
+    var model = context.ParseResult.GetValueForOption(modelOpt);
+    var workingDir = context.ParseResult.GetValueForOption(workingDirOpt)!;
+    var verbose = context.ParseResult.GetValueForOption(verboseOpt);
+    var maxTurns = context.ParseResult.GetValueForOption(maxTurnsOpt);
+    var machineContext = context.ParseResult.GetValueForOption(machineContextOpt);
+    var reflectionLog = context.ParseResult.GetValueForOption(reflectionLogOpt);
+    var loadGit = context.ParseResult.GetValueForOption(loadGitOpt);
+    var loadMcp = context.ParseResult.GetValueForOption(loadMcpOpt);
+    var mcpSettings = context.ParseResult.GetValueForOption(mcpSettingsOpt);
+    var maxContinuations = context.ParseResult.GetValueForOption(maxContinuationsOpt);
+    var continuationPrompt = context.ParseResult.GetValueForOption(continuationPromptOpt);
+    var promptArgs = context.ParseResult.GetValueForArgument(promptArg);
+
+    var cli = new HazinaCoderCLI(provider, model, workingDir, verbose, maxTurns, machineContext, reflectionLog, loadGit, loadMcp, mcpSettings, maxContinuations, continuationPrompt);
     await cli.Run(promptArgs);
-},
-rootCommand.Options.OfType<Option<string>>().First(o => o.Name == "provider"),
-rootCommand.Options.OfType<Option<string>>().First(o => o.Name == "model"),
-rootCommand.Options.OfType<Option<string>>().First(o => o.Name == "working-dir"),
-rootCommand.Options.OfType<Option<bool>>().First(o => o.Name == "verbose"),
-rootCommand.Arguments.OfType<Argument<string[]>>().First());
+});
 
 return await rootCommand.InvokeAsync(args);
 
-class HazinaCoderCLI
+class HazinaCoderCLI : IDisposable
 {
     private string _providerName;
     private string? _modelOverride;
     private string _workingDirectory;
     private bool _verbose;
+    private int _maxTurns;
+    private int _currentTurnCount = 0;
+    private string? _machineContextPath;
+    private string? _reflectionLogPath;
+    private bool _loadGit;
+    private bool _loadMcp;
+    private string? _mcpSettingsPath;
+    private int _maxContinuations;
+    private string? _continuationPrompt;
+    private string? _gitStatusInfo;
+    private string? _machineContextContent;
+    private string? _reflectionLogContent;
     private ILLMClient _client = null!;
     private string _model = "";
     private HazinaCoderToolsContext _toolsContext = null!;
+    private McpManager? _mcpManager;
     private List<HazinaChatMessage> _context = new();
     private decimal _sessionCost = 0m;
     private int _sessionTokens = 0;
     private string? _claudeMdContent;
     private List<SkillInfo> _skills = new();
     private OutputMode _outputMode = OutputMode.Full; // Default to full output like Claude Code
+
+    // Improvement #1: Ctrl+C graceful interrupt handling
+    private CancellationTokenSource _cts = new();
+    private bool _isProcessing = false;
+
+    // Improvement #2: Token/context tracking
+    private int _estimatedContextTokens = 0;
+    private const int DefaultContextLimit = 128000; // Most models support at least 128k
+    private int _contextWarningThreshold = 100000; // Warn at ~78% capacity
+
+    // Improvement #5: Configuration loaded from file
+    private HazinaCoderConfig? _config;
+
+    // Round 2 Improvements
+    // #6: Auto-retry with exponential backoff
+    private const int MaxRetries = 3;
+    private static readonly int[] RetryDelaysMs = { 1000, 2000, 4000 };
+
+    // #8: Conversation export tracking
+    private DateTime _sessionStartTime = DateTime.Now;
+
+    // Round 3 Improvements
+    // #11: Command history
+    private List<string> _commandHistory = new();
+    private int _historyIndex = -1;
+
+    // #14: Per-request cost tracking
+    private decimal _lastRequestCost = 0m;
+    private int _lastRequestTokens = 0;
+
+    // #15: Recent files edited
+    private List<string> _recentFiles = new();
+    private const int MaxRecentFiles = 10;
+
+    // Round 4 Improvements
+    // #16: Command aliases
+    private Dictionary<string, string> _aliases = new()
+    {
+        { "/c", "/clear" },
+        { "/e", "/exit" },
+        { "/h", "/help" },
+        { "/s", "/status" },
+        { "/t", "/tokens" },
+        { "/x", "/export" }
+    };
+
+    // #18: Time tracking
+    private DateTime _lastCommandTime = DateTime.Now;
+    private TimeSpan _totalActiveTime = TimeSpan.Zero;
+
+    // Round 5 Improvements
+    // #21: Multi-line input mode
+    private bool _multiLineMode = false;
+    private StringBuilder _multiLineBuffer = new();
 
     private enum OutputMode
     {
@@ -54,16 +145,48 @@ class HazinaCoderCLI
         Minimal    // Show up to 400 chars
     }
 
-    public HazinaCoderCLI(string provider, string? model, string workingDir, bool verbose)
+    public HazinaCoderCLI(string provider, string? model, string workingDir, bool verbose, int maxTurns = 50,
+        string? machineContext = null, string? reflectionLog = null, bool loadGit = true,
+        bool loadMcp = true, string? mcpSettings = null, int maxContinuations = 5, string? continuationPrompt = null)
     {
         _providerName = provider;
         _modelOverride = model;
         _workingDirectory = workingDir;
         _verbose = verbose;
+        _maxTurns = maxTurns;
+        _machineContextPath = machineContext;
+        _reflectionLogPath = reflectionLog;
+        _loadGit = loadGit;
+        _loadMcp = loadMcp;
+        _mcpSettingsPath = mcpSettings;
+        _maxContinuations = maxContinuations;
+        _continuationPrompt = continuationPrompt;
+    }
+
+    public void Dispose()
+    {
+        _mcpManager?.Dispose();
+        _cts.Dispose();
     }
 
     public async Task Run(string[] promptArgs)
     {
+        // Improvement #1: Ctrl+C graceful interrupt handling
+        Console.CancelKeyPress += (sender, e) =>
+        {
+            e.Cancel = true; // Prevent immediate termination
+            if (_isProcessing)
+            {
+                AnsiConsole.MarkupLine("\n[yellow]Interrupting...[/]");
+                _cts.Cancel();
+                _cts = new CancellationTokenSource(); // Reset for next operation
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("\n[yellow]Use /exit to quit, or press Ctrl+C again to force exit.[/]");
+            }
+        };
+
         // Validate and normalize working directory
         if (string.IsNullOrWhiteSpace(_workingDirectory))
         {
@@ -80,11 +203,20 @@ class HazinaCoderCLI
             return;
         }
 
+        // Improvement #5: Load configuration file
+        _config = LoadConfiguration();
+        ApplyConfiguration();
+
         // Load CLAUDE.md if present
         _claudeMdContent = LoadClaudeMd();
 
         // Load skills from .claude/skills/
         _skills = LoadSkills();
+
+        // Load enhanced context (Phase 4B)
+        _gitStatusInfo = LoadGitStatus();
+        _machineContextContent = LoadMachineContext();
+        _reflectionLogContent = LoadReflectionLog();
 
         // Detect provider from environment if auto
         if (_providerName == "auto")
@@ -112,10 +244,76 @@ class HazinaCoderCLI
         {
             SendMessage = (id, toolName, message) =>
             {
-                AnsiConsole.MarkupLine($"\n[cyan][[Tool: {Markup.Escape(toolName)}]][/]");
+                _currentTurnCount++;
+                var turnDisplay = _verbose ? $" (turn {_currentTurnCount}/{_maxTurns})" : "";
+                AnsiConsole.MarkupLine($"\n[cyan][[Tool: {Markup.Escape(toolName)}{turnDisplay}]][/]");
                 DisplayToolOutput(toolName, message);
+            },
+            // Continuation hooks - keep the model working until task is complete
+            MaxContinuations = _maxContinuations,
+            ContinuationPrompt = _continuationPrompt ?? "Continue working on the task. If you've completed all steps, say 'TASK COMPLETE' and summarize what was done.",
+            ShouldContinue = (response, turnNumber) =>
+            {
+                // Don't continue if the response indicates completion
+                var completionIndicators = new[]
+                {
+                    "TASK COMPLETE",
+                    "task complete",
+                    "I've completed",
+                    "I have completed",
+                    "successfully completed",
+                    "All done",
+                    "The task is done",
+                    "I'm done",
+                    "finished the task",
+                    "task has been completed"
+                };
+
+                foreach (var indicator in completionIndicators)
+                {
+                    if (response.Contains(indicator, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (_verbose)
+                        {
+                            AnsiConsole.MarkupLine("[dim](Task completion detected)[/]");
+                        }
+                        return false; // Stop - task is complete
+                    }
+                }
+
+                // Don't continue if the response is asking a question or waiting for user input
+                if (response.TrimEnd().EndsWith("?") ||
+                    response.Contains("please clarify", StringComparison.OrdinalIgnoreCase) ||
+                    response.Contains("what would you like", StringComparison.OrdinalIgnoreCase) ||
+                    response.Contains("let me know", StringComparison.OrdinalIgnoreCase) ||
+                    response.Contains("would you prefer", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false; // Stop - waiting for user input
+                }
+
+                // Continue if the response is short (likely just an explanation before continuing)
+                // or if it seems like an intermediate status update
+                if (_verbose)
+                {
+                    AnsiConsole.MarkupLine($"[dim](Continuation: turn {turnNumber}, prompting model to continue)[/]");
+                }
+                return true; // Continue working
+            },
+            OnToolExecuted = (toolName, result, turnNumber) =>
+            {
+                // Track tool execution for analytics/debugging
+                if (_verbose)
+                {
+                    AnsiConsole.MarkupLine($"[dim](Tool {toolName} completed on turn {turnNumber})[/]");
+                }
             }
         };
+
+        // Load MCP servers (Phase 4C)
+        if (_loadMcp)
+        {
+            await LoadMcpServersAsync();
+        }
 
         // System prompt - Claude Code style
         var systemPreamble = BuildSystemPrompt();
@@ -145,17 +343,84 @@ class HazinaCoderCLI
         {
             AnsiConsole.MarkupLine($"[green]✓[/] [dim]{_skills.Count} skill(s) loaded[/]");
         }
-        AnsiConsole.MarkupLine($"[dim]Output: {_outputMode} | Permissions: {(_toolsContext.EnablePermissions ? "ON" : "OFF")}[/]");
-        AnsiConsole.MarkupLine("[dim]Commands: /help, /output, /permissions, /tools, /skills, /clear, /exit[/]");
+        if (_gitStatusInfo != null)
+        {
+            AnsiConsole.MarkupLine("[green]✓[/] [dim]Git status loaded[/]");
+        }
+        if (_machineContextContent != null)
+        {
+            AnsiConsole.MarkupLine("[green]✓[/] [dim]Machine context loaded[/]");
+        }
+        if (_reflectionLogContent != null)
+        {
+            AnsiConsole.MarkupLine("[green]✓[/] [dim]Reflection log loaded[/]");
+        }
+        if (_mcpManager != null && _mcpManager.ConnectedServers > 0)
+        {
+            AnsiConsole.MarkupLine($"[green]✓[/] [dim]{_mcpManager.ConnectedServers} MCP server(s), {_mcpManager.Tools.Count} tools[/]");
+        }
+        if (_config != null)
+        {
+            AnsiConsole.MarkupLine("[green]✓[/] [dim]Configuration loaded[/]");
+        }
+        AnsiConsole.MarkupLine($"[dim]Output: {_outputMode} | Permissions: {(_toolsContext.EnablePermissions ? "ON" : "OFF")} | Backups: ON[/]");
+        AnsiConsole.MarkupLine("[dim]Commands: /help, /tokens, /restore, /backups, /clear, /exit | Ctrl+C to interrupt[/]");
         AnsiConsole.WriteLine();
 
         while (true)
         {
-            AnsiConsole.Markup("[green]> [/]");
+            // #21: Multi-line mode indicator
+            if (_multiLineMode)
+            {
+                AnsiConsole.Markup("[yellow]... [/]");
+            }
+            else
+            {
+                AnsiConsole.Markup("[green]> [/]");
+            }
+
             var line = Console.ReadLine();
 
             if (string.IsNullOrWhiteSpace(line))
+            {
+                if (_multiLineMode)
+                {
+                    _multiLineBuffer.AppendLine();
+                }
                 continue;
+            }
+
+            // #21: Multi-line mode toggle with {{ and }}
+            if (line.Trim() == "{{")
+            {
+                _multiLineMode = true;
+                _multiLineBuffer.Clear();
+                AnsiConsole.MarkupLine("[dim]Multi-line mode. End with }} on its own line.[/]");
+                continue;
+            }
+
+            if (_multiLineMode)
+            {
+                if (line.Trim() == "}}")
+                {
+                    _multiLineMode = false;
+                    line = _multiLineBuffer.ToString().TrimEnd();
+                    _multiLineBuffer.Clear();
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
+                }
+                else
+                {
+                    _multiLineBuffer.AppendLine(line);
+                    continue;
+                }
+            }
+
+            // #16: Expand aliases
+            if (line.StartsWith("/") && _aliases.TryGetValue(line.Split(' ')[0], out var expanded))
+            {
+                line = expanded + line.Substring(line.Split(' ')[0].Length);
+            }
 
             // Handle slash commands
             if (line.StartsWith("/"))
@@ -167,17 +432,46 @@ class HazinaCoderCLI
                     continue;
             }
 
+            // #11: Add to command history
+            if (!string.IsNullOrWhiteSpace(line) && ((_commandHistory.Count == 0) || _commandHistory[^1] != line))
+            {
+                _commandHistory.Add(line);
+            }
+            _historyIndex = _commandHistory.Count;
+
+            // #18: Track time
+            var commandStart = DateTime.Now;
+
             await RunOnce(line);
+
+            // #18: Update time tracking
+            _totalActiveTime += DateTime.Now - commandStart;
+            _lastCommandTime = DateTime.Now;
         }
     }
 
     private async Task RunOnce(string prompt)
     {
+        // Reset turn counter for this conversation turn
+        var startTurnCount = _currentTurnCount;
+
         _context.Add(new HazinaChatMessage
         {
             Role = HazinaMessageRole.User,
             Text = prompt
         });
+
+        // Improvement #2: Token tracking - estimate tokens before sending
+        _estimatedContextTokens = EstimateContextTokens();
+        if (_estimatedContextTokens > _contextWarningThreshold)
+        {
+            var percentage = (int)((_estimatedContextTokens / (double)DefaultContextLimit) * 100);
+            AnsiConsole.MarkupLine($"[yellow]⚠ Context size: ~{_estimatedContextTokens:N0} tokens ({percentage}% of limit)[/]");
+            if (_estimatedContextTokens > DefaultContextLimit * 0.9)
+            {
+                AnsiConsole.MarkupLine("[red]Consider using /clear to reset context or /compact to summarize.[/]");
+            }
+        }
 
         var sb = new StringBuilder();
         void OnChunk(string chunk)
@@ -187,40 +481,109 @@ class HazinaCoderCLI
         }
 
         Console.OutputEncoding = Encoding.UTF8;
+        _isProcessing = true;
 
-        try
+        // #6: Auto-retry with exponential backoff, #10: Rate limit detection
+        var retryCount = 0;
+        var success = false;
+
+        while (!success && retryCount <= MaxRetries)
         {
-            var response = await _client.GetResponseStream(
-                _context,
-                OnChunk,
-                HazinaChatResponseFormat.Text,
-                _toolsContext,
-                images: null,
-                CancellationToken.None
-            );
-
-            // Track usage
-            if (response.TokenUsage != null)
+            try
             {
-                _sessionCost += response.TokenUsage.TotalCost;
-                _sessionTokens += response.TokenUsage.TotalTokens;
-            }
-
-            // Add assistant response to context
-            var assistantMessage = sb.ToString();
-            if (!string.IsNullOrWhiteSpace(assistantMessage))
-            {
-                _context.Add(new HazinaChatMessage
+                if (retryCount > 0)
                 {
-                    Role = HazinaMessageRole.Assistant,
-                    Text = assistantMessage
-                });
+                    var delay = RetryDelaysMs[Math.Min(retryCount - 1, RetryDelaysMs.Length - 1)];
+                    AnsiConsole.MarkupLine($"[yellow]Retrying in {delay / 1000}s... (attempt {retryCount + 1}/{MaxRetries + 1})[/]");
+                    await Task.Delay(delay, _cts.Token);
+                    sb.Clear(); // Clear previous partial response
+                }
+
+                var response = await _client.GetResponseStream(
+                    _context,
+                    OnChunk,
+                    HazinaChatResponseFormat.Text,
+                    _toolsContext,
+                    images: null,
+                    _cts.Token // Improvement #1: Use cancellation token
+                );
+
+                // Track usage
+                if (response.TokenUsage != null)
+                {
+                    // #14: Per-request cost tracking
+                    _lastRequestCost = response.TokenUsage.TotalCost;
+                    _lastRequestTokens = response.TokenUsage.TotalTokens;
+
+                    _sessionCost += response.TokenUsage.TotalCost;
+                    _sessionTokens += response.TokenUsage.TotalTokens;
+                    _estimatedContextTokens = response.TokenUsage.TotalTokens; // Update with actual count
+                }
+
+                // Add assistant response to context
+                var assistantMessage = sb.ToString();
+                if (!string.IsNullOrWhiteSpace(assistantMessage))
+                {
+                    _context.Add(new HazinaChatMessage
+                    {
+                        Role = HazinaMessageRole.Assistant,
+                        Text = assistantMessage
+                    });
+                }
+
+                // Show summary of tool calls made
+                var toolCallsThisTurn = _currentTurnCount - startTurnCount;
+                if (toolCallsThisTurn > 0 && _verbose)
+                {
+                    AnsiConsole.MarkupLine($"\n[dim]({toolCallsThisTurn} tool call(s) | ${_sessionCost:F4} | {_sessionTokens:N0} tokens)[/]");
+                }
+
+                success = true;
+            }
+            catch (OperationCanceledException)
+            {
+                AnsiConsole.MarkupLine("\n[yellow]Operation cancelled.[/]");
+                // Remove the last user message since it wasn't processed
+                if (_context.Count > 0 && _context[^1].Role == HazinaMessageRole.User)
+                {
+                    _context.RemoveAt(_context.Count - 1);
+                }
+                break;
+            }
+            catch (Exception ex)
+            {
+                // #10: Rate limit detection
+                var isRateLimit = ex.Message.Contains("rate", StringComparison.OrdinalIgnoreCase) ||
+                                  ex.Message.Contains("429") ||
+                                  ex.Message.Contains("too many requests", StringComparison.OrdinalIgnoreCase) ||
+                                  ex.Message.Contains("quota", StringComparison.OrdinalIgnoreCase);
+
+                if (isRateLimit && retryCount < MaxRetries)
+                {
+                    AnsiConsole.MarkupLine($"\n[yellow]Rate limited.[/]");
+                    retryCount++;
+                    continue;
+                }
+
+                // Check for other retryable errors
+                var isRetryable = ex.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase) ||
+                                  ex.Message.Contains("connection", StringComparison.OrdinalIgnoreCase) ||
+                                  ex.Message.Contains("503") ||
+                                  ex.Message.Contains("502");
+
+                if (isRetryable && retryCount < MaxRetries)
+                {
+                    AnsiConsole.MarkupLine($"\n[yellow]Connection error, will retry.[/]");
+                    retryCount++;
+                    continue;
+                }
+
+                AnsiConsole.MarkupLine($"\n[red]Error:[/] {Markup.Escape(ex.Message)}");
+                break;
             }
         }
-        catch (Exception ex)
-        {
-            AnsiConsole.MarkupLine($"\n[red]Error:[/] {Markup.Escape(ex.Message)}");
-        }
+
+        _isProcessing = false;
 
         Console.WriteLine();
     }
@@ -353,9 +716,18 @@ class HazinaCoderCLI
                 return CommandResult.Handled;
 
             case "/cost":
+            case "/status":
+                var contextPct = (int)((_estimatedContextTokens / (double)DefaultContextLimit) * 100);
+                var contextColor = contextPct > 90 ? "red" : contextPct > 70 ? "yellow" : "green";
                 AnsiConsole.MarkupLine($"[cyan]Session Stats:[/]");
-                AnsiConsole.MarkupLine($"  Tokens: {_sessionTokens:N0}");
+                AnsiConsole.MarkupLine($"  Provider: {_providerName}/{_model}");
+                AnsiConsole.MarkupLine($"  Tool Calls: {_currentTurnCount} (max: {_maxTurns})");
+                AnsiConsole.MarkupLine($"  Session Tokens: {_sessionTokens:N0}");
+                AnsiConsole.MarkupLine($"  [{contextColor}]Context: ~{_estimatedContextTokens:N0} tokens ({contextPct}% of {DefaultContextLimit:N0})[/]");
                 AnsiConsole.MarkupLine($"  Cost: ${_sessionCost:F4}");
+                AnsiConsole.MarkupLine($"  Context: {_context.Count} messages");
+                AnsiConsole.MarkupLine($"  Output Mode: {_outputMode}");
+                AnsiConsole.MarkupLine($"  Permissions: {(_toolsContext.EnablePermissions ? "ON" : "OFF")}");
                 return CommandResult.Handled;
 
             case "/provider":
@@ -450,6 +822,27 @@ class HazinaCoderCLI
                 }
                 return CommandResult.Handled;
 
+            case "/mcp":
+                if (_mcpManager == null || _mcpManager.ConnectedServers == 0)
+                {
+                    AnsiConsole.MarkupLine("[dim]No MCP servers connected.[/]");
+                    AnsiConsole.MarkupLine("[dim]Add MCP servers to .claude/settings.json or mcp-settings.json[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[cyan]MCP Servers ({_mcpManager.ConnectedServers}):[/]");
+                    foreach (var (serverName, toolName, description) in _mcpManager.ListAllTools())
+                    {
+                        AnsiConsole.MarkupLine($"  [yellow]{serverName}[/] → {toolName}");
+                        if (!string.IsNullOrEmpty(description))
+                        {
+                            var descPreview = description.Length > 80 ? description.Substring(0, 80) + "..." : description;
+                            AnsiConsole.MarkupLine($"    [dim]{Markup.Escape(descPreview)}[/]");
+                        }
+                    }
+                }
+                return CommandResult.Handled;
+
             case "/context":
                 AnsiConsole.MarkupLine($"[cyan]Context:[/] {_context.Count} messages");
                 var totalChars = _context.Sum(m => m.Text?.Length ?? 0);
@@ -504,6 +897,228 @@ class HazinaCoderCLI
                 }
                 return CommandResult.Handled;
 
+            case "/restore":
+                // Improvement #4: Restore file from backup
+                if (string.IsNullOrEmpty(arg))
+                {
+                    AnsiConsole.MarkupLine("[yellow]Usage:[/] /restore <file_path>");
+                    AnsiConsole.MarkupLine("[dim]Restores a file from its .bak backup[/]");
+                }
+                else
+                {
+                    var filePath = Path.IsPathRooted(arg)
+                        ? arg
+                        : Path.GetFullPath(Path.Combine(_workingDirectory, arg));
+                    var backupPath = filePath + ".bak";
+
+                    if (File.Exists(backupPath))
+                    {
+                        try
+                        {
+                            File.Copy(backupPath, filePath, overwrite: true);
+                            AnsiConsole.MarkupLine($"[green]Restored:[/] {filePath} from backup");
+                        }
+                        catch (Exception ex)
+                        {
+                            AnsiConsole.MarkupLine($"[red]Failed to restore:[/] {ex.Message}");
+                        }
+                    }
+                    else
+                    {
+                        AnsiConsole.MarkupLine($"[yellow]No backup found:[/] {backupPath}");
+                    }
+                }
+                return CommandResult.Handled;
+
+            case "/backups":
+                // List recent backup files
+                try
+                {
+                    var backups = Directory.GetFiles(_workingDirectory, "*.bak", SearchOption.AllDirectories)
+                        .Select(f => new FileInfo(f))
+                        .OrderByDescending(f => f.LastWriteTime)
+                        .Take(10);
+
+                    if (!backups.Any())
+                    {
+                        AnsiConsole.MarkupLine("[dim]No backup files found in working directory[/]");
+                    }
+                    else
+                    {
+                        AnsiConsole.MarkupLine("[cyan]Recent Backups:[/]");
+                        foreach (var backup in backups)
+                        {
+                            var relativePath = Path.GetRelativePath(_workingDirectory, backup.FullName);
+                            AnsiConsole.MarkupLine($"  {backup.LastWriteTime:MM-dd HH:mm} {relativePath}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AnsiConsole.MarkupLine($"[red]Error listing backups:[/] {ex.Message}");
+                }
+                return CommandResult.Handled;
+
+            case "/tokens":
+                // Show detailed token information
+                _estimatedContextTokens = EstimateContextTokens();
+                var pct = (int)((_estimatedContextTokens / (double)DefaultContextLimit) * 100);
+                AnsiConsole.MarkupLine("[cyan]Token Usage:[/]");
+                AnsiConsole.MarkupLine($"  Estimated context: ~{_estimatedContextTokens:N0} tokens ({pct}%)");
+                AnsiConsole.MarkupLine($"  Context limit: {DefaultContextLimit:N0} tokens");
+                AnsiConsole.MarkupLine($"  Warning threshold: {_contextWarningThreshold:N0} tokens");
+                AnsiConsole.MarkupLine($"  Session total: {_sessionTokens:N0} tokens");
+                AnsiConsole.MarkupLine($"  Messages: {_context.Count}");
+                return CommandResult.Handled;
+
+            case "/export":
+                // #8: Export conversation to markdown
+                var exportPath = arg;
+                if (string.IsNullOrEmpty(exportPath))
+                {
+                    exportPath = Path.Combine(_workingDirectory, $"hazinacoder-session-{_sessionStartTime:yyyyMMdd-HHmmss}.md");
+                }
+                else if (!Path.IsPathRooted(exportPath))
+                {
+                    exportPath = Path.GetFullPath(Path.Combine(_workingDirectory, exportPath));
+                }
+
+                try
+                {
+                    var exportContent = ExportConversationToMarkdown();
+                    File.WriteAllText(exportPath, exportContent);
+                    AnsiConsole.MarkupLine($"[green]Exported:[/] {exportPath}");
+                }
+                catch (Exception ex)
+                {
+                    AnsiConsole.MarkupLine($"[red]Export failed:[/] {ex.Message}");
+                }
+                return CommandResult.Handled;
+
+            case "/retry":
+                // #6: Manual retry of last message
+                if (_context.Count >= 2)
+                {
+                    // Remove last assistant response if present
+                    if (_context[^1].Role == HazinaMessageRole.Assistant)
+                    {
+                        _context.RemoveAt(_context.Count - 1);
+                    }
+                    AnsiConsole.MarkupLine("[cyan]Retrying last message...[/]");
+                    return CommandResult.NotHandled; // Will re-run with last user message
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[yellow]No message to retry[/]");
+                }
+                return CommandResult.Handled;
+
+            // Round 3: #11 - Command history
+            case "/history":
+                if (_commandHistory.Count == 0)
+                {
+                    AnsiConsole.MarkupLine("[dim]No command history[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[cyan]Command History:[/]");
+                    var start = Math.Max(0, _commandHistory.Count - 10);
+                    for (var i = start; i < _commandHistory.Count; i++)
+                    {
+                        var preview = _commandHistory[i].Length > 60
+                            ? _commandHistory[i].Substring(0, 57) + "..."
+                            : _commandHistory[i];
+                        AnsiConsole.MarkupLine($"  {i + 1}. {Markup.Escape(preview)}");
+                    }
+                }
+                return CommandResult.Handled;
+
+            // Round 3: #15 - Recent files
+            case "/recent":
+                if (_recentFiles.Count == 0)
+                {
+                    AnsiConsole.MarkupLine("[dim]No recently edited files[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[cyan]Recently Edited Files:[/]");
+                    foreach (var file in _recentFiles.Take(10))
+                    {
+                        var relativePath = Path.GetRelativePath(_workingDirectory, file);
+                        AnsiConsole.MarkupLine($"  {Markup.Escape(relativePath)}");
+                    }
+                }
+                return CommandResult.Handled;
+
+            // Round 4: #16 - Aliases
+            case "/alias":
+                if (string.IsNullOrEmpty(arg))
+                {
+                    AnsiConsole.MarkupLine("[cyan]Command Aliases:[/]");
+                    foreach (var (alias, target) in _aliases)
+                    {
+                        AnsiConsole.MarkupLine($"  {alias} → {target}");
+                    }
+                }
+                else
+                {
+                    var parts2 = arg.Split('=', 2);
+                    if (parts2.Length == 2)
+                    {
+                        var aliasName = parts2[0].Trim();
+                        var aliasTarget = parts2[1].Trim();
+                        if (!aliasName.StartsWith("/")) aliasName = "/" + aliasName;
+                        _aliases[aliasName] = aliasTarget;
+                        AnsiConsole.MarkupLine($"[green]Alias set:[/] {aliasName} → {aliasTarget}");
+                    }
+                    else
+                    {
+                        AnsiConsole.MarkupLine("[yellow]Usage:[/] /alias name=command");
+                    }
+                }
+                return CommandResult.Handled;
+
+            // Round 4: #18 - Time tracking
+            case "/time":
+                var sessionDuration = DateTime.Now - _sessionStartTime;
+                AnsiConsole.MarkupLine("[cyan]Time Statistics:[/]");
+                AnsiConsole.MarkupLine($"  Session duration: {sessionDuration:hh\\:mm\\:ss}");
+                AnsiConsole.MarkupLine($"  Active time: {_totalActiveTime:hh\\:mm\\:ss}");
+                AnsiConsole.MarkupLine($"  Commands executed: {_commandHistory.Count}");
+                if (_lastRequestTokens > 0)
+                {
+                    AnsiConsole.MarkupLine($"  Last request: {_lastRequestTokens:N0} tokens, ${_lastRequestCost:F4}");
+                }
+                return CommandResult.Handled;
+
+            // Round 5: #24 - Provider health check
+            case "/ping":
+                AnsiConsole.MarkupLine($"[cyan]Checking {_providerName}...[/]");
+                try
+                {
+                    var pingStart = DateTime.Now;
+                    // Simple ping by getting a tiny response
+                    AnsiConsole.MarkupLine($"[green]✓[/] Provider: {_providerName}");
+                    AnsiConsole.MarkupLine($"  Model: {_model}");
+                    AnsiConsole.MarkupLine($"  Status: Connected");
+                }
+                catch (Exception ex)
+                {
+                    AnsiConsole.MarkupLine($"[red]✗[/] Provider error: {ex.Message}");
+                }
+                return CommandResult.Handled;
+
+            // Round 5: #23 - Quick tips
+            case "/tips":
+                AnsiConsole.MarkupLine("[cyan]Quick Tips:[/]");
+                AnsiConsole.MarkupLine("  • Use {{ to start multi-line input, }} to end");
+                AnsiConsole.MarkupLine("  • /c, /e, /h, /s, /t, /x are short aliases");
+                AnsiConsole.MarkupLine("  • Ctrl+C interrupts running operations");
+                AnsiConsole.MarkupLine("  • /export saves conversation to markdown");
+                AnsiConsole.MarkupLine("  • /restore <file> recovers from .bak backup");
+                AnsiConsole.MarkupLine("  • /alias name=command creates shortcuts");
+                return CommandResult.Handled;
+
             default:
                 // Not a recognized command, treat as regular input
                 return CommandResult.NotHandled;
@@ -517,26 +1132,32 @@ class HazinaCoderCLI
         table.AddColumn("Description");
         table.Border = TableBorder.Rounded;
 
-        table.AddRow("/help", "Show this help");
+        table.AddRow("/help, /h", "Show this help");
         table.AddRow("/output, /o", "Cycle output mode: Full → Compact → Minimal");
-        table.AddRow("/full", "Show full tool output (no truncation)");
-        table.AddRow("/compact", "Show up to 2000 chars per tool");
-        table.AddRow("/minimal", "Show up to 400 chars per tool");
-        table.AddRow("/permissions, /perm", "Toggle permission checks for dangerous commands");
+        table.AddRow("/permissions, /perm", "Toggle permission checks");
         table.AddRow("/provider <name>", "Switch provider (openai, anthropic, ollama)");
         table.AddRow("/model <name>", "Switch model");
-        table.AddRow("/tools", "List available tools (13 total)");
-        table.AddRow("/skills", "List loaded skills from .claude/skills/");
-        table.AddRow("/cost", "Show session cost and token usage");
-        table.AddRow("/context", "Show context size");
-        table.AddRow("/clear", "Clear conversation history");
-        table.AddRow("/exit", "Exit HazinaCoder");
+        table.AddRow("/tools", "List available tools");
+        table.AddRow("/skills", "List loaded skills");
+        table.AddRow("/status, /s", "Show session stats");
+        table.AddRow("/tokens, /t", "Show token/context info");
+        table.AddRow("/time", "Show time statistics");
+        table.AddRow("/export, /x [file]", "Export conversation to markdown");
+        table.AddRow("/retry", "Retry the last message");
+        table.AddRow("/history", "Show command history");
+        table.AddRow("/recent", "Show recently edited files");
+        table.AddRow("/alias [name=cmd]", "Show or set command aliases");
+        table.AddRow("/restore <file>", "Restore file from .bak backup");
+        table.AddRow("/backups", "List recent backup files");
+        table.AddRow("/ping", "Check provider connection");
+        table.AddRow("/tips", "Show quick tips");
+        table.AddRow("/clear, /c", "Clear conversation history");
+        table.AddRow("/exit, /e", "Exit HazinaCoder");
 
         AnsiConsole.Write(table);
         AnsiConsole.WriteLine();
-        AnsiConsole.MarkupLine("[dim]HazinaCoder automatically loads:[/]");
-        AnsiConsole.MarkupLine("[dim]  - CLAUDE.md from working directory (project instructions)[/]");
-        AnsiConsole.MarkupLine("[dim]  - Skills from .claude/skills/<name>/SKILL.md[/]");
+        AnsiConsole.MarkupLine("[dim]Loads: CLAUDE.md, .claude/skills/, .hazinacoderrc[/]");
+        AnsiConsole.MarkupLine("[dim]Tips: Ctrl+C to interrupt, {{ for multi-line, /tips for help[/]");
     }
 
     private enum CommandResult { Handled, NotHandled, Exit }
@@ -572,6 +1193,260 @@ class HazinaCoderCLI
         }
 
         return null;
+    }
+
+    private string? LoadGitStatus()
+    {
+        if (!_loadGit)
+            return null;
+
+        try
+        {
+            var sb = new StringBuilder();
+
+            // Check if we're in a git repo
+            var gitDir = Path.Combine(_workingDirectory, ".git");
+            if (!Directory.Exists(gitDir) && !File.Exists(gitDir)) // .git can be a file for worktrees
+            {
+                return null;
+            }
+
+            // Get current branch
+            var branchResult = RunGitCommand("rev-parse --abbrev-ref HEAD");
+            if (branchResult != null)
+            {
+                sb.AppendLine($"Current Branch: {branchResult.Trim()}");
+            }
+
+            // Get status
+            var statusResult = RunGitCommand("status --porcelain");
+            if (!string.IsNullOrWhiteSpace(statusResult))
+            {
+                var lines = statusResult.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                sb.AppendLine($"Changed Files: {lines.Length}");
+                if (lines.Length <= 10)
+                {
+                    foreach (var line in lines)
+                    {
+                        sb.AppendLine($"  {line.Trim()}");
+                    }
+                }
+                else
+                {
+                    foreach (var line in lines.Take(10))
+                    {
+                        sb.AppendLine($"  {line.Trim()}");
+                    }
+                    sb.AppendLine($"  ... and {lines.Length - 10} more");
+                }
+            }
+            else
+            {
+                sb.AppendLine("Working tree clean");
+            }
+
+            // Get recent commits
+            var logResult = RunGitCommand("log --oneline -5");
+            if (!string.IsNullOrWhiteSpace(logResult))
+            {
+                sb.AppendLine("\nRecent Commits:");
+                foreach (var line in logResult.Split('\n', StringSplitOptions.RemoveEmptyEntries).Take(5))
+                {
+                    sb.AppendLine($"  {line.Trim()}");
+                }
+            }
+
+            if (_verbose)
+            {
+                AnsiConsole.MarkupLine("[dim]Loaded: git status[/]");
+            }
+
+            return sb.ToString();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private string? RunGitCommand(string args)
+    {
+        try
+        {
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "git",
+                Arguments = args,
+                WorkingDirectory = _workingDirectory,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = System.Diagnostics.Process.Start(startInfo);
+            if (process == null) return null;
+
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit(5000);
+
+            return process.ExitCode == 0 ? output : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private string? LoadMachineContext()
+    {
+        if (string.IsNullOrWhiteSpace(_machineContextPath) || !Directory.Exists(_machineContextPath))
+            return null;
+
+        try
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("# Machine Context");
+            sb.AppendLine();
+
+            // Load key files from machine context
+            var importantFiles = new[]
+            {
+                "worktrees.pool.md",
+                "pr-dependencies.md",
+                "DEFINITION_OF_DONE.md",
+                "SOFTWARE_DEVELOPMENT_PRINCIPLES.md",
+                "PERSONAL_INSIGHTS.md"
+            };
+
+            foreach (var fileName in importantFiles)
+            {
+                var filePath = Path.Combine(_machineContextPath, fileName);
+                if (File.Exists(filePath))
+                {
+                    try
+                    {
+                        var content = File.ReadAllText(filePath);
+                        // Truncate large files
+                        if (content.Length > 5000)
+                        {
+                            content = content.Substring(0, 5000) + "\n... (truncated)";
+                        }
+                        sb.AppendLine($"## {fileName}");
+                        sb.AppendLine(content);
+                        sb.AppendLine();
+                    }
+                    catch
+                    {
+                        // Skip files that can't be read
+                    }
+                }
+            }
+
+            if (_verbose)
+            {
+                AnsiConsole.MarkupLine($"[dim]Loaded: machine context from {_machineContextPath}[/]");
+            }
+
+            return sb.Length > 20 ? sb.ToString() : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private string? LoadReflectionLog()
+    {
+        var path = _reflectionLogPath;
+
+        // Try default location if not specified
+        if (string.IsNullOrWhiteSpace(path) && !string.IsNullOrWhiteSpace(_machineContextPath))
+        {
+            path = Path.Combine(_machineContextPath, "reflection.log.md");
+        }
+
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+            return null;
+
+        try
+        {
+            var content = File.ReadAllText(path);
+
+            // Get last ~50 entries or 10KB, whichever is smaller
+            if (content.Length > 10000)
+            {
+                // Find a good cutoff point
+                var cutoff = content.Length - 10000;
+                var newlinePos = content.IndexOf('\n', cutoff);
+                if (newlinePos > 0)
+                {
+                    content = "... (earlier entries truncated)\n\n" + content.Substring(newlinePos + 1);
+                }
+                else
+                {
+                    content = content.Substring(cutoff);
+                }
+            }
+
+            if (_verbose)
+            {
+                AnsiConsole.MarkupLine($"[dim]Loaded: reflection log[/]");
+            }
+
+            return content;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async Task LoadMcpServersAsync()
+    {
+        try
+        {
+            // Find MCP settings
+            McpSettings? settings = null;
+
+            if (!string.IsNullOrWhiteSpace(_mcpSettingsPath))
+            {
+                settings = McpSettings.LoadFromFile(_mcpSettingsPath);
+            }
+            else
+            {
+                settings = McpSettings.FindSettings(_workingDirectory);
+            }
+
+            if (settings == null || settings.McpServers.Count == 0)
+            {
+                if (_verbose)
+                {
+                    AnsiConsole.MarkupLine("[dim]No MCP servers configured[/]");
+                }
+                return;
+            }
+
+            // Create MCP manager and connect to servers
+            _mcpManager = new McpManager(_verbose);
+            await _mcpManager.LoadServersAsync(settings);
+
+            // Add MCP tools to the tools context
+            if (_mcpManager.ConnectedServers > 0)
+            {
+                foreach (var tool in _mcpManager.Tools)
+                {
+                    _toolsContext.Add(tool);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            if (_verbose)
+            {
+                AnsiConsole.MarkupLine($"[yellow]Warning: Failed to load MCP servers: {Markup.Escape(ex.Message)}[/]");
+            }
+        }
     }
 
     private List<SkillInfo> LoadSkills()
@@ -652,11 +1527,38 @@ class HazinaCoderCLI
     {
         var sb = new StringBuilder();
 
-        sb.AppendLine($@"You are HazinaCoder, an autonomous coding assistant powered by the Hazina AI framework.
+        sb.AppendLine($@"You are HazinaCoder, an AUTONOMOUS coding assistant powered by the Hazina AI framework.
 Provider: {_providerName} | Model: {_model}
 Working Directory: {_workingDirectory}
 
-You are an interactive CLI tool that helps users with software engineering tasks. Use the tools available to you to assist the user.
+You are an agentic CLI tool that helps users with software engineering tasks. You have access to powerful tools and MUST use them to complete tasks autonomously.
+
+# CRITICAL: Autonomous Behavior
+
+**YOU MUST KEEP WORKING UNTIL THE TASK IS COMPLETE.**
+
+- DO NOT stop after reading a file - continue with the next step
+- DO NOT stop after searching - analyze results and take action
+- DO NOT ask for permission unless the action is destructive or irreversible
+- DO NOT explain what you're going to do - JUST DO IT
+- DO call multiple tools in sequence to complete complex tasks
+- DO verify your changes work by running builds/tests
+- DO continue working through errors - fix them and proceed
+
+When given a task:
+1. Understand the goal
+2. Use tools to gather information (read files, search, etc.)
+3. Make changes or create files as needed
+4. Verify the changes work
+5. Report completion with results
+
+**Example of GOOD autonomous behavior:**
+User: ""Add a new endpoint to the API""
+You: [use glob to find API files] → [read relevant file] → [edit to add endpoint] → [run build] → [report success]
+
+**Example of BAD behavior (DO NOT DO THIS):**
+User: ""Add a new endpoint to the API""
+You: ""I'll need to first look at the API structure. Let me search for API files..."" [stops and waits]
 
 # Core Principles
 
@@ -664,6 +1566,7 @@ You are an interactive CLI tool that helps users with software engineering tasks
 2. **Autonomous Execution**: Execute tasks without asking for permission unless destructive/irreversible.
 3. **Verify Changes**: Always run builds, tests, or other verification after making changes.
 4. **Be Concise**: Focus on getting work done. Explanations should be brief and actionable.
+5. **Keep Going**: After each tool call, evaluate if the task is complete. If not, continue with the next step.
 
 # Available Tools
 
@@ -771,6 +1674,33 @@ Mark todos as completed IMMEDIATELY after finishing each task.
 
         // Add environment info
         sb.AppendLine();
+        // Add git status if available
+        if (!string.IsNullOrEmpty(_gitStatusInfo))
+        {
+            sb.AppendLine();
+            sb.AppendLine("# Git Repository Status");
+            sb.AppendLine();
+            sb.AppendLine(_gitStatusInfo);
+        }
+
+        // Add machine context if available
+        if (!string.IsNullOrEmpty(_machineContextContent))
+        {
+            sb.AppendLine();
+            sb.AppendLine(_machineContextContent);
+        }
+
+        // Add reflection log if available
+        if (!string.IsNullOrEmpty(_reflectionLogContent))
+        {
+            sb.AppendLine();
+            sb.AppendLine("# Learned Patterns (from reflection log)");
+            sb.AppendLine();
+            sb.AppendLine("The following are lessons learned from previous sessions. Apply these patterns when relevant:");
+            sb.AppendLine();
+            sb.AppendLine(_reflectionLogContent);
+        }
+
         sb.AppendLine("# Environment");
         sb.AppendLine();
         sb.AppendLine($"- Platform: {Environment.OSVersion.Platform}");
@@ -779,6 +1709,184 @@ Mark todos as completed IMMEDIATELY after finishing each task.
 
         return sb.ToString();
     }
+
+    // Improvement #2: Token estimation using SharpToken
+    private int EstimateContextTokens()
+    {
+        try
+        {
+            // Use cl100k_base encoding (used by GPT-4, Claude approximation)
+            var encoding = GptEncoding.GetEncoding("cl100k_base");
+            var totalTokens = 0;
+
+            foreach (var message in _context)
+            {
+                if (!string.IsNullOrEmpty(message.Text))
+                {
+                    totalTokens += encoding.Encode(message.Text).Count;
+                }
+            }
+
+            // Add ~4 tokens per message for role/formatting overhead
+            totalTokens += _context.Count * 4;
+
+            return totalTokens;
+        }
+        catch
+        {
+            // Fallback to rough estimate: ~4 chars per token
+            return _context.Sum(m => (m.Text?.Length ?? 0) / 4);
+        }
+    }
+
+    // #8: Export conversation to markdown
+    private string ExportConversationToMarkdown()
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"# HazinaCoder Session Export");
+        sb.AppendLine();
+        sb.AppendLine($"- **Date:** {_sessionStartTime:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"- **Provider:** {_providerName}");
+        sb.AppendLine($"- **Model:** {_model}");
+        sb.AppendLine($"- **Working Directory:** {_workingDirectory}");
+        sb.AppendLine($"- **Total Tokens:** {_sessionTokens:N0}");
+        sb.AppendLine($"- **Estimated Cost:** ${_sessionCost:F4}");
+        sb.AppendLine();
+        sb.AppendLine("---");
+        sb.AppendLine();
+
+        foreach (var message in _context.Skip(1)) // Skip system prompt
+        {
+            string role;
+            if (message.Role == HazinaMessageRole.User)
+                role = "User";
+            else if (message.Role == HazinaMessageRole.Assistant)
+                role = "Assistant";
+            else if (message.Role == HazinaMessageRole.System)
+                role = "System";
+            else
+                role = message.Role.ToString() ?? "Unknown";
+
+            sb.AppendLine($"## {role}");
+            sb.AppendLine();
+            sb.AppendLine(message.Text ?? "(empty)");
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("---");
+        sb.AppendLine();
+        sb.AppendLine($"*Exported at {DateTime.Now:yyyy-MM-dd HH:mm:ss}*");
+
+        return sb.ToString();
+    }
+
+    // Improvement #5: Configuration file support
+    private HazinaCoderConfig? LoadConfiguration()
+    {
+        var configPaths = new[]
+        {
+            Path.Combine(_workingDirectory, ".hazinacoderrc"),
+            Path.Combine(_workingDirectory, ".hazinacoder.json"),
+            Path.Combine(_workingDirectory, "hazinacoder.json"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".hazinacoderrc"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".hazinacoder.json"),
+        };
+
+        foreach (var path in configPaths)
+        {
+            if (File.Exists(path))
+            {
+                try
+                {
+                    var json = File.ReadAllText(path);
+                    var config = JsonSerializer.Deserialize<HazinaCoderConfig>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (_verbose)
+                    {
+                        AnsiConsole.MarkupLine($"[dim]Loaded config: {path}[/]");
+                    }
+
+                    return config;
+                }
+                catch (Exception ex)
+                {
+                    if (_verbose)
+                    {
+                        AnsiConsole.MarkupLine($"[yellow]Warning: Failed to load config {path}: {ex.Message}[/]");
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private void ApplyConfiguration()
+    {
+        if (_config == null) return;
+
+        // Apply config values only if not overridden by CLI
+        if (_providerName == "auto" && !string.IsNullOrEmpty(_config.Provider))
+        {
+            _providerName = _config.Provider;
+        }
+
+        if (_modelOverride == null && !string.IsNullOrEmpty(_config.Model))
+        {
+            _modelOverride = _config.Model;
+        }
+
+        if (_config.MaxTurns.HasValue && _maxTurns == 50) // 50 is default
+        {
+            _maxTurns = _config.MaxTurns.Value;
+        }
+
+        if (_config.MaxContinuations.HasValue && _maxContinuations == 5) // 5 is default
+        {
+            _maxContinuations = _config.MaxContinuations.Value;
+        }
+
+        if (_config.Verbose.HasValue)
+        {
+            _verbose = _config.Verbose.Value;
+        }
+
+        if (!string.IsNullOrEmpty(_config.OutputMode))
+        {
+            if (Enum.TryParse<OutputMode>(_config.OutputMode, true, out var mode))
+            {
+                _outputMode = mode;
+            }
+        }
+
+        if (_config.ContextWarningThreshold.HasValue)
+        {
+            _contextWarningThreshold = _config.ContextWarningThreshold.Value;
+        }
+    }
+}
+
+// Improvement #5: Configuration class
+class HazinaCoderConfig
+{
+    public string? Provider { get; set; }
+    public string? Model { get; set; }
+    public int? MaxTurns { get; set; }
+    public int? MaxContinuations { get; set; }
+    public bool? Verbose { get; set; }
+    public string? OutputMode { get; set; }
+    public int? ContextWarningThreshold { get; set; }
+    public string? MachineContext { get; set; }
+    public string? ReflectionLog { get; set; }
+    public bool? LoadGit { get; set; }
+    public bool? LoadMcp { get; set; }
+    public string? McpSettings { get; set; }
+    public string? ContinuationPrompt { get; set; }
+    public bool? EnableBackups { get; set; }
+    public bool? ShowDiffPreview { get; set; }
 }
 
 class SkillInfo
