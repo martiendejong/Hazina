@@ -54,11 +54,11 @@ public class ConPtyTerminalSession : ITerminalSession
                 if (!IsRunning) return false;
 
                 // Only return true if we detected a question pattern
-                // AND there's been no output for at least 500ms (to avoid flicker)
+                // AND there's been no output for at least 1 second (to avoid flicker during streaming)
                 if (!_waitingForInput) return false;
 
                 var idleTime = DateTime.UtcNow - _lastOutputTime;
-                return idleTime.TotalMilliseconds >= 500;
+                return idleTime.TotalMilliseconds >= 1000;
             }
         }
     }

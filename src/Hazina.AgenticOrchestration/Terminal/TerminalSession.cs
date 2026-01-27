@@ -56,8 +56,9 @@ public class TerminalSession : ITerminalSession
             {
                 if (!IsRunning) return false;
                 if (!_waitingForInput) return false;
+                // Only show "Question" after 1 full second of no output
                 var idleTime = DateTime.UtcNow - _lastOutputTime;
-                return idleTime.TotalMilliseconds >= 500;
+                return idleTime.TotalMilliseconds >= 1000;
             }
         }
     }
