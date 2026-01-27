@@ -1,6 +1,8 @@
 export interface TerminalSession {
   sessionId: string
   command: string
+  /** Dynamic title extracted from terminal output (e.g., from "STATUS: Title" pattern). If null, use command as display title. */
+  title?: string
   workingDirectory?: string
   startedAt: string
   isRunning: boolean

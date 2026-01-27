@@ -170,6 +170,23 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
             }
         };
 
+        // Wire up title change to SignalR
+        session.OnTitleChanged += async (title) =>
+        {
+            try
+            {
+                await _hubContext.Clients
+                    .Group($"terminal-{sessionId}")
+                    .SendAsync("OnTitleChanged", sessionId, title, CancellationToken.None);
+
+                _logger.LogInformation("Session {SessionId} title changed to '{Title}'", sessionId, title);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending title change to SignalR for session {SessionId}", sessionId);
+            }
+        };
+
         // Start the process
         await session.StartAsync(ct);
 

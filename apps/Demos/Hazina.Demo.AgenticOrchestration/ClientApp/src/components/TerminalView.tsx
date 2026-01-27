@@ -10,9 +10,10 @@ interface TerminalViewProps {
   sessionId: string
   onClose: () => void
   onStateChanged?: (sessionId: string, isRunning: boolean, waitingForInput: boolean) => void
+  onTitleChanged?: (sessionId: string, title: string) => void
 }
 
-export function TerminalView({ sessionId, onClose, onStateChanged }: TerminalViewProps) {
+export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChanged }: TerminalViewProps) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const terminalInstance = useRef<Terminal | null>(null)
   const fitAddon = useRef<FitAddon | null>(null)
@@ -134,6 +135,13 @@ export function TerminalView({ sessionId, onClose, onStateChanged }: TerminalVie
     hubConnection.on('OnStateChanged', (sid: string, isRunning: boolean, waitingForInput: boolean) => {
       if (sid === sessionId && onStateChanged) {
         onStateChanged(sid, isRunning, waitingForInput)
+      }
+    })
+
+    // Handle title changes (detected from "STATUS: Title" in output)
+    hubConnection.on('OnTitleChanged', (sid: string, title: string) => {
+      if (sid === sessionId && onTitleChanged) {
+        onTitleChanged(sid, title)
       }
     })
 

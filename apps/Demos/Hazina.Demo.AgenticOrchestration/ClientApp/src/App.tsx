@@ -114,6 +114,14 @@ function App() {
     ))
   }
 
+  const handleTitleChanged = (sessionId: string, title: string) => {
+    setSessions(prev => prev.map(s =>
+      s.sessionId === sessionId
+        ? { ...s, title }
+        : s
+    ))
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -150,6 +158,7 @@ function App() {
               sessionId={selectedSession}
               onClose={() => setSelectedSession(null)}
               onStateChanged={handleStateChanged}
+              onTitleChanged={handleTitleChanged}
             />
           ) : (
             <div className="no-session">
