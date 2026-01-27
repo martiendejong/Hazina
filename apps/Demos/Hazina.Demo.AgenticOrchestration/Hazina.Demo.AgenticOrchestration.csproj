@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Hazina.Demo.AgenticOrchestration</RootNamespace>
+    <SpaRoot>ClientApp\</SpaRoot>
+    <SpaProxyServerUrl>http://localhost:5173</SpaProxyServerUrl>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,5 +30,19 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <!-- Build React app during publish -->
+  <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" />
+    <ItemGroup>
+      <DistFiles Include="wwwroot\**" />
+      <ResolvedFileToPublish Include="@(DistFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
+        <RelativePath>wwwroot\%(RecursiveDir)%(FileName)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
 
 </Project>

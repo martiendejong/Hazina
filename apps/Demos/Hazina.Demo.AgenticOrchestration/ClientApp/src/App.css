@@ -1,0 +1,307 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header */
+.app-header {
+  background: #161b22;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #30363d;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.app-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #58a6ff;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Buttons */
+button {
+  background: #21262d;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: #30363d;
+  border-color: #8b949e;
+}
+
+.btn-primary {
+  background: #238636;
+  border-color: #238636;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background: #2ea043;
+}
+
+.btn-danger {
+  background: #da3633;
+  border-color: #da3633;
+}
+
+.btn-danger:hover {
+  background: #f85149;
+}
+
+/* Error Banner */
+.error-banner {
+  background: #3d1f1f;
+  border: 1px solid #f85149;
+  color: #f85149;
+  padding: 0.75rem 1rem;
+  margin: 1rem 2rem;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.error-banner button {
+  background: transparent;
+  border: none;
+  color: #f85149;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Main Layout */
+.app-main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 300px;
+  background: #161b22;
+  border-right: 1px solid #30363d;
+  overflow-y: auto;
+}
+
+/* Session List */
+.session-list {
+  padding: 1rem;
+}
+
+.session-list h2 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #8b949e;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.session-list .loading,
+.session-list .empty {
+  color: #8b949e;
+  font-size: 0.875rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.session-list ul {
+  list-style: none;
+}
+
+.session-item {
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.session-item:hover {
+  border-color: #8b949e;
+}
+
+.session-item.selected {
+  border-color: #58a6ff;
+  background: #1f3a5f;
+}
+
+.session-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.session-command {
+  font-weight: 600;
+  color: #e6edf3;
+}
+
+.session-id {
+  font-size: 0.75rem;
+  color: #8b949e;
+  font-family: monospace;
+}
+
+.session-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.status {
+  padding: 0.125rem 0.375rem;
+  border-radius: 3px;
+}
+
+.status.running {
+  background: #238636;
+  color: #ffffff;
+}
+
+.status.stopped {
+  background: #6e7681;
+  color: #ffffff;
+}
+
+.start-time {
+  color: #8b949e;
+}
+
+.session-item .btn-terminate {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font-size: 1rem;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.session-item:hover .btn-terminate {
+  opacity: 1;
+}
+
+.session-item .btn-terminate:hover {
+  color: #f85149;
+}
+
+/* Terminal Container */
+.terminal-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #1e1e1e;
+}
+
+/* No Session */
+.no-session {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  color: #8b949e;
+}
+
+/* Terminal View */
+.terminal-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.terminal-toolbar {
+  background: #161b22;
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #30363d;
+}
+
+.terminal-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.session-label {
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: #8b949e;
+}
+
+.connection-status {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 3px;
+}
+
+.connection-status.connected {
+  background: #238636;
+  color: #ffffff;
+}
+
+.connection-status.disconnected {
+  background: #da3633;
+  color: #ffffff;
+}
+
+.terminal-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.terminal-actions button {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.btn-interrupt {
+  background: #9e6a03;
+  border-color: #9e6a03;
+}
+
+.btn-interrupt:hover {
+  background: #bb8009;
+}
+
+.btn-close {
+  background: transparent;
+  border-color: #30363d;
+}
+
+.terminal-error {
+  background: #3d1f1f;
+  color: #f85149;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.terminal-view .terminal-container {
+  flex: 1;
+  padding: 0.5rem;
+}

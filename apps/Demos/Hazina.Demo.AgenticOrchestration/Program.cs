@@ -1,6 +1,7 @@
 using Hazina.AgenticOrchestration.Data;
 using Hazina.AgenticOrchestration.Hubs;
 using Hazina.AgenticOrchestration.Services;
+using Hazina.AgenticOrchestration.Terminal;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,6 +44,10 @@ builder.Services.AddSingleton<IInteractionService>(sp =>
     new InteractionService(
         sp.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<ClaudeOrchestrationHub>>(),
         dbPath));
+
+// Terminal Services (real-time process control)
+builder.Services.AddSingleton<ITerminalSessionManager, TerminalSessionManager>();
+Console.WriteLine("✅ Terminal services registered");
 
 // ASP.NET Core Services
 builder.Services.AddControllers();
@@ -104,6 +109,10 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseRouting();
 
+// Serve React SPA static files
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 // ═══════════════════════════════════════════════════════════════
 // ENDPOINT MAPPING
 // ═══════════════════════════════════════════════════════════════
@@ -111,8 +120,9 @@ app.UseRouting();
 // Map Controllers (REST API)
 app.MapControllers();
 
-// Map SignalR Hub (Real-time)
+// Map SignalR Hubs (Real-time)
 app.MapHub<ClaudeOrchestrationHub>("/hubs/agentic");
+app.MapHub<TerminalHub>("/hubs/terminal");
 
 // ═══════════════════════════════════════════════════════════════
 // MINIMAL API ENDPOINTS - Hazina Declarative Style
@@ -153,6 +163,14 @@ app.MapGet("/", () => Results.Ok(new
         {
             Hub = "/hubs/agentic",
             Events = new[] { "ReceiveOutput", "InputRequired", "ResponseReceived", "GlobalInputRequired" }
+        },
+        Terminal = new
+        {
+            Create = "POST /api/terminal/sessions",
+            List = "GET /api/terminal/sessions",
+            Details = "GET /api/terminal/sessions/{sessionId}",
+            Terminate = "DELETE /api/terminal/sessions/{sessionId}",
+            SignalR = "/hubs/terminal"
         }
     }
 }))
@@ -215,7 +233,12 @@ Console.WriteLine("║    GET  /api/agentic/instances/{id}/output - Get output  
 Console.WriteLine("║    POST /api/agentic/instances/{id}/await-input - Request input  ║");
 Console.WriteLine("║    POST /api/agentic/.../respond        - Submit response        ║");
 Console.WriteLine("║    GET  /api/agentic/interactions/pending - All pending          ║");
+Console.WriteLine("║  Terminal Hub: ws://localhost:5000/hubs/terminal                 ║");
+Console.WriteLine("║  React UI:     http://localhost:5000                             ║");
 Console.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
 Console.WriteLine();
+
+// SPA fallback - serve index.html for client-side routing
+app.MapFallbackToFile("index.html");
 
 app.Run();
