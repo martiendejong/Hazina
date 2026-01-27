@@ -77,32 +77,47 @@ public class ConPtyTerminalSession : ITerminalSession
         }
     }
 
-    // Patterns that indicate Claude is asking a question (more specific to avoid false positives)
+    // Patterns that indicate Claude is asking a question or waiting for input
     private static readonly string[] QuestionPatterns = new[]
     {
         "│ ●", // Claude's selection UI (selected option)
         "│ ○", // Claude's selection UI (unselected option)
+        "| ●", // ASCII fallback for selection UI
+        "| ○", // ASCII fallback for selection UI
         "❯", // Arrow prompt
+        ">", // Simple prompt (at end of line)
         "(y/n)", // Yes/no prompt
         "[Y/n]", // Yes/no prompt
         "[y/N]", // Yes/no prompt
-        "? ", // Question with space (more specific than just ?)
+        "(Y/n)", // Yes/no prompt variant
+        "? ", // Question with space
+        "Allow", // Permission prompts often contain "Allow"
+        "Deny", // Permission prompts
+        "press enter", // Common prompt
+        "Press Enter", // Common prompt
+        "continue?", // Continuation prompt
+        "proceed?", // Proceed prompt
     };
 
     private void DetectQuestionInOutput(string text)
     {
         lock (_stateLock)
         {
-            // Keep last 200 chars of output for pattern matching (smaller window)
+            // Keep last 500 chars of output for pattern matching
             _recentOutput = (_recentOutput + text);
-            if (_recentOutput.Length > 200)
+            if (_recentOutput.Length > 500)
             {
-                _recentOutput = _recentOutput.Substring(_recentOutput.Length - 200);
+                _recentOutput = _recentOutput.Substring(_recentOutput.Length - 500);
             }
 
-            // Check for question patterns - must match at least one specific pattern
+            // Check for question patterns - case insensitive for text patterns
             _waitingForInput = QuestionPatterns.Any(pattern =>
-                _recentOutput.Contains(pattern, StringComparison.Ordinal));
+                _recentOutput.Contains(pattern, StringComparison.OrdinalIgnoreCase));
+
+            if (_waitingForInput)
+            {
+                _logger?.LogDebug("Question pattern detected in session {SessionId}", SessionId);
+            }
         }
     }
 
