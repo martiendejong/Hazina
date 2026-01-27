@@ -112,6 +112,21 @@ Total: ~240 MB for 3 test projects (73% reduction!)
 
 ---
 
+## 🎯 Best Practices
+
+1. **Clean before commits**
+   ```bash
+   dotnet clean
+   ```
+
+2. **Regular maintenance**
+   - Weekly: Clean build artifacts
+   - Monthly: Review test dependencies
+   - Quarterly: Audit for duplicate packages
+
+3. **Never commit bin/obj or artifacts**
+   - Already in .gitignore
+   - Verify: `git status` before commit
 ## 🔧 Additional Optimizations (Optional)
 
 ### 4. Use Project References Instead of Package References
@@ -215,36 +230,8 @@ dotnet build
 **Solution:**
 1. Close Visual Studio
 2. Delete `.vs` folder
-3. Run `cleanup-test-binaries.ps1`
+3. Clean solution
 4. Reopen solution
-
-### Still large after optimization?
-
-**Investigate:**
-```powershell
-# Find largest files in test output
-Get-ChildItem -Path "artifacts/tests" -Recurse -File |
-    Sort-Object Length -Descending |
-    Select-Object -First 20 |
-    Format-Table Length, FullName
-```
-
-Common culprits:
-- Embedded resources (images, test data)
-- Debug symbols (.pdb files)
-- Native dependencies (C++ libraries)
-
----
-
-## ✅ Checklist
-
-- [x] `tests/Directory.Build.props` created
-- [x] `artifacts/` in `.gitignore`
-- [x] Cleanup script available
-- [ ] Run initial cleanup: `cleanup-test-binaries.ps1`
-- [ ] Verify builds still work: `dotnet test`
-- [ ] Monitor disk usage over time
-- [ ] Consider shared test utilities project (future)
 
 ---
 
