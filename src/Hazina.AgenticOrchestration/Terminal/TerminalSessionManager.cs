@@ -1,7 +1,10 @@
 using System.Collections.Concurrent;
+using System.Linq;
+using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Hazina.AgenticOrchestration.Hubs;
+using Hazina.AgenticOrchestration.Terminal.ConPty;
 
 namespace Hazina.AgenticOrchestration.Terminal;
 
@@ -39,14 +42,16 @@ public interface ITerminalSessionManager
 
 /// <summary>
 /// Implementation of terminal session manager with SignalR integration.
+/// Uses ConPTY (Windows Pseudo Console) for full interactive terminal support.
 /// </summary>
 public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
 {
-    private readonly ConcurrentDictionary<string, TerminalSession> _sessions = new();
+    private readonly ConcurrentDictionary<string, ITerminalSession> _sessions = new();
     private readonly IHubContext<TerminalHub> _hubContext;
     private readonly ILogger<TerminalSessionManager> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly Timer _cleanupTimer;
+    private readonly bool _useConPty;
     private bool _disposed;
 
     public int SessionCount => _sessions.Count;
@@ -60,6 +65,10 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
         _logger = logger;
         _loggerFactory = loggerFactory;
 
+        // Use ConPTY on Windows for full interactive terminal support
+        _useConPty = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        _logger.LogInformation("Terminal session manager initialized. ConPTY enabled: {UseConPty}", _useConPty);
+
         // Cleanup dead sessions every 30 seconds
         _cleanupTimer = new Timer(CleanupDeadSessions, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
     }
@@ -67,22 +76,42 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
     public async Task<ITerminalSession> CreateSessionAsync(TerminalSessionConfig config, CancellationToken ct = default)
     {
         var sessionId = GenerateSessionId();
-        var sessionLogger = _loggerFactory.CreateLogger<TerminalSession>();
 
-        var session = new TerminalSession(sessionId, config, sessionLogger);
+        // Create appropriate session type based on platform
+        ITerminalSession session;
+        if (_useConPty)
+        {
+            var conPtyLogger = _loggerFactory.CreateLogger<ConPtyTerminalSession>();
+            session = new ConPtyTerminalSession(sessionId, config, conPtyLogger);
+            _logger.LogInformation("Creating ConPTY session {SessionId} for command '{Command}'", sessionId, config.Command);
+        }
+        else
+        {
+            var pipeLogger = _loggerFactory.CreateLogger<TerminalSession>();
+            session = new TerminalSession(sessionId, config, pipeLogger);
+            _logger.LogInformation("Creating pipe-based session {SessionId} for command '{Command}'", sessionId, config.Command);
+        }
 
         // Wire up output to SignalR
+        // IMPORTANT: Don't use the request's cancellation token here!
+        // The event handlers run after the HTTP request completes, so ct would be cancelled.
         session.OnOutput += async (data) =>
         {
             try
             {
+                _logger.LogDebug("OUTPUT: Sending {ByteCount} bytes to session {SessionId}", data.Length, sessionId);
+
+                // Convert byte[] to int[] because System.Text.Json serializes byte[] as Base64 string
+                // but the JavaScript client expects a number array
+                var intArray = data.Select(b => (int)b).ToArray();
                 await _hubContext.Clients
                     .Group($"terminal-{sessionId}")
-                    .SendAsync("OnOutput", sessionId, data, ct);
+                    .SendAsync("OnOutput", sessionId, intArray, CancellationToken.None);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error sending output to SignalR for session {SessionId}", sessionId);
+                _logger.LogError(ex, "Error sending {ByteCount} bytes to SignalR for session {SessionId}",
+                    data.Length, sessionId);
             }
         };
 
@@ -92,7 +121,7 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
             {
                 await _hubContext.Clients
                     .Group($"terminal-{sessionId}")
-                    .SendAsync("OnExit", sessionId, exitCode, ct);
+                    .SendAsync("OnExit", sessionId, exitCode, CancellationToken.None);
 
                 _logger.LogInformation("Session {SessionId} exited with code {ExitCode}", sessionId, exitCode);
             }
@@ -112,8 +141,8 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
         }
 
         _logger.LogInformation(
-            "Created terminal session {SessionId} running '{Command}', total sessions: {Count}",
-            sessionId, config.Command, _sessions.Count);
+            "Created {SessionType} session {SessionId} running '{Command}', total sessions: {Count}",
+            _useConPty ? "ConPTY" : "pipe-based", sessionId, config.Command, _sessions.Count);
 
         return session;
     }

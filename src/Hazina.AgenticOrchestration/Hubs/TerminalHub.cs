@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Hazina.AgenticOrchestration.Terminal;
@@ -121,9 +122,10 @@ public class TerminalHub : Hub
     }
 
     /// <summary>
-    /// Send input bytes to a session
+    /// Send input bytes to a session.
+    /// Accepts int[] because JavaScript sends number arrays (System.Text.Json can't deserialize directly to byte[]).
     /// </summary>
-    public async Task SendInput(string sessionId, byte[] data)
+    public async Task SendInput(string sessionId, int[] data)
     {
         var session = _sessionManager.GetSession(sessionId);
         if (session == null)
@@ -133,7 +135,9 @@ public class TerminalHub : Hub
             return;
         }
 
-        await session.WriteInputAsync(data);
+        // Convert int[] to byte[] (JavaScript sends numbers, not bytes)
+        var bytes = data.Select(i => (byte)i).ToArray();
+        await session.WriteInputAsync(bytes);
     }
 
     /// <summary>

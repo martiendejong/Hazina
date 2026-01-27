@@ -1,7 +1,5 @@
-using Hazina.AgenticOrchestration.Data;
-using Hazina.AgenticOrchestration.Hubs;
+using Hazina.AgenticOrchestration.Extensions;
 using Hazina.AgenticOrchestration.Services;
-using Hazina.AgenticOrchestration.Terminal;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,37 +19,22 @@ Console.WriteLine($"║  Logs: {logsPath,-54} ║");
 Console.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
 
 // ═══════════════════════════════════════════════════════════════
-// DATABASE INITIALIZATION
-// ═══════════════════════════════════════════════════════════════
-var dbInitializer = new DatabaseInitializer(dbPath);
-dbInitializer.Initialize();
-Console.WriteLine("✅ Database initialized");
-
-// ═══════════════════════════════════════════════════════════════
 // SERVICE REGISTRATION - Hazina Declarative Style
 // ═══════════════════════════════════════════════════════════════
 
-// Core Agentic Orchestration Services
-builder.Services.AddSingleton<IClaudeInstanceManager>(
-    new ClaudeInstanceManager(dbPath));
-
-builder.Services.AddSingleton<IOutputCaptureService>(sp =>
-    new OutputCaptureService(
-        sp.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<ClaudeOrchestrationHub>>(),
-        logsPath));
-
-builder.Services.AddSingleton<IInteractionService>(sp =>
-    new InteractionService(
-        sp.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<ClaudeOrchestrationHub>>(),
-        dbPath));
-
-// Terminal Services (real-time process control)
-builder.Services.AddSingleton<ITerminalSessionManager, TerminalSessionManager>();
-Console.WriteLine("✅ Terminal services registered");
+// Hazina Agentic Orchestration (one-liner declarative registration)
+builder.Services.AddHazinaAgenticOrchestration(options =>
+{
+    options.DatabasePath = dbPath;
+    options.LogsPath = logsPath;
+    options.EnableSignalR = true;
+    options.EnableTerminalStreaming = true;
+});
+Console.WriteLine("✅ Hazina Agentic Orchestration services registered (declarative)");
 
 // ASP.NET Core Services
-builder.Services.AddControllers();
-builder.Services.AddSignalR();
+builder.Services.AddControllers()
+    .AddApplicationPart(typeof(Hazina.AgenticOrchestration.Controllers.TerminalController).Assembly);
 builder.Services.AddEndpointsApiExplorer();
 
 // Swagger
@@ -114,18 +97,17 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 // ═══════════════════════════════════════════════════════════════
-// ENDPOINT MAPPING
+// ENDPOINT MAPPING - Hazina Declarative Style
 // ═══════════════════════════════════════════════════════════════
 
 // Map Controllers (REST API)
 app.MapControllers();
 
-// Map SignalR Hubs (Real-time)
-app.MapHub<ClaudeOrchestrationHub>("/hubs/agentic");
-app.MapHub<TerminalHub>("/hubs/terminal");
+// Map SignalR Hubs (declarative one-liner)
+app.MapHazinaAgenticHubs();
 
 // ═══════════════════════════════════════════════════════════════
-// MINIMAL API ENDPOINTS - Hazina Declarative Style
+// MINIMAL API ENDPOINTS
 // ═══════════════════════════════════════════════════════════════
 
 // Health check endpoint
@@ -137,6 +119,7 @@ app.MapGet("/health", () => Results.Ok(new
 }))
 .WithName("HealthCheck")
 .WithOpenApi();
+
 
 // API root - list available endpoints
 app.MapGet("/", () => Results.Ok(new
@@ -159,11 +142,6 @@ app.MapGet("/", () => Results.Ok(new
             Respond = "POST /api/agentic/instances/{sessionId}/interactions/{id}/respond",
             AllPending = "GET /api/agentic/interactions/pending"
         },
-        SignalR = new
-        {
-            Hub = "/hubs/agentic",
-            Events = new[] { "ReceiveOutput", "InputRequired", "ResponseReceived", "GlobalInputRequired" }
-        },
         Terminal = new
         {
             Create = "POST /api/terminal/sessions",
@@ -171,15 +149,16 @@ app.MapGet("/", () => Results.Ok(new
             Details = "GET /api/terminal/sessions/{sessionId}",
             Terminate = "DELETE /api/terminal/sessions/{sessionId}",
             SignalR = "/hubs/terminal"
+        },
+        SignalR = new
+        {
+            AgenticHub = "/hubs/agentic",
+            TerminalHub = "/hubs/terminal"
         }
     }
 }))
 .WithName("ApiRoot")
 .WithOpenApi();
-
-// ═══════════════════════════════════════════════════════════════
-// CUSTOM CONVENIENCE ENDPOINTS
-// ═══════════════════════════════════════════════════════════════
 
 // Quick endpoint to get active instance count
 app.MapGet("/api/stats", async (IClaudeInstanceManager instanceManager) =>
@@ -222,19 +201,18 @@ Console.WriteLine();
 Console.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
 Console.WriteLine("║                    🚀 SERVER STARTED                             ║");
 Console.WriteLine("╠══════════════════════════════════════════════════════════════════╣");
-Console.WriteLine("║  REST API:    http://localhost:5000                              ║");
-Console.WriteLine("║  Swagger UI:  http://localhost:5000/swagger                      ║");
-Console.WriteLine("║  SignalR Hub: ws://localhost:5000/hubs/agentic                   ║");
+Console.WriteLine("║  REST API:      http://localhost:5000                            ║");
+Console.WriteLine("║  Swagger UI:    http://localhost:5000/swagger                    ║");
+Console.WriteLine("║  React UI:      http://localhost:5000                            ║");
 Console.WriteLine("╠══════════════════════════════════════════════════════════════════╣");
-Console.WriteLine("║  Endpoints:                                                      ║");
-Console.WriteLine("║    GET  /api/agentic/instances          - List active instances  ║");
-Console.WriteLine("║    GET  /api/agentic/instances/{id}     - Instance details       ║");
-Console.WriteLine("║    GET  /api/agentic/instances/{id}/output - Get output          ║");
-Console.WriteLine("║    POST /api/agentic/instances/{id}/await-input - Request input  ║");
-Console.WriteLine("║    POST /api/agentic/.../respond        - Submit response        ║");
-Console.WriteLine("║    GET  /api/agentic/interactions/pending - All pending          ║");
-Console.WriteLine("║  Terminal Hub: ws://localhost:5000/hubs/terminal                 ║");
-Console.WriteLine("║  React UI:     http://localhost:5000                             ║");
+Console.WriteLine("║  SignalR Hubs:                                                   ║");
+Console.WriteLine("║    ws://localhost:5000/hubs/agentic   (Instance management)      ║");
+Console.WriteLine("║    ws://localhost:5000/hubs/terminal  (Real-time terminal)       ║");
+Console.WriteLine("╠══════════════════════════════════════════════════════════════════╣");
+Console.WriteLine("║  Terminal API:                                                   ║");
+Console.WriteLine("║    POST   /api/terminal/sessions      - Create session           ║");
+Console.WriteLine("║    GET    /api/terminal/sessions      - List sessions            ║");
+Console.WriteLine("║    DELETE /api/terminal/sessions/{id} - Terminate session        ║");
 Console.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
 Console.WriteLine();
 

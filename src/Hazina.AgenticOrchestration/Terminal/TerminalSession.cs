@@ -13,6 +13,12 @@ namespace Hazina.AgenticOrchestration.Terminal;
 /// - Uses raw BaseStream, NOT OutputDataReceived (which is line-buffered)
 /// - Immediate byte forwarding for sub-50ms latency
 /// - Preserves ANSI escape sequences for proper terminal rendering
+///
+/// LIMITATION: Uses pipe-based I/O redirection, NOT ConPTY.
+/// This means interactive TUI applications (Claude CLI, vim, htop, etc.)
+/// will not render their full interface because they detect stdout is not a TTY.
+/// For full TUI support, implement ConPTY (Windows Pseudo Console).
+/// See: https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/
 /// </summary>
 public class TerminalSession : ITerminalSession
 {

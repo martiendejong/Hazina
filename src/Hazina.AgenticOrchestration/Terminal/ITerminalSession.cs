@@ -32,6 +32,11 @@ public interface ITerminalSession : IAsyncDisposable
     string Command { get; }
 
     /// <summary>
+    /// Start the terminal session and begin streaming output
+    /// </summary>
+    Task StartAsync(CancellationToken ct = default);
+
+    /// <summary>
     /// Write input bytes to the process stdin
     /// </summary>
     Task WriteInputAsync(byte[] data, CancellationToken ct = default);

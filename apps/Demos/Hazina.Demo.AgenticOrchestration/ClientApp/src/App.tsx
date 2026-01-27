@@ -37,8 +37,8 @@ function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          command: 'claude',
-          workingDirectory: 'C:\\Projects'
+          command: 'claude_agent.bat',
+          workingDirectory: 'C:\\scripts'
         })
       })
       if (!response.ok) throw new Error('Failed to create session')
