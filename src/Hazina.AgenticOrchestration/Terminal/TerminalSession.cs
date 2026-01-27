@@ -55,8 +55,7 @@ public class TerminalSession : ITerminalSession
             lock (_stateLock)
             {
                 if (!IsRunning) return false;
-                if (!_waitingForInput) return false;
-                // Only show "Question" after 1 full second of no output
+                // Simple approach: if no output for 1 second, we're waiting for input
                 var idleTime = DateTime.UtcNow - _lastOutputTime;
                 return idleTime.TotalMilliseconds >= 1000;
             }

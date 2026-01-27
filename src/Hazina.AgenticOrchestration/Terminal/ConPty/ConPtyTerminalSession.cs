@@ -43,7 +43,8 @@ public class ConPtyTerminalSession : ITerminalSession
     public int? ExitCode => _process?.ExitCode;
 
     /// <summary>
-    /// Whether the session appears to be waiting for user input
+    /// Whether the session appears to be waiting for user input.
+    /// Returns true when the terminal has been idle (no output) for at least 1 second.
     /// </summary>
     public bool WaitingForInput
     {
@@ -53,10 +54,7 @@ public class ConPtyTerminalSession : ITerminalSession
             {
                 if (!IsRunning) return false;
 
-                // Only return true if we detected a question pattern
-                // AND there's been no output for at least 1 second (to avoid flicker during streaming)
-                if (!_waitingForInput) return false;
-
+                // Simple approach: if no output for 1 second, we're waiting for input
                 var idleTime = DateTime.UtcNow - _lastOutputTime;
                 return idleTime.TotalMilliseconds >= 1000;
             }
