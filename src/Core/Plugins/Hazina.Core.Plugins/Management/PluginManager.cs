@@ -236,6 +236,180 @@ public class PluginManager : IDisposable
         }
     }
 
+    // ============================================
+    // Version Management & Updates
+    // ============================================
+
+    /// <summary>
+    /// Update an existing plugin with new source code (creates new version)
+    /// </summary>
+    public async Task<string> UpdatePluginAsync(
+        string pluginId,
+        string newSourceCode,
+        string? changeDescription = null,
+        string? updatedBy = null,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Updating plugin: {PluginId}", pluginId);
+
+        // Get current plugin metadata
+        var currentMetadata = await _repository.GetByIdAsync(pluginId, cancellationToken);
+        if (currentMetadata == null)
+        {
+            throw new InvalidOperationException($"Plugin not found: {pluginId}");
+        }
+
+        // Get current active version (or create initial version)
+        var currentVersion = await _repository.GetActiveVersionAsync(pluginId, cancellationToken);
+        var nextVersionNumber = (currentVersion?.Version ?? 0) + 1;
+
+        // Create new version entry
+        var newVersion = new PluginVersion
+        {
+            VersionId = Guid.NewGuid().ToString(),
+            PluginId = pluginId,
+            Version = nextVersionNumber,
+            SourceCode = newSourceCode,
+            ChangeDescription = changeDescription,
+            CreatedBy = updatedBy ?? "AI",
+            IsActive = true  // Will be set as active
+        };
+
+        // Save new version
+        await _repository.SaveVersionAsync(newVersion, cancellationToken);
+
+        // Set as active version (deactivates old versions)
+        await _repository.SetActiveVersionAsync(pluginId, nextVersionNumber, cancellationToken);
+
+        // Update plugin metadata with new source code
+        var updatedMetadata = new PluginMetadata
+        {
+            Id = currentMetadata.Id,
+            Name = currentMetadata.Name,
+            Version = $"{currentMetadata.Version.Split('.')[0]}.{nextVersionNumber}.0",
+            Description = currentMetadata.Description,
+            SourceCode = newSourceCode,
+            CreatedBy = currentMetadata.CreatedBy,
+            CreatedAt = currentMetadata.CreatedAt,
+            Enabled = currentMetadata.Enabled,
+            Tags = currentMetadata.Tags,
+            AdditionalMetadata = currentMetadata.AdditionalMetadata
+        };
+
+        await _repository.SaveAsync(updatedMetadata, cancellationToken);
+
+        // Invalidate cache and recompile
+        await RecompilePluginAsync(pluginId, updatedMetadata, cancellationToken);
+
+        _logger.LogInformation("Plugin updated successfully: {PluginId}, Version: {Version}",
+            pluginId, nextVersionNumber);
+
+        return newVersion.VersionId;
+    }
+
+    /// <summary>
+    /// Rollback a plugin to a previous version
+    /// </summary>
+    public async Task<bool> RollbackPluginAsync(
+        string pluginId,
+        int targetVersionNumber,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Rolling back plugin {PluginId} to version {Version}",
+            pluginId, targetVersionNumber);
+
+        // Get target version
+        var targetVersion = await _repository.GetVersionAsync(pluginId, targetVersionNumber, cancellationToken);
+        if (targetVersion == null)
+        {
+            _logger.LogWarning("Target version not found: {PluginId} v{Version}",
+                pluginId, targetVersionNumber);
+            return false;
+        }
+
+        // Get current plugin metadata
+        var currentMetadata = await _repository.GetByIdAsync(pluginId, cancellationToken);
+        if (currentMetadata == null)
+        {
+            _logger.LogWarning("Plugin not found: {PluginId}", pluginId);
+            return false;
+        }
+
+        // Set target version as active
+        await _repository.SetActiveVersionAsync(pluginId, targetVersionNumber, cancellationToken);
+
+        // Update plugin metadata with rolled-back source code
+        var rolledBackMetadata = new PluginMetadata
+        {
+            Id = currentMetadata.Id,
+            Name = currentMetadata.Name,
+            Version = $"{currentMetadata.Version.Split('.')[0]}.{targetVersionNumber}.0",
+            Description = currentMetadata.Description,
+            SourceCode = targetVersion.SourceCode,
+            CreatedBy = currentMetadata.CreatedBy,
+            CreatedAt = currentMetadata.CreatedAt,
+            Enabled = currentMetadata.Enabled,
+            Tags = currentMetadata.Tags,
+            AdditionalMetadata = currentMetadata.AdditionalMetadata
+        };
+
+        await _repository.SaveAsync(rolledBackMetadata, cancellationToken);
+
+        // Invalidate cache and recompile
+        await RecompilePluginAsync(pluginId, rolledBackMetadata, cancellationToken);
+
+        _logger.LogInformation("Plugin rolled back successfully: {PluginId} to version {Version}",
+            pluginId, targetVersionNumber);
+
+        return true;
+    }
+
+    /// <summary>
+    /// Get version history for a plugin
+    /// </summary>
+    public async Task<List<PluginVersion>> GetPluginVersionsAsync(
+        string pluginId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _repository.GetVersionsAsync(pluginId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Recompile a plugin and update cache (used after update/rollback)
+    /// </summary>
+    private async Task RecompilePluginAsync(
+        string pluginId,
+        PluginMetadata metadata,
+        CancellationToken cancellationToken)
+    {
+        await _compilationLock.WaitAsync(cancellationToken);
+        try
+        {
+            // Remove old compiled version from cache
+            if (_pluginCache.TryRemove(pluginId, out var oldCompiled))
+            {
+                oldCompiled.Dispose();
+            }
+
+            // Compile new version
+            var newCompiled = await _compiler.CompileAsync(metadata);
+
+            // Update cache
+            _pluginCache.TryAdd(pluginId, newCompiled);
+
+            _logger.LogInformation("Plugin recompiled and cache updated: {PluginId}", pluginId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to recompile plugin: {PluginId}", pluginId);
+            throw;
+        }
+        finally
+        {
+            _compilationLock.Release();
+        }
+    }
+
     public void Dispose()
     {
         ClearCache();

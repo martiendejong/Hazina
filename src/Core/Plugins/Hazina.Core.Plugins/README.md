@@ -11,6 +11,8 @@ The Hazina Plugin System allows you to:
 - **Execute plugins in a sandboxed environment** with timeout and security controls
 - **Manage plugin lifecycle** (register, compile, cache, execute, disable/enable)
 - **Create tools dynamically** via AI, enabling truly extensible behavior
+- **Update plugins on-demand** with automatic versioning and hot-reload (no downtime)
+- **Rollback to previous versions** if updates cause issues
 
 This is a **production-ready pattern** used by:
 - Azure Functions (C# scripting)
@@ -30,7 +32,8 @@ Hazina.Core.Plugins/
 │   ├── IHazinaPlugin.cs          # Base plugin interface
 │   ├── PluginContext.cs          # Execution context
 │   ├── PluginResult.cs           # Execution result
-│   └── PluginMetadata.cs         # Plugin metadata
+│   ├── PluginMetadata.cs         # Plugin metadata
+│   └── PluginVersion.cs          # Version tracking
 ├── Compilation/           # Roslyn-based compilation
 │   ├── HazinaPluginCompiler.cs   # Compiles C# → Assembly
 │   ├── CompiledPlugin.cs         # Compiled plugin wrapper
@@ -45,7 +48,10 @@ Hazina.Core.Plugins/
 └── Tools/                 # Agent tools for plugin system
     ├── CreateDynamicToolTool.cs  # Create new plugins
     ├── ListDynamicToolsTool.cs   # List registered plugins
-    └── ExecuteDynamicToolTool.cs # Execute plugins
+    ├── ExecuteDynamicToolTool.cs # Execute plugins
+    ├── UpdateDynamicToolTool.cs  # Update existing plugins
+    ├── RollbackDynamicToolTool.cs # Rollback to previous versions
+    └── GetPluginVersionHistoryTool.cs # View version history
 ```
 
 ---
@@ -191,6 +197,194 @@ var result = await executeTool.ExecuteAsync(new Dictionary<string, object>
 if (result.Success)
 {
     Console.WriteLine("Email sent successfully!");
+}
+```
+
+---
+
+## 🔄 Version Management & Updates
+
+### Update Existing Plugins On-Demand
+
+One of the most powerful features: **modify existing plugin behavior without downtime**.
+
+#### How It Works
+
+1. **Update** - AI or user provides new source code
+2. **Version Created** - System creates new version entry (v2, v3, etc.)
+3. **Recompilation** - New code compiled with Roslyn
+4. **Hot-Reload** - Cache updated atomically (zero downtime)
+5. **Previous Versions Kept** - Can rollback if needed
+
+#### Example: Updating a Plugin
+
+```csharp
+var updateTool = serviceProvider.GetRequiredService<UpdateDynamicToolTool>();
+
+// User: "Add error handling to the welcome email plugin"
+// AI generates improved version:
+var improvedCode = @"
+    var customer = context.GetParameter<Customer>(""customer"");
+    var emailService = context.GetService<IEmailService>();
+
+    try
+    {
+        await emailService.SendTemplateAsync(
+            to: customer.Email,
+            template: ""welcome"",
+            data: new { CustomerName = customer.Name }
+        );
+
+        context.Logger.LogInformation(""Welcome email sent to {Email}"", customer.Email);
+        return PluginResult.Successful(new { EmailSent = true });
+    }
+    catch (Exception ex)
+    {
+        context.Logger.LogError(ex, ""Failed to send welcome email to {Email}"", customer.Email);
+        return PluginResult.Failed($""Email send failed: {ex.Message}"", ex);
+    }
+";
+
+var result = await updateTool.ExecuteAsync(new Dictionary<string, object>
+{
+    ["plugin_identifier"] = "SendWelcomeEmail",
+    ["new_source_code"] = improvedCode,
+    ["change_description"] = "Added try-catch error handling and detailed logging"
+});
+
+// Output: "Plugin 'SendWelcomeEmail' updated successfully. New version: 2. Plugin has been hot-reloaded."
+```
+
+#### View Version History
+
+```csharp
+var historyTool = serviceProvider.GetRequiredService<GetPluginVersionHistoryTool>();
+
+var result = await historyTool.ExecuteAsync(new Dictionary<string, object>
+{
+    ["plugin_identifier"] = "SendWelcomeEmail"
+});
+
+Console.WriteLine(result.Output);
+```
+
+Output:
+```
+Version history for plugin: SendWelcomeEmail
+Total versions: 2
+
+★ ACTIVE Version 2
+         Created: 2026-01-27 16:15:00 UTC
+         Created By: AI
+         Changes: Added try-catch error handling and detailed logging
+         Source Code: 678 characters
+
+   Version 1
+         Created: 2026-01-27 14:30:00 UTC
+         Created By: AI
+         Changes: Initial version
+         Source Code: 456 characters
+```
+
+#### Rollback to Previous Version
+
+```csharp
+var rollbackTool = serviceProvider.GetRequiredService<RollbackDynamicToolTool>();
+
+// If version 2 has issues, rollback to version 1:
+var result = await rollbackTool.ExecuteAsync(new Dictionary<string, object>
+{
+    ["plugin_identifier"] = "SendWelcomeEmail",
+    ["target_version"] = 1
+});
+
+// Output: "Plugin 'SendWelcomeEmail' rolled back to version 1. Plugin has been hot-reloaded with previous code."
+```
+
+### Versioning Features
+
+✅ **Automatic Version Numbering** - v1, v2, v3...
+✅ **Change Descriptions** - Document what changed
+✅ **Hot-Reload** - Zero downtime updates
+✅ **Complete History** - All versions preserved
+✅ **Active Version Tracking** - Only one version active at a time
+✅ **Atomic Updates** - Cache invalidation + recompilation in single operation
+✅ **Rollback Support** - Revert to any previous version
+✅ **Audit Trail** - Who updated, when, and why
+
+### Version Lifecycle
+
+```
+Create Plugin (v1)
+    ↓
+Execute (uses v1)
+    ↓
+Update Plugin (v2 created)
+    ↓
+Hot-Reload (v2 now active)
+    ↓
+Execute (uses v2)
+    ↓
+Issue Detected!
+    ↓
+Rollback to v1
+    ↓
+Hot-Reload (v1 active again)
+    ↓
+Execute (uses v1)
+```
+
+### Use Cases for Updates
+
+1. **Bug Fixes** - Fix logic errors in production plugins
+2. **Feature Enhancement** - Add new capabilities to existing plugins
+3. **Performance Optimization** - Improve slow-running plugins
+4. **Security Patches** - Address security vulnerabilities
+5. **Behavioral Changes** - Modify business rules as requirements change
+6. **A/B Testing** - Deploy v2, compare to v1, rollback if needed
+
+### Storage Considerations
+
+**Repository must implement version methods:**
+
+```csharp
+public interface IPluginRepository
+{
+    // ... existing methods ...
+
+    // Version management
+    Task<string> SaveVersionAsync(PluginVersion version, CancellationToken ct = default);
+    Task<List<PluginVersion>> GetVersionsAsync(string pluginId, CancellationToken ct = default);
+    Task<PluginVersion?> GetVersionAsync(string pluginId, int versionNumber, CancellationToken ct = default);
+    Task<PluginVersion?> GetActiveVersionAsync(string pluginId, CancellationToken ct = default);
+    Task<bool> SetActiveVersionAsync(string pluginId, int versionNumber, CancellationToken ct = default);
+}
+```
+
+**Example (In-Memory):**
+
+```csharp
+private readonly ConcurrentDictionary<string, List<PluginVersion>> _versions = new();
+
+public Task<string> SaveVersionAsync(PluginVersion version, CancellationToken ct = default)
+{
+    if (!_versions.ContainsKey(version.PluginId))
+    {
+        _versions[version.PluginId] = new List<PluginVersion>();
+    }
+
+    _versions[version.PluginId].Add(version);
+    return Task.FromResult(version.VersionId);
+}
+
+public Task<List<PluginVersion>> GetVersionsAsync(string pluginId, CancellationToken ct = default)
+{
+    if (_versions.TryGetValue(pluginId, out var versions))
+    {
+        return Task.FromResult(versions.OrderByDescending(v => v.Version).ToList());
+    }
+
+    return Task.FromResult(new List<PluginVersion>());
 }
 ```
 

@@ -47,4 +47,33 @@ public interface IPluginRepository
     /// Enable/disable a plugin
     /// </summary>
     Task<bool> SetEnabledAsync(string id, bool enabled, CancellationToken cancellationToken = default);
+
+    // ============================================
+    // Version Management
+    // ============================================
+
+    /// <summary>
+    /// Save a new version of a plugin
+    /// </summary>
+    Task<string> SaveVersionAsync(PluginVersion version, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get all versions of a plugin (ordered by version number descending)
+    /// </summary>
+    Task<List<PluginVersion>> GetVersionsAsync(string pluginId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get a specific version
+    /// </summary>
+    Task<PluginVersion?> GetVersionAsync(string pluginId, int versionNumber, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get the active version for a plugin
+    /// </summary>
+    Task<PluginVersion?> GetActiveVersionAsync(string pluginId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Set a version as active (deactivates all other versions for this plugin)
+    /// </summary>
+    Task<bool> SetActiveVersionAsync(string pluginId, int versionNumber, CancellationToken cancellationToken = default);
 }
