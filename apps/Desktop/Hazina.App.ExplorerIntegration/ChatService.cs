@@ -21,13 +21,19 @@ namespace Hazina.App.ExplorerIntegration
                 {
                     apiKey = dlg.OpenAIKey;
                     if (dlg.SaveKeyToRegistry)
-                        Microsoft.Win32.Registry.SetValue("HKEY_CURRENT_USER\\Software\\Hazina\\OpenAI", "ApiKey", apiKey);
+                        Microsoft.Win32.Registry.SetValue("HKEY_CURRENT_USER\\Software\\Hazina\\OpenAI", "ApiKey", apiKey ?? string.Empty);
                 }
+            }
+
+            // If still no API key, throw exception
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                throw new InvalidOperationException("OpenAI API key is required to create a chat window.");
             }
 
             var config = new OpenAIConfig(apiKey);
             var llm = new OpenAIClientWrapper(config);
-            var factory = new Hazina.AgentFactory.Core.AgentFactory(apiKey, config.LogPath);
+            var factory = new Hazina.AgentFactory.Core.AgentFactory(apiKey, config.LogPath ?? "hazina.log");
             var creator = new QuickAgentCreator(factory, llm);
             var store = creator.CreateStore(new StorePaths(folder), new System.IO.DirectoryInfo(folder).Name);
             var agent = await factory.CreateUnregisteredAgent(

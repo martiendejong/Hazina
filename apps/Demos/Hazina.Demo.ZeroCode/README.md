@@ -87,6 +87,7 @@ For each entity in `entities.yaml`:
 | GET | `/api/{entity}/search?q=term` | Search |
 | GET | `/api/{entity}/schema` | Get field definitions |
 | GET | `/api/_entities` | List all entity types |
+| POST | `/api/chat` | **RAG-powered AI chat** |
 
 ## YAML Schema
 
@@ -132,30 +133,272 @@ For each entity in `entities.yaml`:
 | `List` | Collection (JSON) |
 | `Binary` | Byte array |
 
-## Example Requests
+## RAG-Powered Chat Endpoint
 
-### Create a Document
+**NEW!** Ask questions about your documents using AI-powered Retrieval-Augmented Generation.
+
+### How It Works
+
+1. **Create Documents** - Add content via `POST /api/Document`
+2. **Semantic Search** - System finds relevant documents using embeddings
+3. **AI Response** - Ollama (local LLM) generates answers using document context
+
+### Configuration
+
+The API uses your local Ollama instance (no API costs, full privacy):
+
+```json
+{
+  "Ollama": {
+    "Endpoint": "http://85.215.217.154:5555",
+    "Model": "phi3:mini",
+    "EmbeddingModel": "nomic-embed-text",
+    "Password": "Th1s1sSp4rt4!"
+  }
+}
+```
+
+### Simple Chat Request
+
 ```bash
-curl -X POST https://localhost:5001/api/documents \
+curl -X POST https://localhost:49238/api/chat \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "My First Document",
-    "content": "This is the content.",
-    "category": "General"
+    "message": "How does the Zero-Code API work?",
+    "topK": 3
   }'
 ```
 
-### List Documents
+**Response:**
+```json
+{
+  "answer": "Based on the documents, the Zero-Code API allows you to define entities in YAML without writing any C# code. It automatically generates CRUD endpoints, search functionality, and supports embeddings for RAG...",
+  "documentsUsed": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "title": "Zero-Code API Features",
+      "relevance": 0.0
+    }
+  ],
+  "tokenUsage": {
+    "promptTokens": 250,
+    "completionTokens": 45,
+    "totalTokens": 295
+  }
+}
+```
+
+### Conversation Mode (Multi-Turn)
+
 ```bash
-curl https://localhost:5001/api/documents?page=1&pageSize=10
+curl -X POST https://localhost:49238/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is Hazina?"
+      },
+      {
+        "role": "assistant",
+        "content": "Hazina is a framework for building enterprise applications with built-in RAG capabilities."
+      },
+      {
+        "role": "user",
+        "content": "Tell me more about the RAG features"
+      }
+    ],
+    "topK": 3
+  }'
+```
+
+### Test Script
+
+Run the included test script to see RAG in action:
+
+```powershell
+.\test-chat.ps1
+```
+
+This will:
+1. Create sample documents
+2. Send a chat question
+3. Display AI-generated response with sources
+
+### Benefits of Ollama (Local LLM)
+
+- ✅ **No API costs** - Run everything locally
+- ✅ **Privacy** - Your data never leaves your server
+- ✅ **Fast** - Low latency with local inference (~2-3s first request, <1s after)
+- ✅ **Offline** - Works without internet connection
+
+For detailed chat documentation, see **[CHAT_GUIDE.md](./CHAT_GUIDE.md)**.
+
+## Discovering API Details
+
+### Get Complete API Guide
+**NEW!** Get schemas, examples, and endpoints for all entities in one call:
+```bash
+GET https://localhost:5001/api/_guide
+```
+
+This returns:
+- All entity definitions
+- Required vs optional fields
+- Example request bodies for each entity
+- All available endpoints
+
+### Get Schema for Specific Entity
+Before creating entities, check the schema to see required fields:
+```bash
+GET https://localhost:5001/api/Document/schema
+```
+
+**Response shows:**
+- Field names and types
+- Which fields are required
+- Max lengths and validation rules
+- Searchable fields
+- Enabled features
+
+## Example Requests
+
+### Document Entity
+
+**Check schema first:**
+```bash
+curl https://localhost:5001/api/Document/schema
+```
+
+**Create a Document:**
+```bash
+curl -X POST https://localhost:5001/api/Document \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Getting Started with Hazina",
+    "content": "This is a comprehensive guide to using the Hazina framework for building enterprise applications. It covers authentication, multi-tenancy, RAG search, and more...",
+    "category": "Documentation",
+    "tags": ["tutorial", "framework", "getting-started"],
+    "author": "John Doe"
+  }'
+```
+
+**⚠️ Common Mistake:** Don't break JSON strings across lines:
+```bash
+# ❌ WRONG - will cause parse error:
+"content": "This is
+  broken"
+
+# ✅ CORRECT - keep on one line:
+"content": "This is on one line with all the content..."
+```
+
+### Task Entity
+
+**Create a Task:**
+```bash
+curl -X POST https://localhost:5001/api/Task \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Complete project documentation",
+    "description": "Write comprehensive API docs with examples",
+    "priority": "high",
+    "dueDate": "2026-01-30T12:00:00Z",
+    "completed": false
+  }'
+```
+
+### Contact Entity
+
+**Create a Contact:**
+```bash
+curl -X POST https://localhost:5001/api/Contact \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Jane",
+    "lastName": "Smith",
+    "email": "jane.smith@example.com",
+    "phone": "+1234567890",
+    "company": "Acme Corp",
+    "notes": "Met at tech conference 2026"
+  }'
+```
+
+### List Entities
+```bash
+# Get first page (20 items)
+curl https://localhost:5001/api/Document?page=1&pageSize=20
+
+# Get second page (50 items per page)
+curl https://localhost:5001/api/Document?page=2&pageSize=50
 ```
 
 ### Search
 ```bash
-curl https://localhost:5001/api/documents/search?q=first
+# Search documents for keyword
+curl https://localhost:5001/api/Document/search?q=tutorial&limit=10
+
+# Search contacts
+curl https://localhost:5001/api/Contact/search?q=jane
 ```
 
-### Get Schema
+### Get by ID
 ```bash
-curl https://localhost:5001/api/documents/schema
+curl https://localhost:5001/api/Document/550e8400-e29b-41d4-a716-446655440000
+```
+
+### Update
+```bash
+curl -X PUT https://localhost:5001/api/Document/550e8400-e29b-41d4-a716-446655440000 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Updated Title",
+    "content": "Updated content goes here..."
+  }'
+```
+
+### Delete (Soft)
+```bash
+curl -X DELETE https://localhost:5001/api/Document/550e8400-e29b-41d4-a716-446655440000
+```
+
+### Count
+```bash
+curl https://localhost:5001/api/Document/count
+```
+
+## Tips for Creating Entities
+
+### 1. Always Check Schema First
+```bash
+GET /api/{entity}/schema
+```
+Shows you exactly what fields are required and their types.
+
+### 2. Don't Include Auto-Generated Fields
+The following fields are auto-generated - **DO NOT** include them in POST/PUT:
+- `id` - Auto-generated GUID
+- `createdAt` - Auto-generated timestamp
+- `updatedAt` - Auto-generated timestamp
+- `isDeleted` - Auto-managed soft delete flag
+
+### 3. Use Proper JSON Formatting
+- Keep strings on one line (or escape properly)
+- Use double quotes for property names and string values
+- Use ISO 8601 format for dates: `"2026-01-30T12:00:00Z"`
+- Arrays: `["item1", "item2"]`
+- Booleans: `true` or `false` (no quotes)
+- Numbers: `42` or `99.99` (no quotes)
+
+### 4. JSON Field Types
+For `Json` type fields, you can pass any valid JSON:
+```json
+{
+  "tags": ["tag1", "tag2", "tag3"],
+  "metadata": {
+    "category": "tutorial",
+    "difficulty": "beginner",
+    "estimatedTime": 30
+  }
+}
 ```

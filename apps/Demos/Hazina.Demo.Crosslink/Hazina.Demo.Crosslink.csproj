@@ -23,4 +23,9 @@
     <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
     <ProjectReference Include="..\..\..\src\Core\LLMs.Providers\Hazina.LLMs.OpenAI\Hazina.LLMs.OpenAI.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

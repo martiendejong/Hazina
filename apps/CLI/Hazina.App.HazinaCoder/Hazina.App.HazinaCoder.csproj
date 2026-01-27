@@ -18,6 +18,10 @@
   <ItemGroup>
     <PackageReference Include="Spectre.Console" Version="0.49.1" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="YamlDotNet" Version="16.2.1" />
+    <!-- Cognitive AI / Learning System -->
+    <PackageReference Include="Qdrant.Client" Version="1.11.0" />
+    <PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.17" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,6 +29,12 @@
     <ProjectReference Include="..\..\..\src\Core\LLMs.Providers\Hazina.LLMs.Anthropic\Hazina.LLMs.Anthropic.csproj" />
     <ProjectReference Include="..\..\..\src\Core\LLMs.Providers\Hazina.LLMs.Ollama\Hazina.LLMs.Ollama.csproj" />
     <ProjectReference Include="..\..\..\src\Hazina.Agents.Tools\Hazina.Agents.Tools.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

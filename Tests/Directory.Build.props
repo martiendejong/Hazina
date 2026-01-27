@@ -1,0 +1,35 @@
+<Project>
+  <!--
+    Shared MSBuild properties for ALL test projects
+    Reduces disk usage by centralizing build output
+  -->
+
+  <PropertyGroup>
+    <!-- Centralize all test output to shared directory -->
+    <BaseOutputPath>$(MSBuildThisFileDirectory)..\artifacts\tests\$(MSBuildProjectName)\bin\</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\artifacts\tests\$(MSBuildProjectName)\obj\</BaseIntermediateOutputPath>
+
+    <!-- Reduce binary size -->
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+
+    <!-- Don't copy referenced projects to output (use directly from their bin) -->
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+    <!-- Optimize for build speed -->
+    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+  </PropertyGroup>
+
+  <!-- Common test project references -->
+  <ItemGroup>
+    <PackageReference Include="xunit" Version="2.4.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
+  </ItemGroup>
+
+</Project>

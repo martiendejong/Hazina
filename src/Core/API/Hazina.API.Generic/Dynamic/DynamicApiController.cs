@@ -2,6 +2,7 @@ using Hazina.API.Generic.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace Hazina.API.Generic.Dynamic;
 
@@ -110,8 +111,68 @@ public class DynamicApiController : ControllerBase
     /// POST /api/{entity}
     /// Create a new entity
     /// </summary>
+    /// <remarks>
+    /// **IMPORTANT:** Use `/api/{entity}/schema` to see required fields and data types for each entity.
+    ///
+    /// **Example for Document entity:**
+    /// ```json
+    /// {
+    ///   "title": "My Document Title",
+    ///   "content": "Document content goes here...",
+    ///   "category": "Tutorial",
+    ///   "tags": ["getting-started", "api"],
+    ///   "author": "John Doe"
+    /// }
+    /// ```
+    ///
+    /// **Example for Task entity:**
+    /// ```json
+    /// {
+    ///   "title": "Complete project documentation",
+    ///   "description": "Write comprehensive API docs",
+    ///   "priority": "high",
+    ///   "dueDate": "2026-01-30T12:00:00Z",
+    ///   "completed": false
+    /// }
+    /// ```
+    ///
+    /// **Example for Contact entity:**
+    /// ```json
+    /// {
+    ///   "firstName": "Jane",
+    ///   "lastName": "Smith",
+    ///   "email": "jane.smith@example.com",
+    ///   "phone": "+1234567890",
+    ///   "company": "Acme Corp",
+    ///   "notes": "Met at conference"
+    /// }
+    /// ```
+    ///
+    /// **Tips:**
+    /// - Don't include `id`, `createdAt`, `updatedAt`, or `isDeleted` - these are auto-generated
+    /// - Only required fields must be present (check `/api/{entity}/schema`)
+    /// - JSON fields (like `tags`) accept arrays or objects
+    /// - DateTime fields should use ISO 8601 format
+    /// </remarks>
+    /// <param name="entity">Entity type (e.g., 'Document', 'Task', 'Contact')</param>
+    /// <param name="body">JSON object with entity data</param>
+    /// <response code="201">Entity created successfully</response>
+    /// <response code="400">Invalid request body or validation error</response>
+    /// <response code="404">Entity type not found</response>
     [HttpPost]
-    public async Task<ActionResult<DynamicEntity>> Create(string entity, [FromBody] JsonDocument body)
+    [SwaggerOperation(
+        Summary = "Create a new entity",
+        Description = "Creates a new entity of the specified type. Use GET /api/{entity}/schema to see required fields.",
+        Tags = new[] { "Dynamic Entities" }
+    )]
+    [SwaggerResponse(201, "Entity created successfully", typeof(Dictionary<string, object>))]
+    [SwaggerResponse(400, "Invalid request body or validation error")]
+    [SwaggerResponse(404, "Entity type not found")]
+    [Produces("application/json")]
+    [Consumes("application/json")]
+    public async Task<ActionResult<DynamicEntity>> Create(
+        [SwaggerParameter("Entity type (e.g., 'Document', 'Task', 'Contact')", Required = true)] string entity,
+        [FromBody][SwaggerRequestBody("JSON object with entity data")] JsonDocument body)
     {
         try
         {
@@ -281,8 +342,30 @@ public class DynamicApiController : ControllerBase
     /// GET /api/{entity}/schema
     /// Get the field definitions for this entity type
     /// </summary>
+    /// <remarks>
+    /// Returns complete schema information for the entity including:
+    /// - Field names and types
+    /// - Required vs optional fields
+    /// - Validation rules (max length, min/max values)
+    /// - Searchable fields
+    /// - Enabled features (CRUD, search, embedding, etc.)
+    ///
+    /// **Use this endpoint to discover what fields to send when creating/updating entities.**
+    /// </remarks>
+    /// <param name="entity">Entity type (e.g., 'Document', 'Task', 'Contact')</param>
+    /// <response code="200">Schema returned successfully</response>
+    /// <response code="404">Entity type not found</response>
     [HttpGet("schema")]
-    public ActionResult<object> GetSchema(string entity)
+    [SwaggerOperation(
+        Summary = "Get entity schema",
+        Description = "Returns field definitions, validation rules, and features for the entity type",
+        Tags = new[] { "Entity Metadata" }
+    )]
+    [SwaggerResponse(200, "Schema returned successfully")]
+    [SwaggerResponse(404, "Entity type not found")]
+    [Produces("application/json")]
+    public ActionResult<object> GetSchema(
+        [SwaggerParameter("Entity type (e.g., 'Document', 'Task', 'Contact')", Required = true)] string entity)
     {
         var definition = _store.GetDefinition(entity);
         if (definition == null)
@@ -324,10 +407,121 @@ public class DynamicApiController : ControllerBase
     /// GET /api/_entities
     /// List all available entity types
     /// </summary>
+    /// <remarks>
+    /// Returns a list of all entity types defined in the YAML configuration.
+    ///
+    /// For each entity type, you can:
+    /// - View schema: `GET /api/{entity}/schema`
+    /// - List items: `GET /api/{entity}`
+    /// - Create: `POST /api/{entity}`
+    /// - Search: `GET /api/{entity}/search?q=keyword`
+    /// </remarks>
+    /// <response code="200">List of entity types</response>
     [HttpGet("/api/_entities")]
+    [SwaggerOperation(
+        Summary = "List all entity types",
+        Description = "Returns names of all entities defined in the configuration",
+        Tags = new[] { "Entity Metadata" }
+    )]
+    [SwaggerResponse(200, "List of entity types", typeof(List<string>))]
+    [Produces("application/json")]
     public ActionResult<List<string>> ListEntityTypes()
     {
         return Ok(_store.GetEntityTypes().ToList());
+    }
+
+    /// <summary>
+    /// GET /api/_guide
+    /// Complete API guide with schemas and examples
+    /// </summary>
+    /// <remarks>
+    /// Returns comprehensive documentation for all entities including:
+    /// - Complete field schemas
+    /// - Request body examples (JSON)
+    /// - Available endpoints
+    /// - Validation rules
+    ///
+    /// **This is your one-stop guide for using the API!**
+    /// </remarks>
+    /// <response code="200">Complete API guide</response>
+    [HttpGet("/api/_guide")]
+    [SwaggerOperation(
+        Summary = "Complete API documentation guide",
+        Description = "Returns comprehensive guide with schemas and examples for all entities",
+        Tags = new[] { "Entity Metadata" }
+    )]
+    [SwaggerResponse(200, "API guide with schemas and examples")]
+    [Produces("application/json")]
+    public ActionResult<object> GetApiGuide()
+    {
+        var entities = _store.GetEntityTypes()
+            .Select(entityType =>
+            {
+                var definition = _store.GetDefinition(entityType);
+                if (definition == null) return null;
+
+                // Build example JSON
+                var example = new Dictionary<string, object?>();
+                foreach (var field in definition.Fields.Where(f => f.Required || f.Name == "title" || f.Name == "name"))
+                {
+                    example[field.Name] = field.Type switch
+                    {
+                        Configuration.FieldType.String => $"Example {field.Name}",
+                        Configuration.FieldType.Text => $"This is example {field.Name} content...",
+                        Configuration.FieldType.Int => 42,
+                        Configuration.FieldType.Decimal => 99.99m,
+                        Configuration.FieldType.Bool => false,
+                        Configuration.FieldType.DateTime => DateTime.UtcNow.ToString("o"),
+                        Configuration.FieldType.Json => new[] { "example", "tags" },
+                        Configuration.FieldType.Guid => Guid.NewGuid(),
+                        Configuration.FieldType.Enum => "value",
+                        _ => $"example-{field.Name}"
+                    };
+                }
+
+                return new
+                {
+                    entity = entityType,
+                    pluralName = definition.GetPluralName(),
+                    description = definition.Description,
+                    endpoints = new
+                    {
+                        list = $"GET /api/{entityType}?page=1&pageSize=20",
+                        getById = $"GET /api/{entityType}/{{id}}",
+                        create = $"POST /api/{entityType}",
+                        update = $"PUT /api/{entityType}/{{id}}",
+                        delete = $"DELETE /api/{entityType}/{{id}}",
+                        count = $"GET /api/{entityType}/count",
+                        search = $"GET /api/{entityType}/search?q=keyword&limit=20",
+                        schema = $"GET /api/{entityType}/schema"
+                    },
+                    fields = definition.Fields.Select(f => new
+                    {
+                        name = f.Name,
+                        type = f.Type.ToString().ToLowerInvariant(),
+                        required = f.Required,
+                        maxLength = f.MaxLength,
+                        minValue = f.MinValue,
+                        maxValue = f.MaxValue,
+                        description = f.Description,
+                        searchable = f.Searchable,
+                        indexed = f.Indexed
+                    }),
+                    exampleRequest = example,
+                    features = definition.Features
+                };
+            })
+            .Where(e => e != null)
+            .ToList();
+
+        return Ok(new
+        {
+            title = "Zero-Code Dynamic API Guide",
+            description = "Auto-generated API for entities defined in YAML configuration",
+            version = "1.0",
+            totalEntities = entities.Count,
+            entities
+        });
     }
 
     private static object? ConvertJsonElement(JsonElement element)

@@ -10,7 +10,7 @@ public class ImageGenerationTests
     public void OpenAI_FormatMapping_Null_DefaultsToText_And_KnownFormatsWork()
     {
         // null should map to text
-        var mappedNull = HazinaOpenAIExtensions.OpenAI((HazinaChatResponseFormat)null);
+        var mappedNull = HazinaOpenAIExtensions.OpenAI((HazinaChatResponseFormat?)null);
         Assert.NotNull(mappedNull);
 
         // Known formats should map without exceptions

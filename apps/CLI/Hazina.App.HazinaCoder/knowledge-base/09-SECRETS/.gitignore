@@ -1,0 +1,15 @@
+# Gitignore for 09-SECRETS directory
+# Ensures no secrets are accidentally committed
+
+# Ignore all markdown files EXCEPT INDEX.md
+*.md
+!INDEX.md
+
+# Ignore all other files
+*
+
+# Allow directories
+!*/
+
+# Explicitly allow .gitignore itself
+!.gitignore
