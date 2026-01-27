@@ -4,6 +4,7 @@ import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import { Unicode11Addon } from '@xterm/addon-unicode11'
 import * as signalR from '@microsoft/signalr'
+import { authFetch, getAuthHeader } from '../auth'
 import '@xterm/xterm/css/xterm.css'
 
 interface TerminalViewProps {
@@ -102,9 +103,12 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     })
     resizeObserver.observe(terminalRef.current)
 
-    // Create SignalR connection
+    // Create SignalR connection with auth headers
+    const authHeader = getAuthHeader()
     const hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl('/hubs/terminal')
+      .withUrl('/hubs/terminal', {
+        headers: authHeader ? { 'Authorization': authHeader } : undefined
+      })
       .withAutomaticReconnect()
       .configureLogging(signalR.LogLevel.Information)
       .build()
@@ -190,7 +194,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
         // Now fetch and display historical output
         try {
-          const historyResponse = await fetch(`/api/terminal/sessions/${sessionId}/history`)
+          const historyResponse = await authFetch(`/api/terminal/sessions/${sessionId}/history`)
           if (historyResponse.ok) {
             const historyData = await historyResponse.json()
             if (historyData.data && historyData.data.length > 0) {

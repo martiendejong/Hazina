@@ -6,6 +6,14 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
+      "applicationUrl": "https://0.0.0.0:52870;http://0.0.0.0:52871"
+    },
+    "Hazina.Demo.AgenticOrchestration-Localhost": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
       "applicationUrl": "https://localhost:52870;http://localhost:52871"
     }
   }
