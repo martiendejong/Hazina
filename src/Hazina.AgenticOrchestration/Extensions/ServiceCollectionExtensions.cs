@@ -1,8 +1,12 @@
 using Hazina.AgenticOrchestration.Data;
 using Hazina.AgenticOrchestration.Hubs;
 using Hazina.AgenticOrchestration.Services;
+using Hazina.AgenticOrchestration.Terminal;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Hazina.AgenticOrchestration.Extensions;
 
@@ -80,7 +84,42 @@ public static class ServiceCollectionExtensions
             services.AddSignalR();
         }
 
+        // Register Terminal Session Manager for real-time process streaming
+        if (options.EnableTerminalStreaming)
+        {
+            services.AddSingleton<ITerminalSessionManager>(sp =>
+                new TerminalSessionManager(
+                    sp.GetRequiredService<IHubContext<TerminalHub>>(),
+                    sp.GetRequiredService<ILogger<TerminalSessionManager>>(),
+                    sp.GetRequiredService<ILoggerFactory>()));
+        }
+
         return services;
+    }
+
+    /// <summary>
+    /// Map SignalR hubs for Agentic Orchestration.
+    /// Call this in Program.cs after app.Build()
+    /// </summary>
+    /// <example>
+    /// app.MapHazinaAgenticHubs();
+    /// </example>
+    public static IEndpointRouteBuilder MapHazinaAgenticHubs(
+        this IEndpointRouteBuilder endpoints,
+        AgenticOrchestrationOptions? options = null)
+    {
+        options ??= new AgenticOrchestrationOptions();
+
+        // Map orchestration hub (for instance management, interactions)
+        endpoints.MapHub<ClaudeOrchestrationHub>(options.SignalRHubPath);
+
+        // Map terminal hub (for real-time process I/O)
+        if (options.EnableTerminalStreaming)
+        {
+            endpoints.MapHub<TerminalHub>(options.TerminalHubPath);
+        }
+
+        return endpoints;
     }
 }
 
@@ -124,4 +163,40 @@ public class AgenticOrchestrationOptions
     /// Default: 60
     /// </summary>
     public int InteractionExpiryMinutes { get; set; } = 60;
+
+    /// <summary>
+    /// Enable real-time terminal streaming (process-based I/O)
+    /// Default: true
+    /// </summary>
+    public bool EnableTerminalStreaming { get; set; } = true;
+
+    /// <summary>
+    /// Terminal hub path for real-time process I/O
+    /// Default: /hubs/terminal
+    /// </summary>
+    public string TerminalHubPath { get; set; } = "/hubs/terminal";
+
+    /// <summary>
+    /// Default terminal columns
+    /// Default: 120
+    /// </summary>
+    public int DefaultTerminalColumns { get; set; } = 120;
+
+    /// <summary>
+    /// Default terminal rows
+    /// Default: 30
+    /// </summary>
+    public int DefaultTerminalRows { get; set; } = 30;
+
+    /// <summary>
+    /// Maximum concurrent terminal sessions
+    /// Default: 10
+    /// </summary>
+    public int MaxConcurrentSessions { get; set; } = 10;
+
+    /// <summary>
+    /// Session timeout in minutes (inactive sessions are terminated)
+    /// Default: 60
+    /// </summary>
+    public int SessionTimeoutMinutes { get; set; } = 60;
 }
