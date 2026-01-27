@@ -1,7 +1,9 @@
+using System.Data.SQLite;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Hazina.AgenticOrchestration.Terminal;
 using Hazina.AgenticOrchestration.Hubs;
+using Hazina.AgenticOrchestration.Extensions;
 
 namespace Hazina.AgenticOrchestration.Controllers;
 
@@ -21,13 +23,16 @@ public class TerminalController : ControllerBase
 {
     private readonly ITerminalSessionManager _sessionManager;
     private readonly ILogger<TerminalController> _logger;
+    private readonly string _dbPath;
 
     public TerminalController(
         ITerminalSessionManager sessionManager,
-        ILogger<TerminalController> logger)
+        ILogger<TerminalController> logger,
+        Microsoft.Extensions.Options.IOptions<AgenticOrchestrationOptions> options)
     {
         _sessionManager = sessionManager;
         _logger = logger;
+        _dbPath = options.Value.DatabasePath;
     }
 
     /// <summary>
@@ -43,6 +48,7 @@ public class TerminalController : ControllerBase
                 Command = s.Command,
                 StartedAt = s.StartedAt,
                 IsRunning = s.IsRunning,
+                WaitingForInput = s.WaitingForInput,
                 ExitCode = s.ExitCode,
                 Runtime = DateTime.UtcNow - s.StartedAt
             });
@@ -68,6 +74,7 @@ public class TerminalController : ControllerBase
             Command = session.Command,
             StartedAt = session.StartedAt,
             IsRunning = session.IsRunning,
+            WaitingForInput = session.WaitingForInput,
             ExitCode = session.ExitCode,
             Runtime = DateTime.UtcNow - session.StartedAt
         });
@@ -118,6 +125,7 @@ public class TerminalController : ControllerBase
                     Command = session.Command,
                     StartedAt = session.StartedAt,
                     IsRunning = session.IsRunning,
+                    WaitingForInput = session.WaitingForInput,
                     SignalRHubUrl = "/hubs/terminal",
                     Instructions = "Connect to SignalR hub and call JoinSession(sessionId) to receive output"
                 });
@@ -186,6 +194,32 @@ public class TerminalController : ControllerBase
     }
 
     /// <summary>
+    /// Get terminal output history for a session
+    /// </summary>
+    [HttpGet("sessions/{sessionId}/history")]
+    public ActionResult GetSessionHistory(string sessionId)
+    {
+        var session = _sessionManager.GetSession(sessionId);
+        if (session == null)
+        {
+            return NotFound(new { error = "Session not found", sessionId });
+        }
+
+        var history = session.GetOutputHistory();
+
+        _logger.LogDebug("Returning {ByteCount} bytes of history for session {SessionId}",
+            history.Length, sessionId);
+
+        // Return as array of integers for JavaScript compatibility
+        return Ok(new
+        {
+            sessionId,
+            historyLength = history.Length,
+            data = history.Select(b => (int)b).ToArray()
+        });
+    }
+
+    /// <summary>
     /// Send a signal to the process (e.g., SIGINT for Ctrl+C)
     /// </summary>
     [HttpPost("sessions/{sessionId}/signal")]
@@ -227,6 +261,143 @@ public class TerminalController : ControllerBase
             RunningSessions = sessions.Count(s => s.IsRunning),
             CompletedSessions = sessions.Count(s => !s.IsRunning),
             SignalRHubUrl = "/hubs/terminal"
+        });
+    }
+
+    /// <summary>
+    /// Get external Claude instances running on this machine (from agent tracking database).
+    /// These are Claude agents that were started outside of this orchestration tool.
+    /// </summary>
+    [HttpGet("external-instances")]
+    public async Task<ActionResult<IEnumerable<ExternalClaudeInstanceDto>>> GetExternalInstances()
+    {
+        var instances = new List<ExternalClaudeInstanceDto>();
+
+        if (string.IsNullOrEmpty(_dbPath) || !System.IO.File.Exists(_dbPath))
+        {
+            _logger.LogWarning("Agent database not found at {Path}", _dbPath);
+            return Ok(instances);
+        }
+
+        try
+        {
+            using var conn = new SQLiteConnection($"Data Source={_dbPath}");
+            await conn.OpenAsync();
+
+            // Get active agents that have had a heartbeat in the last minute
+            var cmd = new SQLiteCommand(@"
+                SELECT
+                    agent_id,
+                    session_id,
+                    started_at,
+                    last_heartbeat,
+                    status,
+                    current_task,
+                    worktree_seat
+                FROM agents
+                WHERE status = 'active'
+                  AND datetime(last_heartbeat) > datetime('now', '-1 minute')
+                ORDER BY last_heartbeat DESC
+            ", conn);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                instances.Add(new ExternalClaudeInstanceDto
+                {
+                    AgentId = reader.GetString(0),
+                    SessionId = reader.IsDBNull(1) ? null : reader.GetString(1),
+                    StartedAt = DateTime.TryParse(reader.GetString(2), out var started) ? started : DateTime.MinValue,
+                    LastHeartbeat = DateTime.TryParse(reader.GetString(3), out var heartbeat) ? heartbeat : DateTime.MinValue,
+                    Status = reader.GetString(4),
+                    CurrentTask = reader.IsDBNull(5) ? null : reader.GetString(5),
+                    WorktreeSeat = reader.IsDBNull(6) ? null : reader.GetString(6),
+                    IsExternal = true
+                });
+            }
+
+            _logger.LogDebug("Found {Count} external Claude instances", instances.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to query external instances from database");
+        }
+
+        return Ok(instances);
+    }
+
+    /// <summary>
+    /// Get all sessions including external instances (combined view)
+    /// </summary>
+    [HttpGet("all-sessions")]
+    public async Task<ActionResult<AllSessionsDto>> GetAllSessionsAndInstances()
+    {
+        // Get terminal sessions created by this tool
+        var terminalSessions = _sessionManager.GetAllSessions()
+            .Select(s => new TerminalSessionDto
+            {
+                SessionId = s.SessionId,
+                Command = s.Command,
+                StartedAt = s.StartedAt,
+                IsRunning = s.IsRunning,
+                WaitingForInput = s.WaitingForInput,
+                ExitCode = s.ExitCode,
+                Runtime = DateTime.UtcNow - s.StartedAt
+            })
+            .ToList();
+
+        // Get external Claude instances
+        var externalInstances = new List<ExternalClaudeInstanceDto>();
+
+        if (!string.IsNullOrEmpty(_dbPath) && System.IO.File.Exists(_dbPath))
+        {
+            try
+            {
+                using var conn = new SQLiteConnection($"Data Source={_dbPath}");
+                await conn.OpenAsync();
+
+                var cmd = new SQLiteCommand(@"
+                    SELECT
+                        agent_id,
+                        session_id,
+                        started_at,
+                        last_heartbeat,
+                        status,
+                        current_task,
+                        worktree_seat
+                    FROM agents
+                    WHERE status = 'active'
+                      AND datetime(last_heartbeat) > datetime('now', '-1 minute')
+                    ORDER BY last_heartbeat DESC
+                ", conn);
+
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    externalInstances.Add(new ExternalClaudeInstanceDto
+                    {
+                        AgentId = reader.GetString(0),
+                        SessionId = reader.IsDBNull(1) ? null : reader.GetString(1),
+                        StartedAt = DateTime.TryParse(reader.GetString(2), out var started) ? started : DateTime.MinValue,
+                        LastHeartbeat = DateTime.TryParse(reader.GetString(3), out var heartbeat) ? heartbeat : DateTime.MinValue,
+                        Status = reader.GetString(4),
+                        CurrentTask = reader.IsDBNull(5) ? null : reader.GetString(5),
+                        WorktreeSeat = reader.IsDBNull(6) ? null : reader.GetString(6),
+                        IsExternal = true
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to query external instances");
+            }
+        }
+
+        return Ok(new AllSessionsDto
+        {
+            TerminalSessions = terminalSessions,
+            ExternalInstances = externalInstances,
+            TotalCount = terminalSessions.Count + externalInstances.Count
         });
     }
 }
@@ -276,6 +447,7 @@ public class TerminalSessionDto
     public string Command { get; set; } = "";
     public DateTime StartedAt { get; set; }
     public bool IsRunning { get; set; }
+    public bool WaitingForInput { get; set; }
     public int? ExitCode { get; set; }
     public TimeSpan? Runtime { get; set; }
     public string? SignalRHubUrl { get; set; }
@@ -288,4 +460,23 @@ public class TerminalStatsDto
     public int RunningSessions { get; set; }
     public int CompletedSessions { get; set; }
     public string SignalRHubUrl { get; set; } = "/hubs/terminal";
+}
+
+public class ExternalClaudeInstanceDto
+{
+    public string AgentId { get; set; } = "";
+    public string? SessionId { get; set; }
+    public DateTime StartedAt { get; set; }
+    public DateTime LastHeartbeat { get; set; }
+    public string Status { get; set; } = "";
+    public string? CurrentTask { get; set; }
+    public string? WorktreeSeat { get; set; }
+    public bool IsExternal { get; set; } = true;
+}
+
+public class AllSessionsDto
+{
+    public List<TerminalSessionDto> TerminalSessions { get; set; } = new();
+    public List<ExternalClaudeInstanceDto> ExternalInstances { get; set; } = new();
+    public int TotalCount { get; set; }
 }

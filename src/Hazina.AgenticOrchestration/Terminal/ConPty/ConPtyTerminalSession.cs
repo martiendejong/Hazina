@@ -19,6 +19,9 @@ public class ConPtyTerminalSession : ITerminalSession
 {
     private readonly ILogger<ConPtyTerminalSession>? _logger;
     private readonly TerminalSessionConfig _config;
+    private readonly object _historyLock = new();
+    private readonly MemoryStream _outputHistory = new();
+    private readonly object _stateLock = new();
 
     private PseudoConsolePipe? _inputPipe;
     private PseudoConsolePipe? _outputPipe;
@@ -29,6 +32,9 @@ public class ConPtyTerminalSession : ITerminalSession
     private CancellationTokenSource? _cts;
     private Task? _outputTask;
     private bool _disposed;
+    private DateTime _lastOutputTime = DateTime.UtcNow;
+    private bool _waitingForInput;
+    private string _recentOutput = "";
 
     public string SessionId { get; }
     public DateTime StartedAt { get; private set; }
@@ -36,8 +42,78 @@ public class ConPtyTerminalSession : ITerminalSession
     public bool IsRunning => _process?.HasExited == false;
     public int? ExitCode => _process?.ExitCode;
 
+    /// <summary>
+    /// Whether the session appears to be waiting for user input
+    /// </summary>
+    public bool WaitingForInput
+    {
+        get
+        {
+            lock (_stateLock)
+            {
+                if (!IsRunning) return false;
+
+                // Only return true if we detected a question pattern
+                // AND there's been no output for at least 500ms (to avoid flicker)
+                if (!_waitingForInput) return false;
+
+                var idleTime = DateTime.UtcNow - _lastOutputTime;
+                return idleTime.TotalMilliseconds >= 500;
+            }
+        }
+    }
+
     public event Action<byte[]>? OnOutput;
     public event Action<int>? OnExit;
+
+    /// <summary>
+    /// Get all output history as bytes
+    /// </summary>
+    public byte[] GetOutputHistory()
+    {
+        lock (_historyLock)
+        {
+            return _outputHistory.ToArray();
+        }
+    }
+
+    // Patterns that indicate Claude is asking a question (more specific to avoid false positives)
+    private static readonly string[] QuestionPatterns = new[]
+    {
+        "│ ●", // Claude's selection UI (selected option)
+        "│ ○", // Claude's selection UI (unselected option)
+        "❯", // Arrow prompt
+        "(y/n)", // Yes/no prompt
+        "[Y/n]", // Yes/no prompt
+        "[y/N]", // Yes/no prompt
+        "? ", // Question with space (more specific than just ?)
+    };
+
+    private void DetectQuestionInOutput(string text)
+    {
+        lock (_stateLock)
+        {
+            // Keep last 200 chars of output for pattern matching (smaller window)
+            _recentOutput = (_recentOutput + text);
+            if (_recentOutput.Length > 200)
+            {
+                _recentOutput = _recentOutput.Substring(_recentOutput.Length - 200);
+            }
+
+            // Check for question patterns - must match at least one specific pattern
+            _waitingForInput = QuestionPatterns.Any(pattern =>
+                _recentOutput.Contains(pattern, StringComparison.Ordinal));
+        }
+    }
+
+    private void ResetWaitingState()
+    {
+        lock (_stateLock)
+        {
+            _waitingForInput = false;
+            _recentOutput = "";
+        }
+    }
 
     public ConPtyTerminalSession(string sessionId, TerminalSessionConfig config, ILogger<ConPtyTerminalSession>? logger = null)
     {
@@ -235,7 +311,28 @@ public class ConPtyTerminalSession : ITerminalSession
                 var data = new byte[bytesRead];
                 Array.Copy(buffer, data, bytesRead);
 
-                _logger?.LogInformation("ConPTY output: {ByteCount} bytes for session {SessionId}", bytesRead, SessionId);
+                // Store in history buffer
+                lock (_historyLock)
+                {
+                    _outputHistory.Write(data, 0, data.Length);
+                }
+
+                // Update state for question detection
+                lock (_stateLock)
+                {
+                    _lastOutputTime = DateTime.UtcNow;
+                }
+
+                // Try to detect if this output contains a question
+                try
+                {
+                    var text = Encoding.UTF8.GetString(data);
+                    DetectQuestionInOutput(text);
+                }
+                catch { /* Ignore encoding errors */ }
+
+                _logger?.LogDebug("ConPTY output: {ByteCount} bytes for session {SessionId}, total history: {HistorySize} bytes",
+                    bytesRead, SessionId, _outputHistory.Length);
 
                 // Fire event immediately
                 try
@@ -294,6 +391,9 @@ public class ConPtyTerminalSession : ITerminalSession
             _logger?.LogWarning("Cannot write to session {SessionId}: not running", SessionId);
             return;
         }
+
+        // Reset waiting state since user is providing input
+        ResetWaitingState();
 
         try
         {

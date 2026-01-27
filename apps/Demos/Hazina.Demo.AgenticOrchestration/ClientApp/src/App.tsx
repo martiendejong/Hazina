@@ -1,21 +1,23 @@
 import { useState, useEffect } from 'react'
 import { SessionList } from './components/SessionList'
 import { TerminalView } from './components/TerminalView'
-import type { TerminalSession } from './types'
+import type { TerminalSession, ExternalClaudeInstance, AllSessions } from './types'
 import './App.css'
 
 function App() {
   const [sessions, setSessions] = useState<TerminalSession[]>([])
+  const [externalInstances, setExternalInstances] = useState<ExternalClaudeInstance[]>([])
   const [selectedSession, setSelectedSession] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch('/api/terminal/sessions')
+      const response = await fetch('/api/terminal/all-sessions')
       if (!response.ok) throw new Error('Failed to fetch sessions')
-      const data = await response.json()
-      setSessions(data)
+      const data: AllSessions = await response.json()
+      setSessions(data.terminalSessions)
+      setExternalInstances(data.externalInstances)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load sessions')
@@ -33,12 +35,28 @@ function App() {
 
   const handleCreateSession = async () => {
     try {
+      // Calculate approximate terminal size based on container
+      // Use conservative defaults that will be resized when terminal mounts
+      const terminalContainer = document.querySelector('.terminal-container')
+      let cols = 80
+      let rows = 24
+      if (terminalContainer) {
+        const rect = terminalContainer.getBoundingClientRect()
+        // Approximate character size: 9px width, 17px height for 14px font
+        cols = Math.floor((rect.width - 20) / 9)  // -20 for padding
+        rows = Math.floor((rect.height - 60) / 17)  // -60 for toolbar
+        cols = Math.max(80, Math.min(cols, 200))
+        rows = Math.max(24, Math.min(rows, 50))
+      }
+
       const response = await fetch('/api/terminal/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           command: 'claude_agent.bat',
-          workingDirectory: 'C:\\scripts'
+          workingDirectory: 'C:\\scripts',
+          columns: cols,
+          rows: rows
         })
       })
       if (!response.ok) throw new Error('Failed to create session')
@@ -60,6 +78,14 @@ function App() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to terminate session')
     }
+  }
+
+  const handleStateChanged = (sessionId: string, isRunning: boolean, waitingForInput: boolean) => {
+    setSessions(prev => prev.map(s =>
+      s.sessionId === sessionId
+        ? { ...s, isRunning, waitingForInput }
+        : s
+    ))
   }
 
   return (
@@ -84,6 +110,7 @@ function App() {
         <aside className="sidebar">
           <SessionList
             sessions={sessions}
+            externalInstances={externalInstances}
             selectedSession={selectedSession}
             loading={loading}
             onSelect={setSelectedSession}
@@ -96,6 +123,7 @@ function App() {
             <TerminalView
               sessionId={selectedSession}
               onClose={() => setSelectedSession(null)}
+              onStateChanged={handleStateChanged}
             />
           ) : (
             <div className="no-session">

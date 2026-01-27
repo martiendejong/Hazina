@@ -92,6 +92,27 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
             _logger.LogInformation("Creating pipe-based session {SessionId} for command '{Command}'", sessionId, config.Command);
         }
 
+        // Track last state to detect changes
+        bool lastWaitingState = false;
+
+        // Periodic state check timer (check every 2 seconds to avoid flicker)
+        var stateCheckTimer = new System.Threading.Timer(async _ =>
+        {
+            try
+            {
+                var currentWaitingState = session.WaitingForInput;
+                if (currentWaitingState != lastWaitingState)
+                {
+                    lastWaitingState = currentWaitingState;
+                    await _hubContext.Clients
+                        .Group($"terminal-{sessionId}")
+                        .SendAsync("OnStateChanged", sessionId, session.IsRunning, currentWaitingState, CancellationToken.None);
+                    _logger.LogDebug("State changed for session {SessionId}: WaitingForInput={Waiting}", sessionId, currentWaitingState);
+                }
+            }
+            catch { /* ignore timer errors */ }
+        }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
+
         // Wire up output to SignalR
         // IMPORTANT: Don't use the request's cancellation token here!
         // The event handlers run after the HTTP request completes, so ct would be cancelled.
@@ -107,6 +128,16 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
                 await _hubContext.Clients
                     .Group($"terminal-{sessionId}")
                     .SendAsync("OnOutput", sessionId, intArray, CancellationToken.None);
+
+                // Immediately check state on output too
+                var currentWaitingState = session.WaitingForInput;
+                if (currentWaitingState != lastWaitingState)
+                {
+                    lastWaitingState = currentWaitingState;
+                    await _hubContext.Clients
+                        .Group($"terminal-{sessionId}")
+                        .SendAsync("OnStateChanged", sessionId, session.IsRunning, currentWaitingState, CancellationToken.None);
+                }
             }
             catch (Exception ex)
             {
@@ -119,9 +150,17 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
         {
             try
             {
+                // Stop the state check timer
+                await stateCheckTimer.DisposeAsync();
+
                 await _hubContext.Clients
                     .Group($"terminal-{sessionId}")
                     .SendAsync("OnExit", sessionId, exitCode, CancellationToken.None);
+
+                // Also notify that session is no longer waiting (it's exited)
+                await _hubContext.Clients
+                    .Group($"terminal-{sessionId}")
+                    .SendAsync("OnStateChanged", sessionId, false, false, CancellationToken.None);
 
                 _logger.LogInformation("Session {SessionId} exited with code {ExitCode}", sessionId, exitCode);
             }
@@ -171,24 +210,28 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
 
     private void CleanupDeadSessions(object? state)
     {
-        var deadSessions = _sessions
-            .Where(kvp => !kvp.Value.IsRunning)
+        // Only cleanup sessions that have been dead for more than 1 hour
+        // This allows users to view historical output of closed sessions
+        var cutoffTime = DateTime.UtcNow.AddHours(-1);
+
+        var expiredSessions = _sessions
+            .Where(kvp => !kvp.Value.IsRunning && kvp.Value.StartedAt < cutoffTime)
             .Select(kvp => kvp.Key)
             .ToList();
 
-        foreach (var sessionId in deadSessions)
+        foreach (var sessionId in expiredSessions)
         {
             if (_sessions.TryRemove(sessionId, out var session))
             {
-                _logger.LogInformation("Cleaned up dead session {SessionId}", sessionId);
+                _logger.LogInformation("Cleaned up expired session {SessionId} (dead > 1 hour)", sessionId);
                 _ = session.DisposeAsync();
             }
         }
 
-        if (deadSessions.Count > 0)
+        if (expiredSessions.Count > 0)
         {
-            _logger.LogDebug("Cleaned up {Count} dead sessions, remaining: {Remaining}",
-                deadSessions.Count, _sessions.Count);
+            _logger.LogDebug("Cleaned up {Count} expired sessions, remaining: {Remaining}",
+                expiredSessions.Count, _sessions.Count);
         }
     }
 

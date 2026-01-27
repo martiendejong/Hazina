@@ -32,6 +32,16 @@ public interface ITerminalSession : IAsyncDisposable
     string Command { get; }
 
     /// <summary>
+    /// Whether the session is waiting for user input (e.g., showing a question)
+    /// </summary>
+    bool WaitingForInput { get; }
+
+    /// <summary>
+    /// Get all output history as bytes
+    /// </summary>
+    byte[] GetOutputHistory();
+
+    /// <summary>
     /// Start the terminal session and begin streaming output
     /// </summary>
     Task StartAsync(CancellationToken ct = default);

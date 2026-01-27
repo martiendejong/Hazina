@@ -2,15 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
+import { Unicode11Addon } from '@xterm/addon-unicode11'
 import * as signalR from '@microsoft/signalr'
 import '@xterm/xterm/css/xterm.css'
 
 interface TerminalViewProps {
   sessionId: string
   onClose: () => void
+  onStateChanged?: (sessionId: string, isRunning: boolean, waitingForInput: boolean) => void
 }
 
-export function TerminalView({ sessionId, onClose }: TerminalViewProps) {
+export function TerminalView({ sessionId, onClose, onStateChanged }: TerminalViewProps) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const terminalInstance = useRef<Terminal | null>(null)
   const fitAddon = useRef<FitAddon | null>(null)
@@ -21,7 +23,7 @@ export function TerminalView({ sessionId, onClose }: TerminalViewProps) {
   useEffect(() => {
     if (!terminalRef.current) return
 
-    // Create terminal
+    // Create terminal with proper settings for ConPTY
     const terminal = new Terminal({
       cursorBlink: true,
       fontSize: 14,
@@ -30,10 +32,29 @@ export function TerminalView({ sessionId, onClose }: TerminalViewProps) {
         background: '#1e1e1e',
         foreground: '#d4d4d4',
         cursor: '#ffffff',
+        cursorAccent: '#1e1e1e',
         selectionBackground: '#264f78',
+        black: '#000000',
+        red: '#cd3131',
+        green: '#0dbc79',
+        yellow: '#e5e510',
+        blue: '#2472c8',
+        magenta: '#bc3fbc',
+        cyan: '#11a8cd',
+        white: '#e5e5e5',
+        brightBlack: '#666666',
+        brightRed: '#f14c4c',
+        brightGreen: '#23d18b',
+        brightYellow: '#f5f543',
+        brightBlue: '#3b8eea',
+        brightMagenta: '#d670d6',
+        brightCyan: '#29b8db',
+        brightWhite: '#ffffff',
       },
       scrollback: 10000,
-      convertEol: true,
+      allowProposedApi: true,
+      // Don't convert EOL - ConPTY sends proper \r\n sequences
+      convertEol: false,
     })
 
     // Add addons
@@ -41,9 +62,18 @@ export function TerminalView({ sessionId, onClose }: TerminalViewProps) {
     terminal.loadAddon(fit)
     terminal.loadAddon(new WebLinksAddon())
 
+    // Add Unicode 11 support for proper emoji and symbol rendering
+    const unicode11 = new Unicode11Addon()
+    terminal.loadAddon(unicode11)
+    terminal.unicode.activeVersion = '11'
+
     // Open terminal
     terminal.open(terminalRef.current)
-    fit.fit()
+
+    // Initial fit after DOM is ready
+    requestAnimationFrame(() => {
+      fit.fit()
+    })
 
     terminalInstance.current = terminal
     fitAddon.current = fit
@@ -57,6 +87,19 @@ export function TerminalView({ sessionId, onClose }: TerminalViewProps) {
       }
     }
     window.addEventListener('resize', handleResize)
+
+    // Use ResizeObserver for more reliable resize detection
+    const resizeObserver = new ResizeObserver(() => {
+      // Debounce resize
+      setTimeout(() => {
+        fit.fit()
+        if (connection.current?.state === signalR.HubConnectionState.Connected) {
+          connection.current.invoke('Resize', sessionId, terminal.cols, terminal.rows)
+            .catch(err => console.error('Resize failed:', err))
+        }
+      }, 50)
+    })
+    resizeObserver.observe(terminalRef.current)
 
     // Create SignalR connection
     const hubConnection = new signalR.HubConnectionBuilder()
@@ -87,6 +130,13 @@ export function TerminalView({ sessionId, onClose }: TerminalViewProps) {
       }
     })
 
+    // Handle state changes (Running/Question)
+    hubConnection.on('OnStateChanged', (sid: string, isRunning: boolean, waitingForInput: boolean) => {
+      if (sid === sessionId && onStateChanged) {
+        onStateChanged(sid, isRunning, waitingForInput)
+      }
+    })
+
     // Handle user input
     terminal.onData(data => {
       if (hubConnection.state === signalR.HubConnectionState.Connected) {
@@ -113,27 +163,51 @@ export function TerminalView({ sessionId, onClose }: TerminalViewProps) {
       setIsConnected(false)
     })
 
-    // Connect and join session
-    hubConnection.start()
-      .then(() => {
+    // Connect, resize, then load history
+    const connectAndLoadHistory = async () => {
+      // First connect to SignalR
+      try {
+        await hubConnection.start()
         setIsConnected(true)
-        terminal.writeln('\x1b[32m✓ Connected to terminal\x1b[0m\r\n')
-        return hubConnection.invoke('JoinSession', sessionId)
-      })
-      .then(() => {
-        terminal.writeln(`\x1b[90m[Joined session ${sessionId}]\x1b[0m\r\n`)
-      })
-      .catch(err => {
+        await hubConnection.invoke('JoinSession', sessionId)
+
+        // IMPORTANT: Sync terminal size BEFORE loading history
+        // This ensures ConPTY uses the correct dimensions
+        fit.fit()
+        await hubConnection.invoke('Resize', sessionId, terminal.cols, terminal.rows)
+        console.log(`Synced terminal size: ${terminal.cols}x${terminal.rows}`)
+
+        // Small delay to let ConPTY process the resize
+        await new Promise(resolve => setTimeout(resolve, 100))
+
+        // Now fetch and display historical output
+        try {
+          const historyResponse = await fetch(`/api/terminal/sessions/${sessionId}/history`)
+          if (historyResponse.ok) {
+            const historyData = await historyResponse.json()
+            if (historyData.data && historyData.data.length > 0) {
+              const bytes = new Uint8Array(historyData.data)
+              terminal.write(bytes)
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to load history:', err)
+        }
+      } catch (err) {
         console.error('Connection failed:', err)
         setError('Failed to connect to terminal hub')
         terminal.writeln('\x1b[31m✗ Failed to connect to terminal hub\x1b[0m')
-      })
+      }
+    }
+
+    connectAndLoadHistory()
 
     connection.current = hubConnection
 
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize)
+      resizeObserver.disconnect()
       if (hubConnection.state === signalR.HubConnectionState.Connected) {
         hubConnection.invoke('LeaveSession', sessionId).catch(() => {})
         hubConnection.stop()

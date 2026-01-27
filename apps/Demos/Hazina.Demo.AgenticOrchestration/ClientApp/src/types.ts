@@ -4,7 +4,25 @@ export interface TerminalSession {
   workingDirectory?: string
   startedAt: string
   isRunning: boolean
+  waitingForInput: boolean
   exitCode?: number
+}
+
+export interface ExternalClaudeInstance {
+  agentId: string
+  sessionId?: string
+  startedAt: string
+  lastHeartbeat: string
+  status: string
+  currentTask?: string
+  worktreeSeat?: string
+  isExternal: boolean
+}
+
+export interface AllSessions {
+  terminalSessions: TerminalSession[]
+  externalInstances: ExternalClaudeInstance[]
+  totalCount: number
 }
 
 export interface CreateSessionRequest {

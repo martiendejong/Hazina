@@ -24,6 +24,9 @@ public class TerminalSession : ITerminalSession
 {
     private readonly ILogger<TerminalSession>? _logger;
     private readonly TerminalSessionConfig _config;
+    private readonly object _historyLock = new();
+    private readonly MemoryStream _outputHistory = new();
+    private readonly object _stateLock = new();
     private Process? _process;
     private StreamWriter? _stdin;
     private Stream? _stdout;
@@ -32,6 +35,9 @@ public class TerminalSession : ITerminalSession
     private Task? _outputTask;
     private Task? _stderrTask;
     private bool _disposed;
+    private DateTime _lastOutputTime = DateTime.UtcNow;
+    private bool _waitingForInput;
+    private string _recentOutput = "";
 
     public string SessionId { get; }
     public DateTime StartedAt { get; private set; }
@@ -39,8 +45,62 @@ public class TerminalSession : ITerminalSession
     public bool IsRunning => _process?.HasExited == false;
     public int? ExitCode => _process?.HasExited == true ? _process.ExitCode : null;
 
+    /// <summary>
+    /// Whether the session appears to be waiting for user input
+    /// </summary>
+    public bool WaitingForInput
+    {
+        get
+        {
+            lock (_stateLock)
+            {
+                if (!IsRunning) return false;
+                if (!_waitingForInput) return false;
+                var idleTime = DateTime.UtcNow - _lastOutputTime;
+                return idleTime.TotalMilliseconds >= 500;
+            }
+        }
+    }
+
     public event Action<byte[]>? OnOutput;
     public event Action<int>? OnExit;
+
+    /// <summary>
+    /// Get all output history as bytes
+    /// </summary>
+    public byte[] GetOutputHistory()
+    {
+        lock (_historyLock)
+        {
+            return _outputHistory.ToArray();
+        }
+    }
+
+    private static readonly string[] QuestionPatterns = new[]
+    {
+        "│ ●", "│ ○", "❯", "(y/n)", "[Y/n]", "[y/N]", "? ",
+    };
+
+    private void DetectQuestionInOutput(string text)
+    {
+        lock (_stateLock)
+        {
+            _recentOutput = (_recentOutput + text);
+            if (_recentOutput.Length > 200)
+                _recentOutput = _recentOutput.Substring(_recentOutput.Length - 200);
+            _waitingForInput = QuestionPatterns.Any(p =>
+                _recentOutput.Contains(p, StringComparison.Ordinal));
+        }
+    }
+
+    private void ResetWaitingState()
+    {
+        lock (_stateLock)
+        {
+            _waitingForInput = false;
+            _recentOutput = "";
+        }
+    }
 
     public TerminalSession(string sessionId, TerminalSessionConfig config, ILogger<TerminalSession>? logger = null)
     {
@@ -171,6 +231,26 @@ public class TerminalSession : ITerminalSession
                 var data = new byte[bytesRead];
                 Array.Copy(buffer, data, bytesRead);
 
+                // Store in history buffer
+                lock (_historyLock)
+                {
+                    _outputHistory.Write(data, 0, data.Length);
+                }
+
+                // Update state for question detection
+                lock (_stateLock)
+                {
+                    _lastOutputTime = DateTime.UtcNow;
+                }
+
+                // Try to detect if this output contains a question
+                try
+                {
+                    var text = Encoding.UTF8.GetString(data);
+                    DetectQuestionInOutput(text);
+                }
+                catch { /* Ignore encoding errors */ }
+
                 // Fire event immediately - no batching!
                 try
                 {
@@ -198,6 +278,9 @@ public class TerminalSession : ITerminalSession
             _logger?.LogWarning("Cannot write to session {SessionId}: process not running", SessionId);
             return;
         }
+
+        // Reset waiting state since user is providing input
+        ResetWaitingState();
 
         try
         {
