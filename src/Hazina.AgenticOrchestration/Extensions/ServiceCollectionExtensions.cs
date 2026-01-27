@@ -1,0 +1,127 @@
+using Hazina.AgenticOrchestration.Data;
+using Hazina.AgenticOrchestration.Hubs;
+using Hazina.AgenticOrchestration.Services;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Hazina.AgenticOrchestration.Extensions;
+
+/// <summary>
+/// Extension methods for registering Agentic Orchestration services
+/// using Hazina's declarative pattern
+/// </summary>
+public static class ServiceCollectionExtensions
+{
+    /// <summary>
+    /// Add Hazina Agentic Orchestration with default configuration
+    /// </summary>
+    /// <example>
+    /// // One-liner in Program.cs:
+    /// builder.Services.AddHazinaAgenticOrchestration();
+    /// </example>
+    public static IServiceCollection AddHazinaAgenticOrchestration(
+        this IServiceCollection services)
+    {
+        return services.AddHazinaAgenticOrchestration(new AgenticOrchestrationOptions());
+    }
+
+    /// <summary>
+    /// Add Hazina Agentic Orchestration with custom configuration
+    /// </summary>
+    /// <example>
+    /// builder.Services.AddHazinaAgenticOrchestration(options =>
+    /// {
+    ///     options.DatabasePath = @"C:\my\custom\path.db";
+    ///     options.LogsPath = @"C:\my\logs";
+    ///     options.EnableSignalR = true;
+    /// });
+    /// </example>
+    public static IServiceCollection AddHazinaAgenticOrchestration(
+        this IServiceCollection services,
+        Action<AgenticOrchestrationOptions> configureOptions)
+    {
+        var options = new AgenticOrchestrationOptions();
+        configureOptions(options);
+        return services.AddHazinaAgenticOrchestration(options);
+    }
+
+    /// <summary>
+    /// Add Hazina Agentic Orchestration with options object
+    /// </summary>
+    public static IServiceCollection AddHazinaAgenticOrchestration(
+        this IServiceCollection services,
+        AgenticOrchestrationOptions options)
+    {
+        // Initialize database
+        var dbInitializer = new DatabaseInitializer(options.DatabasePath);
+        dbInitializer.Initialize();
+
+        // Register options
+        services.AddSingleton(options);
+
+        // Register core services
+        services.AddSingleton<IClaudeInstanceManager>(
+            new ClaudeInstanceManager(options.DatabasePath));
+
+        // SignalR-dependent services need to be registered as factory
+        services.AddSingleton<IOutputCaptureService>(sp =>
+            new OutputCaptureService(
+                sp.GetRequiredService<IHubContext<ClaudeOrchestrationHub>>(),
+                options.LogsPath));
+
+        services.AddSingleton<IInteractionService>(sp =>
+            new InteractionService(
+                sp.GetRequiredService<IHubContext<ClaudeOrchestrationHub>>(),
+                options.DatabasePath));
+
+        // Add SignalR if enabled
+        if (options.EnableSignalR)
+        {
+            services.AddSignalR();
+        }
+
+        return services;
+    }
+}
+
+/// <summary>
+/// Configuration options for Agentic Orchestration
+/// </summary>
+public class AgenticOrchestrationOptions
+{
+    /// <summary>
+    /// Path to the SQLite database file
+    /// Default: C:\scripts\_machine\agent-activity.db
+    /// </summary>
+    public string DatabasePath { get; set; } = @"C:\scripts\_machine\agent-activity.db";
+
+    /// <summary>
+    /// Path to the logs directory for output streaming
+    /// Default: C:\scripts\logs
+    /// </summary>
+    public string LogsPath { get; set; } = @"C:\scripts\logs";
+
+    /// <summary>
+    /// Enable SignalR for real-time updates
+    /// Default: true
+    /// </summary>
+    public bool EnableSignalR { get; set; } = true;
+
+    /// <summary>
+    /// SignalR hub path
+    /// Default: /hubs/agentic
+    /// </summary>
+    public string SignalRHubPath { get; set; } = "/hubs/agentic";
+
+    /// <summary>
+    /// Heartbeat timeout in seconds for considering an instance inactive
+    /// Default: 60
+    /// </summary>
+    public int HeartbeatTimeoutSeconds { get; set; } = 60;
+
+    /// <summary>
+    /// Interaction request expiry in minutes
+    /// Default: 60
+    /// </summary>
+    public int InteractionExpiryMinutes { get; set; } = 60;
+}

@@ -1,0 +1,59 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// HAZINA AGENTIC ORCHESTRATION - DECLARATIVE STYLE (MINIMAL)
+// ═══════════════════════════════════════════════════════════════════════════
+// This example shows the absolute minimum code needed to run the API
+// using Hazina's declarative patterns.
+//
+// To use this instead of Program.cs, rename this file to Program.cs
+// ═══════════════════════════════════════════════════════════════════════════
+
+using Hazina.AgenticOrchestration.Extensions;
+using Hazina.AgenticOrchestration.Hubs;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ONE-LINER: Register all Agentic Orchestration services
+// ═══════════════════════════════════════════════════════════════════════════
+builder.Services.AddHazinaAgenticOrchestration(options =>
+{
+    options.DatabasePath = @"C:\scripts\_machine\agent-activity.db";
+    options.LogsPath = @"C:\scripts\logs";
+    options.EnableSignalR = true;
+});
+
+// Standard ASP.NET Core services
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+// Middleware
+app.UseSwagger();
+app.UseSwaggerUI();
+
+// Map endpoints
+app.MapControllers();
+app.MapHub<ClaudeOrchestrationHub>("/hubs/agentic");
+
+// Health check
+app.MapGet("/health", () => "OK");
+
+app.Run();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// THAT'S IT! 20 lines of code for a complete Claude instance management API.
+//
+// Available endpoints:
+//   GET  /api/agentic/instances          - List active instances
+//   GET  /api/agentic/instances/{id}     - Instance details
+//   GET  /api/agentic/instances/{id}/output - Output history
+//   POST /api/agentic/instances/{id}/await-input - Claude requests input
+//   GET  /api/agentic/instances/{id}/interactions/{iid}/response - Poll
+//   POST /api/agentic/instances/{id}/interactions/{iid}/respond - Respond
+//   GET  /api/agentic/interactions/pending - All pending interactions
+//
+// SignalR Hub: /hubs/agentic
+//   Events: ReceiveOutput, InputRequired, ResponseReceived, GlobalInputRequired
+// ═══════════════════════════════════════════════════════════════════════════
