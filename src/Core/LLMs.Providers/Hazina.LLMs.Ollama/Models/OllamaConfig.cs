@@ -32,7 +32,8 @@ public class OllamaConfig : HazinaConfigBase
     protected override string ConfigurationSectionName => "Ollama";
 
     /// <inheritdoc />
-    protected override string? DefaultEndpoint => "http://localhost:11434";
+    protected override string? DefaultEndpoint =>
+        Environment.GetEnvironmentVariable("OLLAMA_HOST") ?? "http://localhost:11434";
 
     /// <inheritdoc />
     protected override string DefaultModel => "llama3.2";
