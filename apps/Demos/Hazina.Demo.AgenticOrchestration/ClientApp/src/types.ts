@@ -34,3 +34,14 @@ export interface CreateSessionRequest {
   mergeStderr?: boolean
   environment?: Record<string, string>
 }
+
+export interface TerminalConfig {
+  defaultCommand: string
+  defaultWorkingDirectory: string | null
+  defaultArguments: string[]
+  defaultColumns: number
+  defaultRows: number
+  maxConcurrentSessions: number
+  sessionTimeoutMinutes: number
+  signalRHubUrl: string
+}

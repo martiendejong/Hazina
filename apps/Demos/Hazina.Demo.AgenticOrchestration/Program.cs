@@ -11,11 +11,23 @@ var config = builder.Configuration.GetSection("AgenticOrchestration");
 var dbPath = config["DatabasePath"] ?? @"C:\scripts\_machine\agent-activity.db";
 var logsPath = config["LogsPath"] ?? @"C:\scripts\logs";
 
+// Terminal configuration
+var terminalConfig = config.GetSection("Terminal");
+var defaultCommand = terminalConfig["DefaultCommand"] ?? "claude";
+var defaultWorkingDirectory = terminalConfig["DefaultWorkingDirectory"];
+var defaultArguments = terminalConfig.GetSection("DefaultArguments").Get<string[]>() ?? Array.Empty<string>();
+var defaultColumns = int.TryParse(terminalConfig["DefaultColumns"], out var cols) ? cols : 120;
+var defaultRows = int.TryParse(terminalConfig["DefaultRows"], out var rows) ? rows : 30;
+var maxSessions = int.TryParse(terminalConfig["MaxConcurrentSessions"], out var max) ? max : 10;
+var sessionTimeout = int.TryParse(terminalConfig["SessionTimeoutMinutes"], out var timeout) ? timeout : 60;
+
 Console.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
 Console.WriteLine("║     HAZINA AGENTIC ORCHESTRATION - Demo Application              ║");
 Console.WriteLine("╠══════════════════════════════════════════════════════════════════╣");
 Console.WriteLine($"║  Database: {dbPath,-50} ║");
 Console.WriteLine($"║  Logs: {logsPath,-54} ║");
+Console.WriteLine($"║  Terminal Command: {defaultCommand,-42} ║");
+Console.WriteLine($"║  Working Directory: {defaultWorkingDirectory ?? "(current)",-41} ║");
 Console.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
 
 // ═══════════════════════════════════════════════════════════════
@@ -29,6 +41,14 @@ builder.Services.AddHazinaAgenticOrchestration(options =>
     options.LogsPath = logsPath;
     options.EnableSignalR = true;
     options.EnableTerminalStreaming = true;
+    // Terminal defaults from config
+    options.DefaultCommand = defaultCommand;
+    options.DefaultWorkingDirectory = defaultWorkingDirectory;
+    options.DefaultArguments = defaultArguments;
+    options.DefaultTerminalColumns = defaultColumns;
+    options.DefaultTerminalRows = defaultRows;
+    options.MaxConcurrentSessions = maxSessions;
+    options.SessionTimeoutMinutes = sessionTimeout;
 });
 Console.WriteLine("✅ Hazina Agentic Orchestration services registered (declarative)");
 

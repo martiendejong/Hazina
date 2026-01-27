@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { SessionList } from './components/SessionList'
 import { TerminalView } from './components/TerminalView'
-import type { TerminalSession, ExternalClaudeInstance, AllSessions } from './types'
+import type { TerminalSession, ExternalClaudeInstance, AllSessions, TerminalConfig } from './types'
 import './App.css'
 
 function App() {
@@ -10,6 +10,29 @@ function App() {
   const [selectedSession, setSelectedSession] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [config, setConfig] = useState<TerminalConfig | null>(null)
+
+  const fetchConfig = async () => {
+    try {
+      const response = await fetch('/api/terminal/config')
+      if (!response.ok) throw new Error('Failed to fetch config')
+      const data: TerminalConfig = await response.json()
+      setConfig(data)
+    } catch (err) {
+      console.error('Failed to load terminal config:', err)
+      // Use defaults if config fails to load
+      setConfig({
+        defaultCommand: 'claude',
+        defaultWorkingDirectory: null,
+        defaultArguments: [],
+        defaultColumns: 120,
+        defaultRows: 30,
+        maxConcurrentSessions: 10,
+        sessionTimeoutMinutes: 60,
+        signalRHubUrl: '/hubs/terminal'
+      })
+    }
+  }
 
   const fetchSessions = async () => {
     try {
@@ -27,8 +50,10 @@ function App() {
   }
 
   useEffect(() => {
+    // Fetch config once on mount
+    fetchConfig()
+    // Fetch sessions initially and refresh every 5 seconds
     fetchSessions()
-    // Refresh every 5 seconds
     const interval = setInterval(fetchSessions, 5000)
     return () => clearInterval(interval)
   }, [])
@@ -38,8 +63,8 @@ function App() {
       // Calculate approximate terminal size based on container
       // Use conservative defaults that will be resized when terminal mounts
       const terminalContainer = document.querySelector('.terminal-container')
-      let cols = 80
-      let rows = 24
+      let cols = config?.defaultColumns ?? 80
+      let rows = config?.defaultRows ?? 24
       if (terminalContainer) {
         const rect = terminalContainer.getBoundingClientRect()
         // Approximate character size: 9px width, 17px height for 14px font
@@ -49,14 +74,15 @@ function App() {
         rows = Math.max(24, Math.min(rows, 50))
       }
 
+      // Use configured defaults - command and workingDirectory come from backend config
+      // Only pass columns/rows from our calculation; backend will use its defaults for command/workingDirectory
       const response = await fetch('/api/terminal/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          command: 'claude_agent.bat',
-          workingDirectory: 'C:\\scripts',
           columns: cols,
           rows: rows
+          // command and workingDirectory omitted - backend uses appsettings defaults
         })
       })
       if (!response.ok) throw new Error('Failed to create session')

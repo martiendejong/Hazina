@@ -60,8 +60,27 @@ public static class ServiceCollectionExtensions
         var dbInitializer = new DatabaseInitializer(options.DatabasePath);
         dbInitializer.Initialize();
 
-        // Register options
+        // Register options - both as singleton and IOptions<T> for flexibility
         services.AddSingleton(options);
+        services.AddOptions<AgenticOrchestrationOptions>()
+            .Configure(opt =>
+            {
+                opt.DatabasePath = options.DatabasePath;
+                opt.LogsPath = options.LogsPath;
+                opt.EnableSignalR = options.EnableSignalR;
+                opt.SignalRHubPath = options.SignalRHubPath;
+                opt.HeartbeatTimeoutSeconds = options.HeartbeatTimeoutSeconds;
+                opt.InteractionExpiryMinutes = options.InteractionExpiryMinutes;
+                opt.EnableTerminalStreaming = options.EnableTerminalStreaming;
+                opt.TerminalHubPath = options.TerminalHubPath;
+                opt.DefaultTerminalColumns = options.DefaultTerminalColumns;
+                opt.DefaultTerminalRows = options.DefaultTerminalRows;
+                opt.MaxConcurrentSessions = options.MaxConcurrentSessions;
+                opt.SessionTimeoutMinutes = options.SessionTimeoutMinutes;
+                opt.DefaultCommand = options.DefaultCommand;
+                opt.DefaultWorkingDirectory = options.DefaultWorkingDirectory;
+                opt.DefaultArguments = options.DefaultArguments;
+            });
 
         // Register core services
         services.AddSingleton<IClaudeInstanceManager>(
@@ -199,4 +218,22 @@ public class AgenticOrchestrationOptions
     /// Default: 60
     /// </summary>
     public int SessionTimeoutMinutes { get; set; } = 60;
+
+    /// <summary>
+    /// Default command/executable to run when creating a new terminal session
+    /// Default: "claude" (assumes Claude CLI is in PATH)
+    /// </summary>
+    public string DefaultCommand { get; set; } = "claude";
+
+    /// <summary>
+    /// Default working directory for new terminal sessions
+    /// Default: null (uses current directory)
+    /// </summary>
+    public string? DefaultWorkingDirectory { get; set; }
+
+    /// <summary>
+    /// Default arguments to pass to the command
+    /// Default: empty array
+    /// </summary>
+    public string[] DefaultArguments { get; set; } = Array.Empty<string>();
 }

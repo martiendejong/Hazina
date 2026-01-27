@@ -23,7 +23,7 @@ public class TerminalController : ControllerBase
 {
     private readonly ITerminalSessionManager _sessionManager;
     private readonly ILogger<TerminalController> _logger;
-    private readonly string _dbPath;
+    private readonly AgenticOrchestrationOptions _options;
 
     public TerminalController(
         ITerminalSessionManager sessionManager,
@@ -32,7 +32,7 @@ public class TerminalController : ControllerBase
     {
         _sessionManager = sessionManager;
         _logger = logger;
-        _dbPath = options.Value.DatabasePath;
+        _options = options.Value;
     }
 
     /// <summary>
@@ -94,11 +94,11 @@ public class TerminalController : ControllerBase
 
         var config = new TerminalSessionConfig
         {
-            Command = request.Command ?? "claude",
-            Arguments = request.Arguments ?? Array.Empty<string>(),
-            WorkingDirectory = request.WorkingDirectory,
-            Columns = request.Columns ?? 120,
-            Rows = request.Rows ?? 30,
+            Command = request.Command ?? _options.DefaultCommand,
+            Arguments = request.Arguments ?? _options.DefaultArguments,
+            WorkingDirectory = request.WorkingDirectory ?? _options.DefaultWorkingDirectory,
+            Columns = request.Columns ?? _options.DefaultTerminalColumns,
+            Rows = request.Rows ?? _options.DefaultTerminalRows,
             MergeStderr = request.MergeStderr ?? true
         };
 
@@ -265,6 +265,26 @@ public class TerminalController : ControllerBase
     }
 
     /// <summary>
+    /// Get terminal configuration defaults.
+    /// Frontend can use this to populate session creation forms.
+    /// </summary>
+    [HttpGet("config")]
+    public ActionResult<TerminalConfigDto> GetConfig()
+    {
+        return Ok(new TerminalConfigDto
+        {
+            DefaultCommand = _options.DefaultCommand,
+            DefaultWorkingDirectory = _options.DefaultWorkingDirectory,
+            DefaultArguments = _options.DefaultArguments,
+            DefaultColumns = _options.DefaultTerminalColumns,
+            DefaultRows = _options.DefaultTerminalRows,
+            MaxConcurrentSessions = _options.MaxConcurrentSessions,
+            SessionTimeoutMinutes = _options.SessionTimeoutMinutes,
+            SignalRHubUrl = _options.TerminalHubPath
+        });
+    }
+
+    /// <summary>
     /// Get external Claude instances running on this machine (from agent tracking database).
     /// These are Claude agents that were started outside of this orchestration tool.
     /// </summary>
@@ -273,15 +293,15 @@ public class TerminalController : ControllerBase
     {
         var instances = new List<ExternalClaudeInstanceDto>();
 
-        if (string.IsNullOrEmpty(_dbPath) || !System.IO.File.Exists(_dbPath))
+        if (string.IsNullOrEmpty(_options.DatabasePath) || !System.IO.File.Exists(_options.DatabasePath))
         {
-            _logger.LogWarning("Agent database not found at {Path}", _dbPath);
+            _logger.LogWarning("Agent database not found at {Path}", _options.DatabasePath);
             return Ok(instances);
         }
 
         try
         {
-            using var conn = new SQLiteConnection($"Data Source={_dbPath}");
+            using var conn = new SQLiteConnection($"Data Source={_options.DatabasePath}");
             await conn.OpenAsync();
 
             // Get active agents that have had a heartbeat in the last minute
@@ -349,11 +369,11 @@ public class TerminalController : ControllerBase
         // Get external Claude instances
         var externalInstances = new List<ExternalClaudeInstanceDto>();
 
-        if (!string.IsNullOrEmpty(_dbPath) && System.IO.File.Exists(_dbPath))
+        if (!string.IsNullOrEmpty(_options.DatabasePath) && System.IO.File.Exists(_options.DatabasePath))
         {
             try
             {
-                using var conn = new SQLiteConnection($"Data Source={_dbPath}");
+                using var conn = new SQLiteConnection($"Data Source={_options.DatabasePath}");
                 await conn.OpenAsync();
 
                 var cmd = new SQLiteCommand(@"
@@ -479,4 +499,34 @@ public class AllSessionsDto
     public List<TerminalSessionDto> TerminalSessions { get; set; } = new();
     public List<ExternalClaudeInstanceDto> ExternalInstances { get; set; } = new();
     public int TotalCount { get; set; }
+}
+
+/// <summary>
+/// Terminal configuration DTO for exposing defaults to frontend
+/// </summary>
+public class TerminalConfigDto
+{
+    /// <summary>Default command/executable to run</summary>
+    public string DefaultCommand { get; set; } = "claude";
+
+    /// <summary>Default working directory (null means current directory)</summary>
+    public string? DefaultWorkingDirectory { get; set; }
+
+    /// <summary>Default arguments to pass to the command</summary>
+    public string[] DefaultArguments { get; set; } = Array.Empty<string>();
+
+    /// <summary>Default terminal columns</summary>
+    public int DefaultColumns { get; set; } = 120;
+
+    /// <summary>Default terminal rows</summary>
+    public int DefaultRows { get; set; } = 30;
+
+    /// <summary>Maximum concurrent sessions</summary>
+    public int MaxConcurrentSessions { get; set; } = 10;
+
+    /// <summary>Session timeout in minutes</summary>
+    public int SessionTimeoutMinutes { get; set; } = 60;
+
+    /// <summary>SignalR hub URL for terminal connections</summary>
+    public string SignalRHubUrl { get; set; } = "/hubs/terminal";
 }
