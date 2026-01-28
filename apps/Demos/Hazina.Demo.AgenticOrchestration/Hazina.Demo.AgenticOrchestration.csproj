@@ -7,6 +7,18 @@
     <RootNamespace>Hazina.Demo.AgenticOrchestration</RootNamespace>
     <SpaRoot>ClientApp\</SpaRoot>
     <SpaProxyServerUrl>http://localhost:5173</SpaProxyServerUrl>
+
+    <!-- Assembly info for published executables -->
+    <AssemblyName>HazinaOrchestration</AssemblyName>
+    <Product>Hazina Agentic Orchestration</Product>
+    <Description>Web-based orchestration interface for managing Claude Code CLI instances</Description>
+    <Version>1.0.0</Version>
+
+    <!-- Publishing defaults -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
 
   <ItemGroup>
