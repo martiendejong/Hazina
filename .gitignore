@@ -114,3 +114,4 @@ docs/api/.manifest
 
 # DocFX log files
 docs/obj/
+node_modules
