@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Hazina.Store.Sqlite</name>
+    </assembly>
+    <members>
+        <member name="T:Hazina.Store.Sqlite.SqliteChunkStore">
+            <summary>
+            SQLite-based implementation of IChunkStore.
+            Stores document-to-chunk relationships in the chunks table.
+            </summary>
+        </member>
+        <member name="T:Hazina.Store.Sqlite.SqliteEmbeddingStore">
+            <summary>
+            SQLite-based implementation of IEmbeddingStore and IVectorSearchStore.
+            Stores embeddings as BLOBs in SQLite for persistence.
+            Performs vector similarity search in-memory (loads all embeddings for search).
+            For datasets >100K embeddings, consider using PgVector or a dedicated vector database.
+            </summary>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:Hazina.Store.Sqlite.SqliteEmbeddingStore.SerializeEmbedding(Embedding)" -->
+        <!-- Badly formed XML comment ignored for member "M:Hazina.Store.Sqlite.SqliteEmbeddingStore.DeserializeEmbedding(System.Byte[])" -->
+        <member name="T:Hazina.Store.Sqlite.SqliteMetadataStore">
+            <summary>
+            SQLite-based implementation of IQueryableMetadataStore.
+            Stores metadata in normalized tables (items, metadata, tags) with SQL query support.
+            Supports FTS5 full-text search for efficient keyword matching.
+            </summary>
+        </member>
+        <member name="T:Hazina.Store.Sqlite.SqliteSchema">
+            <summary>
+            Manages SQLite database schema creation and migrations.
+            Implements the canonical storage model: Items (with checksums) → Metadata/Tags/Chunks → Embeddings (optional).
+            </summary>
+        </member>
+        <member name="F:Hazina.Store.Sqlite.SqliteSchema.CurrentSchemaVersion">
+            <summary>
+            Current schema version. Increment when making breaking changes.
+            </summary>
+        </member>
+        <member name="M:Hazina.Store.Sqlite.SqliteSchema.InitializeAsync">
+            <summary>
+            Initializes the database schema if it doesn't exist.
+            Idempotent - safe to call multiple times.
+            </summary>
+        </member>
+        <member name="M:Hazina.Store.Sqlite.SqliteSchema.GetSchemaVersionAsync">
+            <summary>
+            Gets the current schema version from the database.
+            Returns 0 if not initialized.
+            </summary>
+        </member>
+        <member name="T:Hazina.Store.Sqlite.SqliteTextStore">
+            <summary>
+            SQLite-based implementation of ITextStore.
+            Stores text content in the chunks table.
+            Note: RootFolder and GetPath() return database path since text is stored in DB, not files.
+            </summary>
+        </member>
+    </members>
+</doc>

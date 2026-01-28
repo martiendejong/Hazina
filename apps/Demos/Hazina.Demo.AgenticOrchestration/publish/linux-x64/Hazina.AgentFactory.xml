@@ -1,0 +1,250 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Hazina.AgentFactory</name>
+    </assembly>
+    <members>
+        <member name="M:AgentConfigFormatHelper.AutoDetectAndParse(System.String)">
+            <summary>
+            Auto-detects the agent config format (json or .Hazina) and parses agent definitions.
+            If JSON is detected, parses using System.Text.Json. Otherwise, attempts .Hazina parse logic.
+            </summary>
+        </member>
+        <member name="M:AgentConfigFormatHelper.IsLikelyJson(System.String)">
+            <summary>
+            Heuristic for whether the config is likely JSON.
+            Accepts whitespace then expects [, { or ".
+            </summary>
+        </member>
+        <member name="M:FlowConfigFormatHelper.AutoDetectAndParse(System.String)">
+            <summary>
+            Auto-detects the agent config format (json or .Hazina) and parses agent definitions.
+            If JSON is detected, parses using System.Text.Json. Otherwise, attempts .Hazina parse logic.
+            </summary>
+        </member>
+        <member name="M:FlowConfigFormatHelper.IsLikelyJson(System.String)">
+            <summary>
+            Heuristic for whether the config is likely JSON.
+            Accepts whitespace then expects [, { or ".
+            </summary>
+        </member>
+        <member name="M:StoreConfigFormatHelper.AutoDetectAndParse(System.String)">
+            <summary>
+            Auto-detects the store config format (json or .Hazina) and parses store definitions.
+            If JSON is detected, parses using System.Text.Json. Otherwise, attempts .Hazina parse logic.
+            </summary>
+        </member>
+        <member name="M:StoreConfigFormatHelper.IsLikelyJson(System.String)">
+            <summary>
+            Heuristic for whether the config is likely JSON.
+            Accepts whitespace then expects [, { or ".
+            </summary>
+        </member>
+        <member name="T:HazinaAgentConfigParser">
+            <summary>
+            Parser and serializer for AgentConfig in .hazina plain text format.
+            </summary>
+        </member>
+        <member name="M:HazinaAgentConfigParser.Serialize(System.Collections.Generic.IEnumerable{AgentConfig})">
+            <summary>
+            Serialize a list of AgentConfig into .hazina format.
+            </summary>
+        </member>
+        <member name="M:HazinaAgentConfigParser.Parse(System.String)">
+            <summary>
+            Parse a .Hazina agent config string into a list of AgentConfig objects.
+            </summary>
+        </member>
+        <member name="T:HazinaFlowConfigParser">
+            <summary>
+            Parser and serializer for AgentConfig in .Hazina plain text format.
+            </summary>
+        </member>
+        <member name="M:HazinaFlowConfigParser.Serialize(System.Collections.Generic.IEnumerable{FlowConfig})">
+            <summary>
+            Serialize a list of AgentConfig into .Hazina format.
+            </summary>
+        </member>
+        <member name="M:HazinaFlowConfigParser.Parse(System.String)">
+            <summary>
+            Parse a .Hazina agent config string into a list of AgentConfig objects.
+            </summary>
+        </member>
+        <member name="T:Hazina.AgentFactory.Core.AgentFactory">
+             <summary>
+             Factory for creating and managing Hazina agents and flows.
+             Refactored from 1,088 lines to follow Single Responsibility Principle.
+            
+             Responsibilities (now focused):
+             - Agent creation and registration
+             - Flow creation and registration
+             - Configuration management
+            
+             Delegated to services:
+             - Email operations → EmailService
+             - BigQuery operations → BigQueryService
+             - Tool registration → ToolRegistrationService
+             - Agent/Flow execution → AgentExecutionService
+             </summary>
+        </member>
+        <member name="T:Hazina.AgentFactory.Core.AgentFactoryExtensions">
+            <summary>
+            Extension methods for AgentFactory to support Semantic Kernel
+            </summary>
+        </member>
+        <member name="M:Hazina.AgentFactory.Core.AgentFactoryExtensions.CreateAgentWithSemanticKernel(Hazina.AgentFactory.Core.AgentFactory,System.String,System.String,System.Collections.Generic.IEnumerable{System.ValueTuple{IDocumentStore,System.Boolean}},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.String},Hazina.LLMs.SemanticKernelConfig,System.Boolean)">
+            <summary>
+            Create an agent using Semantic Kernel client
+            </summary>
+        </member>
+        <member name="M:Hazina.AgentFactory.Core.AgentFactoryExtensions.CreateUnregisteredAgentWithSemanticKernel(Hazina.AgentFactory.Core.AgentFactory,System.String,System.String,System.Collections.Generic.IEnumerable{System.ValueTuple{IDocumentStore,System.Boolean}},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.String},Hazina.LLMs.SemanticKernelConfig,System.Boolean)">
+            <summary>
+            Create an unregistered agent using Semantic Kernel client
+            </summary>
+        </member>
+        <member name="M:Hazina.AgentFactory.Core.AgentFactoryExtensions.CreateAgentWithCustomClient(Hazina.AgentFactory.Core.AgentFactory,System.String,System.String,System.Collections.Generic.IEnumerable{System.ValueTuple{IDocumentStore,System.Boolean}},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.String},Hazina.LLMs.ILLMClient,System.Boolean)">
+            <summary>
+            Create an agent with a custom ILLMClient implementation
+            </summary>
+        </member>
+        <member name="M:Hazina.AgentFactory.Core.AgentFactoryExtensions.CreateUnregisteredAgentWithCustomClient(Hazina.AgentFactory.Core.AgentFactory,System.String,System.String,System.Collections.Generic.IEnumerable{System.ValueTuple{IDocumentStore,System.Boolean}},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.String},Hazina.LLMs.ILLMClient,System.Boolean)">
+            <summary>
+            Create an unregistered agent with a custom ILLMClient implementation
+            </summary>
+        </member>
+        <member name="T:Hazina.AgentFactory.Core.AgentManager">
+            <summary>
+            AgentManager encapsulates all logic for agent and store initialization, configuration,
+            and provides interfaces for agent interaction. It loads configuration from paths provided
+            in the constructor and is the single point of ownership for Hazina agents and stores,
+            so the rest of the application can treat it entirely as a black box for agent management.
+            </summary>
+        </member>
+        <member name="P:Hazina.AgentFactory.Core.AgentManager.Stores">
+            <summary>
+            All available stores, as loaded and constructed from stores.json
+            </summary>
+        </member>
+        <member name="P:Hazina.AgentFactory.Core.AgentManager.Agents">
+            <summary>
+            All available agents, as loaded and constructed from agents.json
+            </summary>
+        </member>
+        <member name="M:Hazina.AgentFactory.Core.AgentManager.#ctor(System.String,System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Instantiates the AgentManager, loads configuration, and initializes all stores and agents.
+            </summary>
+        </member>
+        <member name="M:Hazina.AgentFactory.Core.AgentManager.LoadStoresAndAgents">
+            <summary>
+            Loads and initializes all document stores and agents from provided configuration files.
+            </summary>
+        </member>
+        <member name="M:Hazina.AgentFactory.Core.AgentManager.InteractiveUserLoop(System.String)">
+            <summary>
+            Interactively communicates with a specified agent through the console,
+            using the agent's context and configuration.
+            </summary>
+        </member>
+        <member name="M:Hazina.AgentFactory.Core.QuickAgentCreator.Create(System.String,System.String,System.Collections.Generic.IEnumerable{System.ValueTuple{IDocumentStore,System.Boolean}},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.String},System.Collections.Generic.IEnumerable{System.String},System.Boolean)">
+            <summary>
+            Centralized agent creation method.
+            </summary>
+        </member>
+        <member name="M:Hazina.AgentFactory.Core.QuickAgentCreator.CreateStore(StorePaths,System.String)">
+            <summary>
+            Creates a document store for code and agent memory.
+            </summary>
+        </member>
+        <member name="T:Hazina.AgentFactory.Services.BigQuery.BigQueryService">
+            <summary>
+            Service for BigQuery operations.
+            Extracted from AgentFactory to follow Single Responsibility Principle.
+            </summary>
+        </member>
+        <member name="T:Hazina.AgentFactory.Services.BigQuery.IBigQueryService">
+            <summary>
+            Interface for BigQuery operations.
+            </summary>
+        </member>
+        <member name="T:Hazina.AgentFactory.Services.Email.EmailDetail">
+            <summary>
+            Detailed information about an email message including body content.
+            </summary>
+        </member>
+        <member name="T:Hazina.AgentFactory.Services.Email.EmailService">
+            <summary>
+            Service for email operations including sending, reading, and organizing emails.
+            Extracted from AgentFactory to follow Single Responsibility Principle.
+            </summary>
+        </member>
+        <member name="T:Hazina.AgentFactory.Services.Email.EmailSettings">
+            <summary>
+            Configuration settings for email operations via SMTP and IMAP.
+            </summary>
+        </member>
+        <member name="T:Hazina.AgentFactory.Services.Email.EmailSummary">
+            <summary>
+            Summary information about an email message.
+            </summary>
+        </member>
+        <member name="T:Hazina.AgentFactory.Services.Email.IEmailService">
+            <summary>
+            Interface for email operations.
+            </summary>
+        </member>
+        <member name="T:Hazina.AgentFactory.Services.Execution.AgentExecutionService">
+            <summary>
+            Service responsible for agent and flow execution.
+            Extracted from AgentFactory to follow Single Responsibility Principle.
+            </summary>
+        </member>
+        <member name="T:Hazina.AgentFactory.Services.Execution.IAgentExecutionService">
+            <summary>
+            Interface for agent and flow execution operations.
+            </summary>
+        </member>
+        <member name="T:Hazina.AgentFactory.Services.Tools.IToolRegistrationService">
+            <summary>
+            Interface for tool registration operations.
+            </summary>
+        </member>
+        <member name="T:Hazina.AgentFactory.Services.Tools.Parameters.CommonToolParameters">
+            <summary>
+            Common reusable tool parameters used across different tools.
+            Extracted from AgentFactory to centralize parameter definitions.
+            </summary>
+        </member>
+        <member name="T:Hazina.AgentFactory.Services.Tools.ToolRegistrationService">
+            <summary>
+            Service responsible for registering tools with agent contexts.
+            Extracted from AgentFactory to follow Single Responsibility Principle.
+            </summary>
+        </member>
+        <member name="T:AgentCardModel">
+            <summary>
+            Agent binding card model for WPF UI.
+            </summary>
+        </member>
+        <member name="T:FlowCardModel">
+            <summary>
+            Model voor het binden van FlowConfig aan WPF UI met ObservableCollection en INotifyPropertyChanged.
+            </summary>
+        </member>
+        <member name="M:FlowCardModel.ToFlowConfig">
+            <summary>
+            Zet deze FlowCardModel terug om naar FlowConfig
+            </summary>
+        </member>
+        <member name="T:FlowCardsBindingModel">
+            <summary>
+            Root bindingmodel voor meerdere flowkaart-modellen plus keuzedata
+            </summary>
+        </member>
+        <member name="T:StoreEntry">
+            <summary>
+            Represents a store entry for agents; supports WPF data binding.
+            </summary>
+        </member>
+    </members>
+</doc>

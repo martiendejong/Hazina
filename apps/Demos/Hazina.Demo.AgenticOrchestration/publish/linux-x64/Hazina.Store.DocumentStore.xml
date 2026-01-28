@@ -1,0 +1,2302 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Hazina.Store.DocumentStore</name>
+    </assembly>
+    <members>
+        <member name="T:CompositeScoringConfig">
+            <summary>
+            Configuration options for composite document scoring.
+            Can be loaded from appsettings.json.
+            </summary>
+        </member>
+        <member name="F:CompositeScoringConfig.SectionName">
+            <summary>
+            Section name in configuration file.
+            </summary>
+        </member>
+        <member name="P:CompositeScoringConfig.Enabled">
+            <summary>
+            Whether composite scoring is enabled.
+            Default: false (backwards compatible)
+            </summary>
+        </member>
+        <member name="P:CompositeScoringConfig.UseLLMTagScoring">
+            <summary>
+            Whether to use LLM-based tag scoring.
+            If false, uses NoOpTagScoringService (neutral scores).
+            Default: true
+            </summary>
+        </member>
+        <member name="P:CompositeScoringConfig.TagScoreCacheHours">
+            <summary>
+            Maximum age of cached tag scores in hours.
+            Older scores will be recomputed.
+            Default: 24 hours
+            </summary>
+        </member>
+        <member name="P:CompositeScoringConfig.CosineSimilarityWeight">
+            <summary>
+            Weight for cosine similarity score (0.0 to 1.0).
+            Default: 0.5
+            </summary>
+        </member>
+        <member name="P:CompositeScoringConfig.TagScoreWeight">
+            <summary>
+            Weight for tag-based relevance score (0.0 to 1.0).
+            Default: 0.3
+            </summary>
+        </member>
+        <member name="P:CompositeScoringConfig.RecencyWeight">
+            <summary>
+            Weight for recency boost (0.0 to 1.0).
+            Default: 0.1
+            </summary>
+        </member>
+        <member name="P:CompositeScoringConfig.PositionWeight">
+            <summary>
+            Weight for position boost (0.0 to 1.0).
+            Default: 0.1
+            </summary>
+        </member>
+        <member name="P:CompositeScoringConfig.RecencyHalfLifeDays">
+            <summary>
+            Number of days until recency score halves.
+            Default: 30 days
+            </summary>
+        </member>
+        <member name="P:CompositeScoringConfig.TagAggregation">
+            <summary>
+            Tag aggregation method: Maximum, Average, or Sum.
+            Default: Maximum
+            </summary>
+        </member>
+        <member name="P:CompositeScoringConfig.MinimumScore">
+            <summary>
+            Minimum composite score threshold.
+            Documents below this are filtered out.
+            Default: 0.0 (no filtering)
+            </summary>
+        </member>
+        <member name="M:CompositeScoringConfig.ToScoringOptions">
+            <summary>
+            Convert configuration to ScoringOptions.
+            </summary>
+        </member>
+        <member name="M:CompositeScoringConfig.GetCacheAge">
+            <summary>
+            Get cache age as TimeSpan.
+            </summary>
+        </member>
+        <member name="T:IChunkSetStore">
+            <summary>
+            Interface for storing and retrieving chunk sets.
+            Chunk sets represent logical groupings of chunks with collective summaries.
+            </summary>
+        </member>
+        <member name="M:IChunkSetStore.StoreAsync(System.String,System.Collections.Generic.IEnumerable{ChunkSet})">
+            <summary>
+            Store chunk sets for a document.
+            </summary>
+            <param name="documentId">The document ID.</param>
+            <param name="chunkSets">Collection of chunk sets to store.</param>
+            <returns>True if successful.</returns>
+        </member>
+        <member name="M:IChunkSetStore.GetAsync(System.String)">
+            <summary>
+            Get all chunk sets for a document.
+            </summary>
+            <param name="documentId">The document ID.</param>
+            <returns>Collection of chunk sets, or empty if none exist.</returns>
+        </member>
+        <member name="M:IChunkSetStore.GetByIdAsync(System.String)">
+            <summary>
+            Get a specific chunk set by ID.
+            </summary>
+            <param name="setId">The chunk set ID (e.g., "doc.txt:section:0").</param>
+            <returns>The chunk set, or null if not found.</returns>
+        </member>
+        <member name="M:IChunkSetStore.RemoveAsync(System.String)">
+            <summary>
+            Remove all chunk sets for a document.
+            </summary>
+            <param name="documentId">The document ID.</param>
+            <returns>True if successful.</returns>
+        </member>
+        <member name="M:IChunkSetStore.ListDocumentIdsAsync">
+            <summary>
+            List all document IDs that have chunk sets.
+            </summary>
+            <returns>Collection of document IDs.</returns>
+        </member>
+        <member name="M:IChunkStore.GetParentDocument(System.String)">
+            <summary>
+            Gets the parent document key for a given chunk key
+            </summary>
+            <param name="chunkKey">The chunk key (e.g., "doc.txt chunk 0" or "doc.txt")</param>
+            <returns>The parent document key, or null if not found</returns>
+        </member>
+        <member name="T:ICompositeScorer">
+            <summary>
+            Service for computing composite document scores from multiple signals.
+            Combines cosine similarity, tag relevance, recency, and position.
+            </summary>
+        </member>
+        <member name="M:ICompositeScorer.Score(ScoredDocument,TagRelevanceIndex,System.Int32,System.Int32,ScoringOptions)">
+            <summary>
+            Score a single document using all available signals.
+            </summary>
+            <param name="document">Document with base similarity score</param>
+            <param name="tagIndex">Tag relevance scores for current query</param>
+            <param name="position">Position in original result set (0-based)</param>
+            <param name="totalResults">Total number of results</param>
+            <param name="options">Scoring weight configuration</param>
+            <returns>Document with all scores computed</returns>
+        </member>
+        <member name="M:ICompositeScorer.ScoreAndRank(System.Collections.Generic.IEnumerable{ScoredDocument},TagRelevanceIndex,ScoringOptions)">
+            <summary>
+            Score and rank a list of documents.
+            </summary>
+            <param name="documents">Documents with base similarity scores</param>
+            <param name="tagIndex">Tag relevance scores for current query</param>
+            <param name="options">Scoring weight configuration</param>
+            <returns>Documents scored and sorted by composite score (descending)</returns>
+        </member>
+        <member name="M:ICompositeScorer.ScoreAndRankAsync(System.Collections.Generic.IEnumerable{ScoredDocument},TagRelevanceIndex,ScoringOptions,System.Threading.CancellationToken)">
+            <summary>
+            Async version of ScoreAndRank for large document sets.
+            </summary>
+        </member>
+        <member name="M:ICompositeScorer.ScoreAndRankWithExplanations(System.Collections.Generic.IEnumerable{ScoredDocument},TagRelevanceIndex,ScoringOptions)">
+            <summary>
+            Score and rank documents with detailed explanations.
+            </summary>
+            <param name="documents">Documents with base similarity scores</param>
+            <param name="tagIndex">Tag relevance scores for current query</param>
+            <param name="options">Scoring weight configuration</param>
+            <returns>Documents with scores and explanations, sorted by composite score</returns>
+        </member>
+        <member name="T:IDocumentGraphStore">
+            <summary>
+            Store for document relationships and graph queries.
+            </summary>
+        </member>
+        <member name="M:IDocumentGraphStore.AddRelationshipAsync(DocumentRelationship,System.Threading.CancellationToken)">
+            <summary>
+            Add a relationship between two documents.
+            </summary>
+        </member>
+        <member name="M:IDocumentGraphStore.AddRelationshipsAsync(System.Collections.Generic.IEnumerable{DocumentRelationship},System.Threading.CancellationToken)">
+            <summary>
+            Add multiple relationships.
+            </summary>
+        </member>
+        <member name="M:IDocumentGraphStore.GetRelationshipAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Get a specific relationship by ID.
+            </summary>
+        </member>
+        <member name="M:IDocumentGraphStore.GetDocumentNodeAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Get all relationships for a document.
+            </summary>
+        </member>
+        <member name="M:IDocumentGraphStore.GetOutgoingRelationshipsAsync(System.String,System.Nullable{RelationshipType},System.Threading.CancellationToken)">
+            <summary>
+            Get outgoing relationships from a document.
+            </summary>
+        </member>
+        <member name="M:IDocumentGraphStore.GetIncomingRelationshipsAsync(System.String,System.Nullable{RelationshipType},System.Threading.CancellationToken)">
+            <summary>
+            Get incoming relationships to a document.
+            </summary>
+        </member>
+        <member name="M:IDocumentGraphStore.GetRelationshipsBetweenAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Find relationships between two specific documents.
+            </summary>
+        </member>
+        <member name="M:IDocumentGraphStore.TraverseAsync(System.String,System.Int32,System.Collections.Generic.List{RelationshipType},System.Double,System.Threading.CancellationToken)">
+            <summary>
+            Traverse the graph from a starting document.
+            </summary>
+            <param name="startDocumentId">Starting document</param>
+            <param name="maxDepth">Maximum hops from start</param>
+            <param name="relationshipTypes">Filter by relationship types (null = all)</param>
+            <param name="minConfidence">Minimum confidence threshold</param>
+            <param name="ct">Cancellation token</param>
+        </member>
+        <member name="M:IDocumentGraphStore.FindSupportingDocumentsAsync(System.String,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Find supporting documents for a given document.
+            </summary>
+        </member>
+        <member name="M:IDocumentGraphStore.FindContradictingDocumentsAsync(System.String,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Find contradicting documents for a given document.
+            </summary>
+        </member>
+        <member name="M:IDocumentGraphStore.FindCitingDocumentsAsync(System.String,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Find documents that cite the given document.
+            </summary>
+        </member>
+        <member name="M:IDocumentGraphStore.UpdateRelationshipAsync(DocumentRelationship,System.Threading.CancellationToken)">
+            <summary>
+            Update an existing relationship.
+            </summary>
+        </member>
+        <member name="M:IDocumentGraphStore.DeleteRelationshipAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete a relationship.
+            </summary>
+        </member>
+        <member name="M:IDocumentGraphStore.DeleteDocumentRelationshipsAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete all relationships for a document.
+            </summary>
+        </member>
+        <member name="M:IDocumentGraphStore.GetStatisticsAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get graph statistics.
+            </summary>
+        </member>
+        <member name="T:GraphStatistics">
+            <summary>
+            Statistics about the document graph.
+            </summary>
+        </member>
+        <member name="P:GraphStatistics.TotalDocuments">
+            <summary>
+            Total number of documents with relationships.
+            </summary>
+        </member>
+        <member name="P:GraphStatistics.TotalRelationships">
+            <summary>
+            Total number of relationships.
+            </summary>
+        </member>
+        <member name="P:GraphStatistics.RelationshipsByType">
+            <summary>
+            Relationships by type.
+            </summary>
+        </member>
+        <member name="P:GraphStatistics.AverageRelationshipsPerDocument">
+            <summary>
+            Average relationships per document.
+            </summary>
+        </member>
+        <member name="P:GraphStatistics.MostConnectedDocumentId">
+            <summary>
+            Document with most relationships.
+            </summary>
+        </member>
+        <member name="P:GraphStatistics.MaxRelationships">
+            <summary>
+            Maximum relationships on any document.
+            </summary>
+        </member>
+        <member name="T:IQueryableMetadataStore">
+            <summary>
+            Extended interface for metadata querying.
+            Implement this alongside IDocumentMetadataStore to enable metadata-first search.
+            </summary>
+        </member>
+        <member name="M:IQueryableMetadataStore.QueryAsync(MetadataFilter,System.Threading.CancellationToken)">
+            <summary>
+            Query metadata using filters. Returns all matching documents.
+            </summary>
+        </member>
+        <member name="M:IQueryableMetadataStore.GetMatchingIdsAsync(MetadataFilter,System.Threading.CancellationToken)">
+            <summary>
+            Get all document IDs matching the filter (lightweight query).
+            </summary>
+        </member>
+        <member name="M:IQueryableMetadataStore.CountAsync(MetadataFilter,System.Threading.CancellationToken)">
+            <summary>
+            Count documents matching the filter.
+            </summary>
+        </member>
+        <member name="M:IQueryableMetadataStore.SearchTextAsync(System.String,MetadataFilter,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Full-text search on content/summary fields.
+            </summary>
+        </member>
+        <member name="T:MetadataFilter">
+            <summary>
+            Filter criteria for metadata queries.
+            All conditions are AND-ed together.
+            </summary>
+        </member>
+        <member name="P:MetadataFilter.MimeType">
+            <summary>Filter by MIME type (exact match)</summary>
+        </member>
+        <member name="P:MetadataFilter.MimeTypePrefix">
+            <summary>Filter by MIME type prefix (e.g., "text/" matches text/plain, text/html)</summary>
+        </member>
+        <member name="P:MetadataFilter.PathPattern">
+            <summary>Filter by original path pattern (supports * wildcard)</summary>
+        </member>
+        <member name="P:MetadataFilter.CreatedAfter">
+            <summary>Filter documents created after this date</summary>
+        </member>
+        <member name="P:MetadataFilter.CreatedBefore">
+            <summary>Filter documents created before this date</summary>
+        </member>
+        <member name="P:MetadataFilter.CustomMetadata">
+            <summary>Filter by custom metadata key-value pairs (all must match)</summary>
+        </member>
+        <member name="P:MetadataFilter.Tags">
+            <summary>Filter by tags (document must have ALL specified tags)</summary>
+        </member>
+        <member name="P:MetadataFilter.AnyTags">
+            <summary>Filter by tags (document must have ANY of the specified tags)</summary>
+        </member>
+        <member name="P:MetadataFilter.IsBinary">
+            <summary>Include only binary files</summary>
+        </member>
+        <member name="P:MetadataFilter.Limit">
+            <summary>Maximum number of results to return</summary>
+        </member>
+        <member name="P:MetadataFilter.Offset">
+            <summary>Skip this many results (for pagination)</summary>
+        </member>
+        <member name="P:MetadataFilter.IsEmpty">
+            <summary>Returns true if no filters are set</summary>
+        </member>
+        <member name="T:IDocumentStore">
+             <summary>
+             Interface for managing a document store with RAG (Retrieval-Augmented Generation) capabilities.
+             </summary>
+             <remarks>
+             <para>
+             A document store combines three underlying stores:
+             <list type="bullet">
+               <item><description><see cref="P:IDocumentStore.TextStore"/> - Stores the actual document content (files)</description></item>
+               <item><description><see cref="P:IDocumentStore.EmbeddingStore"/> - Stores vector embeddings for semantic search</description></item>
+               <item><description>Parts Store - Stores document chunks for efficient retrieval</description></item>
+             </list>
+             </para>
+             <para>
+             Documents are automatically split into chunks and embedded for semantic search when stored.
+             Use <see cref="M:IDocumentStore.RelevantItems(System.String)"/> to find documents relevant to a query.
+             </para>
+             </remarks>
+             <example>
+             Basic usage:
+             <code>
+             // Store a document
+             await store.Store("readme.md", "# My Project\n\nThis is my project...");
+            
+             // Update embeddings
+             await store.UpdateEmbeddings();
+            
+             // Find relevant documents
+             var relevant = await store.RelevantItems("how to install");
+             foreach (var key in relevant)
+             {
+                 var content = await store.Get(key);
+                 Console.WriteLine($"Found: {key}");
+             }
+             </code>
+             </example>
+        </member>
+        <member name="P:IDocumentStore.Name">
+            <summary>
+            Gets or sets the name of this document store.
+            </summary>
+            <remarks>
+            The name is used to identify the store in multi-store configurations and agent setups.
+            </remarks>
+        </member>
+        <member name="P:IDocumentStore.EmbeddingStore">
+            <summary>
+            Gets the underlying embedding store used for vector similarity search.
+            </summary>
+        </member>
+        <member name="P:IDocumentStore.TextStore">
+            <summary>
+            Gets or sets the underlying text store where document content is persisted.
+            </summary>
+        </member>
+        <member name="M:IDocumentStore.GetPath(System.String)">
+            <summary>
+            Gets the file system path for a document by its key.
+            </summary>
+            <param name="id">The document key.</param>
+            <returns>The full file path to the document.</returns>
+        </member>
+        <member name="M:IDocumentStore.Get(System.String)">
+            <summary>
+            Retrieves the content of a document by its key.
+            </summary>
+            <param name="id">The document key.</param>
+            <returns>The document content as a string.</returns>
+            <exception cref="T:System.IO.FileNotFoundException">Thrown if the document doesn't exist.</exception>
+        </member>
+        <member name="M:IDocumentStore.GetChunk(System.String)">
+            <summary>
+            Gets a specific chunk by its chunk key.
+            </summary>
+            <param name="chunkKey">The chunk key (e.g., "doc.txt part 0").</param>
+            <returns>The chunk text, or null if not found.</returns>
+            <remarks>
+            Documents are split into chunks for better semantic search. Each chunk has a key
+            in the format "{documentKey} part {chunkIndex}".
+            </remarks>
+        </member>
+        <member name="M:IDocumentStore.GetDocumentWithChunks(System.String)">
+            <summary>
+            Gets a document with all its metadata and chunk keys.
+            </summary>
+            <param name="key">The document key.</param>
+            <returns>A <see cref="T:DocumentWithChunks"/> object containing the full document, metadata, and chunk keys.</returns>
+        </member>
+        <member name="M:IDocumentStore.Store(System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.String},System.Boolean)">
+            <summary>
+            Adds a text document to the document store.
+            </summary>
+            <param name="id">The key under which to store the document.</param>
+            <param name="content">Text content to store.</param>
+            <param name="metadata">Optional metadata for the document (e.g., author, date, tags).</param>
+            <param name="split">Whether to split the document into chunks for RAG. Default is true.</param>
+            <returns>True if the document was stored successfully.</returns>
+            <remarks>
+            After storing, call <see cref="M:IDocumentStore.UpdateEmbeddings"/> or <see cref="M:IDocumentStore.Embed(System.String)"/> to generate vector embeddings.
+            </remarks>
+        </member>
+        <member name="M:IDocumentStore.Store(System.String,System.Byte[],System.String,System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            Adds a binary document to the document store.
+            </summary>
+            <param name="id">The key under which to store the document.</param>
+            <param name="content">Binary content to store.</param>
+            <param name="mimeType">MIME type of the binary content (e.g., "application/pdf", "image/png").</param>
+            <param name="metadata">Optional metadata for the document.</param>
+            <returns>True if the document was stored successfully.</returns>
+        </member>
+        <member name="M:IDocumentStore.StoreFromFile(System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            Adds a document from a file path.
+            </summary>
+            <param name="id">The key under which to store the document.</param>
+            <param name="filePath">Path to the file to store.</param>
+            <param name="metadata">Optional metadata for the document.</param>
+            <returns>True if the document was stored successfully.</returns>
+        </member>
+        <member name="M:IDocumentStore.GetMetadata(System.String)">
+            <summary>
+            Gets metadata for a document.
+            </summary>
+            <param name="id">Document ID.</param>
+            <returns>Document metadata or null if not found.</returns>
+        </member>
+        <member name="M:IDocumentStore.Embed(System.String)">
+            <summary>
+            Generates and stores the vector embedding for a single document.
+            </summary>
+            <param name="key">The document key to embed.</param>
+            <returns>True if embedding was successful.</returns>
+            <remarks>
+            For bulk embedding, use <see cref="M:IDocumentStore.UpdateEmbeddings"/> instead.
+            </remarks>
+        </member>
+        <member name="M:IDocumentStore.Remove(System.String)">
+            <summary>
+            Removes a document from the store.
+            </summary>
+            <param name="id">The document key to remove.</param>
+            <returns>True if the document was removed successfully.</returns>
+            <remarks>
+            This removes the document content, chunks, and embeddings.
+            </remarks>
+        </member>
+        <member name="M:IDocumentStore.Move(System.String,System.String,System.Boolean)">
+            <summary>
+            Moves/renames a document within the store.
+            </summary>
+            <param name="name">The current document key.</param>
+            <param name="newName">The new document key.</param>
+            <param name="split">Whether to re-split the document after moving.</param>
+            <returns>True if the move was successful.</returns>
+        </member>
+        <member name="M:IDocumentStore.Tree">
+            <summary>
+            Returns the document hierarchy as a tree structure.
+            </summary>
+            <returns>A list of tree nodes representing the folder/file structure.</returns>
+        </member>
+        <member name="M:IDocumentStore.List(System.String,System.Boolean)">
+            <summary>
+            Lists all documents in the store, optionally filtered by folder.
+            </summary>
+            <param name="folder">Optional folder path to filter by.</param>
+            <param name="recursive">If true, includes documents in subfolders.</param>
+            <returns>A list of document keys.</returns>
+        </member>
+        <member name="M:IDocumentStore.UpdateEmbeddings">
+            <summary>
+            Updates embeddings for all documents that have changed or are missing embeddings.
+            </summary>
+            <returns>A task that completes when all embeddings are updated.</returns>
+            <remarks>
+            Call this after adding or modifying documents to ensure the semantic search index is current.
+            Only documents that have changed since their last embedding are re-embedded.
+            </remarks>
+        </member>
+        <member name="M:IDocumentStore.RelevantItems(System.String)">
+            <summary>
+            Finds documents relevant to the given query using semantic similarity.
+            </summary>
+            <param name="query">The search query (natural language).</param>
+            <returns>A list of document keys ordered by relevance (most relevant first).</returns>
+            <example>
+            <code>
+            var results = await store.RelevantItems("how to authenticate users");
+            foreach (var key in results.Take(5))
+            {
+                Console.WriteLine($"Relevant: {key}");
+            }
+            </code>
+            </example>
+        </member>
+        <member name="M:IDocumentStore.Embeddings(System.String)">
+            <summary>
+            Gets embeddings with similarity scores for a query.
+            </summary>
+            <param name="relevancyQuery">The search query.</param>
+            <returns>A list of <see cref="T:RelevantEmbedding"/> objects with similarity scores.</returns>
+            <remarks>
+            Use this instead of <see cref="M:IDocumentStore.RelevantItems(System.String)"/> when you need the similarity scores
+            or want more control over the results.
+            </remarks>
+        </member>
+        <member name="T:IHierarchicalMetadataStore">
+            <summary>
+            Metadata store with hierarchical scope support.
+            Enables knowledge sharing across projects and workspaces.
+            </summary>
+        </member>
+        <member name="M:IHierarchicalMetadataStore.GetScopeHierarchyAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Get the scope hierarchy for a project.
+            </summary>
+        </member>
+        <member name="M:IHierarchicalMetadataStore.QueryHierarchicalAsync(System.String,MetadataFilter,HierarchicalQueryOptions,System.Threading.CancellationToken)">
+            <summary>
+            Query documents across multiple scopes.
+            </summary>
+            <param name="projectId">Project ID (determines scope hierarchy)</param>
+            <param name="filter">Metadata filter</param>
+            <param name="options">Hierarchical query options</param>
+            <param name="ct">Cancellation token</param>
+        </member>
+        <member name="M:IHierarchicalMetadataStore.SearchTextHierarchicalAsync(System.String,System.String,MetadataFilter,HierarchicalQueryOptions,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Search text across multiple scopes.
+            </summary>
+        </member>
+        <member name="M:IHierarchicalMetadataStore.StoreInScopeAsync(System.String,KnowledgeScope,System.String,DocumentMetadata,System.Threading.CancellationToken)">
+            <summary>
+            Store a document in a specific scope.
+            </summary>
+            <param name="scopeId">Scope identifier</param>
+            <param name="scope">Scope level</param>
+            <param name="documentId">Document ID</param>
+            <param name="metadata">Document metadata</param>
+            <param name="ct">Cancellation token</param>
+        </member>
+        <member name="M:IHierarchicalMetadataStore.GetFromScopeAsync(System.String,KnowledgeScope,MetadataFilter,System.Threading.CancellationToken)">
+            <summary>
+            Get documents from a specific scope.
+            </summary>
+        </member>
+        <member name="M:IHierarchicalMetadataStore.MoveToScopeAsync(System.String,System.String,KnowledgeScope,System.String,KnowledgeScope,System.Threading.CancellationToken)">
+            <summary>
+            Move a document to a different scope.
+            </summary>
+        </member>
+        <member name="M:IHierarchicalMetadataStore.PromoteToParentScopeAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Copy a document to a parent scope (promote).
+            </summary>
+        </member>
+        <member name="M:IHierarchicalMetadataStore.ConfigureScopesAsync(System.String,ScopeHierarchy,System.Threading.CancellationToken)">
+            <summary>
+            Configure scope hierarchy for a project.
+            </summary>
+        </member>
+        <member name="T:IIncrementalEmbeddingService">
+            <summary>
+            Service for incremental document embedding.
+            Only re-embeds chunks that have changed, reducing API costs.
+            </summary>
+        </member>
+        <member name="M:IIncrementalEmbeddingService.ComputeDiffAsync(System.String,System.Collections.Generic.List{ContentChunk},System.Threading.CancellationToken)">
+            <summary>
+            Compute which chunks need embedding vs can use cache.
+            </summary>
+            <param name="documentId">Document identifier</param>
+            <param name="newChunks">New content chunks</param>
+            <param name="ct">Cancellation token</param>
+            <returns>Diff showing what needs embedding</returns>
+        </member>
+        <member name="M:IIncrementalEmbeddingService.EmbedIncrementallyAsync(System.String,System.Collections.Generic.List{ContentChunk},System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Embed only the chunks that need it (new + modified).
+            </summary>
+            <param name="documentId">Document identifier</param>
+            <param name="chunks">Chunks to potentially embed</param>
+            <param name="forceReembed">If true, ignore cache and re-embed all</param>
+            <param name="ct">Cancellation token</param>
+            <returns>Embedding result with statistics</returns>
+        </member>
+        <member name="M:IIncrementalEmbeddingService.GetChunkHashesAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Get stored chunk hashes for a document.
+            </summary>
+        </member>
+        <member name="M:IIncrementalEmbeddingService.StoreChunkEmbeddingsAsync(System.String,System.Collections.Generic.List{ChunkEmbeddingRecord},System.Threading.CancellationToken)">
+            <summary>
+            Store chunk embeddings and hashes.
+            </summary>
+        </member>
+        <member name="M:IIncrementalEmbeddingService.DeleteChunkEmbeddingsAsync(System.String,System.Collections.Generic.List{System.String},System.Threading.CancellationToken)">
+            <summary>
+            Delete embeddings for removed chunks.
+            </summary>
+        </member>
+        <member name="M:IIncrementalEmbeddingService.GetStatisticsAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Get embedding statistics for a document.
+            </summary>
+        </member>
+        <member name="T:IncrementalEmbeddingResult">
+            <summary>
+            Result of incremental embedding operation.
+            </summary>
+        </member>
+        <member name="P:IncrementalEmbeddingResult.DocumentId">
+            <summary>
+            Document that was processed.
+            </summary>
+        </member>
+        <member name="P:IncrementalEmbeddingResult.TotalChunks">
+            <summary>
+            Total chunks in document.
+            </summary>
+        </member>
+        <member name="P:IncrementalEmbeddingResult.NewlyEmbedded">
+            <summary>
+            Chunks that were newly embedded.
+            </summary>
+        </member>
+        <member name="P:IncrementalEmbeddingResult.ReEmbedded">
+            <summary>
+            Chunks that were re-embedded due to changes.
+            </summary>
+        </member>
+        <member name="P:IncrementalEmbeddingResult.CachedUsed">
+            <summary>
+            Chunks that used cached embeddings.
+            </summary>
+        </member>
+        <member name="P:IncrementalEmbeddingResult.Deleted">
+            <summary>
+            Chunks that were deleted.
+            </summary>
+        </member>
+        <member name="P:IncrementalEmbeddingResult.Failed">
+            <summary>
+            Chunks that failed to embed.
+            </summary>
+        </member>
+        <member name="P:IncrementalEmbeddingResult.EstimatedCostSaved">
+            <summary>
+            Total API cost saved by using cache.
+            </summary>
+        </member>
+        <member name="P:IncrementalEmbeddingResult.Duration">
+            <summary>
+            Time taken for embedding operation.
+            </summary>
+        </member>
+        <member name="P:IncrementalEmbeddingResult.Success">
+            <summary>
+            Whether operation was successful.
+            </summary>
+        </member>
+        <member name="P:IncrementalEmbeddingResult.CacheHitRate">
+            <summary>
+            Cache hit rate as percentage.
+            </summary>
+        </member>
+        <member name="P:IncrementalEmbeddingResult.Errors">
+            <summary>
+            Error messages if any failures occurred.
+            </summary>
+        </member>
+        <member name="T:ChunkEmbeddingRecord">
+            <summary>
+            Record of a chunk's embedding.
+            </summary>
+        </member>
+        <member name="P:ChunkEmbeddingRecord.ChunkId">
+            <summary>
+            Chunk identifier.
+            </summary>
+        </member>
+        <member name="P:ChunkEmbeddingRecord.ContentHash">
+            <summary>
+            Content hash at time of embedding.
+            </summary>
+        </member>
+        <member name="P:ChunkEmbeddingRecord.Embedding">
+            <summary>
+            The embedding vector.
+            </summary>
+        </member>
+        <member name="P:ChunkEmbeddingRecord.Model">
+            <summary>
+            Model used for embedding.
+            </summary>
+        </member>
+        <member name="P:ChunkEmbeddingRecord.ComputedAt">
+            <summary>
+            When embedding was computed.
+            </summary>
+        </member>
+        <member name="P:ChunkEmbeddingRecord.TokenCount">
+            <summary>
+            Token count of the content.
+            </summary>
+        </member>
+        <member name="T:EmbeddingStatistics">
+            <summary>
+            Embedding statistics for a document.
+            </summary>
+        </member>
+        <member name="P:EmbeddingStatistics.TotalChunks">
+            <summary>
+            Total chunks in document.
+            </summary>
+        </member>
+        <member name="P:EmbeddingStatistics.EmbeddedChunks">
+            <summary>
+            Chunks with embeddings.
+            </summary>
+        </member>
+        <member name="P:EmbeddingStatistics.PendingChunks">
+            <summary>
+            Chunks pending embedding.
+            </summary>
+        </member>
+        <member name="P:EmbeddingStatistics.LastUpdated">
+            <summary>
+            Last embedding update time.
+            </summary>
+        </member>
+        <member name="P:EmbeddingStatistics.Model">
+            <summary>
+            Embedding model used.
+            </summary>
+        </member>
+        <member name="P:EmbeddingStatistics.TotalTokens">
+            <summary>
+            Total tokens embedded.
+            </summary>
+        </member>
+        <member name="P:EmbeddingStatistics.EstimatedCost">
+            <summary>
+            Estimated embedding cost.
+            </summary>
+        </member>
+        <member name="T:IQueryIntentClassifier">
+            <summary>
+            Classifies query intent to route to optimal search strategies.
+            </summary>
+        </member>
+        <member name="M:IQueryIntentClassifier.ClassifyAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Classify the intent of a search query.
+            </summary>
+            <param name="query">The user's search query</param>
+            <param name="ct">Cancellation token</param>
+            <returns>Classified intent with extracted filters</returns>
+        </member>
+        <member name="M:IQueryIntentClassifier.Classify(System.String)">
+            <summary>
+            Synchronous classification (for simple/fast classifiers).
+            </summary>
+        </member>
+        <member name="T:ITagRelevanceStore">
+            <summary>
+            Persistence layer for tag relevance indices.
+            Stores and retrieves tag scores for different query contexts.
+            </summary>
+        </member>
+        <member name="M:ITagRelevanceStore.StoreAsync(TagRelevanceIndex,System.Threading.CancellationToken)">
+            <summary>
+            Store a tag relevance index.
+            </summary>
+        </member>
+        <member name="M:ITagRelevanceStore.GetByIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Retrieve index by its ID.
+            </summary>
+        </member>
+        <member name="M:ITagRelevanceStore.GetByChecksumAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Retrieve index by query context checksum (for cache lookup).
+            </summary>
+        </member>
+        <member name="M:ITagRelevanceStore.GetLatestAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get the most recent index (useful for default scoring).
+            </summary>
+        </member>
+        <member name="M:ITagRelevanceStore.ListAllAsync(System.Threading.CancellationToken)">
+            <summary>
+            List all stored indices.
+            </summary>
+        </member>
+        <member name="M:ITagRelevanceStore.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete an index by ID.
+            </summary>
+        </member>
+        <member name="M:ITagRelevanceStore.CleanupOlderThanAsync(System.DateTime,System.Threading.CancellationToken)">
+            <summary>
+            Delete indices older than the specified date.
+            </summary>
+        </member>
+        <member name="T:ITagScoringService">
+            <summary>
+            Service for scoring tags based on query relevance.
+            Can use LLM or rule-based implementations.
+            </summary>
+        </member>
+        <member name="M:ITagScoringService.ScoreTagsAsync(System.Collections.Generic.IEnumerable{System.String},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Score a list of tags based on their relevance to a query/instruction.
+            Returns a TagRelevanceIndex with scores for each tag.
+            </summary>
+            <param name="tags">List of tags to score</param>
+            <param name="queryContext">The query or instruction to score against</param>
+            <param name="ct">Cancellation token</param>
+            <returns>Tag relevance index with scores</returns>
+        </member>
+        <member name="M:ITagScoringService.GetOrComputeScoresAsync(System.Collections.Generic.IEnumerable{System.String},System.String,System.Nullable{System.TimeSpan},System.Threading.CancellationToken)">
+            <summary>
+            Get or compute tag scores for a query context.
+            Uses cached scores if available, otherwise computes new ones.
+            </summary>
+            <param name="tags">List of tags to score</param>
+            <param name="queryContext">The query or instruction to score against</param>
+            <param name="maxCacheAge">Maximum age of cached scores to use</param>
+            <param name="ct">Cancellation token</param>
+            <returns>Tag relevance index with scores</returns>
+        </member>
+        <member name="M:ITagScoringService.HasScoresForContextAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if scores are available for a query context.
+            </summary>
+        </member>
+        <member name="T:ChunkSet">
+            <summary>
+            Represents a logical grouping of chunks with a collective summary.
+            Used for hierarchical documents where chunks can be organized by sections.
+            </summary>
+        </member>
+        <member name="P:ChunkSet.SetId">
+            <summary>
+            Unique identifier for this chunk set (e.g., "doc.txt:section:0").
+            </summary>
+        </member>
+        <member name="P:ChunkSet.DocumentId">
+            <summary>
+            Parent document ID.
+            </summary>
+        </member>
+        <member name="P:ChunkSet.ChunkIds">
+            <summary>
+            List of chunk IDs belonging to this set.
+            </summary>
+        </member>
+        <member name="P:ChunkSet.Summary">
+            <summary>
+            Summary describing the content of this chunk set.
+            </summary>
+        </member>
+        <member name="P:ChunkSet.StartChunkIndex">
+            <summary>
+            Zero-based index of the first chunk in this set.
+            </summary>
+        </member>
+        <member name="P:ChunkSet.EndChunkIndex">
+            <summary>
+            Zero-based index of the last chunk in this set.
+            </summary>
+        </member>
+        <member name="P:ChunkSet.SectionTitle">
+            <summary>
+            Optional section title from hierarchical chunking.
+            </summary>
+        </member>
+        <member name="P:ChunkSet.Created">
+            <summary>
+            When this chunk set was created.
+            </summary>
+        </member>
+        <member name="P:ChunkSet.LastModified">
+            <summary>
+            When this chunk set was last modified.
+            </summary>
+        </member>
+        <member name="P:ChunkSet.ChunkCount">
+            <summary>
+            Number of chunks in this set.
+            </summary>
+        </member>
+        <member name="M:ChunkSet.Create(System.String,System.Int32,System.Collections.Generic.IEnumerable{System.String},System.String,System.Int32,System.Int32,System.String)">
+            <summary>
+            Create a chunk set from a collection of chunk IDs.
+            </summary>
+        </member>
+        <member name="T:ContentChunk">
+            <summary>
+            Represents a chunk of document content with hash for change detection.
+            Enables incremental embedding - only re-embed changed chunks.
+            </summary>
+        </member>
+        <member name="P:ContentChunk.ChunkId">
+            <summary>
+            Unique identifier for this chunk.
+            </summary>
+        </member>
+        <member name="P:ContentChunk.DocumentId">
+            <summary>
+            Parent document ID.
+            </summary>
+        </member>
+        <member name="P:ContentChunk.ChunkIndex">
+            <summary>
+            Zero-based index of this chunk within the document.
+            </summary>
+        </member>
+        <member name="P:ContentChunk.Content">
+            <summary>
+            The text content of this chunk.
+            </summary>
+        </member>
+        <member name="P:ContentChunk.ContentHash">
+            <summary>
+            Content hash for change detection (SHA256).
+            </summary>
+        </member>
+        <member name="P:ContentChunk.Created">
+            <summary>
+            When this chunk was created.
+            </summary>
+        </member>
+        <member name="P:ContentChunk.LastModified">
+            <summary>
+            When this chunk was last modified.
+            </summary>
+        </member>
+        <member name="P:ContentChunk.HasEmbedding">
+            <summary>
+            Whether this chunk has an embedding computed.
+            </summary>
+        </member>
+        <member name="P:ContentChunk.EmbeddingModel">
+            <summary>
+            The embedding model used (e.g., "openai", "local").
+            </summary>
+        </member>
+        <member name="P:ContentChunk.EmbeddingComputedAt">
+            <summary>
+            When the embedding was last computed.
+            </summary>
+        </member>
+        <member name="P:ContentChunk.StartOffset">
+            <summary>
+            Start character offset in original document.
+            </summary>
+        </member>
+        <member name="P:ContentChunk.EndOffset">
+            <summary>
+            End character offset in original document.
+            </summary>
+        </member>
+        <member name="M:ContentChunk.ComputeHash">
+            <summary>
+            Compute content hash from the current content.
+            </summary>
+        </member>
+        <member name="M:ContentChunk.HasContentChanged(System.String)">
+            <summary>
+            Check if content has changed by comparing hashes.
+            </summary>
+        </member>
+        <member name="M:ContentChunk.ComputeContentHash(System.String)">
+            <summary>
+            Compute SHA256 hash of content.
+            </summary>
+        </member>
+        <member name="M:ContentChunk.Create(System.String,System.Int32,System.String,System.Int32,System.Int32)">
+            <summary>
+            Create a chunk from content.
+            </summary>
+        </member>
+        <member name="T:ChunkEmbeddingStatus">
+            <summary>
+            Status of a chunk embedding operation.
+            </summary>
+        </member>
+        <member name="F:ChunkEmbeddingStatus.New">
+            <summary>
+            Chunk is new and needs embedding.
+            </summary>
+        </member>
+        <member name="F:ChunkEmbeddingStatus.Modified">
+            <summary>
+            Chunk content has changed and needs re-embedding.
+            </summary>
+        </member>
+        <member name="F:ChunkEmbeddingStatus.Cached">
+            <summary>
+            Chunk is unchanged, cached embedding is valid.
+            </summary>
+        </member>
+        <member name="F:ChunkEmbeddingStatus.Deleted">
+            <summary>
+            Chunk was removed from document.
+            </summary>
+        </member>
+        <member name="F:ChunkEmbeddingStatus.Processing">
+            <summary>
+            Embedding is in progress.
+            </summary>
+        </member>
+        <member name="F:ChunkEmbeddingStatus.Failed">
+            <summary>
+            Embedding failed.
+            </summary>
+        </member>
+        <member name="T:ChunkDiff">
+            <summary>
+            Result of comparing document chunks for incremental updates.
+            </summary>
+        </member>
+        <member name="P:ChunkDiff.NewChunks">
+            <summary>
+            Chunks that are new and need embedding.
+            </summary>
+        </member>
+        <member name="P:ChunkDiff.ModifiedChunks">
+            <summary>
+            Chunks that have changed and need re-embedding.
+            </summary>
+        </member>
+        <member name="P:ChunkDiff.UnchangedChunkIds">
+            <summary>
+            Chunk IDs that are unchanged (use cached embeddings).
+            </summary>
+        </member>
+        <member name="P:ChunkDiff.DeletedChunkIds">
+            <summary>
+            Chunk IDs that no longer exist (delete embeddings).
+            </summary>
+        </member>
+        <member name="P:ChunkDiff.ChunksToEmbed">
+            <summary>
+            Total chunks that need embedding (new + modified).
+            </summary>
+        </member>
+        <member name="P:ChunkDiff.CachedChunks">
+            <summary>
+            Total chunks that can use cache.
+            </summary>
+        </member>
+        <member name="P:ChunkDiff.CacheHitRate">
+            <summary>
+            Percentage of chunks that can use cache (0-100).
+            </summary>
+        </member>
+        <member name="P:DocumentMetadata.Tags">
+            <summary>
+            Tags for categorization and filtering.
+            Enables metadata-first search without embeddings.
+            </summary>
+        </member>
+        <member name="P:DocumentMetadata.SearchableText">
+            <summary>
+            Full-text searchable content (optional, for keyword search fallback).
+            If not set, Summary is used for text search.
+            </summary>
+        </member>
+        <member name="T:DocumentRelationship">
+            <summary>
+            Represents a relationship between two documents.
+            </summary>
+        </member>
+        <member name="P:DocumentRelationship.RelationshipId">
+            <summary>
+            Unique identifier for this relationship.
+            </summary>
+        </member>
+        <member name="P:DocumentRelationship.SourceDocumentId">
+            <summary>
+            Source document ID.
+            </summary>
+        </member>
+        <member name="P:DocumentRelationship.TargetDocumentId">
+            <summary>
+            Target document ID.
+            </summary>
+        </member>
+        <member name="P:DocumentRelationship.Type">
+            <summary>
+            Type of relationship.
+            </summary>
+        </member>
+        <member name="P:DocumentRelationship.Confidence">
+            <summary>
+            Confidence score for this relationship (0.0 to 1.0).
+            Higher values indicate more certain relationships.
+            </summary>
+        </member>
+        <member name="P:DocumentRelationship.Source">
+            <summary>
+            How this relationship was detected.
+            </summary>
+        </member>
+        <member name="P:DocumentRelationship.Description">
+            <summary>
+            Optional description of the relationship.
+            </summary>
+        </member>
+        <member name="P:DocumentRelationship.Created">
+            <summary>
+            When this relationship was created.
+            </summary>
+        </member>
+        <member name="P:DocumentRelationship.LastUpdated">
+            <summary>
+            When this relationship was last updated.
+            </summary>
+        </member>
+        <member name="P:DocumentRelationship.Metadata">
+            <summary>
+            Additional metadata about the relationship.
+            </summary>
+        </member>
+        <member name="P:DocumentRelationship.IsBidirectional">
+            <summary>
+            Whether this is a bidirectional relationship.
+            </summary>
+        </member>
+        <member name="T:RelationshipType">
+            <summary>
+            Types of document relationships.
+            </summary>
+        </member>
+        <member name="F:RelationshipType.Related">
+            <summary>
+            Generic relationship - documents are related.
+            </summary>
+        </member>
+        <member name="F:RelationshipType.Supports">
+            <summary>
+            Source supports the target's claims.
+            </summary>
+        </member>
+        <member name="F:RelationshipType.Contradicts">
+            <summary>
+            Source contradicts the target's claims.
+            </summary>
+        </member>
+        <member name="F:RelationshipType.Cites">
+            <summary>
+            Source cites or references the target.
+            </summary>
+        </member>
+        <member name="F:RelationshipType.CitedBy">
+            <summary>
+            Source is cited by the target.
+            </summary>
+        </member>
+        <member name="F:RelationshipType.Summarizes">
+            <summary>
+            Source summarizes the target.
+            </summary>
+        </member>
+        <member name="F:RelationshipType.ExpandsOn">
+            <summary>
+            Source expands on the target.
+            </summary>
+        </member>
+        <member name="F:RelationshipType.UpdatesVersion">
+            <summary>
+            Source is a newer version of the target.
+            </summary>
+        </member>
+        <member name="F:RelationshipType.SameAuthor">
+            <summary>
+            Source and target are by the same author.
+            </summary>
+        </member>
+        <member name="F:RelationshipType.SameTopic">
+            <summary>
+            Source and target cover the same topic.
+            </summary>
+        </member>
+        <member name="F:RelationshipType.RespondsTo">
+            <summary>
+            Source is a response to the target.
+            </summary>
+        </member>
+        <member name="F:RelationshipType.ProvidesEvidence">
+            <summary>
+            Source provides evidence for the target.
+            </summary>
+        </member>
+        <member name="F:RelationshipType.DerivedFrom">
+            <summary>
+            Source is derived from the target.
+            </summary>
+        </member>
+        <member name="T:RelationshipSource">
+            <summary>
+            How the relationship was detected.
+            </summary>
+        </member>
+        <member name="F:RelationshipSource.Manual">
+            <summary>
+            Manually specified by user.
+            </summary>
+        </member>
+        <member name="F:RelationshipSource.LLMDetected">
+            <summary>
+            Detected by LLM analysis.
+            </summary>
+        </member>
+        <member name="F:RelationshipSource.CitationParsing">
+            <summary>
+            Detected by citation parsing.
+            </summary>
+        </member>
+        <member name="F:RelationshipSource.SemanticSimilarity">
+            <summary>
+            Detected by semantic similarity.
+            </summary>
+        </member>
+        <member name="F:RelationshipSource.ContentOverlap">
+            <summary>
+            Detected by content overlap.
+            </summary>
+        </member>
+        <member name="F:RelationshipSource.MetadataInference">
+            <summary>
+            Inferred from metadata (e.g., same author).
+            </summary>
+        </member>
+        <member name="T:DocumentNode">
+            <summary>
+            A node in the document graph.
+            </summary>
+        </member>
+        <member name="P:DocumentNode.DocumentId">
+            <summary>
+            Document identifier.
+            </summary>
+        </member>
+        <member name="P:DocumentNode.Title">
+            <summary>
+            Document title or name.
+            </summary>
+        </member>
+        <member name="P:DocumentNode.OutgoingRelationships">
+            <summary>
+            Outgoing relationships from this document.
+            </summary>
+        </member>
+        <member name="P:DocumentNode.IncomingRelationships">
+            <summary>
+            Incoming relationships to this document.
+            </summary>
+        </member>
+        <member name="P:DocumentNode.RelatedDocumentIds">
+            <summary>
+            All related document IDs (both directions).
+            </summary>
+        </member>
+        <member name="P:DocumentNode.RelationshipCount">
+            <summary>
+            Count of all relationships.
+            </summary>
+        </member>
+        <member name="T:GraphTraversalResult">
+            <summary>
+            Result of traversing the document graph.
+            </summary>
+        </member>
+        <member name="P:GraphTraversalResult.StartDocumentId">
+            <summary>
+            Starting document ID.
+            </summary>
+        </member>
+        <member name="P:GraphTraversalResult.Documents">
+            <summary>
+            Documents found in traversal, ordered by relevance/distance.
+            </summary>
+        </member>
+        <member name="P:GraphTraversalResult.TotalFound">
+            <summary>
+            Total documents found.
+            </summary>
+        </member>
+        <member name="P:GraphTraversalResult.MaxDepthReached">
+            <summary>
+            Maximum depth reached in traversal.
+            </summary>
+        </member>
+        <member name="T:TraversedDocument">
+            <summary>
+            A document found during graph traversal.
+            </summary>
+        </member>
+        <member name="P:TraversedDocument.DocumentId">
+            <summary>
+            Document identifier.
+            </summary>
+        </member>
+        <member name="P:TraversedDocument.Distance">
+            <summary>
+            Distance from start document (number of hops).
+            </summary>
+        </member>
+        <member name="P:TraversedDocument.Path">
+            <summary>
+            Path of relationship types from start to this document.
+            </summary>
+        </member>
+        <member name="P:TraversedDocument.PathConfidence">
+            <summary>
+            Combined confidence along the path.
+            </summary>
+        </member>
+        <member name="P:TraversedDocument.Relationship">
+            <summary>
+            The relationship that led to this document.
+            </summary>
+        </member>
+        <member name="P:DocumentWithChunks.Key">
+            <summary>
+            The document key/ID
+            </summary>
+        </member>
+        <member name="P:DocumentWithChunks.Content">
+            <summary>
+            The full text content of the document
+            </summary>
+        </member>
+        <member name="P:DocumentWithChunks.Metadata">
+            <summary>
+            Document metadata
+            </summary>
+        </member>
+        <member name="P:DocumentWithChunks.ChunkKeys">
+            <summary>
+            List of chunk keys for this document
+            </summary>
+        </member>
+        <member name="T:KnowledgeScope">
+            <summary>
+            Scope levels for knowledge sharing.
+            </summary>
+        </member>
+        <member name="F:KnowledgeScope.Project">
+            <summary>
+            Project-specific knowledge (default, most restrictive).
+            </summary>
+        </member>
+        <member name="F:KnowledgeScope.Workspace">
+            <summary>
+            Workspace-level knowledge (shared across projects in workspace).
+            </summary>
+        </member>
+        <member name="F:KnowledgeScope.Global">
+            <summary>
+            Global knowledge (shared across all projects and workspaces).
+            </summary>
+        </member>
+        <member name="T:ScopeConfiguration">
+            <summary>
+            Configuration for a knowledge scope.
+            </summary>
+        </member>
+        <member name="P:ScopeConfiguration.Scope">
+            <summary>
+            Scope level.
+            </summary>
+        </member>
+        <member name="P:ScopeConfiguration.ScopeId">
+            <summary>
+            Identifier for this scope (project ID, workspace ID, or "global").
+            </summary>
+        </member>
+        <member name="P:ScopeConfiguration.Name">
+            <summary>
+            Display name for this scope.
+            </summary>
+        </member>
+        <member name="P:ScopeConfiguration.StorePath">
+            <summary>
+            Path to the knowledge store for this scope.
+            </summary>
+        </member>
+        <member name="P:ScopeConfiguration.ParentScopeId">
+            <summary>
+            Parent scope (null for global).
+            </summary>
+        </member>
+        <member name="P:ScopeConfiguration.Enabled">
+            <summary>
+            Whether this scope is enabled for queries.
+            </summary>
+        </member>
+        <member name="P:ScopeConfiguration.Priority">
+            <summary>
+            Priority when merging results (higher = more important).
+            </summary>
+        </member>
+        <member name="T:ScopeHierarchy">
+            <summary>
+            Hierarchy of scopes for a project.
+            </summary>
+        </member>
+        <member name="P:ScopeHierarchy.Project">
+            <summary>
+            Project-level scope (most specific).
+            </summary>
+        </member>
+        <member name="P:ScopeHierarchy.Workspace">
+            <summary>
+            Workspace-level scope (if applicable).
+            </summary>
+        </member>
+        <member name="P:ScopeHierarchy.Global">
+            <summary>
+            Global scope (least specific).
+            </summary>
+        </member>
+        <member name="M:ScopeHierarchy.GetInheritanceChain">
+            <summary>
+            Get all enabled scopes in inheritance order (project → workspace → global).
+            </summary>
+        </member>
+        <member name="T:ScopedDocument">
+            <summary>
+            A document with its scope information.
+            </summary>
+        </member>
+        <member name="P:ScopedDocument.Document">
+            <summary>
+            Document metadata.
+            </summary>
+        </member>
+        <member name="P:ScopedDocument.SourceScope">
+            <summary>
+            Scope where this document was found.
+            </summary>
+        </member>
+        <member name="P:ScopedDocument.SourceScopeId">
+            <summary>
+            Scope identifier.
+            </summary>
+        </member>
+        <member name="P:ScopedDocument.IsInherited">
+            <summary>
+            Whether this document is inherited (from parent scope).
+            </summary>
+        </member>
+        <member name="P:ScopedDocument.RelevanceScore">
+            <summary>
+            Original similarity/relevance score.
+            </summary>
+        </member>
+        <member name="P:ScopedDocument.AdjustedScore">
+            <summary>
+            Adjusted score after scope weighting.
+            </summary>
+        </member>
+        <member name="T:HierarchicalQueryResult">
+            <summary>
+            Result of a hierarchical query.
+            </summary>
+        </member>
+        <member name="P:HierarchicalQueryResult.Documents">
+            <summary>
+            Documents found, merged and ranked.
+            </summary>
+        </member>
+        <member name="P:HierarchicalQueryResult.CountByScope">
+            <summary>
+            Count of documents per scope.
+            </summary>
+        </member>
+        <member name="P:HierarchicalQueryResult.QueriedScopes">
+            <summary>
+            Scopes that were queried.
+            </summary>
+        </member>
+        <member name="P:HierarchicalQueryResult.TotalCount">
+            <summary>
+            Total documents found.
+            </summary>
+        </member>
+        <member name="P:HierarchicalQueryResult.IncludesInheritedDocuments">
+            <summary>
+            Whether any inherited documents were included.
+            </summary>
+        </member>
+        <member name="T:HierarchicalQueryOptions">
+            <summary>
+            Options for hierarchical queries.
+            </summary>
+        </member>
+        <member name="P:HierarchicalQueryOptions.IncludeParentScopes">
+            <summary>
+            Whether to include parent scopes in query.
+            Default: true
+            </summary>
+        </member>
+        <member name="P:HierarchicalQueryOptions.MaxScope">
+            <summary>
+            Maximum scope level to query.
+            Default: Global (query all levels)
+            </summary>
+        </member>
+        <member name="P:HierarchicalQueryOptions.ProjectWeight">
+            <summary>
+            Weight multiplier for project-level results.
+            Default: 1.0
+            </summary>
+        </member>
+        <member name="P:HierarchicalQueryOptions.WorkspaceWeight">
+            <summary>
+            Weight multiplier for workspace-level results.
+            Default: 0.8
+            </summary>
+        </member>
+        <member name="P:HierarchicalQueryOptions.GlobalWeight">
+            <summary>
+            Weight multiplier for global-level results.
+            Default: 0.6
+            </summary>
+        </member>
+        <member name="P:HierarchicalQueryOptions.DuplicateHandling">
+            <summary>
+            How to handle duplicates across scopes.
+            Default: PreferMostSpecific
+            </summary>
+        </member>
+        <member name="P:HierarchicalQueryOptions.MaxResultsPerScope">
+            <summary>
+            Maximum results per scope.
+            Default: 20
+            </summary>
+        </member>
+        <member name="M:HierarchicalQueryOptions.GetWeight(KnowledgeScope)">
+            <summary>
+            Get weight for a scope.
+            </summary>
+        </member>
+        <member name="T:DuplicateHandling">
+            <summary>
+            How to handle duplicate documents across scopes.
+            </summary>
+        </member>
+        <member name="F:DuplicateHandling.PreferMostSpecific">
+            <summary>
+            Keep the version from the most specific scope.
+            </summary>
+        </member>
+        <member name="F:DuplicateHandling.PreferLeastSpecific">
+            <summary>
+            Keep the version from the least specific scope.
+            </summary>
+        </member>
+        <member name="F:DuplicateHandling.KeepAll">
+            <summary>
+            Keep all versions.
+            </summary>
+        </member>
+        <member name="F:DuplicateHandling.Merge">
+            <summary>
+            Merge metadata from all scopes.
+            </summary>
+        </member>
+        <member name="T:QueryIntentType">
+            <summary>
+            Represents the detected intent of a search query.
+            Used to route queries to optimal search strategies.
+            </summary>
+        </member>
+        <member name="F:QueryIntentType.Semantic">
+            <summary>
+            Semantic/conceptual search - needs embeddings.
+            Examples: "What is the main thesis?", "Explain the argument"
+            </summary>
+        </member>
+        <member name="F:QueryIntentType.MetadataFilter">
+            <summary>
+            Metadata filter - SQL only, no embeddings needed.
+            Examples: "Find PDFs from last week", "Show all images"
+            </summary>
+        </member>
+        <member name="F:QueryIntentType.TagSearch">
+            <summary>
+            Tag-based search - filter by tags, optional embeddings.
+            Examples: "Documents tagged evidence", "Find research materials"
+            </summary>
+        </member>
+        <member name="F:QueryIntentType.Similarity">
+            <summary>
+            Similarity search - find documents similar to a reference.
+            Examples: "Similar to document X", "More like this"
+            </summary>
+        </member>
+        <member name="F:QueryIntentType.Keyword">
+            <summary>
+            Keyword/exact match search - full-text search.
+            Examples: "Search for 'climate change'", "Find mentions of X"
+            </summary>
+        </member>
+        <member name="F:QueryIntentType.Hybrid">
+            <summary>
+            Hybrid search - combine multiple strategies.
+            Examples: "Recent PDFs about climate change"
+            </summary>
+        </member>
+        <member name="F:QueryIntentType.Unknown">
+            <summary>
+            Unknown or ambiguous intent.
+            </summary>
+        </member>
+        <member name="T:QueryIntent">
+            <summary>
+            Result of query intent classification.
+            </summary>
+        </member>
+        <member name="P:QueryIntent.Type">
+            <summary>
+            Primary detected intent type.
+            </summary>
+        </member>
+        <member name="P:QueryIntent.Confidence">
+            <summary>
+            Confidence score for the classification (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:QueryIntent.SecondaryType">
+            <summary>
+            Secondary intent if hybrid search is detected.
+            </summary>
+        </member>
+        <member name="P:QueryIntent.Filters">
+            <summary>
+            Extracted metadata filters from the query.
+            </summary>
+        </member>
+        <member name="P:QueryIntent.SemanticQuery">
+            <summary>
+            The semantic/keyword portion of the query after filter extraction.
+            </summary>
+        </member>
+        <member name="P:QueryIntent.RecommendEmbeddings">
+            <summary>
+            Whether embeddings are recommended for this query.
+            </summary>
+        </member>
+        <member name="P:QueryIntent.RecommendMetadataFilter">
+            <summary>
+            Whether metadata filtering should be applied.
+            </summary>
+        </member>
+        <member name="P:QueryIntent.Explanation">
+            <summary>
+            Explanation of why this intent was detected.
+            </summary>
+        </member>
+        <member name="T:ExtractedFilters">
+            <summary>
+            Filters extracted from a query.
+            </summary>
+        </member>
+        <member name="P:ExtractedFilters.MimeType">
+            <summary>
+            MIME type filter (e.g., "application/pdf").
+            </summary>
+        </member>
+        <member name="P:ExtractedFilters.MimeTypePrefix">
+            <summary>
+            MIME type prefix (e.g., "image/").
+            </summary>
+        </member>
+        <member name="P:ExtractedFilters.Tags">
+            <summary>
+            Tags to filter by (ANY match).
+            </summary>
+        </member>
+        <member name="P:ExtractedFilters.CreatedAfter">
+            <summary>
+            Date filter - after this date.
+            </summary>
+        </member>
+        <member name="P:ExtractedFilters.CreatedBefore">
+            <summary>
+            Date filter - before this date.
+            </summary>
+        </member>
+        <member name="P:ExtractedFilters.SimilarToDocumentId">
+            <summary>
+            Reference document ID for similarity search.
+            </summary>
+        </member>
+        <member name="P:ExtractedFilters.ExactKeywords">
+            <summary>
+            Exact keywords to search for.
+            </summary>
+        </member>
+        <member name="P:ExtractedFilters.HasFilters">
+            <summary>
+            Whether any filters were extracted.
+            </summary>
+        </member>
+        <member name="M:ExtractedFilters.ToMetadataFilter">
+            <summary>
+            Convert to MetadataFilter for store queries.
+            </summary>
+        </member>
+        <member name="T:ScoredDocument">
+            <summary>
+            Represents a document with its scoring information.
+            Used during the ranking process.
+            </summary>
+        </member>
+        <member name="P:ScoredDocument.Id">
+            <summary>
+            Document identifier.
+            </summary>
+        </member>
+        <member name="P:ScoredDocument.Content">
+            <summary>
+            Document content or text.
+            </summary>
+        </member>
+        <member name="P:ScoredDocument.Similarity">
+            <summary>
+            Original similarity score from vector search (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:ScoredDocument.TagScore">
+            <summary>
+            Tag-based relevance score (0.0 to 1.0).
+            Computed from TagRelevanceIndex.
+            </summary>
+        </member>
+        <member name="P:ScoredDocument.RecencyScore">
+            <summary>
+            Recency score based on document creation date (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:ScoredDocument.PositionScore">
+            <summary>
+            Position score based on original retrieval order (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:ScoredDocument.CompositeScore">
+            <summary>
+            Final composite score after applying weights (0.0 to 1.0).
+            </summary>
+        </member>
+        <member name="P:ScoredDocument.Metadata">
+            <summary>
+            Document metadata containing tags, MIME type, etc.
+            </summary>
+        </member>
+        <member name="P:ScoredDocument.ScoreBreakdown">
+            <summary>
+            Additional scoring details for debugging/transparency.
+            </summary>
+        </member>
+        <member name="P:ScoredDocument.Explanation">
+            <summary>
+            Detailed explanation of why this document scored as it did.
+            Only populated when explanations are requested.
+            </summary>
+        </member>
+        <member name="M:ScoredDocument.FromMetadata(DocumentMetadata,System.Double)">
+            <summary>
+            Create a scored document from metadata and similarity.
+            </summary>
+        </member>
+        <member name="T:ScoringOptions">
+            <summary>
+            Configuration options for composite document scoring.
+            Weights should sum to 1.0 for normalized results.
+            </summary>
+        </member>
+        <member name="P:ScoringOptions.CosineSimilarityWeight">
+            <summary>
+            Weight for cosine similarity score (embedding-based).
+            Default: 0.5 (50% weight)
+            </summary>
+        </member>
+        <member name="P:ScoringOptions.TagScoreWeight">
+            <summary>
+            Weight for tag-based relevance score.
+            Default: 0.3 (30% weight)
+            </summary>
+        </member>
+        <member name="P:ScoringOptions.RecencyWeight">
+            <summary>
+            Weight for recency boost (newer documents score higher).
+            Default: 0.1 (10% weight)
+            </summary>
+        </member>
+        <member name="P:ScoringOptions.PositionWeight">
+            <summary>
+            Weight for position/order boost (earlier results from initial retrieval).
+            Default: 0.1 (10% weight)
+            </summary>
+        </member>
+        <member name="P:ScoringOptions.RecencyHalfLifeDays">
+            <summary>
+            Number of days until recency score halves.
+            Older documents decay exponentially.
+            Default: 30 days
+            </summary>
+        </member>
+        <member name="P:ScoringOptions.TagAggregation">
+            <summary>
+            Aggregation method for multiple tags.
+            </summary>
+        </member>
+        <member name="P:ScoringOptions.MinimumScore">
+            <summary>
+            Minimum score threshold. Documents below this are filtered out.
+            Default: 0.0 (no filtering)
+            </summary>
+        </member>
+        <member name="P:ScoringOptions.Default">
+            <summary>
+            Default scoring options (balanced weights).
+            </summary>
+        </member>
+        <member name="P:ScoringOptions.EmbeddingFocused">
+            <summary>
+            Scoring options that prioritize embedding similarity.
+            </summary>
+        </member>
+        <member name="P:ScoringOptions.TagFocused">
+            <summary>
+            Scoring options that prioritize tag relevance.
+            </summary>
+        </member>
+        <member name="P:ScoringOptions.SimilarityOnly">
+            <summary>
+            Scoring options for backwards compatibility (similarity only).
+            </summary>
+        </member>
+        <member name="T:TagAggregationMethod">
+            <summary>
+            Method for aggregating scores from multiple tags.
+            </summary>
+        </member>
+        <member name="F:TagAggregationMethod.Maximum">
+            <summary>
+            Use the highest score among all tags (optimistic).
+            </summary>
+        </member>
+        <member name="F:TagAggregationMethod.Average">
+            <summary>
+            Use the average score of all tags.
+            </summary>
+        </member>
+        <member name="F:TagAggregationMethod.Sum">
+            <summary>
+            Use the sum of all scores (capped at 1.0).
+            </summary>
+        </member>
+        <member name="T:SearchResultExplanation">
+            <summary>
+            Explains why a document received its search ranking score.
+            Provides transparency into the scoring algorithm for debugging and user trust.
+            </summary>
+        </member>
+        <member name="P:SearchResultExplanation.Summary">
+            <summary>
+            Human-readable summary of why this result ranked where it did.
+            </summary>
+        </member>
+        <member name="P:SearchResultExplanation.Breakdown">
+            <summary>
+            Detailed breakdown of each scoring component.
+            </summary>
+        </member>
+        <member name="P:SearchResultExplanation.Boosts">
+            <summary>
+            Factors that boosted this result's score.
+            </summary>
+        </member>
+        <member name="P:SearchResultExplanation.Penalties">
+            <summary>
+            Factors that penalized this result's score.
+            </summary>
+        </member>
+        <member name="M:SearchResultExplanation.GenerateSummary(ScoreBreakdownDetail)">
+            <summary>
+            Generate a human-readable summary from the breakdown.
+            </summary>
+        </member>
+        <member name="T:ScoreBreakdownDetail">
+            <summary>
+            Detailed breakdown of scoring components.
+            </summary>
+        </member>
+        <member name="T:SimilarityDetail">
+            <summary>
+            Similarity score details.
+            </summary>
+        </member>
+        <member name="T:TagScoreDetail">
+            <summary>
+            Tag score details.
+            </summary>
+        </member>
+        <member name="T:RecencyDetail">
+            <summary>
+            Recency score details.
+            </summary>
+        </member>
+        <member name="T:PositionDetail">
+            <summary>
+            Position score details.
+            </summary>
+        </member>
+        <member name="T:TagRelevanceIndex">
+            <summary>
+            Stores tag relevance scores for a specific query context.
+            Used for query-adaptive document ranking.
+            </summary>
+        </member>
+        <member name="P:TagRelevanceIndex.IndexId">
+            <summary>
+            Unique identifier for this index.
+            </summary>
+        </member>
+        <member name="P:TagRelevanceIndex.QueryContext">
+            <summary>
+            The query or instruction that was used to generate these scores.
+            </summary>
+        </member>
+        <member name="P:TagRelevanceIndex.ContextChecksum">
+            <summary>
+            MD5 checksum of the query context for cache lookup.
+            </summary>
+        </member>
+        <member name="P:TagRelevanceIndex.Created">
+            <summary>
+            When this index was created.
+            </summary>
+        </member>
+        <member name="P:TagRelevanceIndex.LastUpdated">
+            <summary>
+            When this index was last updated.
+            </summary>
+        </member>
+        <member name="P:TagRelevanceIndex.TagScores">
+            <summary>
+            Tag name → Relevance score (0.0 to 1.0).
+            1.0 = Highly relevant to the query.
+            0.5 = Neutral/uncertain relevance.
+            0.0 = Not relevant at all.
+            </summary>
+        </member>
+        <member name="M:TagRelevanceIndex.GetScore(System.String)">
+            <summary>
+            Get the relevance score for a specific tag.
+            Returns 0.5 (neutral) if tag not found.
+            </summary>
+        </member>
+        <member name="M:TagRelevanceIndex.GetAggregateScore(System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Calculate aggregate score for a list of tags.
+            Uses the maximum score among all tags (optimistic matching).
+            </summary>
+        </member>
+        <member name="M:TagRelevanceIndex.GetAverageScore(System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Calculate weighted aggregate score for a list of tags.
+            Uses average of all tag scores.
+            </summary>
+        </member>
+        <member name="T:DefaultCompositeScorer">
+            <summary>
+            Default implementation of composite document scoring.
+            Combines cosine similarity, tag relevance, recency, and position into a final score.
+            </summary>
+        </member>
+        <member name="M:DefaultCompositeScorer.Score(ScoredDocument,TagRelevanceIndex,System.Int32,System.Int32,ScoringOptions)">
+            <summary>
+            Score a single document using all available signals.
+            </summary>
+        </member>
+        <member name="M:DefaultCompositeScorer.ScoreAndRank(System.Collections.Generic.IEnumerable{ScoredDocument},TagRelevanceIndex,ScoringOptions)">
+            <summary>
+            Score and rank a list of documents.
+            </summary>
+        </member>
+        <member name="M:DefaultCompositeScorer.ScoreAndRankAsync(System.Collections.Generic.IEnumerable{ScoredDocument},TagRelevanceIndex,ScoringOptions,System.Threading.CancellationToken)">
+            <summary>
+            Async version of ScoreAndRank.
+            </summary>
+        </member>
+        <member name="M:DefaultCompositeScorer.ScoreAndRankWithExplanations(System.Collections.Generic.IEnumerable{ScoredDocument},TagRelevanceIndex,ScoringOptions)">
+            <summary>
+            Score and rank documents with detailed explanations.
+            </summary>
+        </member>
+        <member name="M:DefaultCompositeScorer.ScoreWithExplanation(ScoredDocument,TagRelevanceIndex,System.Int32,System.Int32,ScoringOptions)">
+            <summary>
+            Score a document and generate a detailed explanation.
+            </summary>
+        </member>
+        <member name="M:DefaultCompositeScorer.FormatAge(System.Nullable{System.TimeSpan})">
+            <summary>
+            Format a timespan as a human-readable age description.
+            </summary>
+        </member>
+        <member name="M:DefaultCompositeScorer.CalculateRecencyScore(System.Nullable{System.DateTime},System.Double)">
+            <summary>
+            Calculate recency score using exponential decay.
+            </summary>
+        </member>
+        <member name="T:HeuristicQueryIntentClassifier">
+            <summary>
+            Fast, pattern-based query intent classifier.
+            Uses regex and keyword matching for instant classification.
+            </summary>
+        </member>
+        <member name="T:IncrementalEmbeddingService">
+            <summary>
+            Default implementation of incremental embedding service.
+            Stores chunk hashes and embeddings in a file-based cache.
+            </summary>
+        </member>
+        <member name="T:LLMQueryIntentClassifier">
+            <summary>
+            LLM-based query intent classifier for accurate classification.
+            Falls back to heuristic classifier if LLM fails.
+            </summary>
+        </member>
+        <member name="T:QueryIntentResponse">
+            <summary>
+            Response model for LLM query intent classification.
+            </summary>
+        </member>
+        <member name="T:LLMTagScoringService">
+            <summary>
+            LLM-based tag scoring service that uses AI to score tags based on query relevance.
+            </summary>
+        </member>
+        <member name="M:LLMTagScoringService.#ctor(Hazina.LLMs.ILLMClient,ITagRelevanceStore)">
+            <summary>
+            Create an LLM tag scoring service.
+            </summary>
+            <param name="llmClient">LLM client for generating scores</param>
+            <param name="store">Optional store for caching scores</param>
+        </member>
+        <member name="M:LLMTagScoringService.ScoreTagsAsync(System.Collections.Generic.IEnumerable{System.String},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Score tags based on their relevance to a query using LLM.
+            </summary>
+        </member>
+        <member name="M:LLMTagScoringService.GetOrComputeScoresAsync(System.Collections.Generic.IEnumerable{System.String},System.String,System.Nullable{System.TimeSpan},System.Threading.CancellationToken)">
+            <summary>
+            Get or compute tag scores, using cache if available.
+            </summary>
+        </member>
+        <member name="M:LLMTagScoringService.HasScoresForContextAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Check if scores exist for a query context.
+            </summary>
+        </member>
+        <member name="T:TagScoreResponse">
+            <summary>
+            Response model for tag scoring.
+            </summary>
+        </member>
+        <member name="T:TagScoreItem">
+            <summary>
+            Individual tag score item.
+            </summary>
+        </member>
+        <member name="T:NoOpTagScoringService">
+            <summary>
+            No-operation tag scoring service for backwards compatibility.
+            Returns neutral scores (0.5) for all tags.
+            </summary>
+        </member>
+        <member name="M:NoOpTagScoringService.ScoreTagsAsync(System.Collections.Generic.IEnumerable{System.String},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Returns neutral scores for all tags (no actual scoring).
+            </summary>
+        </member>
+        <member name="M:NoOpTagScoringService.GetOrComputeScoresAsync(System.Collections.Generic.IEnumerable{System.String},System.String,System.Nullable{System.TimeSpan},System.Threading.CancellationToken)">
+            <summary>
+            Always computes new scores (no caching in NoOp implementation).
+            </summary>
+        </member>
+        <member name="M:NoOpTagScoringService.HasScoresForContextAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Always returns false (no caching).
+            </summary>
+        </member>
+        <member name="T:ChunkSetFileStore">
+            <summary>
+            File-based storage for chunk sets.
+            Stores chunk sets as JSON files with naming pattern: {documentId}.chunksets.json
+            </summary>
+        </member>
+        <member name="M:ChunkSetFileStore.#ctor(System.String)">
+            <summary>
+            Create a new chunk set file store.
+            </summary>
+            <param name="baseDirectory">Base directory for storing chunk set files.</param>
+        </member>
+        <member name="M:ChunkSetFileStore.GetFilePath(System.String)">
+            <summary>
+            Get the file path for a document's chunk sets.
+            </summary>
+        </member>
+        <member name="M:ChunkSetFileStore.StoreAsync(System.String,System.Collections.Generic.IEnumerable{ChunkSet})">
+            <summary>
+            Store chunk sets for a document.
+            </summary>
+        </member>
+        <member name="M:ChunkSetFileStore.GetAsync(System.String)">
+            <summary>
+            Get all chunk sets for a document.
+            </summary>
+        </member>
+        <member name="M:ChunkSetFileStore.GetByIdAsync(System.String)">
+            <summary>
+            Get a specific chunk set by ID.
+            </summary>
+        </member>
+        <member name="M:ChunkSetFileStore.RemoveAsync(System.String)">
+            <summary>
+            Remove all chunk sets for a document.
+            </summary>
+        </member>
+        <member name="M:ChunkSetFileStore.ListDocumentIdsAsync">
+            <summary>
+            List all document IDs that have chunk sets.
+            </summary>
+        </member>
+        <member name="T:DocumentGraphFileStore">
+            <summary>
+            File-based implementation of document graph store.
+            Stores relationships in JSON files.
+            </summary>
+        </member>
+        <member name="T:HierarchicalMetadataFileStore">
+            <summary>
+            File-based implementation of hierarchical metadata store.
+            Enables knowledge sharing across projects via scope inheritance.
+            </summary>
+        </member>
+        <member name="T:QueryableMetadataFileStore">
+            <summary>
+            File-based implementation of IQueryableMetadataStore.
+            Stores metadata as individual JSON files and maintains an in-memory index for fast queries.
+            The index is rebuilt on startup by scanning the metadata folder.
+            </summary>
+        </member>
+        <member name="M:QueryableMetadataFileStore.EnsureIndexLoadedAsync">
+            <summary>
+            Ensures the in-memory index is loaded from disk.
+            Called lazily on first query operation.
+            </summary>
+        </member>
+        <member name="M:QueryableMetadataFileStore.RefreshIndexAsync">
+            <summary>
+            Force reload the index from disk.
+            </summary>
+        </member>
+        <member name="T:TagRelevanceFileStore">
+            <summary>
+            File-based implementation of ITagRelevanceStore.
+            Stores tag relevance indices as JSON files.
+            </summary>
+        </member>
+        <member name="M:TagRelevanceFileStore.#ctor(System.String)">
+            <summary>
+            Create a file-based tag relevance store.
+            </summary>
+            <param name="basePath">Directory to store tag relevance files</param>
+        </member>
+        <member name="M:TagRelevanceFileStore.StoreAsync(TagRelevanceIndex,System.Threading.CancellationToken)">
+            <summary>
+            Store a tag relevance index.
+            </summary>
+        </member>
+        <member name="M:TagRelevanceFileStore.GetByIdAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Get index by ID.
+            </summary>
+        </member>
+        <member name="M:TagRelevanceFileStore.GetByChecksumAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Get index by checksum (for cache lookup).
+            </summary>
+        </member>
+        <member name="M:TagRelevanceFileStore.GetLatestAsync(System.Threading.CancellationToken)">
+            <summary>
+            Get the most recent index.
+            </summary>
+        </member>
+        <member name="M:TagRelevanceFileStore.ListAllAsync(System.Threading.CancellationToken)">
+            <summary>
+            List all stored indices.
+            </summary>
+        </member>
+        <member name="M:TagRelevanceFileStore.DeleteAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Delete an index by ID.
+            </summary>
+        </member>
+        <member name="M:TagRelevanceFileStore.CleanupOlderThanAsync(System.DateTime,System.Threading.CancellationToken)">
+            <summary>
+            Delete indices older than cutoff date.
+            </summary>
+        </member>
+        <member name="T:TagRelevanceIndexEntry">
+            <summary>
+            Index entry for fast checksum-based lookup.
+            </summary>
+        </member>
+        <member name="T:QueryableMetadataMemoryStore">
+            <summary>
+            In-memory implementation of IQueryableMetadataStore.
+            Extends DocumentMetadataMemoryStore with query capabilities.
+            Suitable for development, testing, and small datasets.
+            </summary>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,1349 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Hazina.Tools.Core</name>
+    </assembly>
+    <members>
+        <member name="T:HazinaStore.Core.Chat">
+            <summary>
+            Represents a single chat conversation
+            Provides access to messages, uploads, and chat metadata
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Chat.Id">
+            <summary>
+            Unique identifier for this chat
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Chat.Name">
+            <summary>
+            Display name of the chat
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Chat.Created">
+            <summary>
+            When the chat was created
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Chat.LastUpdated">
+            <summary>
+            When the chat was last updated
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Chat.IsPinned">
+            <summary>
+            Whether the chat is pinned to the top
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Chat.Metadata">
+            <summary>
+            Chat metadata
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Chat.Repository">
+            <summary>
+            Parent repository
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.#ctor(System.String,System.String,HazinaStore.Core.ChatRepository)">
+            <summary>
+            Initialize a chat instance
+            </summary>
+            <param name="chatId">Chat identifier</param>
+            <param name="chatsPath">Path to chats folder</param>
+            <param name="repository">Parent repository</param>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.GetMessages">
+            <summary>
+            Get all messages in this chat
+            </summary>
+            <returns>List of chat messages</returns>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.AddMessage(HazinaStore.Core.Models.ChatMessage)">
+            <summary>
+            Add a message to the chat
+            </summary>
+            <param name="message">Message to add</param>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.AddUserMessage(System.String)">
+            <summary>
+            Add a user message to the chat
+            </summary>
+            <param name="text">Message text</param>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.AddAssistantMessage(System.String)">
+            <summary>
+            Add an assistant message to the chat
+            </summary>
+            <param name="text">Message text</param>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.UpdateMessage(System.Int32,HazinaStore.Core.Models.ChatMessage)">
+            <summary>
+            Update a message at a specific index
+            </summary>
+            <param name="index">Message index (0-based)</param>
+            <param name="message">Updated message</param>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.DeleteMessage(System.Int32)">
+            <summary>
+            Delete a message at a specific index
+            </summary>
+            <param name="index">Message index to delete (0-based)</param>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.ClearMessages">
+            <summary>
+            Delete all messages in the chat
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.UploadFile(System.String,System.Byte[],System.Boolean)">
+            <summary>
+            Upload a file to this chat
+            </summary>
+            <param name="filename">Filename</param>
+            <param name="content">File content</param>
+            <param name="includeInProject">Whether to include in project embeddings</param>
+            <returns>Path to uploaded file</returns>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.GetUploadedFiles">
+            <summary>
+            Get list of uploaded files in this chat
+            </summary>
+            <returns>List of filenames</returns>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.GetUploadedFilePath(System.String)">
+            <summary>
+            Get path to an uploaded file
+            </summary>
+            <param name="filename">Filename</param>
+            <returns>Full path to file or null if not found</returns>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.DeleteUploadedFile(System.String)">
+            <summary>
+            Delete an uploaded file
+            </summary>
+            <param name="filename">Filename to delete</param>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.UpdateName(System.String)">
+            <summary>
+            Update chat name
+            </summary>
+            <param name="name">New name</param>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.Pin">
+            <summary>
+            Pin this chat to the top
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.Unpin">
+            <summary>
+            Unpin this chat
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.UpdateLastUpdated">
+            <summary>
+            Update the last updated timestamp
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.Chat.UpdateLastMessagePreview(System.String)">
+            <summary>
+            Update the last message preview
+            </summary>
+        </member>
+        <member name="T:HazinaStore.Core.ChatRepository">
+            <summary>
+            Manages all chats within a project
+            Handles chat metadata, messages, and uploads
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.ChatRepository.ChatsPath">
+            <summary>
+            Path to the chats folder
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.ChatRepository.Project">
+            <summary>
+            Parent project
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.#ctor(System.String,HazinaStore.Core.Project)">
+            <summary>
+            Initialize chat repository for a project
+            </summary>
+            <param name="projectPath">Path to project folder</param>
+            <param name="project">Parent project</param>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.CreateChat(System.String)">
+            <summary>
+            Create a new chat
+            </summary>
+            <param name="name">Optional chat name (auto-generated if not provided)</param>
+            <returns>Newly created chat</returns>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.GetChat(System.String)">
+            <summary>
+            Get a specific chat by ID
+            </summary>
+            <param name="chatId">Chat identifier</param>
+            <returns>Chat instance or null if not found</returns>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.GetAllChats">
+            <summary>
+            Get metadata for all chats
+            </summary>
+            <returns>List of chat metadata</returns>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.DeleteChat(System.String)">
+            <summary>
+            Delete a chat
+            </summary>
+            <param name="chatId">Chat ID to delete</param>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.UpdateChatName(System.String,System.String)">
+            <summary>
+            Update chat name
+            </summary>
+            <param name="chatId">Chat ID</param>
+            <param name="name">New name</param>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.PinChat(System.String)">
+            <summary>
+            Pin a chat to the top
+            </summary>
+            <param name="chatId">Chat ID</param>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.UnpinChat(System.String)">
+            <summary>
+            Unpin a chat
+            </summary>
+            <param name="chatId">Chat ID</param>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.GetChatMetadata(System.String)">
+            <summary>
+            Get chat metadata by ID
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.UpdateChatMetadata(ChatMetadata)">
+            <summary>
+            Update chat metadata
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.GetMessages(System.String)">
+            <summary>
+            Get messages for a chat
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.SaveMessages(System.String,Hazina.Tools.Models.SerializableList{HazinaStore.Core.Models.ChatMessage})">
+            <summary>
+            Save messages for a chat
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.GetChatUploadsFolder(System.String)">
+            <summary>
+            Get chat uploads folder
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.GetChatMessagesFile(System.String)">
+            <summary>
+            Get path to chat messages file
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.GetChatsMetadataFilePath">
+            <summary>
+            Get path to chats metadata file
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.GetAllChatsMetadata">
+            <summary>
+            Load all chats metadata from disk
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.SaveChatsMetadata(System.Collections.Generic.List{ChatMetadata})">
+            <summary>
+            Save chats metadata to disk
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.ChatRepository.SaveMessagesToFile(System.String,Hazina.Tools.Models.SerializableList{HazinaStore.Core.Models.ChatMessage})">
+            <summary>
+            Save messages to file
+            </summary>
+        </member>
+        <member name="T:HazinaStore.Core.DocumentRepository">
+            <summary>
+            Manages all documents within a project
+            Handles both uploaded documents and generated documents
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.DocumentRepository.ProjectPath">
+            <summary>
+            Path to the project folder
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.DocumentRepository.Project">
+            <summary>
+            Parent project
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.#ctor(System.String,HazinaStore.Core.Project)">
+            <summary>
+            Initialize document repository for a project
+            </summary>
+            <param name="projectPath">Path to project folder</param>
+            <param name="project">Parent project</param>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.UploadDocument(System.String,System.Byte[],System.String,System.Collections.Generic.List{System.String})">
+            <summary>
+            Upload a document to the project
+            </summary>
+            <param name="filename">Original filename</param>
+            <param name="content">File content as bytes</param>
+            <param name="extractedText">Extracted text content (for PDFs, images, etc.)</param>
+            <param name="additionalTags">Additional tags to apply (e.g., "website", "product", "webpage")</param>
+            <returns>Uploaded document metadata</returns>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.DetermineTags(System.String,System.String,System.Collections.Generic.List{System.String})">
+            <summary>
+            Determine appropriate tags for a document based on type and source
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.GetUploadedDocuments">
+            <summary>
+            Get all uploaded documents metadata
+            NOTE: During transition, this returns empty list
+            Use the legacy GetUploadedFiles() for actual file list
+            </summary>
+            <returns>List of uploaded documents</returns>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.GetUploadedDocument(System.String)">
+            <summary>
+            Get a specific uploaded document by ID
+            </summary>
+            <param name="documentId">Document ID</param>
+            <returns>Uploaded document or null if not found</returns>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.DeleteUploadedDocument(System.String)">
+            <summary>
+            Delete an uploaded document
+            </summary>
+            <param name="documentId">Document ID to delete</param>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.GetUploadedDocumentsMetadata">
+            <summary>
+            Read uploaded documents metadata from disk
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.SaveUploadedDocumentsMetadata(System.Collections.Generic.List{HazinaStore.Core.Models.UploadedDocument})">
+            <summary>
+            Save uploaded documents metadata to disk
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.SaveFileWithRetry(System.String,System.Byte[],System.Int32)">
+            <summary>
+            Save file with retry logic to handle file locking issues
+            Retries up to 3 times with 100ms delay between attempts
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.SaveGeneratedDocument(System.String,System.String)">
+            <summary>
+            Create or update a generated document
+            </summary>
+            <param name="name">Document name</param>
+            <param name="content">Document content</param>
+            <returns>Generated document</returns>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.GetGeneratedDocument(System.String)">
+            <summary>
+            Get a generated document by name
+            </summary>
+            <param name="name">Document name</param>
+            <returns>Generated document or null if not found</returns>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.GetGeneratedDocuments">
+            <summary>
+            Get all generated documents in the project
+            </summary>
+            <returns>List of generated documents</returns>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.DeleteGeneratedDocument(System.String)">
+            <summary>
+            Delete a generated document
+            </summary>
+            <param name="name">Document name</param>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.GeneratedDocumentExists(System.String)">
+            <summary>
+            Check if a generated document exists
+            </summary>
+            <param name="name">Document name</param>
+            <returns>True if document exists</returns>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.GetAllDocuments">
+            <summary>
+            Get all documents (both uploaded and generated)
+            </summary>
+            <returns>List of all documents</returns>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.SearchDocuments(System.String)">
+            <summary>
+            Search documents by content or name
+            </summary>
+            <param name="query">Search query</param>
+            <returns>Matching documents</returns>
+        </member>
+        <member name="M:HazinaStore.Core.DocumentRepository.GetMimeType(System.String)">
+            <summary>
+            Get MIME type from filename
+            </summary>
+        </member>
+        <member name="T:HazinaStore.Core.GlobalChat">
+            <summary>
+            Manages global chats that have access to all projects
+            Global chats are stored in the .chats folder at the workspace level
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.GlobalChat.GlobalChatsPath">
+            <summary>
+            Path to the global chats folder (.chats)
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.GlobalChat.Workspace">
+            <summary>
+            Parent workspace
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.GlobalChat.#ctor(System.String,HazinaStore.Core.Workspace)">
+            <summary>
+            Initialize global chat system
+            </summary>
+            <param name="globalChatsPath">Path to .chats folder</param>
+            <param name="workspace">Parent workspace</param>
+        </member>
+        <member name="M:HazinaStore.Core.GlobalChat.CreateChat(System.String)">
+            <summary>
+            Create a new global chat
+            </summary>
+            <param name="name">Optional chat name</param>
+            <returns>Newly created chat</returns>
+        </member>
+        <member name="M:HazinaStore.Core.GlobalChat.GetChat(System.String)">
+            <summary>
+            Get a specific global chat by ID
+            </summary>
+            <param name="chatId">Chat identifier</param>
+            <returns>Chat instance or null if not found</returns>
+        </member>
+        <member name="M:HazinaStore.Core.GlobalChat.GetAllChats">
+            <summary>
+            Get metadata for all global chats
+            </summary>
+            <returns>List of chat metadata</returns>
+        </member>
+        <member name="M:HazinaStore.Core.GlobalChat.DeleteChat(System.String)">
+            <summary>
+            Delete a global chat
+            </summary>
+            <param name="chatId">Chat ID to delete</param>
+        </member>
+        <member name="M:HazinaStore.Core.GlobalChat.GetAllProjectEmbeddingsFiles">
+            <summary>
+            Get all project embeddings files (for RAG across all projects)
+            </summary>
+            <returns>List of paths to embeddings files</returns>
+        </member>
+        <member name="M:HazinaStore.Core.GlobalChat.GetChatMetadata(System.String)">
+            <summary>
+            Get chat metadata by ID
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.GlobalChat.GetChatMessagesFile(System.String)">
+            <summary>
+            Get path to chat messages file
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.GlobalChat.GetChatUploadsFolder(System.String)">
+            <summary>
+            Get chat uploads folder
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.GlobalChat.GetChatsMetadataFilePath">
+            <summary>
+            Get path to chats metadata file
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.GlobalChat.GetAllChatsMetadata">
+            <summary>
+            Load all chats metadata from disk
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.GlobalChat.SaveChatsMetadata(System.Collections.Generic.List{ChatMetadata})">
+            <summary>
+            Save chats metadata to disk
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.GlobalChat.SaveMessagesToFile(System.String,Hazina.Tools.Models.SerializableList{HazinaStore.Core.Models.ChatMessage})">
+            <summary>
+            Save messages to file
+            </summary>
+        </member>
+        <member name="T:HazinaStore.Core.GlobalChat.GlobalChatRepository">
+            <summary>
+            Internal repository class for global chats
+            Wraps ChatRepository functionality for global chats
+            </summary>
+        </member>
+        <member name="T:HazinaStore.Core.Interfaces.IDocument">
+            <summary>
+            Base interface for all documents in the system
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Interfaces.IDocument.Id">
+            <summary>
+            Unique identifier for the document
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Interfaces.IDocument.Name">
+            <summary>
+            Display name of the document
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Interfaces.IDocument.Content">
+            <summary>
+            Full text content of the document
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Interfaces.IDocument.Embedding">
+            <summary>
+            Vector embedding for semantic search (nullable if not yet generated)
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.Interfaces.IDocument.ToDescriptiveString">
+            <summary>
+            Convert document to a descriptive string format for AI context
+            </summary>
+        </member>
+        <member name="T:HazinaStore.Core.Models.ChatMessage">
+            <summary>
+            Represents a single message in a chat conversation
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.ChatMessage.Role">
+            <summary>
+            Role of the message sender (user, assistant, system)
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.ChatMessage.Text">
+            <summary>
+            Text content of the message
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.ChatMessage.Timestamp">
+            <summary>
+            Timestamp when the message was created
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.ChatMessage.Metadata">
+            <summary>
+            Optional metadata (e.g., file uploads, canvas edits)
+            </summary>
+        </member>
+        <member name="T:HazinaStore.Core.Models.ProjectMetadata">
+            <summary>
+            Metadata describing a project
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.ProjectMetadata.Id">
+            <summary>
+            Unique identifier (same as folder name)
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.ProjectMetadata.Name">
+            <summary>
+            Display name of the project
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.ProjectMetadata.Description">
+            <summary>
+            Project description
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.ProjectMetadata.Created">
+            <summary>
+            When the project was created
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.ProjectMetadata.Archived">
+            <summary>
+            Whether the project is archived
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.ProjectMetadata.Status">
+            <summary>
+            Current status of the project
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.ProjectMetadata.ProjectType">
+            <summary>
+            Type of project (customer, chat, global, etc.)
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.ProjectMetadata.IsPinned">
+            <summary>
+            Whether the project is pinned
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.ProjectMetadata.CustomFields">
+            <summary>
+            Custom metadata fields
+            </summary>
+        </member>
+        <member name="T:HazinaStore.Core.Models.UploadedDocument">
+            <summary>
+            Represents a document uploaded by the user
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.UploadedDocument.Filename">
+            <summary>
+            Original filename
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.UploadedDocument.FilePath">
+            <summary>
+            Path to the uploaded file
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.UploadedDocument.ExtractedText">
+            <summary>
+            Text content extracted from the file (for PDFs, images, etc.)
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.UploadedDocument.Content">
+            <summary>
+            Returns extracted text as content
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.UploadedDocument.UploadedAt">
+            <summary>
+            When the document was uploaded
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.UploadedDocument.FileSize">
+            <summary>
+            File size in bytes
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.UploadedDocument.MimeType">
+            <summary>
+            MIME type of the file
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.UploadedDocument.Tags">
+            <summary>
+            Tags for categorizing and filtering documents
+            Examples: "text", "image", "upload", "generated", "website", "webpage", "product"
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Models.UploadedDocument.Embedding">
+            <summary>
+            Vector embedding for semantic search
+            </summary>
+        </member>
+        <member name="T:HazinaStore.Core.Project">
+            <summary>
+            Represents a single project - a folder with documents, chats, and settings
+            Core entity that provides access to all project-related functionality
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Project.ProjectPath">
+            <summary>
+            Path to the project folder
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Project.Id">
+            <summary>
+            Project identifier (folder name)
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Project.Name">
+            <summary>
+            Project display name
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Project.Metadata">
+            <summary>
+            Project metadata
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Project.Documents">
+            <summary>
+            Document repository for this project
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Project.Chats">
+            <summary>
+            Chat repository for this project
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Project.Settings">
+            <summary>
+            Project-specific settings
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Project.Workspace">
+            <summary>
+            Parent workspace
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.Project.#ctor(System.String,HazinaStore.Core.Workspace)">
+            <summary>
+            Initialize a project from its folder path
+            </summary>
+            <param name="projectPath">Path to the project folder</param>
+            <param name="workspace">Parent workspace</param>
+        </member>
+        <member name="M:HazinaStore.Core.Project.LoadMetadata">
+            <summary>
+            Load project metadata from disk
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.Project.SaveMetadata">
+            <summary>
+            Save project metadata to disk
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.Project.UpdateMetadata(HazinaStore.Core.Models.ProjectMetadata)">
+            <summary>
+            Update project metadata
+            </summary>
+            <param name="metadata">New metadata</param>
+        </member>
+        <member name="M:HazinaStore.Core.Project.UpdateName(System.String)">
+            <summary>
+            Update project name
+            </summary>
+            <param name="name">New project name</param>
+        </member>
+        <member name="M:HazinaStore.Core.Project.UpdateDescription(System.String)">
+            <summary>
+            Update project description
+            </summary>
+            <param name="description">New description</param>
+        </member>
+        <member name="M:HazinaStore.Core.Project.Archive">
+            <summary>
+            Archive this project (soft delete)
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.Project.Unarchive">
+            <summary>
+            Unarchive this project
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.Project.Pin">
+            <summary>
+            Pin this project to the top
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.Project.Unpin">
+            <summary>
+            Unpin this project
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.Project.UpdateStatus(System.String)">
+            <summary>
+            Update project status
+            </summary>
+            <param name="status">New status</param>
+        </member>
+        <member name="M:HazinaStore.Core.Project.GetEmbeddingsFilePath">
+            <summary>
+            Get embeddings file path for this project
+            </summary>
+            <returns>Path to embeddings file</returns>
+        </member>
+        <member name="M:HazinaStore.Core.Project.HasEmbeddings">
+            <summary>
+            Check if embeddings exist for this project
+            </summary>
+            <returns>True if embeddings file exists</returns>
+        </member>
+        <member name="M:HazinaStore.Core.Project.GetUploadsFolder">
+            <summary>
+            Get the uploads folder path
+            </summary>
+            <returns>Path to Uploads folder</returns>
+        </member>
+        <member name="M:HazinaStore.Core.Project.GetChatsFolder">
+            <summary>
+            Get the chats folder path
+            </summary>
+            <returns>Path to chats folder</returns>
+        </member>
+        <member name="T:HazinaStore.Core.ProjectSettings">
+            <summary>
+            Manages project-specific settings and configuration
+            Handles custom prompts, action files, and WordPress settings
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.ProjectSettings.ProjectPath">
+            <summary>
+            Path to the project folder
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.ProjectSettings.Project">
+            <summary>
+            Parent project
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.#ctor(System.String,HazinaStore.Core.Project)">
+            <summary>
+            Initialize project settings
+            </summary>
+            <param name="projectPath">Path to project folder</param>
+            <param name="project">Parent project</param>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.GetCustomPrompt">
+            <summary>
+            Get the project-specific custom prompt
+            </summary>
+            <returns>Custom prompt text or null if not set</returns>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.SetCustomPrompt(System.String)">
+            <summary>
+            Set the project-specific custom prompt
+            </summary>
+            <param name="prompt">Custom prompt text</param>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.GetActionFiles">
+            <summary>
+            Get all action files (*.actions)
+            </summary>
+            <returns>Dictionary of action name to content</returns>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.GetActionFile(System.String)">
+            <summary>
+            Get a specific action file content
+            </summary>
+            <param name="actionName">Action name (without .actions extension)</param>
+            <returns>Action content or null if not found</returns>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.SaveActionFile(System.String,System.String)">
+            <summary>
+            Save an action file
+            </summary>
+            <param name="actionName">Action name (without .actions extension)</param>
+            <param name="content">Action content</param>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.DeleteActionFile(System.String)">
+            <summary>
+            Delete an action file
+            </summary>
+            <param name="actionName">Action name (without .actions extension)</param>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.ActionFileExists(System.String)">
+            <summary>
+            Check if an action file exists
+            </summary>
+            <param name="actionName">Action name (without .actions extension)</param>
+            <returns>True if action file exists</returns>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.GetWordpressSettings">
+            <summary>
+            Get WordPress settings for this project
+            </summary>
+            <returns>WordPress settings or null if not configured</returns>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.SaveWordpressSettings(Hazina.Tools.Models.WordpressSettings)">
+            <summary>
+            Save WordPress settings for this project
+            </summary>
+            <param name="settings">WordPress settings</param>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.GetPromptFiles">
+            <summary>
+            Get all prompt files in the project
+            </summary>
+            <returns>Dictionary of prompt file name to content</returns>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.GetPromptFile(System.String)">
+            <summary>
+            Get a specific prompt file content
+            </summary>
+            <param name="filename">Prompt filename (e.g., "project.prompts.config.json")</param>
+            <returns>Prompt content or null if not found</returns>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.SavePromptFile(System.String,System.String)">
+            <summary>
+            Save a prompt file
+            </summary>
+            <param name="filename">Prompt filename</param>
+            <param name="content">Prompt content (JSON)</param>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.DeletePromptFile(System.String)">
+            <summary>
+            Delete a prompt file
+            </summary>
+            <param name="filename">Prompt filename</param>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.GetContentHooks">
+            <summary>
+            Get content hooks data
+            </summary>
+            <returns>Content hooks JSON or null if not found</returns>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.SaveContentHooks(System.String)">
+            <summary>
+            Save content hooks data
+            </summary>
+            <param name="content">JSON content</param>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.GetBlogCategories">
+            <summary>
+            Get blog categories data
+            </summary>
+            <returns>Blog categories JSON or null if not found</returns>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.SaveBlogCategories(System.String)">
+            <summary>
+            Save blog categories data
+            </summary>
+            <param name="content">JSON content</param>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.GetContentPlanning">
+            <summary>
+            Get content planning data
+            </summary>
+            <returns>Content planning JSON or null if not found</returns>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.SaveContentPlanning(System.String)">
+            <summary>
+            Save content planning data
+            </summary>
+            <param name="content">JSON content</param>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.GetProjectFile(System.String)">
+            <summary>
+            Get a project file content
+            </summary>
+            <param name="filename">Filename</param>
+            <returns>File content or null if not found</returns>
+        </member>
+        <member name="M:HazinaStore.Core.ProjectSettings.SaveProjectFile(System.String,System.String)">
+            <summary>
+            Save a project file
+            </summary>
+            <param name="filename">Filename</param>
+            <param name="content">File content</param>
+        </member>
+        <member name="T:HazinaStore.Core.Workspace">
+            <summary>
+            Represents the entire workspace - the projects folder
+            Entry point for accessing all projects, global chats, and workspace settings
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Workspace.BasePath">
+            <summary>
+            Path to the projects folder (workspace root)
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.Workspace.Settings">
+            <summary>
+            Workspace-wide settings and configuration
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.Workspace.#ctor(System.String)">
+            <summary>
+            Initialize a workspace from the projects folder path
+            </summary>
+            <param name="basePath">Path to the projects folder</param>
+        </member>
+        <member name="M:HazinaStore.Core.Workspace.GetProject(System.String)">
+            <summary>
+            Get a specific project by ID (folder name)
+            </summary>
+            <param name="projectId">Project identifier (folder name)</param>
+            <returns>Project instance</returns>
+        </member>
+        <member name="M:HazinaStore.Core.Workspace.GetAllProjects">
+            <summary>
+            Get all non-archived projects
+            </summary>
+            <returns>List of all active projects</returns>
+        </member>
+        <member name="M:HazinaStore.Core.Workspace.GetAllProjects(System.Boolean)">
+            <summary>
+            Get all projects, optionally including archived ones
+            </summary>
+            <param name="includeArchived">Whether to include archived projects</param>
+            <returns>List of projects</returns>
+        </member>
+        <member name="M:HazinaStore.Core.Workspace.CreateProject(System.String,System.String,System.String)">
+            <summary>
+            Create a new project
+            </summary>
+            <param name="projectId">Unique project identifier (will be folder name)</param>
+            <param name="name">Display name for the project</param>
+            <param name="description">Optional project description</param>
+            <returns>Newly created project</returns>
+        </member>
+        <member name="M:HazinaStore.Core.Workspace.DeleteProject(System.String)">
+            <summary>
+            Delete a project (archives it instead of hard delete)
+            </summary>
+            <param name="projectId">Project to delete</param>
+        </member>
+        <member name="M:HazinaStore.Core.Workspace.GetGlobalChat">
+            <summary>
+            Get the global chat system (chats accessible across all projects)
+            </summary>
+            <returns>GlobalChat instance</returns>
+        </member>
+        <member name="M:HazinaStore.Core.Workspace.ProjectExists(System.String)">
+            <summary>
+            Check if a project exists
+            </summary>
+            <param name="projectId">Project identifier</param>
+            <returns>True if project exists</returns>
+        </member>
+        <member name="M:HazinaStore.Core.Workspace.SearchProjects(System.String)">
+            <summary>
+            Search for projects by name or description
+            </summary>
+            <param name="query">Search query</param>
+            <returns>Matching projects</returns>
+        </member>
+        <member name="T:HazinaStore.Core.WorkspaceSettings">
+            <summary>
+            Manages workspace-wide settings and configuration
+            Handles prompts, conversation starters, and other global settings
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Core.WorkspaceSettings.WorkspacePath">
+            <summary>
+            Path to the workspace folder
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.#ctor(System.String)">
+            <summary>
+            Initialize workspace settings
+            </summary>
+            <param name="workspacePath">Path to workspace folder</param>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.GetBasisPrompt">
+            <summary>
+            Get the basis (system) prompt
+            </summary>
+            <returns>Basis prompt text</returns>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.SetBasisPrompt(System.String)">
+            <summary>
+            Set the basis (system) prompt
+            </summary>
+            <param name="prompt">Prompt text</param>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.GetRolePrompts">
+            <summary>
+            Get all role prompts
+            </summary>
+            <returns>Dictionary of role prompts</returns>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.SaveRolePrompts(System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            Save role prompts
+            </summary>
+            <param name="rolePrompts">Dictionary of role prompts</param>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.GetRolePrompt(System.String)">
+            <summary>
+            Get a specific role prompt
+            </summary>
+            <param name="roleName">Role name</param>
+            <returns>Prompt text or null if not found</returns>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.SetRolePrompt(System.String,System.String)">
+            <summary>
+            Set a specific role prompt
+            </summary>
+            <param name="roleName">Role name</param>
+            <param name="prompt">Prompt text</param>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.GetSnelAanpassen">
+            <summary>
+            Get quick adjustment options (snel aanpassen)
+            </summary>
+            <returns>List of quick adjustment options</returns>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.SaveSnelAanpassen(System.Collections.Generic.List{System.Collections.Generic.KeyValuePair{System.String,System.String}})">
+            <summary>
+            Save quick adjustment options
+            </summary>
+            <param name="snelAanpassen">List of options</param>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.GetConversationStarters">
+            <summary>
+            Get conversation starters configuration
+            </summary>
+            <returns>Conversation starters data</returns>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.SaveConversationStarters(System.String)">
+            <summary>
+            Save conversation starters configuration
+            </summary>
+            <param name="conversationStarters">JSON string of conversation starters</param>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.GetUsers">
+            <summary>
+            Get users configuration
+            </summary>
+            <returns>Users data as JSON string</returns>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.SaveUsers(System.String)">
+            <summary>
+            Save users configuration
+            </summary>
+            <param name="users">JSON string of users</param>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.GetCustomSetting(System.String)">
+            <summary>
+            Get a custom setting file content
+            </summary>
+            <param name="filename">Setting filename</param>
+            <returns>File content or null if not found</returns>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.SaveCustomSetting(System.String,System.String)">
+            <summary>
+            Save a custom setting file
+            </summary>
+            <param name="filename">Setting filename</param>
+            <param name="content">File content</param>
+        </member>
+        <member name="M:HazinaStore.Core.WorkspaceSettings.CustomSettingExists(System.String)">
+            <summary>
+            Check if a custom setting file exists
+            </summary>
+            <param name="filename">Setting filename</param>
+            <returns>True if file exists</returns>
+        </member>
+        <member name="T:HazinaStore.Models.SqliteSettings">
+            <summary>
+            Configuration settings for SQLite storage backend.
+            SQLite provides single-file database storage ideal for local development and embedded scenarios.
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Models.SqliteSettings.Enabled">
+            <summary>
+            Enable SQLite storage backend.
+            When true, SQLite will be used instead of file-based storage.
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Models.SqliteSettings.DatabasePath">
+            <summary>
+            Path to the SQLite database file.
+            If relative, resolved from project folder.
+            Default: "./hazina.db" in project folder.
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Models.SqliteSettings.ConnectionString">
+            <summary>
+            Connection string for SQLite.
+            If not provided, auto-generated from DatabasePath.
+            Example: "Data Source=C:\path\to\hazina.db;Mode=ReadWriteCreate"
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Models.SqliteSettings.EmbeddingsOptional">
+            <summary>
+            Whether embeddings are optional (metadata-first mode).
+            When true, the system works without generating/storing embeddings.
+            Useful for cost savings or pure keyword/metadata search.
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Models.SqliteSettings.GetConnectionString(System.String)">
+            <summary>
+            Gets the connection string, using provided value or auto-generating from database path.
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Models.SqliteSettings.Validate">
+            <summary>
+            Validates the settings and throws if invalid.
+            </summary>
+        </member>
+        <member name="T:HazinaStore.Models.SupabaseSettings">
+            <summary>
+            Configuration settings for Supabase integration
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Models.SupabaseSettings.Url">
+            <summary>
+            Supabase project URL (e.g., https://your-project.supabase.co)
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Models.SupabaseSettings.AnonKey">
+            <summary>
+            Supabase anonymous key (public key for client-side use)
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Models.SupabaseSettings.ServiceRoleKey">
+            <summary>
+            Supabase service role key (server-side key with elevated permissions)
+            Use this for administrative operations
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Models.SupabaseSettings.Enabled">
+            <summary>
+            Whether to use Supabase as the primary database (defaults to false for optional integration)
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Models.SupabaseSettings.ConnectionString">
+            <summary>
+            Database connection string (for direct PostgreSQL access via Npgsql)
+            Format: Host=db.your-project.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=your-password
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Models.SupabaseSettings.UseSupabaseStorage">
+            <summary>
+            Whether to use Supabase Storage for file uploads (defaults to false)
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Models.SupabaseSettings.DefaultBucket">
+            <summary>
+            Default bucket name for Supabase Storage
+            </summary>
+        </member>
+        <member name="P:HazinaStore.Models.SupabaseSettings.UseSupabaseAuth">
+            <summary>
+            Whether to use Supabase Auth for authentication (defaults to false)
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Models.SupabaseSettings.IsValid">
+            <summary>
+            Validates that required settings are configured
+            </summary>
+        </member>
+        <member name="M:HazinaStore.Models.SupabaseSettings.GetConnectionString">
+            <summary>
+            Gets the connection string with fallback to environment variable
+            </summary>
+        </member>
+        <member name="P:ConversationMessage.MessageType">
+            <summary>
+            Type of message (Text, GuidanceQuestion, InputGuidance, SystemStatus, Artifact, SideEffect)
+            </summary>
+        </member>
+        <member name="P:ConversationMessage.UserIntent">
+            <summary>
+            Classified user intent (Query, Command, Feedback, Clarification)
+            </summary>
+        </member>
+        <member name="P:ConversationMessage.Guidance">
+            <summary>
+            Guidance data for interactive components (stored as JSON)
+            </summary>
+        </member>
+        <member name="P:ConversationMessage.Status">
+            <summary>
+            Status information for system feedback
+            </summary>
+        </member>
+        <member name="P:ConversationMessage.SideEffects">
+            <summary>
+            Side effects of tool execution
+            </summary>
+        </member>
+        <member name="T:Hazina.Tools.Core.Services.HazinaServiceBase`1">
+            <summary>
+            Abstract base class for all Hazina services.
+            Provides common functionality for configuration, logging, and error handling.
+            Reduces boilerplate code across 30+ service implementations.
+            </summary>
+            <typeparam name="TService">The concrete service type (for typed logging).</typeparam>
+        </member>
+        <member name="P:Hazina.Tools.Core.Services.HazinaServiceBase`1.Configuration">
+            <summary>
+            Application configuration.
+            </summary>
+        </member>
+        <member name="P:Hazina.Tools.Core.Services.HazinaServiceBase`1.Logger">
+            <summary>
+            Typed logger for this service.
+            </summary>
+        </member>
+        <member name="P:Hazina.Tools.Core.Services.HazinaServiceBase`1.ServiceName">
+            <summary>
+            Gets the service name for logging purposes.
+            </summary>
+        </member>
+        <member name="M:Hazina.Tools.Core.Services.HazinaServiceBase`1.#ctor(Microsoft.Extensions.Configuration.IConfiguration,Microsoft.Extensions.Logging.ILogger{`0})">
+            <summary>
+            Creates a new service instance with configuration and logging.
+            </summary>
+        </member>
+        <member name="M:Hazina.Tools.Core.Services.HazinaServiceBase`1.#ctor(Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Creates a new service instance with configuration only (logger is optional).
+            </summary>
+        </member>
+        <member name="M:Hazina.Tools.Core.Services.HazinaServiceBase`1.GetConfigValue(System.String,System.String)">
+            <summary>
+            Gets a configuration value from the specified section and key.
+            </summary>
+        </member>
+        <member name="M:Hazina.Tools.Core.Services.HazinaServiceBase`1.GetRequiredConfigValue(System.String,System.String)">
+            <summary>
+            Gets a required configuration value, throwing if not found.
+            </summary>
+        </member>
+        <member name="M:Hazina.Tools.Core.Services.HazinaServiceBase`1.LogInfo(System.String,System.Object[])">
+            <summary>
+            Logs an information message.
+            </summary>
+        </member>
+        <member name="M:Hazina.Tools.Core.Services.HazinaServiceBase`1.LogWarning(System.String,System.Object[])">
+            <summary>
+            Logs a warning message.
+            </summary>
+        </member>
+        <member name="M:Hazina.Tools.Core.Services.HazinaServiceBase`1.LogError(System.Exception,System.String,System.Object[])">
+            <summary>
+            Logs an error message with exception.
+            </summary>
+        </member>
+        <member name="M:Hazina.Tools.Core.Services.HazinaServiceBase`1.ExecuteAsync``1(System.String,System.Func{System.Threading.Tasks.Task{``0}})">
+            <summary>
+            Executes an async operation with standardized error handling and logging.
+            </summary>
+        </member>
+        <member name="M:Hazina.Tools.Core.Services.HazinaServiceBase`1.ExecuteAsync(System.String,System.Func{System.Threading.Tasks.Task})">
+            <summary>
+            Executes an async operation with standardized error handling and logging (no return value).
+            </summary>
+        </member>
+        <member name="M:Hazina.Tools.Core.Services.HazinaServiceBase`1.ExecuteWithRetryAsync``1(System.String,System.Func{System.Threading.Tasks.Task{``0}},System.Int32,System.Int32)">
+            <summary>
+            Executes an async operation with retry logic.
+            </summary>
+        </member>
+        <member name="T:Hazina.Tools.Core.Services.HazinaServiceBase">
+            <summary>
+            Abstract base class for services that don't need typed logging.
+            </summary>
+        </member>
+        <member name="P:Hazina.Tools.Core.Services.HazinaServiceBase.Configuration">
+            <summary>
+            Application configuration.
+            </summary>
+        </member>
+        <member name="M:Hazina.Tools.Core.Services.HazinaServiceBase.#ctor(Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Creates a new service instance with configuration.
+            </summary>
+        </member>
+        <member name="M:Hazina.Tools.Core.Services.HazinaServiceBase.GetConfigValue(System.String,System.String)">
+            <summary>
+            Gets a configuration value from the specified section and key.
+            </summary>
+        </member>
+        <member name="M:Hazina.Tools.Core.Services.HazinaServiceBase.GetRequiredConfigValue(System.String,System.String)">
+            <summary>
+            Gets a required configuration value, throwing if not found.
+            </summary>
+        </member>
+    </members>
+</doc>

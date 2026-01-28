@@ -1,0 +1,741 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Hazina.AI.Providers</name>
+    </assembly>
+    <members>
+        <member name="T:Hazina.AI.Providers.Core.IProviderOrchestrator">
+            <summary>
+            Main interface for provider orchestration
+            Provides high-level API for multi-provider management with failover, health monitoring, and cost tracking
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.IProviderOrchestrator.SetDefaultStrategy(Hazina.AI.Providers.Selection.SelectionStrategy)">
+            <summary>
+            Configure default selection strategy
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.IProviderOrchestrator.SetDefaultContext(Hazina.AI.Providers.Selection.SelectionContext)">
+            <summary>
+            Set default selection context
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.IProviderOrchestrator.GetProvider(System.String)">
+            <summary>
+            Get a provider by name
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.IProviderOrchestrator.GetProviderMetadata(System.String)">
+            <summary>
+            Get provider metadata
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.IProviderOrchestrator.SetProviderEnabled(System.String,System.Boolean)">
+            <summary>
+            Enable/disable a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.IProviderOrchestrator.SetProviderPriority(System.String,System.Int32)">
+            <summary>
+            Set provider priority (lower = higher priority)
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.IProviderOrchestrator.GetTotalCost">
+            <summary>
+            Get total cost across all providers
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.IProviderOrchestrator.GetCostByProvider">
+            <summary>
+            Get cost breakdown by provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.IProviderOrchestrator.SetBudget(System.String,System.Decimal,Hazina.AI.Providers.Cost.BudgetPeriod)">
+            <summary>
+            Set budget for a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.IProviderOrchestrator.AddBudgetAlert(System.String,System.Double,System.String)">
+            <summary>
+            Add budget alert
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.IProviderOrchestrator.GetHealthStatus(System.String)">
+            <summary>
+            Get health status for a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.IProviderOrchestrator.GetAllHealthStatuses">
+            <summary>
+            Get health status for all providers
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.IProviderOrchestrator.StartHealthMonitoringAsync(System.TimeSpan,System.Threading.CancellationToken)">
+            <summary>
+            Start health monitoring
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.IProviderOrchestrator.StopHealthMonitoring">
+            <summary>
+            Stop health monitoring
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.IProviderOrchestrator.ResetCircuitBreaker(System.String)">
+            <summary>
+            Reset circuit breaker for a provider
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Core.ProviderMetadata">
+            <summary>
+            Metadata about an LLM provider
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Core.ProviderType">
+            <summary>
+            Type of LLM provider
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Core.ProviderCapabilities">
+            <summary>
+            Capabilities supported by a provider
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Core.ProviderPricing">
+            <summary>
+            Pricing information for a provider
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Core.ProviderOrchestrator">
+            <summary>
+            Main orchestrator for multi-provider LLM management
+            Implements ILLMClient to provide transparent multi-provider support with failover, health monitoring, and cost tracking
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.RegisterProvider(System.String,Hazina.LLMs.ILLMClient,Hazina.AI.Providers.Core.ProviderMetadata)">
+            <summary>
+            Register a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.UnregisterProvider(System.String)">
+            <summary>
+            Unregister a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.GetProvider(System.String)">
+            <summary>
+            Get a provider by name
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.GetProviderMetadata(System.String)">
+            <summary>
+            Get provider metadata
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.SetProviderEnabled(System.String,System.Boolean)">
+            <summary>
+            Enable/disable a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.SetProviderPriority(System.String,System.Int32)">
+            <summary>
+            Set provider priority
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.SetDefaultStrategy(Hazina.AI.Providers.Selection.SelectionStrategy)">
+            <summary>
+            Set default selection strategy
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.SetDefaultContext(Hazina.AI.Providers.Selection.SelectionContext)">
+            <summary>
+            Set default selection context
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.GetTotalCost">
+            <summary>
+            Get total cost
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.GetCostByProvider">
+            <summary>
+            Get cost by provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.SetBudget(System.String,System.Decimal,Hazina.AI.Providers.Cost.BudgetPeriod)">
+            <summary>
+            Set budget
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.AddBudgetAlert(System.String,System.Double,System.String)">
+            <summary>
+            Add budget alert
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.GetHealthStatus(System.String)">
+            <summary>
+            Get health status
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.GetAllHealthStatuses">
+            <summary>
+            Get all health statuses
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.StartHealthMonitoringAsync(System.TimeSpan,System.Threading.CancellationToken)">
+            <summary>
+            Start health monitoring
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.StopHealthMonitoring">
+            <summary>
+            Stop health monitoring
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderOrchestrator.ResetCircuitBreaker(System.String)">
+            <summary>
+            Reset circuit breaker
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Core.ProviderRegistry">
+            <summary>
+            Registry of all available LLM providers
+            Maintains a mapping of provider names to their ILLMClient instances and metadata
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderRegistry.Register(System.String,Hazina.LLMs.ILLMClient,Hazina.AI.Providers.Core.ProviderMetadata)">
+            <summary>
+            Register a new provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderRegistry.Unregister(System.String)">
+            <summary>
+            Unregister a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderRegistry.GetProvider(System.String)">
+            <summary>
+            Get a provider by name
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderRegistry.GetMetadata(System.String)">
+            <summary>
+            Get provider metadata
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderRegistry.GetProviderNames">
+            <summary>
+            Get all registered provider names
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderRegistry.GetEnabledProviders">
+            <summary>
+            Get all enabled providers
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderRegistry.GetProvidersByPriority">
+            <summary>
+            Get all providers sorted by priority
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderRegistry.FindByCapability(System.Func{Hazina.AI.Providers.Core.ProviderCapabilities,System.Boolean})">
+            <summary>
+            Find providers by capability
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderRegistry.SetProviderEnabled(System.String,System.Boolean)">
+            <summary>
+            Enable/disable a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderRegistry.SetProviderPriority(System.String,System.Int32)">
+            <summary>
+            Update provider priority
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderRegistry.IsRegistered(System.String)">
+            <summary>
+            Check if a provider is registered
+            </summary>
+        </member>
+        <member name="P:Hazina.AI.Providers.Core.ProviderRegistry.Count">
+            <summary>
+            Get count of registered providers
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Core.ProviderRegistry.Clear">
+            <summary>
+            Clear all providers
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Cost.BudgetManager">
+            <summary>
+            Manages budgets and alerts for LLM costs
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.BudgetManager.SetBudget(System.String,System.Decimal,Hazina.AI.Providers.Cost.BudgetPeriod)">
+            <summary>
+            Set budget for a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.BudgetManager.SetGlobalBudget(System.Decimal,Hazina.AI.Providers.Cost.BudgetPeriod)">
+            <summary>
+            Set global budget across all providers
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.BudgetManager.GetBudget(System.String)">
+            <summary>
+            Get budget for a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.BudgetManager.IsBudgetExceeded(System.String)">
+            <summary>
+            Check if budget exceeded
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.BudgetManager.GetBudgetUtilization(System.String)">
+            <summary>
+            Get budget utilization percentage (0-100+)
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.BudgetManager.AddAlert(System.String,System.Double,System.String)">
+            <summary>
+            Add budget alert threshold
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.BudgetManager.CheckAlerts">
+            <summary>
+            Check for budget alerts
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.BudgetManager.ResetAlerts">
+            <summary>
+            Reset alerts
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.BudgetManager.GetTriggeredAlerts">
+            <summary>
+            Get all triggered alerts
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Cost.Budget">
+            <summary>
+            Budget configuration
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Cost.BudgetPeriod">
+            <summary>
+            Budget period
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Cost.BudgetAlert">
+            <summary>
+            Budget alert configuration
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Cost.BudgetAlertEventArgs">
+            <summary>
+            Budget alert event args
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Cost.CostTracker">
+            <summary>
+            Tracks costs and token usage across providers
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.CostTracker.RecordUsage(System.String,TokenUsageInfo)">
+            <summary>
+            Record token usage and cost
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.CostTracker.GetTotalCost(System.String)">
+            <summary>
+            Get total cost for a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.CostTracker.GetTotalCost">
+            <summary>
+            Get total cost across all providers
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.CostTracker.GetCostByProvider">
+            <summary>
+            Get cost breakdown by provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.CostTracker.GetUsage(System.String)">
+            <summary>
+            Get token usage for a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.CostTracker.GetTotalUsage">
+            <summary>
+            Get total token usage across all providers
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.CostTracker.Reset">
+            <summary>
+            Reset cost tracking
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.CostTracker.Reset(System.String)">
+            <summary>
+            Reset cost tracking for a specific provider
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Cost.ICostTracker">
+            <summary>
+            Interface for tracking LLM costs
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.ICostTracker.RecordUsage(System.String,TokenUsageInfo)">
+            <summary>
+            Record token usage and cost
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.ICostTracker.GetTotalCost(System.String)">
+            <summary>
+            Get total cost for a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.ICostTracker.GetTotalCost">
+            <summary>
+            Get total cost across all providers
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.ICostTracker.GetCostByProvider">
+            <summary>
+            Get cost breakdown by provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.ICostTracker.GetUsage(System.String)">
+            <summary>
+            Get token usage for a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.ICostTracker.GetTotalUsage">
+            <summary>
+            Get total token usage across all providers
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.ICostTracker.Reset">
+            <summary>
+            Reset cost tracking
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Cost.ICostTracker.Reset(System.String)">
+            <summary>
+            Reset cost tracking for a specific provider
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Health.IProviderHealthMonitor">
+            <summary>
+            Interface for provider health monitoring
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Health.IProviderHealthMonitor.CheckHealthAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Perform health check on a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Health.IProviderHealthMonitor.GetHealthStatus(System.String)">
+            <summary>
+            Get current health status
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Health.IProviderHealthMonitor.GetAllHealthStatuses">
+            <summary>
+            Get health status for all providers
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Health.IProviderHealthMonitor.RecordSuccess(System.String,System.TimeSpan)">
+            <summary>
+            Record a successful request
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Health.IProviderHealthMonitor.RecordFailure(System.String,System.String,System.Exception)">
+            <summary>
+            Record a failed request
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Health.IProviderHealthMonitor.StartMonitoringAsync(System.TimeSpan,System.Threading.CancellationToken)">
+            <summary>
+            Start continuous health monitoring
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Health.IProviderHealthMonitor.StopMonitoring">
+            <summary>
+            Stop continuous health monitoring
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Health.ProviderHealthMonitor">
+            <summary>
+            Monitors health of LLM providers
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Health.ProviderHealthMonitor.CheckHealthAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Perform health check using a simple test request
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Health.ProviderHealthMonitor.GetHealthStatus(System.String)">
+            <summary>
+            Get current health status for a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Health.ProviderHealthMonitor.GetAllHealthStatuses">
+            <summary>
+            Get all health statuses
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Health.ProviderHealthMonitor.RecordSuccess(System.String,System.TimeSpan)">
+            <summary>
+            Record a successful request
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Health.ProviderHealthMonitor.RecordFailure(System.String,System.String,System.Exception)">
+            <summary>
+            Record a failed request
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Health.ProviderHealthMonitor.StartMonitoringAsync(System.TimeSpan,System.Threading.CancellationToken)">
+            <summary>
+            Start continuous health monitoring
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Health.ProviderHealthMonitor.StopMonitoring">
+            <summary>
+            Stop continuous health monitoring
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Health.ProviderHealthStatus">
+            <summary>
+            Health status of a provider
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Health.HealthState">
+            <summary>
+            Health state enum
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Health.HealthCheckResult">
+            <summary>
+            Health check result
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Resilience.CircuitBreaker">
+            <summary>
+            Circuit breaker pattern implementation for provider resilience
+            </summary>
+        </member>
+        <member name="P:Hazina.AI.Providers.Resilience.CircuitBreaker.State">
+            <summary>
+            Current state of the circuit breaker
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Resilience.CircuitBreaker.ExecuteAsync``1(System.Func{System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)">
+            <summary>
+            Execute action with circuit breaker protection
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Resilience.CircuitBreaker.OnSuccess">
+            <summary>
+            Record a successful operation
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Resilience.CircuitBreaker.OnFailure">
+            <summary>
+            Record a failed operation
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Resilience.CircuitBreaker.Reset">
+            <summary>
+            Reset the circuit breaker
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Resilience.CircuitBreaker.GetMetrics">
+            <summary>
+            Get current metrics
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Resilience.CircuitBreakerState">
+            <summary>
+            Circuit breaker state
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Resilience.CircuitBreakerMetrics">
+            <summary>
+            Circuit breaker metrics
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Resilience.CircuitBreakerOpenException">
+            <summary>
+            Exception thrown when circuit breaker is open
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Resilience.FailoverHandler">
+            <summary>
+            Handles automatic failover between providers
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Resilience.FailoverHandler.ExecuteWithFailoverAsync``1(System.Func{Hazina.LLMs.ILLMClient,System.Threading.Tasks.Task{LLMResponse{``0}}},Hazina.AI.Providers.Selection.SelectionStrategy,Hazina.AI.Providers.Selection.SelectionContext,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Execute action with automatic failover
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Resilience.FailoverHandler.ResetCircuitBreaker(System.String)">
+            <summary>
+            Reset circuit breaker for a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Resilience.FailoverHandler.ResetAllCircuitBreakers">
+            <summary>
+            Reset all circuit breakers
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Resilience.FailoverHandler.GetCircuitBreakerMetrics(System.String)">
+            <summary>
+            Get circuit breaker metrics for a provider
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Resilience.FailoverHandler.GetAllCircuitBreakerMetrics">
+            <summary>
+            Get all circuit breaker metrics
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Resilience.FailoverException">
+            <summary>
+            Exception thrown when all failover attempts fail
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Resilience.RetryPolicy">
+            <summary>
+            Retry policy for provider operations
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Resilience.RetryPolicy.ExecuteAsync``1(System.Func{System.Threading.Tasks.Task{``0}},System.Func{System.Exception,System.Boolean},System.Action{System.Int32,System.Exception},System.Threading.CancellationToken)">
+            <summary>
+            Execute action with retry logic
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Resilience.RetryPolicy.CalculateDelay(System.Int32)">
+            <summary>
+            Calculate delay using exponential backoff
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Selection.IProviderSelector">
+            <summary>
+            Interface for provider selection
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Selection.IProviderSelector.SelectProvider(Hazina.AI.Providers.Selection.SelectionStrategy,Hazina.AI.Providers.Selection.SelectionContext)">
+            <summary>
+            Select a provider based on strategy and context
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Selection.IProviderSelector.SelectProviders(Hazina.AI.Providers.Selection.SelectionStrategy,System.Int32,Hazina.AI.Providers.Selection.SelectionContext)">
+            <summary>
+            Select multiple providers (for fallback chains)
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Selection.ProviderSelector">
+            <summary>
+            Selects providers based on various strategies
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Selection.ProviderSelector.SelectProvider(Hazina.AI.Providers.Selection.SelectionStrategy,Hazina.AI.Providers.Selection.SelectionContext)">
+            <summary>
+            Select a provider based on strategy
+            </summary>
+        </member>
+        <member name="M:Hazina.AI.Providers.Selection.ProviderSelector.SelectProviders(Hazina.AI.Providers.Selection.SelectionStrategy,System.Int32,Hazina.AI.Providers.Selection.SelectionContext)">
+            <summary>
+            Select multiple providers for fallback
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Selection.SelectionStrategy">
+            <summary>
+            Strategy for selecting which provider to use
+            </summary>
+        </member>
+        <member name="F:Hazina.AI.Providers.Selection.SelectionStrategy.Priority">
+            <summary>
+            Use the first available healthy provider by priority
+            </summary>
+        </member>
+        <member name="F:Hazina.AI.Providers.Selection.SelectionStrategy.LeastCost">
+            <summary>
+            Use the cheapest provider that meets requirements
+            </summary>
+        </member>
+        <member name="F:Hazina.AI.Providers.Selection.SelectionStrategy.FastestResponse">
+            <summary>
+            Use the fastest provider based on recent response times
+            </summary>
+        </member>
+        <member name="F:Hazina.AI.Providers.Selection.SelectionStrategy.RoundRobin">
+            <summary>
+            Round-robin across healthy providers
+            </summary>
+        </member>
+        <member name="F:Hazina.AI.Providers.Selection.SelectionStrategy.Random">
+            <summary>
+            Random selection from healthy providers
+            </summary>
+        </member>
+        <member name="F:Hazina.AI.Providers.Selection.SelectionStrategy.Specific">
+            <summary>
+            Use specific provider by name
+            </summary>
+        </member>
+        <member name="F:Hazina.AI.Providers.Selection.SelectionStrategy.Custom">
+            <summary>
+            Custom selection logic
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Selection.SelectionContext">
+            <summary>
+            Context for provider selection
+            </summary>
+        </member>
+        <member name="P:Hazina.AI.Providers.Selection.SelectionContext.RequiredCapabilities">
+            <summary>
+            Required capabilities
+            </summary>
+        </member>
+        <member name="P:Hazina.AI.Providers.Selection.SelectionContext.SpecificProvider">
+            <summary>
+            Specific provider name (for Specific strategy)
+            </summary>
+        </member>
+        <member name="P:Hazina.AI.Providers.Selection.SelectionContext.MaxCostPer1KTokens">
+            <summary>
+            Maximum acceptable cost per 1K tokens
+            </summary>
+        </member>
+        <member name="P:Hazina.AI.Providers.Selection.SelectionContext.MaxResponseTime">
+            <summary>
+            Maximum acceptable response time
+            </summary>
+        </member>
+        <member name="P:Hazina.AI.Providers.Selection.SelectionContext.MinSuccessRate">
+            <summary>
+            Minimum required success rate (0-1)
+            </summary>
+        </member>
+        <member name="P:Hazina.AI.Providers.Selection.SelectionContext.CustomSelector">
+            <summary>
+            Custom selection function
+            </summary>
+        </member>
+        <member name="P:Hazina.AI.Providers.Selection.SelectionContext.ExcludedProviders">
+            <summary>
+            Exclude specific providers
+            </summary>
+        </member>
+        <member name="T:Hazina.AI.Providers.Selection.SelectionResult">
+            <summary>
+            Result of provider selection
+            </summary>
+        </member>
+    </members>
+</doc>

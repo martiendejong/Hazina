@@ -1,0 +1,1103 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Hazina.API.Generic</name>
+    </assembly>
+    <members>
+        <member name="T:Hazina.API.Generic.CodeGen.ControllerCodeGenerator">
+            <summary>
+            Generates ASP.NET Core controllers from YAML definitions.
+            Controllers inherit from GenericEntityController for full CRUD.
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.CodeGen.ControllerCodeGenerator.GenerateMinimalController(Hazina.API.Generic.Configuration.EntityDefinition)">
+            <summary>
+            Generate a minimal controller that inherits all CRUD from GenericEntityController.
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.CodeGen.ControllerCodeGenerator.GenerateExtendedController(Hazina.API.Generic.Configuration.EntityDefinition)">
+            <summary>
+            Generate a controller with additional custom endpoints based on field types.
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.CodeGen.ControllerCodeGenerator.GenerateAllControllers(System.Collections.Generic.IEnumerable{Hazina.API.Generic.Configuration.EntityDefinition},System.Boolean)">
+            <summary>
+            Generate all controllers from a list of definitions.
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.CodeGen.EntityCodeGenerator">
+            <summary>
+            Generates C# entity classes from YAML definitions.
+            Produces strongly-typed entities that inherit from EntityBase.
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.CodeGen.EntityCodeGenerator.GenerateEntityClass(Hazina.API.Generic.Configuration.EntityDefinition)">
+            <summary>
+            Generate a complete C# entity class file.
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.CodeGen.EntityCodeGenerator.GenerateAllEntityClasses(System.Collections.Generic.IEnumerable{Hazina.API.Generic.Configuration.EntityDefinition})">
+            <summary>
+            Generate all entity classes from a list of definitions.
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.CodeGen.HazinaCodeGen">
+             <summary>
+             CLI tool for generating C# code from YAML entity definitions.
+            
+             Usage:
+               hazina-codegen generate-project --yaml entities.yaml --output ./MyApi --name MyApi
+               hazina-codegen generate-entity --yaml entities.yaml --output ./Entities
+               hazina-codegen generate-controller --yaml entities.yaml --output ./Controllers
+             </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.CodeGen.HazinaCodeGen.GenerateProjectAsync(System.String,System.String,System.String,System.Boolean)">
+            <summary>
+            Generate a complete project from YAML definitions.
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.CodeGen.HazinaCodeGen.GenerateEntitiesAsync(System.String,System.String,System.String)">
+            <summary>
+            Generate only entity classes from YAML definitions.
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.CodeGen.HazinaCodeGen.GenerateControllersAsync(System.String,System.String,System.String,System.String,System.Boolean)">
+            <summary>
+            Generate only controller classes from YAML definitions.
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.CodeGen.HazinaCodeGen.PreviewAsync(System.String)">
+            <summary>
+            Print the generated code to console (for preview).
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.CodeGen.ProjectGenerator">
+            <summary>
+            Generates a complete ASP.NET Core project from YAML entity definitions.
+            Creates a ready-to-run API project with entities, controllers, and configuration.
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.CodeGen.ProjectGenerator.GenerateProject(System.Collections.Generic.IEnumerable{Hazina.API.Generic.Configuration.EntityDefinition},System.Boolean)">
+            <summary>
+            Generate all project files.
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Configuration.EntityConfigurationLoader">
+            <summary>
+            Loads entity definitions from YAML or JSON configuration files.
+            This allows defining entities without writing C# code.
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Configuration.EntityConfigurationLoader.LoadFromFileAsync(System.String)">
+            <summary>
+            Loads entity definitions from a configuration file.
+            Supports .yaml, .yml, and .json files.
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Configuration.EntityConfigurationLoader.LoadFromDirectoryAsync(System.String,System.String)">
+            <summary>
+            Loads entity definitions from a directory.
+            Each file can contain one or more entity definitions.
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Configuration.EntityConfigurationLoader.LoadFromYaml(System.String)">
+            <summary>
+            Loads entity definitions from YAML content
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Configuration.EntityConfigurationLoader.LoadFromJson(System.String)">
+            <summary>
+            Loads entity definitions from JSON content
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Configuration.EntityConfigurationLoader.ValidateDefinitions(System.Collections.Generic.IEnumerable{Hazina.API.Generic.Configuration.EntityDefinition})">
+            <summary>
+            Validates entity definitions for correctness
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Configuration.EntityConfigurationRoot">
+            <summary>
+            Root object for entity configuration files
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityConfigurationRoot.Entities">
+            <summary>
+            List of entity definitions
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Configuration.EntityDefinition">
+            <summary>
+            Defines an entity via configuration (YAML/JSON).
+            This allows non-developers to define new entities without writing C# code.
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityDefinition.Name">
+            <summary>
+            The name of the entity (used in routes and table names)
+            Example: "Product", "BlogPost", "Customer"
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityDefinition.PluralName">
+            <summary>
+            Optional plural name for list routes. If not set, adds 's' to Name.
+            Example: "Products", "BlogPosts", "Customers"
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityDefinition.Description">
+            <summary>
+            Description shown in API documentation
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityDefinition.Fields">
+            <summary>
+            The fields/properties of this entity
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityDefinition.Features">
+            <summary>
+            Which features are enabled for this entity
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityDefinition.Access">
+            <summary>
+            Access control settings
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Configuration.EntityDefinition.GetPluralName">
+            <summary>
+            Gets the plural name, generating one if not explicitly set
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Configuration.FieldDefinition">
+            <summary>
+            Defines a field/property on an entity
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.FieldDefinition.Name">
+            <summary>
+            Field name (will be used as property name)
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.FieldDefinition.Type">
+            <summary>
+            Data type of the field
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.FieldDefinition.Required">
+            <summary>
+            Whether this field is required
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.FieldDefinition.MaxLength">
+            <summary>
+            Maximum length for string fields
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.FieldDefinition.MinValue">
+            <summary>
+            Minimum value for numeric fields
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.FieldDefinition.MaxValue">
+            <summary>
+            Maximum value for numeric fields
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.FieldDefinition.DefaultValue">
+            <summary>
+            Default value (as string, will be parsed)
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.FieldDefinition.Description">
+            <summary>
+            Description for API documentation
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.FieldDefinition.Searchable">
+            <summary>
+            Whether this field should be included in search/embedding
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.FieldDefinition.Indexed">
+            <summary>
+            Whether this field should be indexed in the database
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.FieldDefinition.ReferencesEntity">
+            <summary>
+            For reference fields: the name of the related entity
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Configuration.FieldType">
+            <summary>
+            Supported field types
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Configuration.EntityFeatures">
+            <summary>
+            Feature flags for an entity
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityFeatures.Crud">
+            <summary>
+            Enable CRUD operations (Create, Read, Update, Delete)
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityFeatures.Search">
+            <summary>
+            Enable full-text search
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityFeatures.Embedding">
+            <summary>
+            Enable RAG embedding generation
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityFeatures.SoftDelete">
+            <summary>
+            Enable soft delete instead of hard delete
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityFeatures.Timestamps">
+            <summary>
+            Track creation and modification timestamps
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityFeatures.Pagination">
+            <summary>
+            Enable list with pagination
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityFeatures.Filtering">
+            <summary>
+            Enable filtering via query parameters
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityFeatures.Sorting">
+            <summary>
+            Enable sorting via query parameters
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityFeatures.BulkOperations">
+            <summary>
+            Enable bulk operations (create/update/delete many)
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityFeatures.Export">
+            <summary>
+            Enable export to CSV/Excel
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.EntityFeatures.Realtime">
+            <summary>
+            Enable real-time updates via SignalR
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Configuration.AccessControl">
+            <summary>
+            Access control settings for an entity
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.AccessControl.RequiresAuth">
+            <summary>
+            Whether authentication is required to access this entity
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.AccessControl.ReadRoles">
+            <summary>
+            Roles that can read this entity (empty = all authenticated users)
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.AccessControl.CreateRoles">
+            <summary>
+            Roles that can create this entity
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.AccessControl.UpdateRoles">
+            <summary>
+            Roles that can update this entity
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.AccessControl.DeleteRoles">
+            <summary>
+            Roles that can delete this entity
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.AccessControl.OwnerOnly">
+            <summary>
+            Whether users can only access their own entities
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Configuration.AccessControl.TenantScoped">
+            <summary>
+            Whether access is scoped to tenant
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Controllers.GenericEntityController`2">
+             <summary>
+             Generic CRUD controller that provides standard REST endpoints for any entity type.
+             Inherit from this to get automatic CRUD operations, or use convention-based routing.
+            
+             Example usage:
+             <code>
+             public class ProductsController : GenericEntityController&lt;Product, Guid&gt;
+             {
+                 public ProductsController(IRepository&lt;Product&gt; repository) : base(repository) { }
+             }
+             </code>
+            
+             This gives you:
+             - GET /api/products - List all (with pagination, filtering, sorting)
+             - GET /api/products/{id} - Get by ID
+             - POST /api/products - Create
+             - PUT /api/products/{id} - Update
+             - DELETE /api/products/{id} - Delete (soft or hard)
+             - POST /api/products/bulk - Bulk create
+             - GET /api/products/search?q=term - Full-text search
+             </summary>
+             <typeparam name="TEntity">The entity type</typeparam>
+             <typeparam name="TKey">The primary key type</typeparam>
+        </member>
+        <member name="M:Hazina.API.Generic.Controllers.GenericEntityController`2.GetAll(System.Int32,System.Int32,System.String,System.Boolean,System.String)">
+            <summary>
+            GET /api/{entities}
+            List entities with optional pagination, filtering, and sorting
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Controllers.GenericEntityController`2.GetById(`1)">
+            <summary>
+            GET /api/{entities}/{id}
+            Get a single entity by ID
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Controllers.GenericEntityController`2.Create(`0)">
+            <summary>
+            POST /api/{entities}
+            Create a new entity
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Controllers.GenericEntityController`2.Update(`1,`0)">
+            <summary>
+            PUT /api/{entities}/{id}
+            Update an existing entity
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Controllers.GenericEntityController`2.PartialUpdate(`1,System.Text.Json.JsonDocument)">
+            <summary>
+            PATCH /api/{entities}/{id}
+            Partial update of an entity
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Controllers.GenericEntityController`2.Delete(`1,System.Boolean)">
+            <summary>
+            DELETE /api/{entities}/{id}
+            Delete an entity (soft or hard delete based on entity type)
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Controllers.GenericEntityController`2.BulkCreate(System.Collections.Generic.List{`0})">
+            <summary>
+            POST /api/{entities}/bulk
+            Create multiple entities at once
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Controllers.GenericEntityController`2.BulkDelete(System.Collections.Generic.List{`1},System.Boolean)">
+            <summary>
+            DELETE /api/{entities}/bulk
+            Delete multiple entities at once
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Controllers.GenericEntityController`2.Count(System.String)">
+            <summary>
+            GET /api/{entities}/count
+            Get total count of entities
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Controllers.GenericEntityController`2.Exists(`1)">
+            <summary>
+            GET /api/{entities}/exists/{id}
+            Check if an entity exists
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Controllers.GenericEntityController`2.BuildFilterExpression(System.String)">
+            <summary>
+            Override to customize filter expression building
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Controllers.GenericEntityController`2.ApplySorting(System.Linq.IQueryable{`0},System.String,System.Boolean)">
+            <summary>
+            Override to customize sorting
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Controllers.GenericEntityController`1">
+            <summary>
+            Convenience class for entities with Guid primary keys
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Controllers.PagedResult`1">
+            <summary>
+            Paginated result container
+            </summary>
+            <typeparam name="T">The entity type</typeparam>
+        </member>
+        <member name="P:Hazina.API.Generic.Controllers.PagedResult`1.Items">
+            <summary>
+            The items on this page
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Controllers.PagedResult`1.Page">
+            <summary>
+            Current page number (1-based)
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Controllers.PagedResult`1.PageSize">
+            <summary>
+            Number of items per page
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Controllers.PagedResult`1.TotalCount">
+            <summary>
+            Total number of items across all pages
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Controllers.PagedResult`1.TotalPages">
+            <summary>
+            Total number of pages
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Controllers.PagedResult`1.HasPreviousPage">
+            <summary>
+            Whether there is a previous page
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Controllers.PagedResult`1.HasNextPage">
+            <summary>
+            Whether there is a next page
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Controllers.BulkResult">
+            <summary>
+            Result of a bulk operation
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Controllers.BulkResult.SuccessCount">
+            <summary>
+            Number of successful operations
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Controllers.BulkResult.ErrorCount">
+            <summary>
+            Number of failed operations
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Controllers.BulkResult.Errors">
+            <summary>
+            Details of any errors
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Controllers.BulkError">
+            <summary>
+            Error detail for a single item in a bulk operation
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Controllers.BulkError.Index">
+            <summary>
+            Index of the item that failed
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Controllers.BulkError.Message">
+            <summary>
+            Error message
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Controllers.CountResult">
+            <summary>
+            Result of a count operation
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Controllers.CountResult.Count">
+            <summary>
+            Total count of entities
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Controllers.ExistsResult">
+            <summary>
+            Result of an exists check
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Controllers.ExistsResult.Exists">
+            <summary>
+            Whether the entity exists
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Dynamic.DynamicApiController">
+             <summary>
+             Catch-all controller that handles ALL entity types defined in YAML.
+             No individual controller files needed!
+            
+             Routes:
+               GET    /api/{entity}          - List all
+               GET    /api/{entity}/{id}     - Get by ID
+               POST   /api/{entity}          - Create
+               PUT    /api/{entity}/{id}     - Update
+               DELETE /api/{entity}/{id}     - Delete
+               GET    /api/{entity}/count    - Count
+               GET    /api/{entity}/search   - Search
+               GET    /api/{entity}/schema   - Get field definitions
+             </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicApiController.GetAll(System.String,System.Int32,System.Int32)">
+            <summary>
+            GET /api/{entity}
+            List all entities with pagination
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicApiController.GetById(System.String,System.Guid)">
+            <summary>
+            GET /api/{entity}/{id}
+            Get entity by ID
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicApiController.Create(System.String,System.Text.Json.JsonDocument)">
+             <summary>
+             POST /api/{entity}
+             Create a new entity
+             </summary>
+             <remarks>
+             **IMPORTANT:** Use `/api/{entity}/schema` to see required fields and data types for each entity.
+            
+             **Example for Document entity:**
+             ```json
+             {
+               "title": "My Document Title",
+               "content": "Document content goes here...",
+               "category": "Tutorial",
+               "tags": ["getting-started", "api"],
+               "author": "John Doe"
+             }
+             ```
+            
+             **Example for Task entity:**
+             ```json
+             {
+               "title": "Complete project documentation",
+               "description": "Write comprehensive API docs",
+               "priority": "high",
+               "dueDate": "2026-01-30T12:00:00Z",
+               "completed": false
+             }
+             ```
+            
+             **Example for Contact entity:**
+             ```json
+             {
+               "firstName": "Jane",
+               "lastName": "Smith",
+               "email": "jane.smith@example.com",
+               "phone": "+1234567890",
+               "company": "Acme Corp",
+               "notes": "Met at conference"
+             }
+             ```
+            
+             **Tips:**
+             - Don't include `id`, `createdAt`, `updatedAt`, or `isDeleted` - these are auto-generated
+             - Only required fields must be present (check `/api/{entity}/schema`)
+             - JSON fields (like `tags`) accept arrays or objects
+             - DateTime fields should use ISO 8601 format
+             </remarks>
+             <param name="entity">Entity type (e.g., 'Document', 'Task', 'Contact')</param>
+             <param name="body">JSON object with entity data</param>
+             <response code="201">Entity created successfully</response>
+             <response code="400">Invalid request body or validation error</response>
+             <response code="404">Entity type not found</response>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicApiController.Update(System.String,System.Guid,System.Text.Json.JsonDocument)">
+            <summary>
+            PUT /api/{entity}/{id}
+            Update an entity
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicApiController.Delete(System.String,System.Guid,System.Boolean)">
+            <summary>
+            DELETE /api/{entity}/{id}
+            Delete an entity (soft delete by default)
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicApiController.Count(System.String)">
+            <summary>
+            GET /api/{entity}/count
+            Get count of entities
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicApiController.Search(System.String,System.String,System.Int32)">
+            <summary>
+            GET /api/{entity}/search?q=term
+            Search entities
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicApiController.GetSchema(System.String)">
+             <summary>
+             GET /api/{entity}/schema
+             Get the field definitions for this entity type
+             </summary>
+             <remarks>
+             Returns complete schema information for the entity including:
+             - Field names and types
+             - Required vs optional fields
+             - Validation rules (max length, min/max values)
+             - Searchable fields
+             - Enabled features (CRUD, search, embedding, etc.)
+            
+             **Use this endpoint to discover what fields to send when creating/updating entities.**
+             </remarks>
+             <param name="entity">Entity type (e.g., 'Document', 'Task', 'Contact')</param>
+             <response code="200">Schema returned successfully</response>
+             <response code="404">Entity type not found</response>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicApiController.ListEntityTypes">
+             <summary>
+             GET /api/_entities
+             List all available entity types
+             </summary>
+             <remarks>
+             Returns a list of all entity types defined in the YAML configuration.
+            
+             For each entity type, you can:
+             - View schema: `GET /api/{entity}/schema`
+             - List items: `GET /api/{entity}`
+             - Create: `POST /api/{entity}`
+             - Search: `GET /api/{entity}/search?q=keyword`
+             </remarks>
+             <response code="200">List of entity types</response>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicApiController.GetApiGuide">
+             <summary>
+             GET /api/_guide
+             Complete API guide with schemas and examples
+             </summary>
+             <remarks>
+             Returns comprehensive documentation for all entities including:
+             - Complete field schemas
+             - Request body examples (JSON)
+             - Available endpoints
+             - Validation rules
+            
+             **This is your one-stop guide for using the API!**
+             </remarks>
+             <response code="200">Complete API guide</response>
+        </member>
+        <member name="T:Hazina.API.Generic.Dynamic.DynamicApiExtensions">
+            <summary>
+            Extension methods for configuring the dynamic API.
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicApiExtensions.AddHazinaDynamicApi(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.String)">
+            <summary>
+            Adds dynamic API services.
+            Entities are defined in YAML - no C# code needed!
+            </summary>
+            <param name="services">Service collection</param>
+            <param name="yamlPath">Path to the entities.yaml file</param>
+            <param name="databasePath">Path to SQLite database (created if not exists)</param>
+            <example>
+            <code>
+            // In Program.cs - THIS IS ALL YOU NEED:
+            builder.Services.AddHazinaDynamicApi("entities.yaml", "data.db");
+            </code>
+            </example>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicApiExtensions.AddHazinaDynamicApiFromDirectory(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.String,System.String)">
+            <summary>
+            Adds dynamic API services from a directory of YAML files.
+            Each file can contain multiple entity definitions.
+            </summary>
+            <param name="services">Service collection</param>
+            <param name="directoryPath">Directory containing entity YAML files</param>
+            <param name="pattern">File pattern (default: *.yaml)</param>
+            <param name="databasePath">Path to SQLite database</param>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicApiExtensions.AddHazinaDynamicApiFromYaml(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.String)">
+            <summary>
+            Adds dynamic API with inline entity definitions (for testing/demos).
+            </summary>
+            <param name="services">Service collection</param>
+            <param name="yamlContent">YAML content as string</param>
+            <param name="databasePath">Path to SQLite database</param>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicApiExtensions.UseHazinaDynamicApi(Microsoft.AspNetCore.Builder.IApplicationBuilder)">
+            <summary>
+            Maps the dynamic API endpoints.
+            </summary>
+            <param name="app">Application builder</param>
+            <example>
+            <code>
+            // In Program.cs:
+            app.MapHazinaDynamicApi();
+            </code>
+            </example>
+        </member>
+        <member name="T:Hazina.API.Generic.Dynamic.DynamicEntity">
+            <summary>
+            A dynamic entity that can hold any fields defined in YAML.
+            No C# class needed - fields are determined at runtime.
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Dynamic.DynamicEntity.Id">
+            <summary>
+            Entity ID (always present)
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Dynamic.DynamicEntity.CreatedAt">
+            <summary>
+            When created (always present)
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Dynamic.DynamicEntity.UpdatedAt">
+            <summary>
+            When last updated
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Dynamic.DynamicEntity.IsDeleted">
+            <summary>
+            Soft delete flag
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Dynamic.DynamicEntity.EntityType">
+            <summary>
+            The entity type name (e.g., "Document", "Note")
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Dynamic.DynamicEntity.Item(System.String)">
+            <summary>
+            Get a property value by name
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Dynamic.DynamicEntity.Properties">
+            <summary>
+            Get all properties as a dictionary
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicEntity.FromJson(System.String,System.String)">
+            <summary>
+            Create from JSON
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicEntity.FromDictionary(System.Collections.Generic.IDictionary{System.String,System.Object},System.String)">
+            <summary>
+            Create from dictionary
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicEntity.ToJson(System.Text.Json.JsonSerializerOptions)">
+            <summary>
+            Convert to JSON
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicEntity.ToDictionary">
+            <summary>
+            Convert to dictionary for storage
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Dynamic.DynamicEntityStore">
+            <summary>
+            Storage for dynamic entities using SQLite.
+            No EF Core needed - direct SQL for maximum flexibility.
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicEntityStore.InitializeAsync">
+            <summary>
+            Initialize database tables for all entities
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicEntityStore.GetAllAsync(System.String,System.Int32,System.Int32)">
+            <summary>
+            Get all entities of a type
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicEntityStore.GetByIdAsync(System.String,System.Guid)">
+            <summary>
+            Get entity by ID
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicEntityStore.CreateAsync(System.String,Hazina.API.Generic.Dynamic.DynamicEntity)">
+            <summary>
+            Create a new entity
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicEntityStore.UpdateAsync(System.String,System.Guid,Hazina.API.Generic.Dynamic.DynamicEntity)">
+            <summary>
+            Update an entity
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicEntityStore.DeleteAsync(System.String,System.Guid,System.Boolean)">
+            <summary>
+            Delete an entity (soft delete)
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicEntityStore.CountAsync(System.String)">
+            <summary>
+            Count entities
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicEntityStore.SearchAsync(System.String,System.String,System.Int32)">
+            <summary>
+            Search entities by text (simple LIKE search)
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicEntityStore.GetEntityTypes">
+            <summary>
+            Get all registered entity types
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Dynamic.DynamicEntityStore.GetDefinition(System.String)">
+            <summary>
+            Get entity definition
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Entities.EntityBase">
+            <summary>
+            Base class for entities with Guid primary key.
+            Inherit from this for standard entities.
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Entities.SoftDeleteEntityBase">
+            <summary>
+            Base class for entities with soft delete support.
+            Use when you need to keep deleted records in the database.
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Entities.TenantEntityBase">
+            <summary>
+            Base class for multi-tenant entities.
+            Use when the application supports multiple tenants.
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Entities.OwnedEntityBase">
+            <summary>
+            Base class for user-owned entities.
+            Use when entities belong to specific users.
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Entities.FullEntityBase">
+            <summary>
+            Full-featured base class with tenant, owner, soft delete, and timestamps.
+            Use this when you need all common features.
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Entities.EmbeddableEntityBase">
+            <summary>
+            Base class for RAG-enabled entities.
+            Use when entities should be searchable via embeddings.
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Entities.EmbeddableEntityBase.GetSearchableText">
+            <summary>
+            Override this to provide the text that will be embedded for RAG search.
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Entities.IEntity`1">
+            <summary>
+            Base interface for all entities managed by the generic API.
+            Entities must have a unique identifier.
+            </summary>
+            <typeparam name="TKey">The type of the primary key (usually Guid, int, or string)</typeparam>
+        </member>
+        <member name="P:Hazina.API.Generic.Entities.IEntity`1.Id">
+            <summary>
+            The unique identifier for this entity
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Entities.IEntity">
+            <summary>
+            Convenience interface for entities using Guid as primary key (most common case)
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Entities.IHasTimestamps">
+            <summary>
+            Interface for entities that track creation and modification timestamps
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Entities.IHasTimestamps.CreatedAt">
+            <summary>
+            When the entity was created (UTC)
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Entities.IHasTimestamps.UpdatedAt">
+            <summary>
+            When the entity was last modified (UTC)
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Entities.ISoftDelete">
+            <summary>
+            Interface for entities that support soft deletion
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Entities.ISoftDelete.IsDeleted">
+            <summary>
+            Whether the entity has been soft-deleted
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Entities.ISoftDelete.DeletedAt">
+            <summary>
+            When the entity was deleted (UTC), if deleted
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Entities.IHasTenant">
+            <summary>
+            Interface for entities that belong to a tenant (multi-tenant support)
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Entities.IHasTenant.TenantId">
+            <summary>
+            The tenant identifier this entity belongs to
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Entities.IHasOwner">
+            <summary>
+            Interface for entities that belong to a user
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Entities.IHasOwner.OwnerId">
+            <summary>
+            The user identifier who owns this entity
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Entities.ISearchable">
+            <summary>
+            Interface for entities that can be searched via text
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Entities.ISearchable.GetSearchableText">
+            <summary>
+            Gets the searchable text representation of this entity.
+            Used for full-text search and RAG embeddings.
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Entities.IEmbeddable">
+            <summary>
+            Interface for entities that support embedding/RAG integration
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Entities.IEmbeddable.Embedding">
+            <summary>
+            The embedding vector for this entity (if computed)
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Entities.IEmbeddable.EmbeddingComputedAt">
+            <summary>
+            When the embedding was last computed (UTC)
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Extensions.ApplicationBuilderExtensions">
+            <summary>
+            Extension methods for configuring the application pipeline
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Extensions.ApplicationBuilderExtensions.UseGenericEntityApi(Microsoft.AspNetCore.Builder.IApplicationBuilder)">
+            <summary>
+            Adds the tenant filtering middleware to the pipeline.
+            Call this after authentication middleware.
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Extensions.ServiceCollectionExtensions">
+            <summary>
+            Extension methods for configuring generic API services
+            </summary>
+        </member>
+        <member name="M:Hazina.API.Generic.Extensions.ServiceCollectionExtensions.AddGenericEntityApi``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.Action{Hazina.API.Generic.Extensions.GenericApiOptions})">
+            <summary>
+            Adds the generic entity API services to the DI container.
+            </summary>
+            <typeparam name="TContext">The DbContext type</typeparam>
+        </member>
+        <member name="M:Hazina.API.Generic.Extensions.ServiceCollectionExtensions.AddGenericEntity``1(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
+            <summary>
+            Registers a specific entity type for the generic API
+            </summary>
+            <typeparam name="TEntity">The entity type</typeparam>
+        </member>
+        <member name="M:Hazina.API.Generic.Extensions.ServiceCollectionExtensions.AddGenericEntity``2(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
+            <summary>
+            Registers a specific entity type with a custom repository
+            </summary>
+            <typeparam name="TEntity">The entity type</typeparam>
+            <typeparam name="TRepository">The custom repository type</typeparam>
+        </member>
+        <member name="T:Hazina.API.Generic.Extensions.GenericApiOptions">
+            <summary>
+            Options for configuring the generic entity API
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Extensions.GenericApiOptions.AutoDiscoverEntities">
+            <summary>
+            Whether to automatically discover and register entities implementing IEntity
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Extensions.GenericApiOptions.EntityAssemblies">
+            <summary>
+            Assemblies to scan for entity types. If empty, scans entry assembly.
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Extensions.GenericApiOptions.ConfigurationFilePath">
+            <summary>
+            Path to the entity configuration file (YAML or JSON)
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Extensions.GenericApiOptions.ConfigurationDirectoryPath">
+            <summary>
+            Path to a directory containing entity configuration files
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Extensions.GenericApiOptions.DefaultPageSize">
+            <summary>
+            Default page size for list operations
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Extensions.GenericApiOptions.MaxPageSize">
+            <summary>
+            Maximum page size for list operations
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Extensions.GenericApiOptions.EnableSoftDelete">
+            <summary>
+            Whether to enable soft delete by default
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Extensions.GenericApiOptions.EnableTimestamps">
+            <summary>
+            Whether to track timestamps by default
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Middleware.TenantFilterMiddleware">
+            <summary>
+            Middleware that extracts tenant and user context from the request.
+            This context can be used for automatic filtering of entities.
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Middleware.ITenantContext">
+            <summary>
+            Interface for accessing the current tenant/user context
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Middleware.ITenantContext.TenantId">
+            <summary>
+            The current tenant ID (if multi-tenant)
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Middleware.ITenantContext.UserId">
+            <summary>
+            The current user ID (if authenticated)
+            </summary>
+        </member>
+        <member name="P:Hazina.API.Generic.Middleware.ITenantContext.IsAuthenticated">
+            <summary>
+            Whether the current request is authenticated
+            </summary>
+        </member>
+        <member name="T:Hazina.API.Generic.Middleware.TenantContext">
+            <summary>
+            Default implementation of ITenantContext
+            Registered as scoped to persist across the request
+            </summary>
+        </member>
+    </members>
+</doc>

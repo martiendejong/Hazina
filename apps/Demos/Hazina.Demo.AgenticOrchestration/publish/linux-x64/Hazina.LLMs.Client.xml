@@ -1,0 +1,427 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Hazina.LLMs.Client</name>
+    </assembly>
+    <members>
+        <member name="T:Hazina.LLMs.Configuration.HazinaConfigBase">
+            <summary>
+            Abstract base class for LLM provider configurations.
+            Provides common functionality for API key, model, endpoint, and logging configuration.
+            Reduces code duplication across 7+ provider config classes (~400 LOC reduction).
+            </summary>
+        </member>
+        <member name="P:Hazina.LLMs.Configuration.HazinaConfigBase.ApiKey">
+            <inheritdoc />
+        </member>
+        <member name="P:Hazina.LLMs.Configuration.HazinaConfigBase.Model">
+            <inheritdoc />
+        </member>
+        <member name="P:Hazina.LLMs.Configuration.HazinaConfigBase.Endpoint">
+            <inheritdoc />
+        </member>
+        <member name="P:Hazina.LLMs.Configuration.HazinaConfigBase.LogPath">
+            <inheritdoc />
+        </member>
+        <member name="P:Hazina.LLMs.Configuration.HazinaConfigBase.ConfigurationSectionName">
+            <summary>
+            Gets the configuration section name for this provider (e.g., "OpenAI", "Anthropic").
+            </summary>
+        </member>
+        <member name="P:Hazina.LLMs.Configuration.HazinaConfigBase.DefaultEndpoint">
+            <summary>
+            Gets the default endpoint URL for this provider.
+            </summary>
+        </member>
+        <member name="P:Hazina.LLMs.Configuration.HazinaConfigBase.DefaultModel">
+            <summary>
+            Gets the default model for this provider.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Configuration.HazinaConfigBase.Validate">
+            <summary>
+            Validates the configuration and returns validation errors.
+            Override to add provider-specific validation.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Configuration.HazinaConfigBase.ApplyDefaults">
+            <summary>
+            Applies default values for properties that are not set.
+            Called after binding from configuration.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Configuration.HazinaConfigBase.LoadFromConfiguration``1">
+            <summary>
+            Loads configuration from appsettings.json using the provider's section name.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Configuration.HazinaConfigBase.LoadFromConfiguration``1(Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Loads configuration from an IConfiguration instance.
+            </summary>
+        </member>
+        <member name="T:Hazina.LLMs.Configuration.IProviderConfig">
+            <summary>
+            Common interface for all LLM provider configurations.
+            Enables generic factory patterns and reduces type-checking logic.
+            </summary>
+        </member>
+        <member name="P:Hazina.LLMs.Configuration.IProviderConfig.ApiKey">
+            <summary>
+            API key for authentication with the provider.
+            </summary>
+        </member>
+        <member name="P:Hazina.LLMs.Configuration.IProviderConfig.Model">
+            <summary>
+            Model identifier (e.g., "gpt-4o", "claude-3-5-sonnet", "gemini-1.5-pro").
+            </summary>
+        </member>
+        <member name="P:Hazina.LLMs.Configuration.IProviderConfig.Endpoint">
+            <summary>
+            Base endpoint URL for the provider API.
+            </summary>
+        </member>
+        <member name="P:Hazina.LLMs.Configuration.IProviderConfig.LogPath">
+            <summary>
+            Path for logging API interactions (optional).
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Configuration.IProviderConfig.Validate">
+            <summary>
+            Validates the configuration and returns any validation errors.
+            </summary>
+        </member>
+        <member name="T:Hazina.LLMs.ILLMClient">
+            <summary>
+            Core interface for interacting with Large Language Model (LLM) providers.
+            </summary>
+            <remarks>
+            <para>
+            This interface abstracts the communication with various LLM providers (OpenAI, Anthropic, Gemini, etc.),
+            providing a unified API for chat completions, embeddings, image generation, and text-to-speech.
+            </para>
+            <para>
+            Implementations include:
+            <list type="bullet">
+              <item><description><c>OpenAIClientWrapper</c> - OpenAI GPT models</description></item>
+              <item><description><c>ClaudeClientWrapper</c> - Anthropic Claude models</description></item>
+              <item><description><c>GeminiClientWrapper</c> - Google Gemini models</description></item>
+              <item><description><c>OllamaClientWrapper</c> - Local Ollama models</description></item>
+            </list>
+            </para>
+            </remarks>
+            <example>
+            Basic usage:
+            <code>
+            var llm = new OpenAIClientWrapper(new OpenAIConfig(apiKey, model));
+            var messages = new List&lt;HazinaChatMessage&gt;
+            {
+                new() { Role = HazinaMessageRole.User, Text = "Hello!" }
+            };
+            var response = await llm.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, CancellationToken.None);
+            Console.WriteLine(response.Result);
+            </code>
+            </example>
+        </member>
+        <member name="M:Hazina.LLMs.ILLMClient.GenerateEmbedding(System.String)">
+            <summary>
+            Generates a vector embedding for the given text data.
+            </summary>
+            <param name="data">The text to embed.</param>
+            <returns>An <see cref="T:Embedding"/> containing the vector representation of the input text.</returns>
+            <remarks>
+            Embeddings are used for semantic search, document similarity, and RAG (Retrieval-Augmented Generation).
+            The embedding dimension depends on the model (e.g., 1536 for OpenAI text-embedding-ada-002).
+            </remarks>
+            <example>
+            <code>
+            var embedding = await llm.GenerateEmbedding("How does authentication work?");
+            // Use embedding.Vector for similarity calculations
+            </code>
+            </example>
+        </member>
+        <member name="M:Hazina.LLMs.ILLMClient.GetImage(System.String,HazinaChatResponseFormat,Hazina.LLMs.IToolsContext,System.Collections.Generic.List{ImageData},System.Threading.CancellationToken)">
+            <summary>
+            Generates an image based on the given prompt.
+            </summary>
+            <param name="prompt">The text description of the image to generate.</param>
+            <param name="responseFormat">The desired response format.</param>
+            <param name="toolsContext">Optional tools context for tool calling during generation.</param>
+            <param name="images">Optional reference images for image-to-image generation.</param>
+            <param name="cancel">Cancellation token to cancel the operation.</param>
+            <returns>An <see cref="T:LLMResponse`1"/> containing the generated image and token usage information.</returns>
+            <exception cref="T:System.NotSupportedException">Thrown when the LLM provider does not support image generation.</exception>
+        </member>
+        <member name="M:Hazina.LLMs.ILLMClient.GetResponse(System.Collections.Generic.List{HazinaChatMessage},HazinaChatResponseFormat,Hazina.LLMs.IToolsContext,System.Collections.Generic.List{ImageData},System.Threading.CancellationToken)">
+            <summary>
+            Sends a chat conversation to the LLM and returns the response as a string.
+            </summary>
+            <param name="messages">The conversation history as a list of messages.</param>
+            <param name="responseFormat">The desired response format (Text or JSON).</param>
+            <param name="toolsContext">Optional tools context enabling function/tool calling.</param>
+            <param name="images">Optional images to include in the conversation (for multimodal models).</param>
+            <param name="cancel">Cancellation token to cancel the operation.</param>
+            <returns>An <see cref="T:LLMResponse`1"/> containing the response text and token usage information.</returns>
+            <example>
+            <code>
+            var messages = new List&lt;HazinaChatMessage&gt;
+            {
+                new() { Role = HazinaMessageRole.System, Text = "You are a helpful assistant." },
+                new() { Role = HazinaMessageRole.User, Text = "What is the capital of France?" }
+            };
+            var response = await llm.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, CancellationToken.None);
+            Console.WriteLine($"Answer: {response.Result}");
+            Console.WriteLine($"Tokens used: {response.TokenUsage?.TotalTokens}");
+            </code>
+            </example>
+        </member>
+        <member name="M:Hazina.LLMs.ILLMClient.GetResponse``1(System.Collections.Generic.List{HazinaChatMessage},Hazina.LLMs.IToolsContext,System.Collections.Generic.List{ImageData},System.Threading.CancellationToken)">
+            <summary>
+            Sends a chat conversation to the LLM and returns a strongly-typed response.
+            </summary>
+            <typeparam name="ResponseType">The type to deserialize the response into. Must inherit from <see cref="T:ChatResponse`1"/>.</typeparam>
+            <param name="messages">The conversation history as a list of messages.</param>
+            <param name="toolsContext">Optional tools context enabling function/tool calling.</param>
+            <param name="images">Optional images to include in the conversation (for multimodal models).</param>
+            <param name="cancel">Cancellation token to cancel the operation.</param>
+            <returns>An <see cref="T:LLMResponse`1"/> containing the typed response and token usage information.</returns>
+            <remarks>
+            This method is useful for structured outputs where you expect the LLM to respond in a specific format.
+            The LLM will be instructed to return JSON matching the schema of <typeparamref name="ResponseType"/>.
+            </remarks>
+        </member>
+        <member name="M:Hazina.LLMs.ILLMClient.GetResponseStream(System.Collections.Generic.List{HazinaChatMessage},System.Action{System.String},HazinaChatResponseFormat,Hazina.LLMs.IToolsContext,System.Collections.Generic.List{ImageData},System.Threading.CancellationToken)">
+            <summary>
+            Sends a chat conversation to the LLM with streaming response.
+            </summary>
+            <param name="messages">The conversation history as a list of messages.</param>
+            <param name="onChunkReceived">Callback invoked for each text chunk received from the stream.</param>
+            <param name="responseFormat">The desired response format.</param>
+            <param name="toolsContext">Optional tools context enabling function/tool calling.</param>
+            <param name="images">Optional images to include in the conversation (for multimodal models).</param>
+            <param name="cancel">Cancellation token to cancel the operation.</param>
+            <returns>An <see cref="T:LLMResponse`1"/> containing the complete response text and token usage information.</returns>
+            <remarks>
+            Use this method for real-time UI updates where you want to display text as it's generated.
+            The <paramref name="onChunkReceived"/> callback is called for each token/chunk received.
+            </remarks>
+            <example>
+            <code>
+            var response = await llm.GetResponseStream(
+                messages,
+                chunk => Console.Write(chunk),  // Display each chunk as it arrives
+                HazinaChatResponseFormat.Text,
+                null, null,
+                CancellationToken.None);
+            </code>
+            </example>
+        </member>
+        <member name="M:Hazina.LLMs.ILLMClient.GetResponseStream``1(System.Collections.Generic.List{HazinaChatMessage},System.Action{System.String},Hazina.LLMs.IToolsContext,System.Collections.Generic.List{ImageData},System.Threading.CancellationToken)">
+            <summary>
+            Sends a chat conversation to the LLM with streaming and returns a strongly-typed response.
+            </summary>
+            <typeparam name="ResponseType">The type to deserialize the response into. Must inherit from <see cref="T:ChatResponse`1"/>.</typeparam>
+            <param name="messages">The conversation history as a list of messages.</param>
+            <param name="onChunkReceived">Callback invoked for each text chunk received from the stream.</param>
+            <param name="toolsContext">Optional tools context enabling function/tool calling.</param>
+            <param name="images">Optional images to include in the conversation (for multimodal models).</param>
+            <param name="cancel">Cancellation token to cancel the operation.</param>
+            <returns>An <see cref="T:LLMResponse`1"/> containing the typed response and token usage information.</returns>
+        </member>
+        <member name="M:Hazina.LLMs.ILLMClient.SpeakStream(System.String,System.String,System.Action{System.Byte[]},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Converts text to speech and streams the audio bytes.
+            </summary>
+            <param name="text">The text to convert to speech.</param>
+            <param name="voice">The voice identifier to use (provider-specific, e.g., "alloy", "echo", "nova" for OpenAI).</param>
+            <param name="onAudioChunk">Callback invoked for each audio chunk received.</param>
+            <param name="mimeType">The desired audio MIME type (e.g., "audio/mpeg", "audio/opus").</param>
+            <param name="cancel">Cancellation token to cancel the operation.</param>
+            <returns>A task that completes when all audio has been streamed.</returns>
+            <exception cref="T:System.NotSupportedException">Thrown when the LLM provider does not support text-to-speech.</exception>
+            <example>
+            <code>
+            using var audioStream = new MemoryStream();
+            await llm.SpeakStream(
+                "Hello, world!",
+                "nova",
+                chunk => audioStream.Write(chunk),
+                "audio/mpeg",
+                CancellationToken.None);
+            // audioStream now contains the complete audio data
+            </code>
+            </example>
+        </member>
+        <member name="P:Hazina.LLMs.IToolsContext.OnToolExecuted">
+            <summary>
+            Optional callback invoked after each tool execution.
+            Parameters: toolName, toolResult, turnNumber
+            </summary>
+        </member>
+        <member name="P:Hazina.LLMs.IToolsContext.ShouldContinue">
+            <summary>
+            Optional callback to determine if the agentic loop should continue after a non-tool response.
+            Parameters: currentResponse, turnNumber
+            Returns: true to inject continuation prompt, false to stop
+            Default behavior (when null): stop on non-tool response
+            </summary>
+        </member>
+        <member name="P:Hazina.LLMs.IToolsContext.ContinuationPrompt">
+            <summary>
+            Optional prompt to inject when ShouldContinue returns true.
+            This prompts the model to continue working on the task.
+            </summary>
+        </member>
+        <member name="P:Hazina.LLMs.IToolsContext.MaxContinuations">
+            <summary>
+            Maximum number of continuation prompts to inject (prevents infinite loops).
+            Default: 5
+            </summary>
+        </member>
+        <member name="T:Hazina.LLMs.PromptBasedToolsOrchestrator">
+            <summary>
+            Provides prompt-engineering based tool calling for LLM models that don't support native function calling.
+            Works with any ILLMClient implementation by converting tools to text descriptions and parsing JSON responses.
+            </summary>
+            <remarks>
+            This orchestrator enables tool/function calling for models without native support (e.g., phi3, llama3, older models).
+            It works by:
+            1. Generating a system prompt that describes available tools in human-readable format
+            2. Instructing the model to respond with JSON when it wants to call a tool
+            3. Detecting JSON tool call responses and executing the corresponding tool
+            4. Feeding tool results back to the model and continuing the conversation
+            5. Repeating until the model provides a final answer (max iterations configurable)
+            </remarks>
+        </member>
+        <member name="M:Hazina.LLMs.PromptBasedToolsOrchestrator.#ctor(System.Int32,Microsoft.Extensions.Logging.ILogger{Hazina.LLMs.PromptBasedToolsOrchestrator})">
+            <summary>
+            Creates a new instance of PromptBasedToolsOrchestrator
+            </summary>
+            <param name="maxToolCalls">Maximum number of tool calls allowed in a single conversation (default: 50)</param>
+            <param name="logger">Optional logger for diagnostic output</param>
+        </member>
+        <member name="M:Hazina.LLMs.PromptBasedToolsOrchestrator.GetResponseWithToolsAsync(System.Collections.Generic.List{HazinaChatMessage},Hazina.LLMs.IToolsContext,System.Func{System.Collections.Generic.List{HazinaChatMessage},System.Threading.CancellationToken,System.Threading.Tasks.Task{LLMResponse{System.String}}},System.Threading.CancellationToken)">
+            <summary>
+            Orchestrates tool calling for a non-streaming LLM request
+            </summary>
+            <param name="messages">Conversation messages</param>
+            <param name="toolsContext">Tools context with available tools</param>
+            <param name="llmCall">Function to call the underlying LLM (without tools)</param>
+            <param name="cancel">Cancellation token</param>
+            <returns>Final LLM response after all tool calls are completed</returns>
+        </member>
+        <member name="M:Hazina.LLMs.PromptBasedToolsOrchestrator.GetResponseStreamWithToolsAsync(System.Collections.Generic.List{HazinaChatMessage},Hazina.LLMs.IToolsContext,System.Func{System.Collections.Generic.List{HazinaChatMessage},System.Action{System.String},System.Threading.CancellationToken,System.Threading.Tasks.Task{LLMResponse{System.String}}},System.Action{System.String},System.Threading.CancellationToken)">
+            <summary>
+            Orchestrates tool calling for a streaming LLM request
+            </summary>
+            <param name="messages">Conversation messages</param>
+            <param name="toolsContext">Tools context with available tools</param>
+            <param name="llmCall">Function to call the underlying LLM with streaming (without tools)</param>
+            <param name="onChunkReceived">Callback for each chunk received</param>
+            <param name="cancel">Cancellation token</param>
+            <returns>Final LLM response after all tool calls are completed</returns>
+        </member>
+        <member name="M:Hazina.LLMs.PromptBasedToolsOrchestrator.GenerateToolsSystemPrompt(Hazina.LLMs.IToolsContext)">
+            <summary>
+            Generates a system prompt that describes available tools for models without native tool support.
+            The model is instructed to respond with JSON when it wants to call a tool.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.PromptBasedToolsOrchestrator.IsToolCallResponse(System.String,Hazina.LLMs.PromptToolCall@)">
+            <summary>
+            Detects if the model response is a tool call request.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.PromptBasedToolsOrchestrator.ExecuteToolCallAsync(Hazina.LLMs.IToolsContext,System.Collections.Generic.List{HazinaChatMessage},Hazina.LLMs.PromptToolCall,System.Threading.CancellationToken)">
+            <summary>
+            Executes a tool call and returns the result.
+            </summary>
+        </member>
+        <member name="T:Hazina.LLMs.PromptToolCall">
+            <summary>
+            Model for prompt-based tool call requests (for models without native tool support)
+            </summary>
+        </member>
+        <member name="T:Hazina.LLMs.Providers.LLMProviderBase`1">
+            <summary>
+            Abstract base class for LLM provider client implementations.
+            Provides common HTTP client functionality, retry logic, and error handling.
+            Reduces boilerplate code across 8 provider implementations (~300 LOC reduction).
+            </summary>
+            <typeparam name="TConfig">The configuration type for this provider.</typeparam>
+        </member>
+        <member name="P:Hazina.LLMs.Providers.LLMProviderBase`1.Config">
+            <summary>
+            The provider configuration.
+            </summary>
+        </member>
+        <member name="P:Hazina.LLMs.Providers.LLMProviderBase`1.Http">
+            <summary>
+            Shared HTTP client for API calls.
+            </summary>
+        </member>
+        <member name="F:Hazina.LLMs.Providers.LLMProviderBase`1.JsonOptions">
+            <summary>
+            JSON serializer options for request/response handling.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Providers.LLMProviderBase`1.#ctor(`0)">
+            <summary>
+            Creates a new provider instance with the specified configuration.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Providers.LLMProviderBase`1.CreateHttpClientInternal">
+            <summary>
+            Internal method to create HttpClient without virtual call in constructor.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Providers.LLMProviderBase`1.CreateHttpClient">
+            <summary>
+            Creates and configures the HTTP client for this provider.
+            Note: Not used in constructor to avoid virtual method call.
+            Use CreateHttpClientInternal for initialization.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Providers.LLMProviderBase`1.ConfigureHttpClient(System.Net.Http.HttpClient)">
+            <summary>
+            Configures the HTTP client with authentication headers.
+            Override to add provider-specific headers.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Providers.LLMProviderBase`1.PostJsonAsync``2(System.String,``0,System.Threading.CancellationToken)">
+            <summary>
+            Sends a POST request with JSON content and deserializes the response.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Providers.LLMProviderBase`1.PostStreamAsync``1(System.String,``0,System.Threading.CancellationToken)">
+            <summary>
+            Sends a POST request and returns the raw response stream for SSE handling.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Providers.LLMProviderBase`1.ExecuteWithRetryAsync``1(System.Func{System.Threading.Tasks.Task{``0}},System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Executes an operation with retry logic for transient failures.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Providers.LLMProviderBase`1.IsTransientError(System.Net.Http.HttpRequestException)">
+            <summary>
+            Determines if an HTTP error is transient and should be retried.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Providers.LLMProviderBase`1.Log(System.String)">
+            <summary>
+            Logs API interactions if a log path is configured.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Providers.LLMProviderBase`1.BuildJsonFormatInstruction``1">
+            <summary>
+            Builds the JSON format instruction for structured output.
+            </summary>
+        </member>
+        <member name="M:Hazina.LLMs.Providers.LLMProviderBase`1.CreateTokenUsage(System.Int32,System.Int32,System.String)">
+            <summary>
+            Creates a token usage info object from input/output counts.
+            </summary>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>HazinaOrchestration</name>
+    </assembly>
+    <members>
+        <member name="T:Hazina.Demo.AgenticOrchestration.Authentication.BasicAuthenticationHandler">
+            <summary>
+            Basic HTTP Authentication handler.
+            Validates credentials from the Authorization header against configuration.
+            </summary>
+        </member>
+        <member name="T:Hazina.Demo.AgenticOrchestration.Authentication.BasicAuthenticationOptions">
+            <summary>
+            Configuration options for basic authentication
+            </summary>
+        </member>
+        <member name="P:Hazina.Demo.AgenticOrchestration.Authentication.BasicAuthenticationOptions.Enabled">
+            <summary>
+            Whether authentication is enabled. If false, all requests are allowed.
+            </summary>
+        </member>
+        <member name="P:Hazina.Demo.AgenticOrchestration.Authentication.BasicAuthenticationOptions.Username">
+            <summary>
+            The username required for authentication
+            </summary>
+        </member>
+        <member name="P:Hazina.Demo.AgenticOrchestration.Authentication.BasicAuthenticationOptions.Password">
+            <summary>
+            The password required for authentication
+            </summary>
+        </member>
+        <member name="P:Hazina.Demo.AgenticOrchestration.Authentication.BasicAuthenticationOptions.Realm">
+            <summary>
+            The realm shown in the browser's login dialog
+            </summary>
+        </member>
+        <member name="T:Hazina.Demo.AgenticOrchestration.Authentication.BasicAuthenticationExtensions">
+            <summary>
+            Extension methods for registering basic authentication
+            </summary>
+        </member>
+    </members>
+</doc>
