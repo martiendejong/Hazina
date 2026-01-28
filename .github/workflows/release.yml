@@ -1,0 +1,308 @@
+name: Release Hazina CLI
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            artifact: hazinacoder.exe
+          - os: ubuntu-latest
+            rid: linux-x64
+            artifact: hazinacoder
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build self-contained executable
+        run: |
+          dotnet publish apps/CLI/Hazina.App.HazinaCoder/Hazina.App.HazinaCoder.csproj \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:EnableCompressionInSingleFile=true \
+            -p:DebugType=embedded \
+            -p:Version=${{ steps.version.outputs.version }} \
+            -o ./publish
+
+      - name: Create archive (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path ./publish/${{ matrix.artifact }},./publish/appsettings.json -DestinationPath ./hazinacoder-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip
+
+      - name: Create archive (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd publish
+          zip ../hazinacoder-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip ${{ matrix.artifact }} appsettings.json
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hazinacoder-${{ matrix.rid }}
+          path: hazinacoder-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip
+
+  create-installer:
+    needs: build
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: hazinacoder-win-x64
+          path: ./artifacts
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract for installer
+        shell: pwsh
+        run: |
+          Expand-Archive -Path ./artifacts/hazinacoder-${{ steps.version.outputs.version }}-win-x64.zip -DestinationPath ./installer-files
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup -y
+
+      - name: Create Inno Setup script
+        shell: pwsh
+        run: |
+          $script = @"
+          #define MyAppName "Hazina CLI"
+          #define MyAppVersion "${{ steps.version.outputs.version }}"
+          #define MyAppPublisher "Hazina"
+          #define MyAppURL "https://martiendejong.nl/hazina"
+          #define MyAppExeName "hazinacoder.exe"
+
+          [Setup]
+          AppId={{8A1B2C3D-4E5F-6789-ABCD-EF0123456789}
+          AppName={#MyAppName}
+          AppVersion={#MyAppVersion}
+          AppVerName={#MyAppName} {#MyAppVersion}
+          AppPublisher={#MyAppPublisher}
+          AppPublisherURL={#MyAppURL}
+          DefaultDirName={autopf}\Hazina
+          DefaultGroupName={#MyAppName}
+          AllowNoIcons=yes
+          OutputDir=.
+          OutputBaseFilename=hazinacoder-${{ steps.version.outputs.version }}-win-x64-setup
+          Compression=lzma2/ultra64
+          SolidCompression=yes
+          WizardStyle=modern
+          PrivilegesRequired=lowest
+          ChangesEnvironment=yes
+          ArchitecturesInstallIn64BitMode=x64compatible
+
+          [Tasks]
+          Name: "addtopath"; Description: "Add to PATH (recommended)"; GroupDescription: "Additional options:"; Flags: checkedonce
+
+          [Files]
+          Source: "installer-files\hazinacoder.exe"; DestDir: "{app}"; Flags: ignoreversion
+          Source: "installer-files\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion
+
+          [Icons]
+          Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+          Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
+
+          [Registry]
+          Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}"; Tasks: addtopath; Check: NeedsAddPath('{app}')
+
+          [Code]
+          function NeedsAddPath(Param: string): boolean;
+          var
+            OrigPath: string;
+          begin
+            if not RegQueryStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', OrigPath) then
+            begin
+              Result := True;
+              exit;
+            end;
+            Result := Pos(';' + Param + ';', ';' + OrigPath + ';') = 0;
+          end;
+          "@
+          Set-Content -Path setup.iss -Value $script
+
+      - name: Compile installer
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hazinacoder-installer
+          path: hazinacoder-${{ steps.version.outputs.version }}-win-x64-setup.exe
+
+  release:
+    needs: [build, create-installer]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./release-artifacts
+
+      - name: List artifacts
+        run: find ./release-artifacts -type f
+
+      - name: Create install script
+        run: |
+          cat > ./release-artifacts/install.sh << 'INSTALL_SCRIPT'
+          #!/bin/bash
+          # Hazina CLI Installer for Linux
+          # Usage: curl -fsSL https://martiendejong.nl/hazina/install.sh | bash
+
+          set -e
+
+          VERSION="${{ steps.version.outputs.version }}"
+          INSTALL_DIR="${HOME}/.hazina"
+          BIN_DIR="${HOME}/.local/bin"
+
+          echo "================================================"
+          echo "  Hazina CLI Installer"
+          echo "  Version: $VERSION"
+          echo "================================================"
+          echo ""
+
+          ARCH=$(uname -m)
+          case $ARCH in
+              x86_64)
+                  PLATFORM="linux-x64"
+                  ;;
+              aarch64|arm64)
+                  PLATFORM="linux-arm64"
+                  echo "Warning: ARM64 builds may not be available yet"
+                  ;;
+              *)
+                  echo "Error: Unsupported architecture: $ARCH"
+                  exit 1
+                  ;;
+          esac
+
+          echo "Detected platform: $PLATFORM"
+          echo ""
+
+          mkdir -p "$INSTALL_DIR"
+          mkdir -p "$BIN_DIR"
+
+          DOWNLOAD_URL="https://github.com/martiendejong/hazina/releases/download/v$VERSION/hazinacoder-$VERSION-$PLATFORM.zip"
+          TEMP_FILE="/tmp/hazinacoder-$VERSION.zip"
+
+          echo "Downloading Hazina CLI..."
+          echo "  URL: $DOWNLOAD_URL"
+
+          if command -v curl &> /dev/null; then
+              curl -fsSL "$DOWNLOAD_URL" -o "$TEMP_FILE"
+          elif command -v wget &> /dev/null; then
+              wget -q "$DOWNLOAD_URL" -O "$TEMP_FILE"
+          else
+              echo "Error: curl or wget required"
+              exit 1
+          fi
+
+          echo "Extracting..."
+          unzip -o "$TEMP_FILE" -d "$INSTALL_DIR"
+
+          echo "Setting permissions..."
+          chmod +x "$INSTALL_DIR/hazinacoder"
+
+          echo "Creating symlink..."
+          ln -sf "$INSTALL_DIR/hazinacoder" "$BIN_DIR/hazinacoder"
+
+          rm -f "$TEMP_FILE"
+
+          echo ""
+          echo "================================================"
+          echo "  Installation Complete!"
+          echo "================================================"
+          echo ""
+          echo "Hazina CLI installed to: $INSTALL_DIR"
+          echo ""
+
+          if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
+              echo "NOTE: Add to your shell profile:"
+              echo ""
+              echo "  export PATH=\"$BIN_DIR:\$PATH\""
+              echo ""
+          fi
+
+          echo "To get started: hazinacoder --help"
+          echo ""
+          INSTALL_SCRIPT
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Hazina CLI v${{ steps.version.outputs.version }}
+          tag_name: v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            ./release-artifacts/hazinacoder-win-x64/*.zip
+            ./release-artifacts/hazinacoder-linux-x64/*.zip
+            ./release-artifacts/hazinacoder-installer/*.exe
+            ./release-artifacts/install.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
