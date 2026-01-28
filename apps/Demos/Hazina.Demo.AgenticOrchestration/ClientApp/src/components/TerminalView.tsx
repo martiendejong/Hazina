@@ -106,6 +106,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       scrollOnUserInput: true,
       fastScrollSensitivity: isMobile ? 1 : 5,
       smoothScrollDuration: isMobile ? 0 : 125,  // Disable smooth scroll on mobile
+      // Clipboard support
+      rightClickSelectsWord: true,  // Right-click selects word for easy copy
     })
 
     // Add addons
@@ -234,6 +236,156 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       }
     })
 
+    // Custom keyboard handler for copy/paste
+    // Ctrl+C: Copy if text selected, otherwise send interrupt
+    // Ctrl+V: Paste from clipboard
+    terminal.attachCustomKeyEventHandler((event) => {
+      // Handle Ctrl+C - copy if selection exists
+      if (event.ctrlKey && event.key === 'c' && event.type === 'keydown') {
+        const selection = terminal.getSelection()
+        if (selection && selection.length > 0) {
+          navigator.clipboard.writeText(selection).catch(err => {
+            console.error('Copy failed:', err)
+          })
+          return false // Prevent default (don't send to terminal)
+        }
+        // No selection - let it pass through as interrupt (Ctrl+C)
+        return true
+      }
+
+      // Handle Ctrl+V - paste
+      if (event.ctrlKey && event.key === 'v' && event.type === 'keydown') {
+        navigator.clipboard.readText().then(text => {
+          if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
+            const encoder = new TextEncoder()
+            const bytes = Array.from(encoder.encode(text))
+            hubConnection.invoke('SendInput', sessionId, bytes)
+              .catch(err => console.error('Paste failed:', err))
+          }
+        }).catch(err => {
+          console.error('Paste failed:', err)
+        })
+        return false // Prevent default
+      }
+
+      // Handle Ctrl+Shift+C - always copy (alternative shortcut)
+      if (event.ctrlKey && event.shiftKey && event.key === 'C' && event.type === 'keydown') {
+        const selection = terminal.getSelection()
+        if (selection && selection.length > 0) {
+          navigator.clipboard.writeText(selection).catch(err => {
+            console.error('Copy failed:', err)
+          })
+        }
+        return false
+      }
+
+      // Handle Ctrl+Shift+V - always paste (alternative shortcut)
+      if (event.ctrlKey && event.shiftKey && event.key === 'V' && event.type === 'keydown') {
+        navigator.clipboard.readText().then(text => {
+          if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
+            const encoder = new TextEncoder()
+            const bytes = Array.from(encoder.encode(text))
+            hubConnection.invoke('SendInput', sessionId, bytes)
+              .catch(err => console.error('Paste failed:', err))
+          }
+        }).catch(err => {
+          console.error('Paste failed:', err)
+        })
+        return false
+      }
+
+      return true // Allow all other keys
+    })
+
+    // Right-click context menu for copy/paste
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault()
+      const selection = terminal.getSelection()
+
+      // Create context menu
+      const existingMenu = document.querySelector('.terminal-context-menu')
+      if (existingMenu) existingMenu.remove()
+
+      const menu = document.createElement('div')
+      menu.className = 'terminal-context-menu'
+      menu.style.cssText = `
+        position: fixed;
+        left: ${e.clientX}px;
+        top: ${e.clientY}px;
+        background: #21262d;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        padding: 4px 0;
+        z-index: 1000;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        min-width: 120px;
+      `
+
+      const createMenuItem = (text: string, action: () => void, disabled = false) => {
+        const item = document.createElement('div')
+        item.textContent = text
+        item.style.cssText = `
+          padding: 8px 16px;
+          cursor: ${disabled ? 'default' : 'pointer'};
+          color: ${disabled ? '#6e7681' : '#c9d1d9'};
+          font-size: 14px;
+        `
+        if (!disabled) {
+          item.onmouseenter = () => item.style.background = '#30363d'
+          item.onmouseleave = () => item.style.background = 'transparent'
+          item.onclick = () => {
+            action()
+            menu.remove()
+          }
+        }
+        return item
+      }
+
+      // Copy option
+      menu.appendChild(createMenuItem(
+        'Copy',
+        () => {
+          if (selection) {
+            navigator.clipboard.writeText(selection)
+          }
+        },
+        !selection || selection.length === 0
+      ))
+
+      // Paste option
+      menu.appendChild(createMenuItem(
+        'Paste',
+        () => {
+          navigator.clipboard.readText().then(text => {
+            if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
+              const encoder = new TextEncoder()
+              const bytes = Array.from(encoder.encode(text))
+              hubConnection.invoke('SendInput', sessionId, bytes)
+            }
+          })
+        }
+      ))
+
+      // Select All option
+      menu.appendChild(createMenuItem(
+        'Select All',
+        () => terminal.selectAll()
+      ))
+
+      document.body.appendChild(menu)
+
+      // Close menu on click outside
+      const closeMenu = (ev: MouseEvent) => {
+        if (!menu.contains(ev.target as Node)) {
+          menu.remove()
+          document.removeEventListener('click', closeMenu)
+        }
+      }
+      setTimeout(() => document.addEventListener('click', closeMenu), 0)
+    }
+
+    terminalRef.current.addEventListener('contextmenu', handleContextMenu)
+
     // Connection state handlers
     hubConnection.onreconnecting(() => {
       terminal.writeln('\r\n\x1b[33m[Reconnecting...]\x1b[0m')
@@ -300,6 +452,14 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       if (resizeTimeoutRef.current) {
         clearTimeout(resizeTimeoutRef.current)
       }
+      // Remove context menu handler
+      if (terminalRef.current) {
+        terminalRef.current.removeEventListener('contextmenu', handleContextMenu)
+      }
+      // Remove any lingering context menu
+      const existingMenu = document.querySelector('.terminal-context-menu')
+      if (existingMenu) existingMenu.remove()
+
       if (hubConnection.state === signalR.HubConnectionState.Connected) {
         hubConnection.invoke('LeaveSession', sessionId).catch(() => {})
         hubConnection.stop()

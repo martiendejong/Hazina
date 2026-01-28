@@ -350,6 +350,196 @@ public class TerminalController : ControllerBase
     }
 
     /// <summary>
+    /// Get archived session logs with pagination
+    /// </summary>
+    [HttpGet("archive")]
+    public ActionResult<ArchivedSessionsResponse> GetArchivedSessions(
+        [FromQuery] int page = 0,
+        [FromQuery] int pageSize = 50)
+    {
+        if (string.IsNullOrEmpty(_options.AgentSessionLogsPath) || !Directory.Exists(_options.AgentSessionLogsPath))
+        {
+            return Ok(new ArchivedSessionsResponse
+            {
+                Sessions = new List<ArchivedSessionDto>(),
+                TotalCount = 0,
+                Page = page,
+                PageSize = pageSize,
+                HasMore = false
+            });
+        }
+
+        try
+        {
+            // Scan all log files recursively and parse metadata
+            var logFiles = Directory.GetFiles(_options.AgentSessionLogsPath, "session-*.log", SearchOption.AllDirectories)
+                .Select(path =>
+                {
+                    var fileInfo = new FileInfo(path);
+                    var metadata = ParseLogFileMetadata(path);
+                    return new ArchivedSessionDto
+                    {
+                        SessionId = metadata.sessionId,
+                        Command = metadata.command,
+                        WorkingDirectory = metadata.workingDirectory,
+                        StartedAt = metadata.startedAt ?? fileInfo.CreationTime,
+                        EndedAt = metadata.endedAt,
+                        ExitCode = metadata.exitCode,
+                        LogFilePath = path,
+                        LogSizeBytes = fileInfo.Length
+                    };
+                })
+                .OrderByDescending(s => s.StartedAt)
+                .ToList();
+
+            var totalCount = logFiles.Count;
+            var pagedSessions = logFiles
+                .Skip(page * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return Ok(new ArchivedSessionsResponse
+            {
+                Sessions = pagedSessions,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                HasMore = (page + 1) * pageSize < totalCount
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list archived sessions");
+            return StatusCode(500, new { error = "Failed to list archived sessions", message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Get log content for an archived session
+    /// </summary>
+    [HttpGet("archive/{sessionId}/log")]
+    public ActionResult<SessionLogResponse> GetArchivedSessionLog(string sessionId)
+    {
+        if (string.IsNullOrEmpty(_options.AgentSessionLogsPath) || !Directory.Exists(_options.AgentSessionLogsPath))
+        {
+            return NotFound(new { error = "Session logs not configured" });
+        }
+
+        try
+        {
+            // Find the log file for this session
+            var logFiles = Directory.GetFiles(_options.AgentSessionLogsPath, $"session-{sessionId}.log", SearchOption.AllDirectories);
+            if (logFiles.Length == 0)
+            {
+                // Try a partial match
+                logFiles = Directory.GetFiles(_options.AgentSessionLogsPath, $"session-*{sessionId}*.log", SearchOption.AllDirectories);
+            }
+
+            if (logFiles.Length == 0)
+            {
+                return NotFound(new { error = "Session log not found", sessionId });
+            }
+
+            var logPath = logFiles[0];
+            var content = System.IO.File.ReadAllText(logPath);
+
+            return Ok(new SessionLogResponse
+            {
+                SessionId = sessionId,
+                Content = content,
+                TotalBytes = content.Length
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to read session log for {SessionId}", sessionId);
+            return StatusCode(500, new { error = "Failed to read session log", message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Parse metadata from log file header
+    /// </summary>
+    private (string sessionId, string command, string? workingDirectory, DateTime? startedAt, DateTime? endedAt, int? exitCode) ParseLogFileMetadata(string path)
+    {
+        var sessionId = Path.GetFileNameWithoutExtension(path).Replace("session-", "");
+        var command = "claude";
+        string? workingDirectory = null;
+        DateTime? startedAt = null;
+        DateTime? endedAt = null;
+        int? exitCode = null;
+
+        try
+        {
+            using var reader = new StreamReader(path);
+            var lineCount = 0;
+            string? line;
+
+            while ((line = reader.ReadLine()) != null && lineCount < 20)
+            {
+                lineCount++;
+
+                if (line.StartsWith("Command:"))
+                {
+                    command = line.Substring("Command:".Length).Trim();
+                }
+                else if (line.StartsWith("Working Directory:"))
+                {
+                    var wd = line.Substring("Working Directory:".Length).Trim();
+                    workingDirectory = wd == "(default)" ? null : wd;
+                }
+                else if (line.StartsWith("Started:"))
+                {
+                    var dateStr = line.Substring("Started:".Length).Trim();
+                    if (DateTime.TryParse(dateStr, out var dt))
+                    {
+                        startedAt = dt;
+                    }
+                }
+            }
+
+            // Read from end for exit info (seek backward if file is large)
+            reader.BaseStream.Seek(0, SeekOrigin.End);
+            var endPosition = reader.BaseStream.Position;
+
+            // Read last 2KB for exit code
+            var readStart = Math.Max(0, endPosition - 2048);
+            reader.BaseStream.Seek(readStart, SeekOrigin.Begin);
+            reader.DiscardBufferedData();
+
+            var tail = reader.ReadToEnd();
+            var tailLines = tail.Split('\n');
+
+            foreach (var tailLine in tailLines)
+            {
+                var trimmed = tailLine.Trim();
+                if (trimmed.StartsWith("Ended:"))
+                {
+                    var dateStr = trimmed.Substring("Ended:".Length).Trim();
+                    if (DateTime.TryParse(dateStr, out var dt))
+                    {
+                        endedAt = dt;
+                    }
+                }
+                else if (trimmed.StartsWith("Exit Code:"))
+                {
+                    var codeStr = trimmed.Substring("Exit Code:".Length).Trim();
+                    if (int.TryParse(codeStr, out var code))
+                    {
+                        exitCode = code;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // If parsing fails, use defaults
+        }
+
+        return (sessionId, command, workingDirectory, startedAt, endedAt, exitCode);
+    }
+
+    /// <summary>
     /// Get all sessions including external instances (combined view)
     /// </summary>
     [HttpGet("all-sessions")]
@@ -538,4 +728,41 @@ public class TerminalConfigDto
 
     /// <summary>SignalR hub URL for terminal connections</summary>
     public string SignalRHubUrl { get; set; } = "/hubs/terminal";
+}
+
+/// <summary>
+/// Archived session info (from log file)
+/// </summary>
+public class ArchivedSessionDto
+{
+    public string SessionId { get; set; } = "";
+    public string Command { get; set; } = "";
+    public string? WorkingDirectory { get; set; }
+    public DateTime StartedAt { get; set; }
+    public DateTime? EndedAt { get; set; }
+    public int? ExitCode { get; set; }
+    public string LogFilePath { get; set; } = "";
+    public long LogSizeBytes { get; set; }
+}
+
+/// <summary>
+/// Response for archived sessions list
+/// </summary>
+public class ArchivedSessionsResponse
+{
+    public List<ArchivedSessionDto> Sessions { get; set; } = new();
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public bool HasMore { get; set; }
+}
+
+/// <summary>
+/// Response for session log content
+/// </summary>
+public class SessionLogResponse
+{
+    public string SessionId { get; set; } = "";
+    public string Content { get; set; } = "";
+    public long TotalBytes { get; set; }
 }

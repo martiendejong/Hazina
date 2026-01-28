@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react'
 import { SessionList } from './components/SessionList'
 import { TerminalView } from './components/TerminalView'
+import { ChatView } from './components/ChatView'
+import { ArchiveView } from './components/ArchiveView'
 import { Login } from './components/Login'
 import { authFetch, hasCredentials, clearCredentials } from './auth'
 import type { TerminalSession, ExternalClaudeInstance, AllSessions, TerminalConfig } from './types'
 import './App.css'
+
+type ViewMode = 'sessions' | 'chat' | 'archive'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(hasCredentials())
@@ -14,6 +18,7 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [config, setConfig] = useState<TerminalConfig | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('sessions')
 
   const handleUnauthorized = () => {
     clearCredentials()
@@ -166,9 +171,29 @@ function App() {
       <header className="app-header">
         <h1>Claude Terminal Orchestration</h1>
         <div className="header-actions">
-          <button className="btn-primary" onClick={handleCreateSession}>
-            + New Session
+          <button
+            className={`btn-nav ${viewMode === 'sessions' ? 'active' : ''}`}
+            onClick={() => { setViewMode('sessions'); setSelectedSession(null) }}
+          >
+            Sessions
           </button>
+          <button
+            className={`btn-nav ${viewMode === 'chat' ? 'active' : ''}`}
+            onClick={() => setViewMode('chat')}
+          >
+            Chat
+          </button>
+          <button
+            className={`btn-nav ${viewMode === 'archive' ? 'active' : ''}`}
+            onClick={() => setViewMode('archive')}
+          >
+            Archive
+          </button>
+          {viewMode === 'sessions' && (
+            <button className="btn-primary" onClick={handleCreateSession}>
+              + New Session
+            </button>
+          )}
           <button className="btn-logout" onClick={handleLogout}>
             Logout
           </button>
@@ -183,31 +208,43 @@ function App() {
       )}
 
       <main className="app-main">
-        <aside className={`sidebar ${selectedSession ? 'session-active' : ''}`}>
-          <SessionList
-            sessions={sessions}
-            externalInstances={externalInstances}
-            selectedSession={selectedSession}
-            loading={loading}
-            onSelect={setSelectedSession}
-            onTerminate={handleTerminateSession}
-          />
-        </aside>
+        {viewMode === 'sessions' && (
+          <>
+            <aside className={`sidebar ${selectedSession ? 'session-active' : ''}`}>
+              <SessionList
+                sessions={sessions}
+                externalInstances={externalInstances}
+                selectedSession={selectedSession}
+                loading={loading}
+                onSelect={setSelectedSession}
+                onTerminate={handleTerminateSession}
+              />
+            </aside>
 
-        <section className={`terminal-section ${selectedSession ? 'has-session' : ''}`}>
-          {selectedSession ? (
-            <TerminalView
-              sessionId={selectedSession}
-              onClose={() => setSelectedSession(null)}
-              onStateChanged={handleStateChanged}
-              onTitleChanged={handleTitleChanged}
-            />
-          ) : (
-            <div className="no-session">
-              <p>Select a session or create a new one</p>
-            </div>
-          )}
-        </section>
+            <section className={`terminal-section ${selectedSession ? 'has-session' : ''}`}>
+              {selectedSession ? (
+                <TerminalView
+                  sessionId={selectedSession}
+                  onClose={() => setSelectedSession(null)}
+                  onStateChanged={handleStateChanged}
+                  onTitleChanged={handleTitleChanged}
+                />
+              ) : (
+                <div className="no-session">
+                  <p>Select a session or create a new one</p>
+                </div>
+              )}
+            </section>
+          </>
+        )}
+
+        {viewMode === 'chat' && (
+          <ChatView onClose={() => setViewMode('sessions')} />
+        )}
+
+        {viewMode === 'archive' && (
+          <ArchiveView onClose={() => setViewMode('sessions')} />
+        )}
       </main>
     </div>
   )

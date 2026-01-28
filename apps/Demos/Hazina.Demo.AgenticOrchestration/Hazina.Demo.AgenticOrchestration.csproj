@@ -25,6 +25,9 @@
     <!-- Hazina Core Dependencies -->
     <ProjectReference Include="..\..\..\src\Hazina.AgenticOrchestration\Hazina.AgenticOrchestration.csproj" />
     <ProjectReference Include="..\..\..\src\Core\API\Hazina.API.Generic\Hazina.API.Generic.csproj" />
+    <!-- LLM Provider for Chat functionality -->
+    <ProjectReference Include="..\..\..\src\Core\AI\Hazina.AI.Providers\Hazina.AI.Providers.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -47,3 +47,57 @@ export interface TerminalConfig {
   sessionTimeoutMinutes: number
   signalRHubUrl: string
 }
+
+// Chat types
+export interface ChatMessage {
+  id: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  timestamp: string
+  toolCalls?: ToolCall[]
+  isStreaming?: boolean
+}
+
+export interface ToolCall {
+  id: string
+  name: string
+  arguments: Record<string, unknown>
+  result?: string
+}
+
+export interface ChatRequest {
+  message: string
+  conversationId?: string
+}
+
+export interface ChatResponse {
+  conversationId: string
+  message: ChatMessage
+  isComplete: boolean
+}
+
+// Archive types
+export interface ArchivedSession {
+  sessionId: string
+  command: string
+  workingDirectory?: string
+  startedAt: string
+  endedAt?: string
+  exitCode?: number
+  logFilePath: string
+  logSizeBytes: number
+}
+
+export interface ArchivedSessionsResponse {
+  sessions: ArchivedSession[]
+  totalCount: number
+  page: number
+  pageSize: number
+  hasMore: boolean
+}
+
+export interface SessionLogResponse {
+  sessionId: string
+  content: string
+  totalBytes: number
+}
