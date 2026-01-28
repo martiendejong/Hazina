@@ -1,5 +1,6 @@
 using Hazina.AgenticOrchestration.Extensions;
 using Hazina.AgenticOrchestration.Services;
+using Hazina.Demo.AgenticOrchestration.Authentication;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,13 @@ var defaultRows = int.TryParse(terminalConfig["DefaultRows"], out var rows) ? ro
 var maxSessions = int.TryParse(terminalConfig["MaxConcurrentSessions"], out var max) ? max : 10;
 var sessionTimeout = int.TryParse(terminalConfig["SessionTimeoutMinutes"], out var timeout) ? timeout : 60;
 
+// Authentication configuration
+var authConfig = builder.Configuration.GetSection("Authentication");
+var authEnabled = bool.TryParse(authConfig["Enabled"], out var enabled) && enabled;
+var authUsername = authConfig["Username"] ?? "admin";
+var authPassword = authConfig["Password"] ?? "changeme";
+var authRealm = authConfig["Realm"] ?? "Hazina Agentic Orchestration";
+
 Console.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
 Console.WriteLine("║     HAZINA AGENTIC ORCHESTRATION - Demo Application              ║");
 Console.WriteLine("╠══════════════════════════════════════════════════════════════════╣");
@@ -28,6 +36,7 @@ Console.WriteLine($"║  Database: {dbPath,-50} ║");
 Console.WriteLine($"║  Logs: {logsPath,-54} ║");
 Console.WriteLine($"║  Terminal Command: {defaultCommand,-42} ║");
 Console.WriteLine($"║  Working Directory: {defaultWorkingDirectory ?? "(current)",-41} ║");
+Console.WriteLine($"║  Authentication: {(authEnabled ? $"ENABLED (user: {authUsername})" : "DISABLED"),-44} ║");
 Console.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
 
 // ═══════════════════════════════════════════════════════════════
@@ -52,6 +61,19 @@ builder.Services.AddHazinaAgenticOrchestration(options =>
 });
 Console.WriteLine("✅ Hazina Agentic Orchestration services registered (declarative)");
 
+// Authentication
+builder.Services.AddAuthentication(BasicAuthenticationExtensions.SchemeName)
+    .AddBasicAuthentication(options =>
+    {
+        options.Enabled = authEnabled;
+        options.Username = authUsername;
+        options.Password = authPassword;
+        options.Realm = authRealm;
+    });
+
+builder.Services.AddAuthorization();
+Console.WriteLine($"✅ Basic Authentication configured (enabled: {authEnabled})");
+
 // ASP.NET Core Services
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(Hazina.AgenticOrchestration.Controllers.TerminalController).Assembly);
@@ -71,6 +93,32 @@ builder.Services.AddSwaggerGen(c =>
             Url = new Uri("https://github.com/martiendejong/Hazina")
         }
     });
+
+    // Add Basic Authentication to Swagger
+    if (authEnabled)
+    {
+        c.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "basic",
+            Description = "Basic HTTP Authentication. Enter your username and password."
+        });
+
+        c.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Basic"
+                    }
+                },
+                Array.Empty<string>()
+            }
+        });
+    }
 });
 
 // CORS for frontend development
@@ -112,6 +160,10 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseRouting();
 
+// Authentication & Authorization
+app.UseAuthentication();
+app.UseAuthorization();
+
 // Serve React SPA static files
 app.UseDefaultFiles();
 app.UseStaticFiles();
@@ -120,10 +172,11 @@ app.UseStaticFiles();
 // ENDPOINT MAPPING - Hazina Declarative Style
 // ═══════════════════════════════════════════════════════════════
 
-// Map Controllers (REST API)
-app.MapControllers();
+// Map Controllers (REST API) - require authentication if enabled
+app.MapControllers().RequireAuthorization();
 
 // Map SignalR Hubs (declarative one-liner)
+// Note: SignalR hub authorization is handled via [Authorize] attribute on hub classes
 app.MapHazinaAgenticHubs();
 
 // ═══════════════════════════════════════════════════════════════
@@ -141,8 +194,8 @@ app.MapGet("/health", () => Results.Ok(new
 .WithOpenApi();
 
 
-// API root - list available endpoints
-app.MapGet("/", () => Results.Ok(new
+// API root - list available endpoints (requires auth)
+app.MapGet("/api", () => Results.Ok(new
 {
     Service = "Hazina Agentic Orchestration API",
     Version = "1.0.0",
@@ -178,7 +231,8 @@ app.MapGet("/", () => Results.Ok(new
     }
 }))
 .WithName("ApiRoot")
-.WithOpenApi();
+.WithOpenApi()
+.RequireAuthorization();
 
 // Quick endpoint to get active instance count
 app.MapGet("/api/stats", async (IClaudeInstanceManager instanceManager) =>
@@ -198,7 +252,8 @@ app.MapGet("/api/stats", async (IClaudeInstanceManager instanceManager) =>
     });
 })
 .WithName("GetStats")
-.WithOpenApi();
+.WithOpenApi()
+.RequireAuthorization();
 
 // Pending interaction count
 app.MapGet("/api/interactions/count", async (IInteractionService interactionService) =>
@@ -211,7 +266,8 @@ app.MapGet("/api/interactions/count", async (IInteractionService interactionServ
     });
 })
 .WithName("GetInteractionCount")
-.WithOpenApi();
+.WithOpenApi()
+.RequireAuthorization();
 
 // ═══════════════════════════════════════════════════════════════
 // STARTUP MESSAGE
@@ -221,18 +277,25 @@ Console.WriteLine();
 Console.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
 Console.WriteLine("║                    🚀 SERVER STARTED                             ║");
 Console.WriteLine("╠══════════════════════════════════════════════════════════════════╣");
-Console.WriteLine("║  REST API:      http://localhost:5000                            ║");
-Console.WriteLine("║  Swagger UI:    http://localhost:5000/swagger                    ║");
-Console.WriteLine("║  React UI:      http://localhost:5000                            ║");
+Console.WriteLine("║  Listening on: (see URLs below from Kestrel)                     ║");
+Console.WriteLine("║  Swagger UI:   /swagger                                          ║");
+Console.WriteLine("║  React UI:     /                                                 ║");
 Console.WriteLine("╠══════════════════════════════════════════════════════════════════╣");
 Console.WriteLine("║  SignalR Hubs:                                                   ║");
-Console.WriteLine("║    ws://localhost:5000/hubs/agentic   (Instance management)      ║");
-Console.WriteLine("║    ws://localhost:5000/hubs/terminal  (Real-time terminal)       ║");
+Console.WriteLine("║    /hubs/agentic   (Instance management)                         ║");
+Console.WriteLine("║    /hubs/terminal  (Real-time terminal)                          ║");
 Console.WriteLine("╠══════════════════════════════════════════════════════════════════╣");
 Console.WriteLine("║  Terminal API:                                                   ║");
 Console.WriteLine("║    POST   /api/terminal/sessions      - Create session           ║");
 Console.WriteLine("║    GET    /api/terminal/sessions      - List sessions            ║");
 Console.WriteLine("║    DELETE /api/terminal/sessions/{id} - Terminate session        ║");
+if (authEnabled)
+{
+    Console.WriteLine("╠══════════════════════════════════════════════════════════════════╣");
+    Console.WriteLine("║  🔐 AUTHENTICATION REQUIRED                                      ║");
+    Console.WriteLine($"║     Username: {authUsername,-51} ║");
+    Console.WriteLine("║     Password: (configured in appsettings.json)                   ║");
+}
 Console.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
 Console.WriteLine();
 

@@ -72,7 +72,9 @@ export function SessionList({
                 onClick={() => onSelect(session.sessionId)}
               >
                 <div className="session-info">
-                  <span className="session-command">{session.command}</span>
+                  <span className="session-command" title={session.title ? `Command: ${session.command}` : undefined}>
+                    {session.title || session.command}
+                  </span>
                   <span className="session-id">{session.sessionId.slice(0, 8)}...</span>
                 </div>
                 <div className="session-meta">

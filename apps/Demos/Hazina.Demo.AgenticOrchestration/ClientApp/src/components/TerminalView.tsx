@@ -1,24 +1,69 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import { Unicode11Addon } from '@xterm/addon-unicode11'
 import * as signalR from '@microsoft/signalr'
+import { authFetch, getAuthHeader } from '../auth'
+import { useVoiceControl } from '../hooks/useVoiceControl'
 import '@xterm/xterm/css/xterm.css'
 
 interface TerminalViewProps {
   sessionId: string
   onClose: () => void
   onStateChanged?: (sessionId: string, isRunning: boolean, waitingForInput: boolean) => void
+  onTitleChanged?: (sessionId: string, title: string) => void
 }
 
-export function TerminalView({ sessionId, onClose, onStateChanged }: TerminalViewProps) {
+export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChanged }: TerminalViewProps) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const terminalInstance = useRef<Terminal | null>(null)
   const fitAddon = useRef<FitAddon | null>(null)
   const connection = useRef<signalR.HubConnection | null>(null)
+  const resizeTimeoutRef = useRef<number | null>(null)
+  const lastDimensionsRef = useRef<{ cols: number; rows: number } | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Voice control - send transcribed speech to terminal
+  const handleVoiceTranscript = useCallback((text: string) => {
+    if (connection.current?.state === signalR.HubConnectionState.Connected) {
+      // Sanitize: trim whitespace, limit length, remove control characters
+      const sanitized = text
+        .trim()
+        .slice(0, 1000) // Reasonable max length
+        .replace(/[\x00-\x1F\x7F]/g, '') // Remove control chars except those we add
+
+      if (!sanitized) return
+
+      // Send the text as input with a newline to execute
+      const encoder = new TextEncoder()
+      const bytes = Array.from(encoder.encode(sanitized + '\n'))
+      connection.current.invoke('SendInput', sessionId, bytes)
+        .catch(err => console.error('SendInput (voice) failed:', err))
+
+      // Also show indicator in terminal (escape for display)
+      const displayText = sanitized.length > 50 ? sanitized.slice(0, 50) + '...' : sanitized
+      terminalInstance.current?.writeln(`\r\n\x1b[36m[Voice: "${displayText}"]\x1b[0m`)
+    }
+  }, [sessionId])
+
+  const [voiceState, voiceActions] = useVoiceControl(handleVoiceTranscript)
+
+  // Keyboard shortcut: Ctrl+M to toggle voice
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 'm') {
+        e.preventDefault()
+        voiceActions.toggle()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [voiceActions])
+
+  // Detect if we're on a mobile device
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 
   useEffect(() => {
     if (!terminalRef.current) return
@@ -26,7 +71,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged }: TerminalVie
     // Create terminal with proper settings for ConPTY
     const terminal = new Terminal({
       cursorBlink: true,
-      fontSize: 14,
+      fontSize: isMobile ? 12 : 14,  // Smaller font on mobile
       fontFamily: 'Cascadia Code, Consolas, Monaco, monospace',
       theme: {
         background: '#1e1e1e',
@@ -34,6 +79,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged }: TerminalVie
         cursor: '#ffffff',
         cursorAccent: '#1e1e1e',
         selectionBackground: '#264f78',
+        selectionForeground: '#ffffff',
+        selectionInactiveBackground: '#264f78',  // Same as active to prevent grey
         black: '#000000',
         red: '#cd3131',
         green: '#0dbc79',
@@ -51,10 +98,14 @@ export function TerminalView({ sessionId, onClose, onStateChanged }: TerminalVie
         brightCyan: '#29b8db',
         brightWhite: '#ffffff',
       },
-      scrollback: 10000,
+      scrollback: isMobile ? 1000 : 10000,  // Less scrollback on mobile for performance
       allowProposedApi: true,
       // Don't convert EOL - ConPTY sends proper \r\n sequences
       convertEol: false,
+      // Mobile optimizations
+      scrollOnUserInput: true,
+      fastScrollSensitivity: isMobile ? 1 : 5,
+      smoothScrollDuration: isMobile ? 0 : 125,  // Disable smooth scroll on mobile
     })
 
     // Add addons
@@ -78,32 +129,61 @@ export function TerminalView({ sessionId, onClose, onStateChanged }: TerminalVie
     terminalInstance.current = terminal
     fitAddon.current = fit
 
-    // Handle resize
-    const handleResize = () => {
-      fit.fit()
-      if (connection.current?.state === signalR.HubConnectionState.Connected) {
-        connection.current.invoke('Resize', sessionId, terminal.cols, terminal.rows)
-          .catch(err => console.error('Resize failed:', err))
+    // Debounced resize handler that prevents rapid resizing on mobile
+    const doResize = () => {
+      if (!fitAddon.current || !terminalInstance.current) return
+
+      try {
+        fitAddon.current.fit()
+        const newCols = terminalInstance.current.cols
+        const newRows = terminalInstance.current.rows
+
+        // Only send resize to server if dimensions actually changed
+        const last = lastDimensionsRef.current
+        if (!last || last.cols !== newCols || last.rows !== newRows) {
+          lastDimensionsRef.current = { cols: newCols, rows: newRows }
+
+          if (connection.current?.state === signalR.HubConnectionState.Connected) {
+            connection.current.invoke('Resize', sessionId, newCols, newRows)
+              .catch(err => console.error('Resize failed:', err))
+          }
+        }
+      } catch (err) {
+        console.error('Fit error:', err)
       }
+    }
+
+    // Heavily debounced resize for mobile (keyboard open/close causes many events)
+    const debouncedResize = () => {
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current)
+      }
+      // Use longer debounce on mobile to avoid jumping
+      const debounceMs = isMobile ? 300 : 100
+      resizeTimeoutRef.current = window.setTimeout(doResize, debounceMs)
+    }
+
+    // Handle window resize
+    const handleResize = () => {
+      debouncedResize()
     }
     window.addEventListener('resize', handleResize)
 
-    // Use ResizeObserver for more reliable resize detection
-    const resizeObserver = new ResizeObserver(() => {
-      // Debounce resize
-      setTimeout(() => {
-        fit.fit()
-        if (connection.current?.state === signalR.HubConnectionState.Connected) {
-          connection.current.invoke('Resize', sessionId, terminal.cols, terminal.rows)
-            .catch(err => console.error('Resize failed:', err))
-        }
-      }, 50)
-    })
-    resizeObserver.observe(terminalRef.current)
+    // Use ResizeObserver for container size changes (but not on mobile to avoid keyboard issues)
+    let resizeObserver: ResizeObserver | null = null
+    if (!isMobile) {
+      resizeObserver = new ResizeObserver(() => {
+        debouncedResize()
+      })
+      resizeObserver.observe(terminalRef.current)
+    }
 
-    // Create SignalR connection
+    // Create SignalR connection with auth headers
+    const authHeader = getAuthHeader()
     const hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl('/hubs/terminal')
+      .withUrl('/hubs/terminal', {
+        headers: authHeader ? { 'Authorization': authHeader } : undefined
+      })
       .withAutomaticReconnect()
       .configureLogging(signalR.LogLevel.Information)
       .build()
@@ -134,6 +214,13 @@ export function TerminalView({ sessionId, onClose, onStateChanged }: TerminalVie
     hubConnection.on('OnStateChanged', (sid: string, isRunning: boolean, waitingForInput: boolean) => {
       if (sid === sessionId && onStateChanged) {
         onStateChanged(sid, isRunning, waitingForInput)
+      }
+    })
+
+    // Handle title changes (detected from "STATUS: Title" in output)
+    hubConnection.on('OnTitleChanged', (sid: string, title: string) => {
+      if (sid === sessionId && onTitleChanged) {
+        onTitleChanged(sid, title)
       }
     })
 
@@ -182,7 +269,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged }: TerminalVie
 
         // Now fetch and display historical output
         try {
-          const historyResponse = await fetch(`/api/terminal/sessions/${sessionId}/history`)
+          const historyResponse = await authFetch(`/api/terminal/sessions/${sessionId}/history`)
           if (historyResponse.ok) {
             const historyData = await historyResponse.json()
             if (historyData.data && historyData.data.length > 0) {
@@ -207,14 +294,19 @@ export function TerminalView({ sessionId, onClose, onStateChanged }: TerminalVie
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize)
-      resizeObserver.disconnect()
+      if (resizeObserver) {
+        resizeObserver.disconnect()
+      }
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current)
+      }
       if (hubConnection.state === signalR.HubConnectionState.Connected) {
         hubConnection.invoke('LeaveSession', sessionId).catch(() => {})
         hubConnection.stop()
       }
       terminal.dispose()
     }
-  }, [sessionId])
+  }, [sessionId, isMobile])
 
   const handleInterrupt = async () => {
     if (connection.current?.state === signalR.HubConnectionState.Connected) {
@@ -248,6 +340,37 @@ export function TerminalView({ sessionId, onClose, onStateChanged }: TerminalVie
           </span>
         </div>
         <div className="terminal-actions">
+          {voiceState.isSupported && (
+            <button
+              className={`btn-voice ${voiceState.isListening ? 'recording' : ''}`}
+              onClick={voiceActions.toggle}
+              title={voiceState.isListening ? 'Stop voice input (Ctrl+M)' : 'Start voice input (Ctrl+M)'}
+              aria-pressed={voiceState.isListening}
+              aria-label={voiceState.isListening ? 'Stop voice input' : 'Start voice input'}
+            >
+              <svg className="mic-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+              </svg>
+              {voiceState.isListening ? 'Listening...' : 'Voice'}
+            </button>
+          )}
+          {/* Accessible live region for voice status announcements */}
+          <span
+            className="voice-status-live"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {voiceState.isListening && voiceState.interimTranscript
+              ? `Hearing: ${voiceState.interimTranscript}`
+              : voiceState.error || ''}
+          </span>
+          {voiceState.interimTranscript && (
+            <span className="voice-interim" aria-hidden="true">{voiceState.interimTranscript}</span>
+          )}
+          {voiceState.error && (
+            <span className="voice-error" aria-hidden="true">{voiceState.error}</span>
+          )}
           <button className="btn-interrupt" onClick={handleInterrupt} title="Send Ctrl+C">
             Ctrl+C
           </button>

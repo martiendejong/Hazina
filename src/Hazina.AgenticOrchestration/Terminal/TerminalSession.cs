@@ -38,6 +38,7 @@ public class TerminalSession : ITerminalSession
     private DateTime _lastOutputTime = DateTime.UtcNow;
     private bool _waitingForInput;
     private string _recentOutput = "";
+    private string? _title;
 
     public string SessionId { get; }
     public DateTime StartedAt { get; private set; }
@@ -55,15 +56,31 @@ public class TerminalSession : ITerminalSession
             lock (_stateLock)
             {
                 if (!IsRunning) return false;
-                if (!_waitingForInput) return false;
+                // Simple approach: if no output for 1 second, we're waiting for input
                 var idleTime = DateTime.UtcNow - _lastOutputTime;
-                return idleTime.TotalMilliseconds >= 500;
+                return idleTime.TotalMilliseconds >= 1000;
             }
         }
     }
 
     public event Action<byte[]>? OnOutput;
     public event Action<int>? OnExit;
+    public event Action<string>? OnTitleChanged;
+
+    /// <summary>
+    /// Dynamic title extracted from terminal output.
+    /// Returns null if no title has been detected.
+    /// </summary>
+    public string? Title
+    {
+        get
+        {
+            lock (_stateLock)
+            {
+                return _title;
+            }
+        }
+    }
 
     /// <summary>
     /// Get all output history as bytes
@@ -78,18 +95,56 @@ public class TerminalSession : ITerminalSession
 
     private static readonly string[] QuestionPatterns = new[]
     {
-        "│ ●", "│ ○", "❯", "(y/n)", "[Y/n]", "[y/N]", "? ",
+        "│ ●", "│ ○", "| ●", "| ○", "❯", ">",
+        "(y/n)", "[Y/n]", "[y/N]", "(Y/n)", "? ",
+        "Allow", "Deny", "press enter", "Press Enter",
+        "continue?", "proceed?",
     };
 
     private void DetectQuestionInOutput(string text)
     {
+        string? newTitle = null;
+
         lock (_stateLock)
         {
             _recentOutput = (_recentOutput + text);
-            if (_recentOutput.Length > 200)
-                _recentOutput = _recentOutput.Substring(_recentOutput.Length - 200);
+            if (_recentOutput.Length > 500)
+                _recentOutput = _recentOutput.Substring(_recentOutput.Length - 500);
             _waitingForInput = QuestionPatterns.Any(p =>
-                _recentOutput.Contains(p, StringComparison.Ordinal));
+                _recentOutput.Contains(p, StringComparison.OrdinalIgnoreCase));
+            if (_waitingForInput)
+                _logger?.LogDebug("Question pattern detected in session {SessionId}", SessionId);
+
+            // Detect title from "STATUS: Title" pattern
+            var statusIndex = text.IndexOf("STATUS:", StringComparison.OrdinalIgnoreCase);
+            if (statusIndex >= 0)
+            {
+                var afterStatus = text.Substring(statusIndex + 7).TrimStart();
+                var newlineIndex = afterStatus.IndexOfAny(new[] { '\r', '\n' });
+                var extractedTitle = newlineIndex >= 0
+                    ? afterStatus.Substring(0, newlineIndex).Trim()
+                    : afterStatus.Trim();
+
+                if (!string.IsNullOrWhiteSpace(extractedTitle) && extractedTitle != _title)
+                {
+                    _title = extractedTitle;
+                    newTitle = extractedTitle;
+                    _logger?.LogInformation("Title changed to '{Title}' for session {SessionId}", _title, SessionId);
+                }
+            }
+        }
+
+        // Fire event outside lock
+        if (newTitle != null)
+        {
+            try
+            {
+                OnTitleChanged?.Invoke(newTitle);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error in OnTitleChanged handler for session {SessionId}", SessionId);
+            }
         }
     }
 

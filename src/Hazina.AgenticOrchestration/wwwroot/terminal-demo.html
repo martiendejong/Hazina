@@ -81,6 +81,61 @@
             background: #f85149;
         }
 
+        /* Voice control button styles */
+        button.voice {
+            background: #21262d;
+            border-color: #30363d;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button.voice:hover {
+            background: #30363d;
+            border-color: #8b949e;
+        }
+
+        button.voice.recording {
+            background: #da3633;
+            border-color: #da3633;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        button.voice.recording:hover {
+            background: #f85149;
+        }
+
+        button.voice .mic-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(218, 54, 51, 0.4);
+            }
+            50% {
+                opacity: 0.8;
+                box-shadow: 0 0 0 8px rgba(218, 54, 51, 0);
+            }
+        }
+
+        /* Voice status indicator */
+        .voice-status {
+            font-size: 0.75rem;
+            color: #8b949e;
+            margin-left: 0.5rem;
+        }
+
+        .voice-status.listening {
+            color: #f85149;
+        }
+
+        .voice-status.processing {
+            color: #d29922;
+        }
+
         .toolbar {
             background: #161b22;
             padding: 0.5rem 2rem;
@@ -152,6 +207,14 @@
     <header>
         <h1><span>Claude</span> Terminal</h1>
         <div class="controls">
+            <button id="btn-voice" class="voice" title="Hold to speak (or click to toggle)">
+                <svg class="mic-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/>
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+                <span id="voice-btn-text">Voice</span>
+            </button>
+            <span id="voice-status" class="voice-status"></span>
             <button id="btn-new-session" class="primary">New Session</button>
             <button id="btn-interrupt">Send Ctrl+C</button>
             <button id="btn-terminate" class="danger">Terminate</button>
@@ -383,6 +446,209 @@
                 client.sendInterrupt();
             }
         });
+
+        // Voice Control Implementation
+        class VoiceControl {
+            constructor(terminal) {
+                this.terminal = terminal;
+                this.recognition = null;
+                this.isListening = false;
+                this.isSupported = false;
+                this.finalTranscript = '';
+
+                this.btnVoice = document.getElementById('btn-voice');
+                this.btnText = document.getElementById('voice-btn-text');
+                this.statusEl = document.getElementById('voice-status');
+
+                this.init();
+            }
+
+            init() {
+                // Check for Web Speech API support
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+                if (!SpeechRecognition) {
+                    this.isSupported = false;
+                    this.btnVoice.disabled = true;
+                    this.btnVoice.title = 'Voice input not supported in this browser';
+                    this.btnText.textContent = 'No Voice';
+                    this.statusEl.textContent = 'Use Chrome/Edge for voice';
+                    return;
+                }
+
+                this.isSupported = true;
+                this.recognition = new SpeechRecognition();
+
+                // Configure recognition
+                this.recognition.continuous = true;
+                this.recognition.interimResults = true;
+                this.recognition.lang = 'en-US';
+
+                // Event handlers
+                this.recognition.onstart = () => this.onRecognitionStart();
+                this.recognition.onend = () => this.onRecognitionEnd();
+                this.recognition.onresult = (event) => this.onRecognitionResult(event);
+                this.recognition.onerror = (event) => this.onRecognitionError(event);
+                this.recognition.onnomatch = () => this.onNoMatch();
+
+                // Set up button handlers
+                this.setupButtonHandlers();
+            }
+
+            setupButtonHandlers() {
+                // Click to toggle
+                this.btnVoice.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.toggle();
+                });
+
+                // Space bar to toggle when button is focused
+                this.btnVoice.addEventListener('keydown', (e) => {
+                    if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        this.toggle();
+                    }
+                });
+
+                // Global keyboard shortcut: Ctrl+M to toggle voice
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey && e.key === 'm') {
+                        e.preventDefault();
+                        this.toggle();
+                    }
+                });
+            }
+
+            toggle() {
+                if (!this.isSupported) {
+                    this.terminal.terminal.writeln('\r\n\x1b[33m[Voice input not supported - use Chrome or Edge]\x1b[0m');
+                    return;
+                }
+
+                if (this.isListening) {
+                    this.stop();
+                } else {
+                    this.start();
+                }
+            }
+
+            start() {
+                if (this.isListening) return;
+
+                try {
+                    this.finalTranscript = '';
+                    this.recognition.start();
+                } catch (err) {
+                    console.error('Failed to start recognition:', err);
+                    this.terminal.terminal.writeln('\r\n\x1b[31m[Voice: Failed to start - ' + err.message + ']\x1b[0m');
+                }
+            }
+
+            stop() {
+                if (!this.isListening) return;
+
+                try {
+                    this.recognition.stop();
+                } catch (err) {
+                    console.error('Failed to stop recognition:', err);
+                }
+            }
+
+            onRecognitionStart() {
+                this.isListening = true;
+                this.btnVoice.classList.add('recording');
+                this.btnText.textContent = 'Stop';
+                this.statusEl.textContent = 'Listening...';
+                this.statusEl.className = 'voice-status listening';
+
+                this.terminal.terminal.writeln('\r\n\x1b[36m[Voice: Listening... speak now]\x1b[0m');
+            }
+
+            onRecognitionEnd() {
+                this.isListening = false;
+                this.btnVoice.classList.remove('recording');
+                this.btnText.textContent = 'Voice';
+                this.statusEl.textContent = '';
+                this.statusEl.className = 'voice-status';
+
+                // Send final transcript if we have one
+                if (this.finalTranscript.trim()) {
+                    this.sendToTerminal(this.finalTranscript.trim());
+                }
+            }
+
+            onRecognitionResult(event) {
+                let interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const result = event.results[i];
+                    if (result.isFinal) {
+                        this.finalTranscript += result[0].transcript;
+                    } else {
+                        interimTranscript += result[0].transcript;
+                    }
+                }
+
+                // Update status with interim results
+                if (interimTranscript) {
+                    this.statusEl.textContent = interimTranscript.substring(0, 40) + (interimTranscript.length > 40 ? '...' : '');
+                    this.statusEl.className = 'voice-status processing';
+                }
+            }
+
+            onRecognitionError(event) {
+                console.error('Recognition error:', event.error);
+
+                let errorMessage = event.error;
+                switch (event.error) {
+                    case 'no-speech':
+                        errorMessage = 'No speech detected';
+                        break;
+                    case 'audio-capture':
+                        errorMessage = 'No microphone found';
+                        break;
+                    case 'not-allowed':
+                        errorMessage = 'Microphone permission denied';
+                        break;
+                    case 'network':
+                        errorMessage = 'Network error';
+                        break;
+                    case 'aborted':
+                        // User stopped, not an error
+                        return;
+                }
+
+                this.terminal.terminal.writeln(`\r\n\x1b[31m[Voice Error: ${errorMessage}]\x1b[0m`);
+                this.statusEl.textContent = errorMessage;
+            }
+
+            onNoMatch() {
+                this.terminal.terminal.writeln('\r\n\x1b[33m[Voice: Could not understand speech]\x1b[0m');
+            }
+
+            sendToTerminal(text) {
+                if (!this.terminal.currentSessionId || !this.terminal.isConnected) {
+                    this.terminal.terminal.writeln('\r\n\x1b[33m[Voice: No active session - start a session first]\x1b[0m');
+                    return;
+                }
+
+                // Show what we're sending
+                this.terminal.terminal.writeln(`\r\n\x1b[32m[Voice Input: "${text}"]\x1b[0m`);
+
+                // Send via SignalR (add newline to submit)
+                this.terminal.connection.invoke('SendInputText', this.terminal.currentSessionId, text + '\n')
+                    .then(() => {
+                        console.log('Voice input sent successfully');
+                    })
+                    .catch(err => {
+                        console.error('Failed to send voice input:', err);
+                        this.terminal.terminal.writeln(`\r\n\x1b[31m[Voice: Failed to send - ${err.message}]\x1b[0m`);
+                    });
+            }
+        }
+
+        // Initialize voice control after terminal is ready
+        const voiceControl = new VoiceControl(client);
     </script>
 </body>
 </html>

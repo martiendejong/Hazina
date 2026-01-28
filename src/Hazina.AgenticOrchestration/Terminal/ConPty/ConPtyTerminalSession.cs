@@ -35,6 +35,7 @@ public class ConPtyTerminalSession : ITerminalSession
     private DateTime _lastOutputTime = DateTime.UtcNow;
     private bool _waitingForInput;
     private string _recentOutput = "";
+    private string? _title;
 
     public string SessionId { get; }
     public DateTime StartedAt { get; private set; }
@@ -43,7 +44,8 @@ public class ConPtyTerminalSession : ITerminalSession
     public int? ExitCode => _process?.ExitCode;
 
     /// <summary>
-    /// Whether the session appears to be waiting for user input
+    /// Whether the session appears to be waiting for user input.
+    /// Returns true when the terminal has been idle (no output) for at least 1 second.
     /// </summary>
     public bool WaitingForInput
     {
@@ -53,18 +55,31 @@ public class ConPtyTerminalSession : ITerminalSession
             {
                 if (!IsRunning) return false;
 
-                // Only return true if we detected a question pattern
-                // AND there's been no output for at least 500ms (to avoid flicker)
-                if (!_waitingForInput) return false;
-
+                // Simple approach: if no output for 1 second, we're waiting for input
                 var idleTime = DateTime.UtcNow - _lastOutputTime;
-                return idleTime.TotalMilliseconds >= 500;
+                return idleTime.TotalMilliseconds >= 1000;
             }
         }
     }
 
     public event Action<byte[]>? OnOutput;
     public event Action<int>? OnExit;
+    public event Action<string>? OnTitleChanged;
+
+    /// <summary>
+    /// Dynamic title extracted from terminal output.
+    /// Returns null if no title has been detected.
+    /// </summary>
+    public string? Title
+    {
+        get
+        {
+            lock (_stateLock)
+            {
+                return _title;
+            }
+        }
+    }
 
     /// <summary>
     /// Get all output history as bytes
@@ -77,32 +92,84 @@ public class ConPtyTerminalSession : ITerminalSession
         }
     }
 
-    // Patterns that indicate Claude is asking a question (more specific to avoid false positives)
+    // Patterns that indicate Claude is asking a question or waiting for input
     private static readonly string[] QuestionPatterns = new[]
     {
         "│ ●", // Claude's selection UI (selected option)
         "│ ○", // Claude's selection UI (unselected option)
+        "| ●", // ASCII fallback for selection UI
+        "| ○", // ASCII fallback for selection UI
         "❯", // Arrow prompt
+        ">", // Simple prompt (at end of line)
         "(y/n)", // Yes/no prompt
         "[Y/n]", // Yes/no prompt
         "[y/N]", // Yes/no prompt
-        "? ", // Question with space (more specific than just ?)
+        "(Y/n)", // Yes/no prompt variant
+        "? ", // Question with space
+        "Allow", // Permission prompts often contain "Allow"
+        "Deny", // Permission prompts
+        "press enter", // Common prompt
+        "Press Enter", // Common prompt
+        "continue?", // Continuation prompt
+        "proceed?", // Proceed prompt
     };
 
     private void DetectQuestionInOutput(string text)
     {
+        string? newTitle = null;
+
         lock (_stateLock)
         {
-            // Keep last 200 chars of output for pattern matching (smaller window)
+            // Keep last 500 chars of output for pattern matching
             _recentOutput = (_recentOutput + text);
-            if (_recentOutput.Length > 200)
+            if (_recentOutput.Length > 500)
             {
-                _recentOutput = _recentOutput.Substring(_recentOutput.Length - 200);
+                _recentOutput = _recentOutput.Substring(_recentOutput.Length - 500);
             }
 
-            // Check for question patterns - must match at least one specific pattern
+            // Check for question patterns - case insensitive for text patterns
             _waitingForInput = QuestionPatterns.Any(pattern =>
-                _recentOutput.Contains(pattern, StringComparison.Ordinal));
+                _recentOutput.Contains(pattern, StringComparison.OrdinalIgnoreCase));
+
+            if (_waitingForInput)
+            {
+                _logger?.LogDebug("Question pattern detected in session {SessionId}", SessionId);
+            }
+
+            // Detect title from "STATUS: Title" pattern
+            // Look for the pattern in the incoming text (not buffered, to catch new titles immediately)
+            var statusIndex = text.IndexOf("STATUS:", StringComparison.OrdinalIgnoreCase);
+            if (statusIndex >= 0)
+            {
+                // Extract the title after "STATUS: "
+                var afterStatus = text.Substring(statusIndex + 7).TrimStart();
+                // Take text until newline or end of string
+                var newlineIndex = afterStatus.IndexOfAny(new[] { '\r', '\n' });
+                var extractedTitle = newlineIndex >= 0
+                    ? afterStatus.Substring(0, newlineIndex).Trim()
+                    : afterStatus.Trim();
+
+                // Only update if we got a non-empty title that's different
+                if (!string.IsNullOrWhiteSpace(extractedTitle) && extractedTitle != _title)
+                {
+                    _title = extractedTitle;
+                    newTitle = extractedTitle;
+                    _logger?.LogInformation("Title changed to '{Title}' for session {SessionId}", _title, SessionId);
+                }
+            }
+        }
+
+        // Fire event outside lock to avoid deadlocks
+        if (newTitle != null)
+        {
+            try
+            {
+                OnTitleChanged?.Invoke(newTitle);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error in OnTitleChanged handler for session {SessionId}", SessionId);
+            }
         }
     }
 

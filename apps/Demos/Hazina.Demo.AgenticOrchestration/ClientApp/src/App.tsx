@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
 import { SessionList } from './components/SessionList'
 import { TerminalView } from './components/TerminalView'
+import { Login } from './components/Login'
+import { authFetch, hasCredentials, clearCredentials } from './auth'
 import type { TerminalSession, ExternalClaudeInstance, AllSessions, TerminalConfig } from './types'
 import './App.css'
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(hasCredentials())
   const [sessions, setSessions] = useState<TerminalSession[]>([])
   const [externalInstances, setExternalInstances] = useState<ExternalClaudeInstance[]>([])
   const [selectedSession, setSelectedSession] = useState<string | null>(null)
@@ -12,9 +15,18 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [config, setConfig] = useState<TerminalConfig | null>(null)
 
+  const handleUnauthorized = () => {
+    clearCredentials()
+    setIsAuthenticated(false)
+  }
+
   const fetchConfig = async () => {
     try {
-      const response = await fetch('/api/terminal/config')
+      const response = await authFetch('/api/terminal/config')
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
+      }
       if (!response.ok) throw new Error('Failed to fetch config')
       const data: TerminalConfig = await response.json()
       setConfig(data)
@@ -36,7 +48,11 @@ function App() {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch('/api/terminal/all-sessions')
+      const response = await authFetch('/api/terminal/all-sessions')
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
+      }
       if (!response.ok) throw new Error('Failed to fetch sessions')
       const data: AllSessions = await response.json()
       setSessions(data.terminalSessions)
@@ -50,19 +66,21 @@ function App() {
   }
 
   useEffect(() => {
+    if (!isAuthenticated) return
+
     // Fetch config once on mount
     fetchConfig()
     // Fetch sessions initially and refresh every 5 seconds
     fetchSessions()
     const interval = setInterval(fetchSessions, 5000)
     return () => clearInterval(interval)
-  }, [])
+  }, [isAuthenticated])
 
   const handleCreateSession = async () => {
     try {
       // Calculate approximate terminal size based on container
       // Use conservative defaults that will be resized when terminal mounts
-      const terminalContainer = document.querySelector('.terminal-container')
+      const terminalContainer = document.querySelector('.terminal-section')
       let cols = config?.defaultColumns ?? 80
       let rows = config?.defaultRows ?? 24
       if (terminalContainer) {
@@ -76,7 +94,7 @@ function App() {
 
       // Use configured defaults - command and workingDirectory come from backend config
       // Only pass columns/rows from our calculation; backend will use its defaults for command/workingDirectory
-      const response = await fetch('/api/terminal/sessions', {
+      const response = await authFetch('/api/terminal/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -85,6 +103,10 @@ function App() {
           // command and workingDirectory omitted - backend uses appsettings defaults
         })
       })
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
+      }
       if (!response.ok) throw new Error('Failed to create session')
       const newSession = await response.json()
       setSessions(prev => [...prev, newSession])
@@ -96,7 +118,11 @@ function App() {
 
   const handleTerminateSession = async (sessionId: string) => {
     try {
-      await fetch(`/api/terminal/sessions/${sessionId}`, { method: 'DELETE' })
+      const response = await authFetch(`/api/terminal/sessions/${sessionId}`, { method: 'DELETE' })
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
+      }
       setSessions(prev => prev.filter(s => s.sessionId !== sessionId))
       if (selectedSession === sessionId) {
         setSelectedSession(null)
@@ -104,6 +130,14 @@ function App() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to terminate session')
     }
+  }
+
+  const handleLogout = () => {
+    clearCredentials()
+    setIsAuthenticated(false)
+    setSessions([])
+    setExternalInstances([])
+    setSelectedSession(null)
   }
 
   const handleStateChanged = (sessionId: string, isRunning: boolean, waitingForInput: boolean) => {
@@ -114,6 +148,19 @@ function App() {
     ))
   }
 
+  const handleTitleChanged = (sessionId: string, title: string) => {
+    setSessions(prev => prev.map(s =>
+      s.sessionId === sessionId
+        ? { ...s, title }
+        : s
+    ))
+  }
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLogin={() => setIsAuthenticated(true)} />
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -121,6 +168,9 @@ function App() {
         <div className="header-actions">
           <button className="btn-primary" onClick={handleCreateSession}>
             + New Session
+          </button>
+          <button className="btn-logout" onClick={handleLogout}>
+            Logout
           </button>
         </div>
       </header>
@@ -133,7 +183,7 @@ function App() {
       )}
 
       <main className="app-main">
-        <aside className="sidebar">
+        <aside className={`sidebar ${selectedSession ? 'session-active' : ''}`}>
           <SessionList
             sessions={sessions}
             externalInstances={externalInstances}
@@ -144,19 +194,17 @@ function App() {
           />
         </aside>
 
-        <section className="terminal-container">
+        <section className={`terminal-section ${selectedSession ? 'has-session' : ''}`}>
           {selectedSession ? (
             <TerminalView
               sessionId={selectedSession}
               onClose={() => setSelectedSession(null)}
               onStateChanged={handleStateChanged}
+              onTitleChanged={handleTitleChanged}
             />
           ) : (
             <div className="no-session">
-              <p>Select a session or create a new one to start</p>
-              <button className="btn-primary" onClick={handleCreateSession}>
-                + New Session
-              </button>
+              <p>Select a session or create a new one</p>
             </div>
           )}
         </section>

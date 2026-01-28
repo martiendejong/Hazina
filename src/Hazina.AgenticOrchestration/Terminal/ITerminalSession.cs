@@ -37,6 +37,12 @@ public interface ITerminalSession : IAsyncDisposable
     bool WaitingForInput { get; }
 
     /// <summary>
+    /// Dynamic title extracted from terminal output (e.g., from "STATUS: Title" pattern).
+    /// Returns null if no title has been detected, in which case Command should be used.
+    /// </summary>
+    string? Title { get; }
+
+    /// <summary>
     /// Get all output history as bytes
     /// </summary>
     byte[] GetOutputHistory();
@@ -80,6 +86,11 @@ public interface ITerminalSession : IAsyncDisposable
     /// Event fired when the process exits
     /// </summary>
     event Action<int>? OnExit;
+
+    /// <summary>
+    /// Event fired when the session title changes (detected from "STATUS: Title" in output)
+    /// </summary>
+    event Action<string>? OnTitleChanged;
 }
 
 /// <summary>

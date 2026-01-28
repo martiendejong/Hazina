@@ -46,6 +46,7 @@ public class TerminalController : ControllerBase
             {
                 SessionId = s.SessionId,
                 Command = s.Command,
+                Title = s.Title,
                 StartedAt = s.StartedAt,
                 IsRunning = s.IsRunning,
                 WaitingForInput = s.WaitingForInput,
@@ -72,6 +73,7 @@ public class TerminalController : ControllerBase
         {
             SessionId = session.SessionId,
             Command = session.Command,
+            Title = session.Title,
             StartedAt = session.StartedAt,
             IsRunning = session.IsRunning,
             WaitingForInput = session.WaitingForInput,
@@ -123,6 +125,7 @@ public class TerminalController : ControllerBase
                 {
                     SessionId = session.SessionId,
                     Command = session.Command,
+                    Title = session.Title,
                     StartedAt = session.StartedAt,
                     IsRunning = session.IsRunning,
                     WaitingForInput = session.WaitingForInput,
@@ -358,6 +361,7 @@ public class TerminalController : ControllerBase
             {
                 SessionId = s.SessionId,
                 Command = s.Command,
+                Title = s.Title,
                 StartedAt = s.StartedAt,
                 IsRunning = s.IsRunning,
                 WaitingForInput = s.WaitingForInput,
@@ -465,6 +469,11 @@ public class TerminalSessionDto
 {
     public string SessionId { get; set; } = "";
     public string Command { get; set; } = "";
+    /// <summary>
+    /// Dynamic title extracted from terminal output (e.g., from "STATUS: Title" pattern).
+    /// If null, use Command as the display title.
+    /// </summary>
+    public string? Title { get; set; }
     public DateTime StartedAt { get; set; }
     public bool IsRunning { get; set; }
     public bool WaitingForInput { get; set; }
