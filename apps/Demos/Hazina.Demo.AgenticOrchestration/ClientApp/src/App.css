@@ -402,7 +402,6 @@ button:hover {
 @media (max-width: 768px) {
   .app-main {
     flex-direction: column;
-    position: relative;
   }
 
   /* Session list fills screen on mobile when no session selected */
@@ -425,15 +424,11 @@ button:hover {
     display: none;
   }
 
-  /* Terminal fullscreen on mobile when session is active */
+  /* Terminal fills available space on mobile when session is active */
   .terminal-container.has-session {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 10;
-    min-height: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
 
   /* Mobile toolbar layout */
@@ -475,20 +470,19 @@ button:hover {
     content: '← ';
   }
 
-  /* Fix xterm container height on mobile - fullscreen mode */
+  /* Terminal view fills container on mobile */
+  .terminal-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* Fix xterm container height on mobile */
   .terminal-view .terminal-container {
     flex: 1;
     min-height: 0;
-    /* Prevent jumping when keyboard appears */
-    height: 100%;
     overflow: hidden;
-  }
-
-  /* Fullscreen terminal view on mobile */
-  .terminal-view {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
   }
 
   /* Prevent body scroll when terminal is focused */
