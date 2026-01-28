@@ -299,6 +299,60 @@ button:hover {
   border-color: #30363d;
 }
 
+/* Voice Control Button */
+.btn-voice {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: #21262d;
+  border-color: #30363d;
+}
+
+.btn-voice:hover {
+  background: #30363d;
+  border-color: #8b949e;
+}
+
+.btn-voice.recording {
+  background: #da3633;
+  border-color: #da3633;
+  animation: voice-pulse 1.5s ease-in-out infinite;
+}
+
+.btn-voice.recording:hover {
+  background: #f85149;
+}
+
+.btn-voice .mic-icon {
+  width: 14px;
+  height: 14px;
+}
+
+@keyframes voice-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(218, 54, 51, 0.4);
+  }
+  50% {
+    opacity: 0.85;
+    box-shadow: 0 0 0 6px rgba(218, 54, 51, 0);
+  }
+}
+
+.voice-interim {
+  font-size: 0.75rem;
+  color: #d29922;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voice-error {
+  font-size: 0.75rem;
+  color: #f85149;
+}
+
 .terminal-error {
   background: #3d1f1f;
   color: #f85149;
