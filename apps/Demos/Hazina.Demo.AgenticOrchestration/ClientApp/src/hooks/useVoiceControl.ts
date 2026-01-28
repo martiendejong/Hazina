@@ -1,5 +1,20 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 
+/**
+ * useVoiceControl - Hook for voice-to-text input using Web Speech API
+ *
+ * PRIVACY NOTICE:
+ * This hook uses the browser's Web Speech API for speech recognition.
+ * - In Chrome/Edge: Audio is sent to Google's servers for processing
+ * - In Firefox: Uses local speech recognition (limited functionality)
+ * - In Safari: Uses Apple's servers for processing
+ *
+ * Users should be aware that spoken audio may be processed by third-party
+ * cloud services depending on their browser.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API
+ */
+
 // TypeScript declarations for Web Speech API
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList

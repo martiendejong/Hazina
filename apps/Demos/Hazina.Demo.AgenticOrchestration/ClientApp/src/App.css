@@ -353,6 +353,33 @@ button:hover {
   color: #f85149;
 }
 
+/* Visually hidden but accessible to screen readers */
+.voice-status-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Mobile: larger touch target for voice button */
+@media (max-width: 768px) {
+  .btn-voice {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .btn-voice .mic-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
 .terminal-error {
   background: #3d1f1f;
   color: #f85149;
