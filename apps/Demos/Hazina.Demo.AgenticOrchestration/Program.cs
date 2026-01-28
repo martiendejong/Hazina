@@ -22,6 +22,11 @@ var defaultRows = int.TryParse(terminalConfig["DefaultRows"], out var rows) ? ro
 var maxSessions = int.TryParse(terminalConfig["MaxConcurrentSessions"], out var max) ? max : 10;
 var sessionTimeout = int.TryParse(terminalConfig["SessionTimeoutMinutes"], out var timeout) ? timeout : 60;
 
+// Session logging configuration
+var sessionLoggingConfig = config.GetSection("SessionLogging");
+var sessionLoggingEnabled = !bool.TryParse(sessionLoggingConfig["Enabled"], out var logEnabled) || logEnabled; // Default: true
+var sessionLogsBasePath = sessionLoggingConfig["BasePath"] ?? @"C:\scripts\logs\agent-sessions";
+
 // Authentication configuration
 var authConfig = builder.Configuration.GetSection("Authentication");
 var authEnabled = bool.TryParse(authConfig["Enabled"], out var enabled) && enabled;
@@ -36,6 +41,11 @@ Console.WriteLine($"║  Database: {dbPath,-50} ║");
 Console.WriteLine($"║  Logs: {logsPath,-54} ║");
 Console.WriteLine($"║  Terminal Command: {defaultCommand,-42} ║");
 Console.WriteLine($"║  Working Directory: {defaultWorkingDirectory ?? "(current)",-41} ║");
+Console.WriteLine($"║  Session Logging: {(sessionLoggingEnabled ? "ENABLED" : "DISABLED"),-43} ║");
+if (sessionLoggingEnabled)
+{
+    Console.WriteLine($"║  Session Logs: {sessionLogsBasePath,-46} ║");
+}
 Console.WriteLine($"║  Authentication: {(authEnabled ? $"ENABLED (user: {authUsername})" : "DISABLED"),-44} ║");
 Console.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
 
@@ -58,6 +68,9 @@ builder.Services.AddHazinaAgenticOrchestration(options =>
     options.DefaultTerminalRows = defaultRows;
     options.MaxConcurrentSessions = maxSessions;
     options.SessionTimeoutMinutes = sessionTimeout;
+    // Session logging
+    options.EnableSessionLogging = sessionLoggingEnabled;
+    options.AgentSessionLogsPath = sessionLogsBasePath;
 });
 Console.WriteLine("✅ Hazina Agentic Orchestration services registered (declarative)");
 

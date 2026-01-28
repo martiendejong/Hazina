@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Hazina.AgenticOrchestration.Hubs;
+using Hazina.AgenticOrchestration.Services;
 using Hazina.AgenticOrchestration.Terminal.ConPty;
 
 namespace Hazina.AgenticOrchestration.Terminal;
@@ -50,6 +51,7 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
     private readonly IHubContext<TerminalHub> _hubContext;
     private readonly ILogger<TerminalSessionManager> _logger;
     private readonly ILoggerFactory _loggerFactory;
+    private readonly IAgentSessionLogger _sessionLogger;
     private readonly Timer _cleanupTimer;
     private readonly bool _useConPty;
     private bool _disposed;
@@ -59,11 +61,13 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
     public TerminalSessionManager(
         IHubContext<TerminalHub> hubContext,
         ILogger<TerminalSessionManager> logger,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory,
+        IAgentSessionLogger sessionLogger)
     {
         _hubContext = hubContext;
         _logger = logger;
         _loggerFactory = loggerFactory;
+        _sessionLogger = sessionLogger;
 
         // Use ConPTY on Windows for full interactive terminal support
         _useConPty = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
@@ -91,6 +95,9 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
             session = new TerminalSession(sessionId, config, pipeLogger);
             _logger.LogInformation("Creating pipe-based session {SessionId} for command '{Command}'", sessionId, config.Command);
         }
+
+        // Start session logging
+        await _sessionLogger.StartSessionAsync(sessionId, config.Command, config.WorkingDirectory);
 
         // Track last state to detect changes
         bool lastWaitingState = false;
@@ -122,6 +129,9 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
             {
                 _logger.LogDebug("OUTPUT: Sending {ByteCount} bytes to session {SessionId}", data.Length, sessionId);
 
+                // Log output to file
+                await _sessionLogger.LogOutputAsync(sessionId, data);
+
                 // Convert byte[] to int[] because System.Text.Json serializes byte[] as Base64 string
                 // but the JavaScript client expects a number array
                 var intArray = data.Select(b => (int)b).ToArray();
@@ -152,6 +162,9 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
             {
                 // Stop the state check timer
                 await stateCheckTimer.DisposeAsync();
+
+                // End session logging
+                await _sessionLogger.EndSessionAsync(sessionId, exitCode);
 
                 await _hubContext.Clients
                     .Group($"terminal-{sessionId}")
