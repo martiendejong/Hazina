@@ -402,50 +402,93 @@ button:hover {
 @media (max-width: 768px) {
   .app-main {
     flex-direction: column;
+    position: relative;
   }
 
+  /* Session list fills screen on mobile when no session selected */
   .sidebar {
     width: 100%;
-    max-height: 30vh;
+    flex: 1;
+    max-height: none;
     border-right: none;
-    border-bottom: 1px solid #30363d;
+    border-bottom: none;
+    overflow-y: auto;
   }
 
-  .terminal-container {
-    min-height: 50vh;
+  /* Hide sidebar when a session is active on mobile */
+  .sidebar.session-active {
+    display: none;
   }
 
-  /* Smaller toolbar on mobile */
+  /* Hide terminal container when no session (show only sidebar) */
+  .terminal-container:not(.has-session) {
+    display: none;
+  }
+
+  /* Terminal fullscreen on mobile when session is active */
+  .terminal-container.has-session {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    min-height: 100%;
+  }
+
+  /* Mobile toolbar layout */
   .terminal-toolbar {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.5rem;
     padding: 0.5rem;
   }
 
   .terminal-info {
-    flex: 1 1 100%;
-    justify-content: space-between;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .terminal-info .session-label {
+    display: none; /* Hide session ID on mobile - save space */
   }
 
   .terminal-actions {
-    flex: 1 1 100%;
-    justify-content: flex-end;
+    flex-shrink: 0;
+    gap: 0.25rem;
   }
 
-  /* Smaller buttons on mobile */
+  /* Mobile buttons */
   .terminal-actions button {
     padding: 0.5rem 0.75rem;
     font-size: 0.8rem;
   }
 
-  /* Fix xterm container height on mobile */
+  /* Make Close button prominent as Back button on mobile */
+  .terminal-actions .btn-close {
+    background: #21262d;
+    border-color: #30363d;
+    order: -1; /* Move to front */
+  }
+
+  .terminal-actions .btn-close::before {
+    content: '← ';
+  }
+
+  /* Fix xterm container height on mobile - fullscreen mode */
   .terminal-view .terminal-container {
     flex: 1;
     min-height: 0;
     /* Prevent jumping when keyboard appears */
     height: 100%;
-    max-height: calc(100vh - 200px);
     overflow: hidden;
+  }
+
+  /* Fullscreen terminal view on mobile */
+  .terminal-view {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
   /* Prevent body scroll when terminal is focused */

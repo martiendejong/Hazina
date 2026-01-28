@@ -183,7 +183,7 @@ function App() {
       )}
 
       <main className="app-main">
-        <aside className="sidebar">
+        <aside className={`sidebar ${selectedSession ? 'session-active' : ''}`}>
           <SessionList
             sessions={sessions}
             externalInstances={externalInstances}
@@ -194,7 +194,7 @@ function App() {
           />
         </aside>
 
-        <section className="terminal-container">
+        <section className={`terminal-container ${selectedSession ? 'has-session' : ''}`}>
           {selectedSession ? (
             <TerminalView
               sessionId={selectedSession}
@@ -204,10 +204,7 @@ function App() {
             />
           ) : (
             <div className="no-session">
-              <p>Select a session or create a new one to start</p>
-              <button className="btn-primary" onClick={handleCreateSession}>
-                + New Session
-              </button>
+              <p>Select a session or create a new one</p>
             </div>
           )}
         </section>
