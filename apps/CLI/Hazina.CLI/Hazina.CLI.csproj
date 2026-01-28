@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Hazina.CLI</RootNamespace>
+    <AssemblyName>hazina</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.2" />
+    <PackageReference Include="Spectre.Console" Version="0.49.1" />
+  </ItemGroup>
+
+  <!-- Configuration files -->
+  <ItemGroup Condition="Exists('appsettings.json')">
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!-- Project references -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Core\AI\Hazina.AI.FluentAPI\Hazina.AI.FluentAPI.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\AI\Hazina.AI.RAG\Hazina.AI.RAG.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\AI\Hazina.AI.Agents\Hazina.AI.Agents.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\AI\Hazina.Neurochain.Core\Hazina.Neurochain.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\AI\Hazina.AI.Providers\Hazina.AI.Providers.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\AI\Hazina.AI.FaultDetection\Hazina.AI.FaultDetection.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\Storage\Hazina.Store.DocumentStore\Hazina.Store.DocumentStore.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\Storage\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\LLMs.Providers\Hazina.LLMs.OpenAI\Hazina.LLMs.OpenAI.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\LLMs.Providers\Hazina.LLMs.Anthropic\Hazina.LLMs.Anthropic.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\..\src\Tools\Services\Hazina.Tools.Services.Intake\Hazina.Tools.Services.Intake.csproj" />
+    <ProjectReference Include="..\..\..\src\Tools\Foundation\Hazina.Tools.TextExtraction\Hazina.Tools.TextExtraction.csproj" />
+  </ItemGroup>
+</Project>
