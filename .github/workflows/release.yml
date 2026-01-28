@@ -53,6 +53,7 @@ jobs:
           fi
 
       - name: Publish self-contained app
+        shell: bash
         run: |
           dotnet publish apps/Demos/Hazina.Demo.AgenticOrchestration/Hazina.Demo.AgenticOrchestration.csproj \
             -c Release \
