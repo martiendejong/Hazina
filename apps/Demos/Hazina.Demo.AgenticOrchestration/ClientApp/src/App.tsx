@@ -80,7 +80,7 @@ function App() {
     try {
       // Calculate approximate terminal size based on container
       // Use conservative defaults that will be resized when terminal mounts
-      const terminalContainer = document.querySelector('.terminal-container')
+      const terminalContainer = document.querySelector('.terminal-section')
       let cols = config?.defaultColumns ?? 80
       let rows = config?.defaultRows ?? 24
       if (terminalContainer) {
@@ -194,7 +194,7 @@ function App() {
           />
         </aside>
 
-        <section className={`terminal-container ${selectedSession ? 'has-session' : ''}`}>
+        <section className={`terminal-section ${selectedSession ? 'has-session' : ''}`}>
           {selectedSession ? (
             <TerminalView
               sessionId={selectedSession}

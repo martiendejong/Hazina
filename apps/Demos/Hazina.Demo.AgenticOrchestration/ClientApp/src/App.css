@@ -212,8 +212,8 @@ button:hover {
   color: #f85149;
 }
 
-/* Terminal Container */
-.terminal-container {
+/* Terminal Section (outer container in App.tsx) */
+.terminal-section {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -419,13 +419,13 @@ button:hover {
     display: none;
   }
 
-  /* Hide terminal container when no session (show only sidebar) */
-  .terminal-container:not(.has-session) {
+  /* Hide terminal section when no session (show only sidebar) */
+  .terminal-section:not(.has-session) {
     display: none;
   }
 
   /* Terminal fills available space on mobile when session is active */
-  .terminal-container.has-session {
+  .terminal-section.has-session {
     flex: 1;
     display: flex;
     flex-direction: column;
