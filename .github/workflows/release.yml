@@ -1,4 +1,4 @@
-name: Release Hazina CLI
+name: Release Terminal Orchestration Tool
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., 1.0.0)'
+        description: 'Version to release (e.g., 1.1.0)'
         required: true
         type: string
 
@@ -21,10 +21,10 @@ jobs:
         include:
           - os: windows-latest
             rid: win-x64
-            artifact: hazinacoder.exe
+            exe: HazinaOrchestration.exe
           - os: ubuntu-latest
             rid: linux-x64
-            artifact: hazinacoder
+            exe: HazinaOrchestration
 
     runs-on: ${{ matrix.os }}
 
@@ -37,6 +37,11 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Get version
         id: version
         shell: bash
@@ -47,36 +52,37 @@ jobs:
             echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build self-contained executable
+      - name: Publish self-contained app
         run: |
-          dotnet publish apps/CLI/Hazina.App.HazinaCoder/Hazina.App.HazinaCoder.csproj \
+          dotnet publish apps/Demos/Hazina.Demo.AgenticOrchestration/Hazina.Demo.AgenticOrchestration.csproj \
             -c Release \
             -r ${{ matrix.rid }} \
             --self-contained true \
-            -p:PublishSingleFile=true \
-            -p:IncludeNativeLibrariesForSelfExtract=true \
-            -p:EnableCompressionInSingleFile=true \
-            -p:DebugType=embedded \
             -p:Version=${{ steps.version.outputs.version }} \
             -o ./publish
+
+      - name: Copy distribution config
+        shell: bash
+        run: |
+          cp build/dist/appsettings.dist.json ./publish/appsettings.json
 
       - name: Create archive (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          Compress-Archive -Path ./publish/${{ matrix.artifact }},./publish/appsettings.json -DestinationPath ./hazinacoder-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip
+          Compress-Archive -Path ./publish/* -DestinationPath ./terminal-orchestration-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip
 
       - name: Create archive (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
           cd publish
-          zip ../hazinacoder-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip ${{ matrix.artifact }} appsettings.json
+          tar -czf ../terminal-orchestration-${{ steps.version.outputs.version }}-${{ matrix.rid }}.tar.gz *
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: hazinacoder-${{ matrix.rid }}
-          path: hazinacoder-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip
+          name: terminal-orchestration-${{ matrix.rid }}
+          path: terminal-orchestration-${{ steps.version.outputs.version }}-${{ matrix.rid }}.*
 
   create-installer:
     needs: build
@@ -89,7 +95,7 @@ jobs:
       - name: Download Windows artifact
         uses: actions/download-artifact@v4
         with:
-          name: hazinacoder-win-x64
+          name: terminal-orchestration-win-x64
           path: ./artifacts
 
       - name: Get version
@@ -105,7 +111,7 @@ jobs:
       - name: Extract for installer
         shell: pwsh
         run: |
-          Expand-Archive -Path ./artifacts/hazinacoder-${{ steps.version.outputs.version }}-win-x64.zip -DestinationPath ./installer-files
+          Expand-Archive -Path "./artifacts/terminal-orchestration-${{ steps.version.outputs.version }}-win-x64.zip" -DestinationPath ./installer-files
 
       - name: Install Inno Setup
         shell: pwsh
@@ -115,70 +121,55 @@ jobs:
       - name: Create Inno Setup script
         shell: pwsh
         run: |
-          $script = @"
-          #define MyAppName "Hazina CLI"
+          @"
+          #define MyAppName "Terminal Orchestration Tool"
           #define MyAppVersion "${{ steps.version.outputs.version }}"
           #define MyAppPublisher "Hazina"
           #define MyAppURL "https://martiendejong.nl/hazina"
-          #define MyAppExeName "hazinacoder.exe"
+          #define MyAppExeName "HazinaOrchestration.exe"
 
           [Setup]
-          AppId={{8A1B2C3D-4E5F-6789-ABCD-EF0123456789}
+          AppId={{B2A3C4D5-E6F7-8901-ABCD-EF2345678901}
           AppName={#MyAppName}
           AppVersion={#MyAppVersion}
           AppVerName={#MyAppName} {#MyAppVersion}
           AppPublisher={#MyAppPublisher}
           AppPublisherURL={#MyAppURL}
-          DefaultDirName={autopf}\Hazina
+          DefaultDirName={autopf}\TerminalOrchestration
           DefaultGroupName={#MyAppName}
           AllowNoIcons=yes
           OutputDir=.
-          OutputBaseFilename=hazinacoder-${{ steps.version.outputs.version }}-win-x64-setup
+          OutputBaseFilename=terminal-orchestration-${{ steps.version.outputs.version }}-win-x64-setup
           Compression=lzma2/ultra64
           SolidCompression=yes
           WizardStyle=modern
           PrivilegesRequired=lowest
-          ChangesEnvironment=yes
           ArchitecturesInstallIn64BitMode=x64compatible
 
-          [Tasks]
-          Name: "addtopath"; Description: "Add to PATH (recommended)"; GroupDescription: "Additional options:"; Flags: checkedonce
-
           [Files]
-          Source: "installer-files\hazinacoder.exe"; DestDir: "{app}"; Flags: ignoreversion
+          Source: "installer-files\HazinaOrchestration.exe"; DestDir: "{app}"; Flags: ignoreversion
           Source: "installer-files\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion
+          Source: "installer-files\entities.yaml"; DestDir: "{app}"; Flags: ignoreversion
+          Source: "installer-files\wwwroot\*"; DestDir: "{app}\wwwroot"; Flags: ignoreversion recursesubdirs createallsubdirs
 
           [Icons]
           Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
           Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 
-          [Registry]
-          Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; ValueData: "{olddata};{app}"; Tasks: addtopath; Check: NeedsAddPath('{app}')
-
-          [Code]
-          function NeedsAddPath(Param: string): boolean;
-          var
-            OrigPath: string;
-          begin
-            if not RegQueryStringValue(HKEY_CURRENT_USER, 'Environment', 'Path', OrigPath) then
-            begin
-              Result := True;
-              exit;
-            end;
-            Result := Pos(';' + Param + ';', ';' + OrigPath + ';') = 0;
-          end;
-          "@
-          Set-Content -Path setup.iss -Value $script
+          [Run]
+          Filename: "{app}\{#MyAppExeName}"; Description: "Launch Terminal Orchestration Tool"; Flags: nowait postinstall skipifsilent
+          "@ | Set-Content -Path setup.iss
 
       - name: Compile installer
+        shell: pwsh
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: hazinacoder-installer
-          path: hazinacoder-${{ steps.version.outputs.version }}-win-x64-setup.exe
+          name: terminal-orchestration-installer
+          path: terminal-orchestration-${{ steps.version.outputs.version }}-win-x64-setup.exe
 
   release:
     needs: [build, create-installer]
@@ -206,69 +197,49 @@ jobs:
       - name: List artifacts
         run: find ./release-artifacts -type f
 
-      - name: Create install script
+      - name: Create install script for Linux
         run: |
-          cat > ./release-artifacts/install.sh << 'INSTALL_SCRIPT'
+          cat > ./release-artifacts/install.sh << 'INSTALL_EOF'
           #!/bin/bash
-          # Hazina CLI Installer for Linux
-          # Usage: curl -fsSL https://martiendejong.nl/hazina/install.sh | bash
-
           set -e
 
-          VERSION="${{ steps.version.outputs.version }}"
-          INSTALL_DIR="${HOME}/.hazina"
-          BIN_DIR="${HOME}/.local/bin"
+          GITHUB_REPO="martiendejong/hazina"
+          INSTALL_DIR="${HOME}/.terminal-orchestration"
 
           echo "================================================"
-          echo "  Hazina CLI Installer"
-          echo "  Version: $VERSION"
+          echo "  Terminal Orchestration Tool Installer"
           echo "================================================"
           echo ""
+
+          # Get latest version from GitHub
+          VERSION=$(curl -s "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/' 2>/dev/null || echo "")
+          if [ -z "$VERSION" ]; then
+            echo "Error: Could not determine latest version from GitHub"
+            exit 1
+          fi
+          echo "Latest version: $VERSION"
 
           ARCH=$(uname -m)
           case $ARCH in
-              x86_64)
-                  PLATFORM="linux-x64"
-                  ;;
-              aarch64|arm64)
-                  PLATFORM="linux-arm64"
-                  echo "Warning: ARM64 builds may not be available yet"
-                  ;;
-              *)
-                  echo "Error: Unsupported architecture: $ARCH"
-                  exit 1
-                  ;;
+              x86_64) PLATFORM="linux-x64" ;;
+              *) echo "Error: Unsupported architecture: $ARCH"; exit 1 ;;
           esac
 
-          echo "Detected platform: $PLATFORM"
+          echo "Platform: $PLATFORM"
           echo ""
 
           mkdir -p "$INSTALL_DIR"
-          mkdir -p "$BIN_DIR"
 
-          DOWNLOAD_URL="https://github.com/martiendejong/hazina/releases/download/v$VERSION/hazinacoder-$VERSION-$PLATFORM.zip"
-          TEMP_FILE="/tmp/hazinacoder-$VERSION.zip"
+          DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/terminal-orchestration-${VERSION}-${PLATFORM}.tar.gz"
+          TEMP_FILE="/tmp/terminal-orchestration.tar.gz"
 
-          echo "Downloading Hazina CLI..."
-          echo "  URL: $DOWNLOAD_URL"
+          echo "Downloading..."
+          curl -fsSL "$DOWNLOAD_URL" -o "$TEMP_FILE" --progress-bar
 
-          if command -v curl &> /dev/null; then
-              curl -fsSL "$DOWNLOAD_URL" -o "$TEMP_FILE"
-          elif command -v wget &> /dev/null; then
-              wget -q "$DOWNLOAD_URL" -O "$TEMP_FILE"
-          else
-              echo "Error: curl or wget required"
-              exit 1
-          fi
+          echo "Extracting to $INSTALL_DIR..."
+          tar -xzf "$TEMP_FILE" -C "$INSTALL_DIR"
 
-          echo "Extracting..."
-          unzip -o "$TEMP_FILE" -d "$INSTALL_DIR"
-
-          echo "Setting permissions..."
-          chmod +x "$INSTALL_DIR/hazinacoder"
-
-          echo "Creating symlink..."
-          ln -sf "$INSTALL_DIR/hazinacoder" "$BIN_DIR/hazinacoder"
+          chmod +x "$INSTALL_DIR/HazinaOrchestration"
 
           rm -f "$TEMP_FILE"
 
@@ -277,32 +248,48 @@ jobs:
           echo "  Installation Complete!"
           echo "================================================"
           echo ""
-          echo "Hazina CLI installed to: $INSTALL_DIR"
+          echo "Installed to: $INSTALL_DIR"
           echo ""
-
-          if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
-              echo "NOTE: Add to your shell profile:"
-              echo ""
-              echo "  export PATH=\"$BIN_DIR:\$PATH\""
-              echo ""
-          fi
-
-          echo "To get started: hazinacoder --help"
+          echo "To start the server:"
+          echo "  $INSTALL_DIR/HazinaOrchestration"
           echo ""
-          INSTALL_SCRIPT
+          echo "Then open http://localhost:5000 in your browser."
+          echo ""
+          echo "Configuration: $INSTALL_DIR/appsettings.json"
+          echo ""
+          INSTALL_EOF
+          chmod +x ./release-artifacts/install.sh
 
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
-          name: Hazina CLI v${{ steps.version.outputs.version }}
+          name: Terminal Orchestration Tool v${{ steps.version.outputs.version }}
           tag_name: v${{ steps.version.outputs.version }}
           draft: false
           prerelease: false
           generate_release_notes: true
+          body: |
+            ## Terminal Orchestration Tool v${{ steps.version.outputs.version }}
+
+            Web-based interface for managing AI terminal sessions with real-time streaming.
+
+            ### Quick Install
+
+            **Windows:** Download and run the installer, or extract the ZIP.
+            **Linux:** `curl -fsSL https://github.com/martiendejong/hazina/releases/latest/download/install.sh | bash`
+
+            After installing, run the executable and open http://localhost:5000
+
+            ### Downloads
+            | Platform | File |
+            |----------|------|
+            | Windows Installer | `terminal-orchestration-${{ steps.version.outputs.version }}-win-x64-setup.exe` |
+            | Windows ZIP | `terminal-orchestration-${{ steps.version.outputs.version }}-win-x64.zip` |
+            | Linux tar.gz | `terminal-orchestration-${{ steps.version.outputs.version }}-linux-x64.tar.gz` |
           files: |
-            ./release-artifacts/hazinacoder-win-x64/*.zip
-            ./release-artifacts/hazinacoder-linux-x64/*.zip
-            ./release-artifacts/hazinacoder-installer/*.exe
+            ./release-artifacts/terminal-orchestration-win-x64/*
+            ./release-artifacts/terminal-orchestration-linux-x64/*
+            ./release-artifacts/terminal-orchestration-installer/*.exe
             ./release-artifacts/install.sh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
