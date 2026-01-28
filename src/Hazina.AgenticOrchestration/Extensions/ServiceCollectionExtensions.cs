@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace Hazina.AgenticOrchestration.Extensions;
@@ -80,6 +81,8 @@ public static class ServiceCollectionExtensions
                 opt.DefaultCommand = options.DefaultCommand;
                 opt.DefaultWorkingDirectory = options.DefaultWorkingDirectory;
                 opt.DefaultArguments = options.DefaultArguments;
+                opt.EnableSessionLogging = options.EnableSessionLogging;
+                opt.AgentSessionLogsPath = options.AgentSessionLogsPath;
             });
 
         // Register core services
@@ -103,6 +106,19 @@ public static class ServiceCollectionExtensions
             services.AddSignalR();
         }
 
+        // Register Agent Session Logger for file-based I/O logging
+        if (options.EnableSessionLogging)
+        {
+            services.AddSingleton<IAgentSessionLogger>(
+                new AgentSessionLogger(options.AgentSessionLogsPath));
+        }
+        else
+        {
+            // Register null implementation to avoid null checks everywhere
+            services.TryAddSingleton<IAgentSessionLogger>(
+                new NullAgentSessionLogger());
+        }
+
         // Register Terminal Session Manager for real-time process streaming
         if (options.EnableTerminalStreaming)
         {
@@ -110,7 +126,8 @@ public static class ServiceCollectionExtensions
                 new TerminalSessionManager(
                     sp.GetRequiredService<IHubContext<TerminalHub>>(),
                     sp.GetRequiredService<ILogger<TerminalSessionManager>>(),
-                    sp.GetRequiredService<ILoggerFactory>()));
+                    sp.GetRequiredService<ILoggerFactory>(),
+                    sp.GetRequiredService<IAgentSessionLogger>()));
         }
 
         return services;
@@ -236,4 +253,17 @@ public class AgenticOrchestrationOptions
     /// Default: empty array
     /// </summary>
     public string[] DefaultArguments { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Enable logging of all agent session input/output to files.
+    /// Default: true
+    /// </summary>
+    public bool EnableSessionLogging { get; set; } = true;
+
+    /// <summary>
+    /// Base path for agent session log files.
+    /// Files are organized as: {BasePath}/{yyyy-MM-dd}/{HH}/session-{sessionId}.log
+    /// Default: C:\scripts\logs\agent-sessions
+    /// </summary>
+    public string AgentSessionLogsPath { get; set; } = @"C:\scripts\logs\agent-sessions";
 }

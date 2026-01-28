@@ -1,6 +1,8 @@
 using System.Linq;
+using System.Text;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using Hazina.AgenticOrchestration.Services;
 using Hazina.AgenticOrchestration.Terminal;
 
 namespace Hazina.AgenticOrchestration.Hubs;
@@ -29,11 +31,16 @@ public class TerminalHub : Hub
 {
     private readonly ITerminalSessionManager _sessionManager;
     private readonly ILogger<TerminalHub> _logger;
+    private readonly IAgentSessionLogger _sessionLogger;
 
-    public TerminalHub(ITerminalSessionManager sessionManager, ILogger<TerminalHub> logger)
+    public TerminalHub(
+        ITerminalSessionManager sessionManager,
+        ILogger<TerminalHub> logger,
+        IAgentSessionLogger sessionLogger)
     {
         _sessionManager = sessionManager;
         _logger = logger;
+        _sessionLogger = sessionLogger;
     }
 
     /// <summary>
@@ -137,6 +144,10 @@ public class TerminalHub : Hub
 
         // Convert int[] to byte[] (JavaScript sends numbers, not bytes)
         var bytes = data.Select(i => (byte)i).ToArray();
+
+        // Log input to file
+        await _sessionLogger.LogInputAsync(sessionId, bytes);
+
         await session.WriteInputAsync(bytes);
     }
 
@@ -152,6 +163,9 @@ public class TerminalHub : Hub
             await Clients.Caller.SendAsync("OnError", sessionId, "Session not found");
             return;
         }
+
+        // Log input to file
+        await _sessionLogger.LogInputAsync(sessionId, text);
 
         await session.WriteInputAsync(text);
     }

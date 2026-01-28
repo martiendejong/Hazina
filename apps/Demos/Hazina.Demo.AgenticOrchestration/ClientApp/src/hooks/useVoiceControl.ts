@@ -128,19 +128,26 @@ export function useVoiceControl(
       let interim = ''
       let final = ''
 
+      // On Android/mobile browsers, each result (both interim AND final)
+      // contains the FULL transcript so far, not just new words.
+      // We use = instead of += to avoid duplication.
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i]
         if (result.isFinal) {
-          final += result[0].transcript
+          final = result[0].transcript
         } else {
-          interim += result[0].transcript
+          interim = result[0].transcript
         }
       }
 
       if (final) {
-        finalTranscriptRef.current += final
+        // Replace, don't accumulate - Android sends full transcript each time
+        finalTranscriptRef.current = final
+        // Clear interim since we have a final result
+        setInterimTranscript('')
+      } else if (interim) {
+        setInterimTranscript(interim)
       }
-      setInterimTranscript(interim)
     }
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
