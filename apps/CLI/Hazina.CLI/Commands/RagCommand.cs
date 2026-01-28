@@ -130,7 +130,7 @@ public static class RagCommand
             var client = HazinaConfig.GetLLMClient();
 
             // Create embedding store
-            var vectorStorePath = Path.Combine(storeConfig.Path, "vectors");
+            var vectorStorePath = Path.Combine(storeConfig.Path, "vectors", "embeddings.json");
             var embeddingStore = EmbeddingStoreFactory.CreateFromSpec(vectorStorePath, client);
 
             // Load existing chunk texts
@@ -249,7 +249,7 @@ public static class RagCommand
 
             // Get client
             var client = HazinaConfig.GetLLMClient();
-            var vectorStorePath = Path.Combine(storeConfig.Path, "vectors");
+            var vectorStorePath = Path.Combine(storeConfig.Path, "vectors", "embeddings.json");
             var embeddingStore = EmbeddingStoreFactory.CreateFromSpec(vectorStorePath, client);
 
             await AnsiConsole.Status()

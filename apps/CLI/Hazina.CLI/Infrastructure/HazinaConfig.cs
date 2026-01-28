@@ -54,8 +54,10 @@ public static class HazinaConfig
 
         var config = GetConfiguration();
 
-        // Try to configure OpenAI
-        var openAiKey = config["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        // Try to configure OpenAI - check multiple config paths
+        var openAiKey = config["OpenAI:ApiKey"]
+            ?? config["ApiSettings:OpenApiKey"]
+            ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
         if (string.IsNullOrEmpty(openAiKey))
         {
             AnsiConsole.MarkupLine("[red]Error:[/] No OpenAI API key configured.");
