@@ -19,8 +19,13 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const terminalInstance = useRef<Terminal | null>(null)
   const fitAddon = useRef<FitAddon | null>(null)
   const connection = useRef<signalR.HubConnection | null>(null)
+  const resizeTimeoutRef = useRef<number | null>(null)
+  const lastDimensionsRef = useRef<{ cols: number; rows: number } | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Detect if we're on a mobile device
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 
   useEffect(() => {
     if (!terminalRef.current) return
@@ -28,7 +33,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     // Create terminal with proper settings for ConPTY
     const terminal = new Terminal({
       cursorBlink: true,
-      fontSize: 14,
+      fontSize: isMobile ? 12 : 14,  // Smaller font on mobile
       fontFamily: 'Cascadia Code, Consolas, Monaco, monospace',
       theme: {
         background: '#1e1e1e',
@@ -36,6 +41,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         cursor: '#ffffff',
         cursorAccent: '#1e1e1e',
         selectionBackground: '#264f78',
+        selectionForeground: '#ffffff',
+        selectionInactiveBackground: '#264f78',  // Same as active to prevent grey
         black: '#000000',
         red: '#cd3131',
         green: '#0dbc79',
@@ -53,10 +60,14 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         brightCyan: '#29b8db',
         brightWhite: '#ffffff',
       },
-      scrollback: 10000,
+      scrollback: isMobile ? 1000 : 10000,  // Less scrollback on mobile for performance
       allowProposedApi: true,
       // Don't convert EOL - ConPTY sends proper \r\n sequences
       convertEol: false,
+      // Mobile optimizations
+      scrollOnUserInput: true,
+      fastScrollSensitivity: isMobile ? 1 : 5,
+      smoothScrollDuration: isMobile ? 0 : 125,  // Disable smooth scroll on mobile
     })
 
     // Add addons
@@ -80,28 +91,54 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     terminalInstance.current = terminal
     fitAddon.current = fit
 
-    // Handle resize
-    const handleResize = () => {
-      fit.fit()
-      if (connection.current?.state === signalR.HubConnectionState.Connected) {
-        connection.current.invoke('Resize', sessionId, terminal.cols, terminal.rows)
-          .catch(err => console.error('Resize failed:', err))
+    // Debounced resize handler that prevents rapid resizing on mobile
+    const doResize = () => {
+      if (!fitAddon.current || !terminalInstance.current) return
+
+      try {
+        fitAddon.current.fit()
+        const newCols = terminalInstance.current.cols
+        const newRows = terminalInstance.current.rows
+
+        // Only send resize to server if dimensions actually changed
+        const last = lastDimensionsRef.current
+        if (!last || last.cols !== newCols || last.rows !== newRows) {
+          lastDimensionsRef.current = { cols: newCols, rows: newRows }
+
+          if (connection.current?.state === signalR.HubConnectionState.Connected) {
+            connection.current.invoke('Resize', sessionId, newCols, newRows)
+              .catch(err => console.error('Resize failed:', err))
+          }
+        }
+      } catch (err) {
+        console.error('Fit error:', err)
       }
+    }
+
+    // Heavily debounced resize for mobile (keyboard open/close causes many events)
+    const debouncedResize = () => {
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current)
+      }
+      // Use longer debounce on mobile to avoid jumping
+      const debounceMs = isMobile ? 300 : 100
+      resizeTimeoutRef.current = window.setTimeout(doResize, debounceMs)
+    }
+
+    // Handle window resize
+    const handleResize = () => {
+      debouncedResize()
     }
     window.addEventListener('resize', handleResize)
 
-    // Use ResizeObserver for more reliable resize detection
-    const resizeObserver = new ResizeObserver(() => {
-      // Debounce resize
-      setTimeout(() => {
-        fit.fit()
-        if (connection.current?.state === signalR.HubConnectionState.Connected) {
-          connection.current.invoke('Resize', sessionId, terminal.cols, terminal.rows)
-            .catch(err => console.error('Resize failed:', err))
-        }
-      }, 50)
-    })
-    resizeObserver.observe(terminalRef.current)
+    // Use ResizeObserver for container size changes (but not on mobile to avoid keyboard issues)
+    let resizeObserver: ResizeObserver | null = null
+    if (!isMobile) {
+      resizeObserver = new ResizeObserver(() => {
+        debouncedResize()
+      })
+      resizeObserver.observe(terminalRef.current)
+    }
 
     // Create SignalR connection with auth headers
     const authHeader = getAuthHeader()
@@ -219,14 +256,19 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize)
-      resizeObserver.disconnect()
+      if (resizeObserver) {
+        resizeObserver.disconnect()
+      }
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current)
+      }
       if (hubConnection.state === signalR.HubConnectionState.Connected) {
         hubConnection.invoke('LeaveSession', sessionId).catch(() => {})
         hubConnection.stop()
       }
       terminal.dispose()
     }
-  }, [sessionId])
+  }, [sessionId, isMobile])
 
   const handleInterrupt = async () => {
     if (connection.current?.state === signalR.HubConnectionState.Connected) {

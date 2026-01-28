@@ -373,6 +373,129 @@ button:hover {
   text-overflow: ellipsis;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   MOBILE FIXES FOR XTERM.JS
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Prevent xterm from showing grey overlay on touch */
+.xterm .xterm-screen {
+  touch-action: pan-y;
+}
+
+/* Fix xterm textarea (hidden input) on mobile */
+.xterm-helper-textarea {
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  z-index: -10 !important;
+}
+
+/* Prevent selection overlay issues on touch */
+.xterm .xterm-selection {
+  pointer-events: none;
+}
+
+/* Mobile-specific layout */
+@media (max-width: 768px) {
+  .app-main {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    max-height: 30vh;
+    border-right: none;
+    border-bottom: 1px solid #30363d;
+  }
+
+  .terminal-container {
+    min-height: 50vh;
+  }
+
+  /* Smaller toolbar on mobile */
+  .terminal-toolbar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .terminal-info {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+
+  .terminal-actions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+
+  /* Smaller buttons on mobile */
+  .terminal-actions button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  /* Fix xterm container height on mobile */
+  .terminal-view .terminal-container {
+    flex: 1;
+    min-height: 0;
+    /* Prevent jumping when keyboard appears */
+    height: 100%;
+    max-height: calc(100vh - 200px);
+    overflow: hidden;
+  }
+
+  /* Prevent body scroll when terminal is focused */
+  .terminal-view {
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Session list compact mode on mobile */
+  .session-item {
+    padding: 0.5rem;
+  }
+
+  .session-command {
+    font-size: 0.875rem;
+  }
+
+  /* Header adjustments */
+  .app-header {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.1rem;
+  }
+
+  .header-actions {
+    gap: 0.25rem;
+  }
+
+  .header-actions button {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Prevent iOS zoom on double-tap */
+.terminal-view * {
+  touch-action: manipulation;
+}
+
+/* Fix for iOS safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .terminal-view {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 /* Logout Button */
 .btn-logout {
   background: #3d1f1f;
