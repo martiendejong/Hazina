@@ -1,6 +1,66 @@
 {
-  "hash": "ddf7fbde",
+  "hash": "6c5bcfd8",
   "configHash": "97cdc4ec",
+  "lockfileHash": "deab29ae",
+  "browserHash": "8c99c53c",
+  "optimized": {
+    "react/jsx-dev-runtime": {
+      "src": "../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "864cbab6",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "621b0f38",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "3aa551a0",
+      "needsInterop": true
+    },
+    "@xterm/xterm": {
+      "src": "../../node_modules/@xterm/xterm/lib/xterm.mjs",
+      "file": "@xterm_xterm.js",
+      "fileHash": "a8a11553",
+      "needsInterop": false
+    },
+    "@xterm/addon-fit": {
+      "src": "../../node_modules/@xterm/addon-fit/lib/addon-fit.mjs",
+      "file": "@xterm_addon-fit.js",
+      "fileHash": "427b8abb",
+      "needsInterop": false
+    },
+    "@xterm/addon-web-links": {
+      "src": "../../node_modules/@xterm/addon-web-links/lib/addon-web-links.mjs",
+      "file": "@xterm_addon-web-links.js",
+      "fileHash": "b3c561c5",
+      "needsInterop": false
+    },
+    "@xterm/addon-unicode11": {
+      "src": "../../node_modules/@xterm/addon-unicode11/lib/addon-unicode11.mjs",
+      "file": "@xterm_addon-unicode11.js",
+      "fileHash": "5e05f0d0",
+      "needsInterop": false
+    },
+    "@microsoft/signalr": {
+      "src": "../../node_modules/@microsoft/signalr/dist/esm/index.js",
+      "file": "@microsoft_signalr.js",
+      "fileHash": "95b0983c",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-44A63XUI": {
+      "file": "chunk-44A63XUI.js"
+    },
+    "chunk-VUNV25KB": {
+      "file": "chunk-VUNV25KB.js"
+    }
+  },
   "lockfileHash": "b51f587d",
   "browserHash": "47ec296f",
   "optimized": {},

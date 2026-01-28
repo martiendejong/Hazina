@@ -1,0 +1,652 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header */
+.app-header {
+  background: #161b22;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #30363d;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.app-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #58a6ff;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Buttons */
+button {
+  background: #21262d;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: #30363d;
+  border-color: #8b949e;
+}
+
+.btn-primary {
+  background: #238636;
+  border-color: #238636;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background: #2ea043;
+}
+
+.btn-danger {
+  background: #da3633;
+  border-color: #da3633;
+}
+
+.btn-danger:hover {
+  background: #f85149;
+}
+
+/* Error Banner */
+.error-banner {
+  background: #3d1f1f;
+  border: 1px solid #f85149;
+  color: #f85149;
+  padding: 0.75rem 1rem;
+  margin: 1rem 2rem;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.error-banner button {
+  background: transparent;
+  border: none;
+  color: #f85149;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Main Layout */
+.app-main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 300px;
+  background: #161b22;
+  border-right: 1px solid #30363d;
+  overflow-y: auto;
+}
+
+/* Session List */
+.session-list {
+  padding: 1rem;
+}
+
+.session-list h2 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #8b949e;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.session-list .loading,
+.session-list .empty {
+  color: #8b949e;
+  font-size: 0.875rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.session-list ul {
+  list-style: none;
+}
+
+.session-item {
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.session-item:hover {
+  border-color: #8b949e;
+}
+
+.session-item.selected {
+  border-color: #58a6ff;
+  background: #1f3a5f;
+}
+
+.session-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.session-command {
+  font-weight: 600;
+  color: #e6edf3;
+}
+
+.session-id {
+  font-size: 0.75rem;
+  color: #8b949e;
+  font-family: monospace;
+}
+
+.session-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+.status {
+  padding: 0.125rem 0.375rem;
+  border-radius: 3px;
+}
+
+.status.running {
+  background: #238636;
+  color: #ffffff;
+}
+
+.status.waiting {
+  background: #d97706;
+  color: #ffffff;
+}
+
+.status.stopped {
+  background: #6e7681;
+  color: #ffffff;
+}
+
+.start-time {
+  color: #8b949e;
+}
+
+.session-item .btn-terminate {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font-size: 1rem;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.session-item:hover .btn-terminate {
+  opacity: 1;
+}
+
+.session-item .btn-terminate:hover {
+  color: #f85149;
+}
+
+/* Terminal Section (outer container in App.tsx) */
+.terminal-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #1e1e1e;
+}
+
+/* No Session */
+.no-session {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  color: #8b949e;
+}
+
+/* Terminal View */
+.terminal-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.terminal-toolbar {
+  background: #161b22;
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #30363d;
+}
+
+.terminal-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.session-label {
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: #8b949e;
+}
+
+.connection-status {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 3px;
+}
+
+.connection-status.connected {
+  background: #238636;
+  color: #ffffff;
+}
+
+.connection-status.disconnected {
+  background: #da3633;
+  color: #ffffff;
+}
+
+.terminal-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.terminal-actions button {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.btn-interrupt {
+  background: #9e6a03;
+  border-color: #9e6a03;
+}
+
+.btn-interrupt:hover {
+  background: #bb8009;
+}
+
+.btn-close {
+  background: transparent;
+  border-color: #30363d;
+}
+
+.terminal-error {
+  background: #3d1f1f;
+  color: #f85149;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.terminal-view .terminal-container {
+  flex: 1;
+  padding: 0.5rem;
+  overflow: hidden;
+}
+
+/* Ensure xterm fills the container properly */
+.terminal-view .terminal-container .xterm {
+  height: 100%;
+}
+
+.terminal-view .terminal-container .xterm-viewport {
+  overflow-y: auto !important;
+}
+
+.terminal-view .terminal-container .xterm-screen {
+  height: 100%;
+}
+
+/* Section Headers */
+.section-header {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #8b949e;
+  margin: 1rem 0 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid #30363d;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-header .icon {
+  font-size: 0.875rem;
+}
+
+/* External Instances */
+.session-item.external {
+  background: #1c2433;
+  border-color: #3b82f6;
+  cursor: default;
+}
+
+.session-item.external:hover {
+  border-color: #60a5fa;
+}
+
+.external-badge {
+  color: #93c5fd !important;
+}
+
+.status.external {
+  background: #1e40af;
+  color: #93c5fd;
+}
+
+.external-task {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MOBILE FIXES FOR XTERM.JS
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Prevent xterm from showing grey overlay on touch */
+.xterm .xterm-screen {
+  touch-action: pan-y;
+}
+
+/* Fix xterm textarea (hidden input) on mobile */
+.xterm-helper-textarea {
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  z-index: -10 !important;
+}
+
+/* Prevent selection overlay issues on touch */
+.xterm .xterm-selection {
+  pointer-events: none;
+}
+
+/* Mobile-specific layout */
+@media (max-width: 768px) {
+  .app-main {
+    flex-direction: column;
+  }
+
+  /* Session list fills screen on mobile when no session selected */
+  .sidebar {
+    width: 100%;
+    flex: 1;
+    max-height: none;
+    border-right: none;
+    border-bottom: none;
+    overflow-y: auto;
+  }
+
+  /* Hide sidebar when a session is active on mobile */
+  .sidebar.session-active {
+    display: none;
+  }
+
+  /* Hide terminal section when no session (show only sidebar) */
+  .terminal-section:not(.has-session) {
+    display: none;
+  }
+
+  /* Terminal fills available space on mobile when session is active */
+  .terminal-section.has-session {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Mobile toolbar layout */
+  .terminal-toolbar {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .terminal-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .terminal-info .session-label {
+    display: none; /* Hide session ID on mobile - save space */
+  }
+
+  .terminal-actions {
+    flex-shrink: 0;
+    gap: 0.25rem;
+  }
+
+  /* Mobile buttons */
+  .terminal-actions button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  /* Make Close button prominent as Back button on mobile */
+  .terminal-actions .btn-close {
+    background: #21262d;
+    border-color: #30363d;
+    order: -1; /* Move to front */
+  }
+
+  .terminal-actions .btn-close::before {
+    content: '← ';
+  }
+
+  /* Terminal view fills container on mobile */
+  .terminal-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* Fix xterm container height on mobile */
+  .terminal-view .terminal-container {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* Prevent body scroll when terminal is focused */
+  .terminal-view {
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Session list compact mode on mobile */
+  .session-item {
+    padding: 0.5rem;
+  }
+
+  .session-command {
+    font-size: 0.875rem;
+  }
+
+  /* Header adjustments */
+  .app-header {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.1rem;
+  }
+
+  .header-actions {
+    gap: 0.25rem;
+  }
+
+  .header-actions button {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Prevent iOS zoom on double-tap */
+.terminal-view * {
+  touch-action: manipulation;
+}
+
+/* Fix for iOS safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .terminal-view {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Logout Button */
+.btn-logout {
+  background: #3d1f1f;
+  border-color: #da3633;
+  color: #f85149;
+}
+
+.btn-logout:hover {
+  background: #5c2323;
+  border-color: #f85149;
+}
+
+/* Login Container */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+}
+
+.login-box {
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.login-box h1 {
+  color: #58a6ff;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.login-subtitle {
+  color: #8b949e;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.login-error {
+  background: #3d1f1f;
+  border: 1px solid #f85149;
+  color: #f85149;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  color: #c9d1d9;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #c9d1d9;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #58a6ff;
+}
+
+.form-group input::placeholder {
+  color: #6e7681;
+}
+
+.form-group input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-login {
+  width: 100%;
+  padding: 0.875rem;
+  background: #238636;
+  border: none;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 0.5rem;
+}
+
+.btn-login:hover {
+  background: #2ea043;
+}
+
+.btn-login:disabled {
+  background: #1e5128;
+  cursor: not-allowed;
+}

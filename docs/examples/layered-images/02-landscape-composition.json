@@ -1,0 +1,49 @@
+{
+  "format": "ora",
+  "canvas": {
+    "width": 1920,
+    "height": 1080
+  },
+  "useVisionContext": true,
+  "layers": [
+    {
+      "name": "Sky",
+      "type": "Generated",
+      "shouldGenerate": true,
+      "content": "Beautiful blue sky with soft white clouds, peaceful atmosphere, photorealistic",
+      "size": { "width": 1920, "height": 1080 },
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "name": "Mountains",
+      "type": "Generated",
+      "shouldGenerate": true,
+      "content": "Snow-capped mountain peaks in the distance, majestic and dramatic, photorealistic style matching the peaceful sky atmosphere",
+      "size": { "width": 1600, "height": 500 },
+      "position": { "x": 160, "y": 300 }
+    },
+    {
+      "name": "Forest",
+      "type": "Generated",
+      "shouldGenerate": true,
+      "content": "Dense evergreen forest in foreground, rich dark greens, creating natural frame for mountains, photorealistic",
+      "size": { "width": 1920, "height": 400 },
+      "position": { "x": 0, "y": 680 }
+    },
+    {
+      "name": "Atmospheric Haze",
+      "type": "Generated",
+      "shouldGenerate": true,
+      "content": "Soft atmospheric haze and mist between forest and mountains, subtle blue-gray tones adding depth",
+      "size": { "width": 1920, "height": 600 },
+      "position": { "x": 0, "y": 300 },
+      "opacity": 0.6,
+      "blendMode": "Screen"
+    }
+  ],
+  "metadata": {
+    "title": "Mountain Landscape",
+    "description": "Complex landscape with multiple depth layers using vision-enhanced context",
+    "tags": ["landscape", "nature", "mountains"]
+  }
+}

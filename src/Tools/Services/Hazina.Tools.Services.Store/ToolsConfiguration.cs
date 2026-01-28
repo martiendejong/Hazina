@@ -47,6 +47,12 @@ namespace Hazina.Tools.Services.Store
         public bool EnableWorkflowComponents { get; set; } = true;
 
         /// <summary>
+        /// Enable layered image generation tools (GenerateLayeredImage)
+        /// Allows AI to create multi-layer images (PDN/ORA/PSD format)
+        /// </summary>
+        public bool EnableLayeredImages { get; set; } = false;
+
+        /// <summary>
         /// Returns a configuration with all tools enabled (default behavior)
         /// </summary>
         public static ToolsConfiguration All()
@@ -60,7 +66,8 @@ namespace Hazina.Tools.Services.Store
                 EnableBigQuery = true,
                 EnableDataGathering = true,
                 EnableAnalysisTools = true,
-                EnableWorkflowComponents = true
+                EnableWorkflowComponents = true,
+                EnableLayeredImages = true
             };
         }
 

@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace Hazina.Tools.Services.Chat
 {
@@ -649,6 +650,173 @@ namespace Hazina.Tools.Services.Chat
                 ContentType = contentType;
                 SourceUrl = sourceUrl;
             }
+        }
+
+        /// <summary>
+        /// Generates an image from a prompt and returns the raw bytes.
+        /// Used by LayeredImageService for generating individual layers.
+        /// </summary>
+        public async Task<byte[]> GenerateImageBytesAsync(string prompt, ImageModel imageModel, int width, int height, CancellationToken cancel)
+        {
+            // Generate the image using the existing OpenAI method
+            var imageSource = await GenerateOpenAIImage(prompt, imageModel, cancel);
+
+            // Resolve the image data
+            var resolved = await ResolveImageDataAsync(imageSource, cancel);
+
+            // Resize if needed to match requested dimensions
+            using var image = SixLabors.ImageSharp.Image.Load<Rgba32>(resolved.Data);
+
+            if (image.Width != width || image.Height != height)
+            {
+                image.Mutate(ctx => ctx.Resize(width, height));
+            }
+
+            using var output = new MemoryStream();
+            await image.SaveAsPngAsync(output, cancel);
+            return output.ToArray();
+        }
+
+        /// <summary>
+        /// Generates an image from a prompt with context images for reference.
+        /// Used by LayeredImageService for sequential layer generation.
+        /// Uses GPT-4 Vision to analyze context images and create enhanced prompts.
+        /// </summary>
+        public async Task<byte[]> GenerateImageBytesWithContextAsync(
+            string prompt,
+            ImageModel imageModel,
+            int width,
+            int height,
+            List<byte[]>? contextImages,
+            string? contextDescriptions,
+            CancellationToken cancel)
+        {
+            // Build enhanced prompt with context descriptions
+            var enhancedPrompt = prompt;
+
+            if (!string.IsNullOrEmpty(contextDescriptions))
+            {
+                enhancedPrompt = $"{contextDescriptions}\n\n";
+            }
+
+            // Phase 2A: Vision-Enhanced Context
+            // If we have context images, use GPT-4 Vision to analyze them
+            // and create a super-enhanced prompt
+            if (contextImages != null && contextImages.Count > 0)
+            {
+                try
+                {
+                    var visionAnalysis = await AnalyzeContextImagesWithVisionAsync(contextImages, prompt, cancel);
+                    enhancedPrompt += visionAnalysis + "\n\n";
+                }
+                catch (Exception ex)
+                {
+                    // If vision analysis fails, fall back to text-only context
+                    Console.WriteLine($"[ChatImageService] Vision analysis failed: {ex.Message}. Falling back to text context.");
+                }
+            }
+
+            enhancedPrompt += $"Based on all this context, generate: {prompt}";
+
+            var imageSource = await GenerateOpenAIImage(enhancedPrompt, imageModel, cancel);
+
+            // Resolve the image data
+            var resolved = await ResolveImageDataAsync(imageSource, cancel);
+
+            // Resize if needed to match requested dimensions
+            using var image = SixLabors.ImageSharp.Image.Load<Rgba32>(resolved.Data);
+
+            if (image.Width != width || image.Height != height)
+            {
+                image.Mutate(ctx => ctx.Resize(width, height));
+            }
+
+            using var output = new MemoryStream();
+            await image.SaveAsPngAsync(output, cancel);
+            return output.ToArray();
+        }
+
+        /// <summary>
+        /// Analyzes context images using GPT-4 Vision to create detailed descriptions
+        /// for enhanced prompt generation.
+        /// </summary>
+        private async Task<string> AnalyzeContextImagesWithVisionAsync(
+            List<byte[]> contextImages,
+            string targetPrompt,
+            CancellationToken cancel)
+        {
+            if (string.IsNullOrWhiteSpace(_openAiApiKey))
+            {
+                throw new InvalidOperationException("OpenAI API key not configured for vision analysis.");
+            }
+
+            // Convert images to base64 data URLs
+            var imageDataUrls = contextImages.Select(imageBytes =>
+            {
+                var base64 = Convert.ToBase64String(imageBytes);
+                return $"data:image/png;base64,{base64}";
+            }).ToList();
+
+            // Create vision analysis prompt
+            var analysisPrompt = $@"You are analyzing reference images for a multi-layer image generation task.
+
+TARGET: The next layer to generate is: ""{targetPrompt}""
+
+TASK: Analyze the provided context images (previous layers) and describe:
+1. Visual composition: What elements, colors, shapes, and styles are present
+2. Spatial layout: Where elements are positioned
+3. Art style: What artistic style, technique, or aesthetic is being used
+4. Color palette: Dominant colors and color relationships
+5. Lighting and atmosphere: Light sources, shadows, mood
+6. Cohesion recommendations: How the new layer should integrate with existing layers
+
+Be specific and detailed. Your analysis will be used to generate the next layer that harmonizes with these reference images.";
+
+            // Build the vision API request manually using HttpClient
+            // This is a workaround until the Responses API is fully integrated
+            var requestBody = new
+            {
+                model = "gpt-4o", // GPT-4 with vision capabilities
+                messages = new[]
+                {
+                    new
+                    {
+                        role = "user",
+                        content = new object[]
+                        {
+                            new { type = "text", text = analysisPrompt },
+                            // Add all context images
+                        }.Concat(imageDataUrls.Select(url => new
+                        {
+                            type = "image_url",
+                            image_url = new { url }
+                        })).ToArray()
+                    }
+                },
+                max_tokens = 1000
+            };
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
+            request.Headers.Add("Authorization", $"Bearer {_openAiApiKey}");
+            request.Content = new StringContent(
+                System.Text.Json.JsonSerializer.Serialize(requestBody),
+                System.Text.Encoding.UTF8,
+                "application/json"
+            );
+
+            var response = await HttpClient.SendAsync(request, cancel);
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync(cancel);
+            var jsonDoc = System.Text.Json.JsonDocument.Parse(responseContent);
+            var analysis = jsonDoc.RootElement
+                .GetProperty("choices")[0]
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString() ?? string.Empty;
+
+            Console.WriteLine($"[ChatImageService] Vision analysis completed: {analysis.Length} characters");
+            return analysis;
         }
     }
 }

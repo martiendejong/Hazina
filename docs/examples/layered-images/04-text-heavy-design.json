@@ -1,0 +1,60 @@
+{
+  "format": "pdn",
+  "canvas": {
+    "width": 1200,
+    "height": 1600
+  },
+  "useVisionContext": false,
+  "layers": [
+    {
+      "name": "Background",
+      "type": "Generated",
+      "shouldGenerate": true,
+      "content": "Modern abstract geometric background with triangles and polygons, blue and purple gradient colors",
+      "size": { "width": 1200, "height": 1600 },
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "name": "Header Text",
+      "type": "Text",
+      "content": "ANNUAL REPORT",
+      "fontFamily": "Arial",
+      "fontSize": 96,
+      "fontColor": "#FFFFFF",
+      "size": { "width": 1000, "height": 150 },
+      "position": { "x": 100, "y": 200 }
+    },
+    {
+      "name": "Year",
+      "type": "Text",
+      "content": "2026",
+      "fontFamily": "Arial",
+      "fontSize": 120,
+      "fontColor": "#60A5FA",
+      "size": { "width": 400, "height": 180 },
+      "position": { "x": 100, "y": 350 }
+    },
+    {
+      "name": "Company Name",
+      "type": "Text",
+      "content": "Brand2Boost Inc.",
+      "fontFamily": "Arial",
+      "fontSize": 48,
+      "fontColor": "#E0E7FF",
+      "size": { "width": 800, "height": 80 },
+      "position": { "x": 100, "y": 1400 }
+    },
+    {
+      "name": "Accent Line",
+      "type": "SolidColor",
+      "content": "#60A5FA",
+      "size": { "width": 600, "height": 8 },
+      "position": { "x": 100, "y": 550 }
+    }
+  ],
+  "metadata": {
+    "title": "Annual Report Cover",
+    "description": "Text-heavy design for corporate report cover",
+    "tags": ["corporate", "report", "text-design"]
+  }
+}

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Terminal - Hazina Agentic Orchestration</title>
+
+    <!-- xterm.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: #161b22;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        header h1 span {
+            color: #58a6ff;
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        button {
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #30363d;
+            border-color: #8b949e;
+        }
+
+        button.primary {
+            background: #238636;
+            border-color: #238636;
+        }
+
+        button.primary:hover {
+            background: #2ea043;
+        }
+
+        button.danger {
+            background: #da3633;
+            border-color: #da3633;
+        }
+
+        button.danger:hover {
+            background: #f85149;
+        }
+
+        .toolbar {
+            background: #161b22;
+            padding: 0.5rem 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .toolbar label {
+            font-size: 0.875rem;
+            color: #8b949e;
+        }
+
+        .toolbar input, .toolbar select {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+
+        .toolbar input:focus, .toolbar select:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+        }
+
+        #terminal-container {
+            flex: 1;
+            background: #1e1e1e;
+            border-radius: 8px;
+            overflow: hidden;
+            min-height: 400px;
+        }
+
+        .status-bar {
+            background: #161b22;
+            padding: 0.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #8b949e;
+            border-top: 1px solid #30363d;
+        }
+
+        .status-bar .connected {
+            color: #3fb950;
+        }
+
+        .status-bar .disconnected {
+            color: #f85149;
+        }
+
+        .session-info {
+            display: flex;
+            gap: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span>Claude</span> Terminal</h1>
+        <div class="controls">
+            <button id="btn-new-session" class="primary">New Session</button>
+            <button id="btn-interrupt">Send Ctrl+C</button>
+            <button id="btn-terminate" class="danger">Terminate</button>
+        </div>
+    </header>
+
+    <div class="toolbar">
+        <label>Command:</label>
+        <input type="text" id="command" value="claude" placeholder="claude" style="width: 100px;">
+
+        <label>Working Dir:</label>
+        <input type="text" id="working-dir" value="C:\Projects" placeholder="C:\Projects" style="width: 200px;">
+
+        <label>Arguments:</label>
+        <input type="text" id="arguments" placeholder="--prompt 'Hello'" style="width: 250px;">
+    </div>
+
+    <main>
+        <div id="terminal-container"></div>
+    </main>
+
+    <div class="status-bar">
+        <div class="session-info">
+            <span>Session: <span id="session-id">None</span></span>
+            <span>Status: <span id="status" class="disconnected">Disconnected</span></span>
+        </div>
+        <div>
+            <span>Hub: /hubs/terminal</span>
+        </div>
+    </div>
+
+    <!-- Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.8.0/lib/addon-fit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.9.0/lib/addon-web-links.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+
+    <script>
+        // Terminal client implementation
+        class ClaudeTerminal {
+            constructor() {
+                this.terminal = null;
+                this.fitAddon = null;
+                this.connection = null;
+                this.currentSessionId = null;
+                this.isConnected = false;
+            }
+
+            async init() {
+                // Create terminal
+                this.terminal = new Terminal({
+                    cursorBlink: true,
+                    fontSize: 14,
+                    fontFamily: 'Cascadia Code, Consolas, Monaco, monospace',
+                    theme: {
+                        background: '#1e1e1e',
+                        foreground: '#d4d4d4',
+                        cursor: '#ffffff',
+                        selection: '#264f78',
+                    },
+                    scrollback: 10000,
+                    convertEol: true,
+                });
+
+                // Add fit addon
+                this.fitAddon = new FitAddon.FitAddon();
+                this.terminal.loadAddon(this.fitAddon);
+
+                // Add web links addon
+                this.terminal.loadAddon(new WebLinksAddon.WebLinksAddon());
+
+                // Open terminal
+                const container = document.getElementById('terminal-container');
+                this.terminal.open(container);
+                this.fitAddon.fit();
+
+                // Handle resize
+                window.addEventListener('resize', () => this.fitAddon.fit());
+
+                // Create SignalR connection
+                this.connection = new signalR.HubConnectionBuilder()
+                    .withUrl('/hubs/terminal')
+                    .withAutomaticReconnect()
+                    .configureLogging(signalR.LogLevel.Information)
+                    .build();
+
+                this.setupEventHandlers();
+
+                // Connect
+                try {
+                    await this.connection.start();
+                    this.isConnected = true;
+                    this.updateStatus('Connected', true);
+                    this.terminal.writeln('\x1b[32m✓ Connected to terminal hub\x1b[0m\r\n');
+                    this.terminal.writeln('Click "New Session" to start a Claude instance.\r\n');
+                } catch (err) {
+                    console.error('Connection failed:', err);
+                    this.terminal.writeln('\x1b[31m✗ Failed to connect to terminal hub\x1b[0m');
+                    this.terminal.writeln('\x1b[90mMake sure the Hazina API is running.\x1b[0m');
+                }
+            }
+
+            setupEventHandlers() {
+                // Receive output
+                this.connection.on('OnOutput', (sessionId, data) => {
+                    if (sessionId === this.currentSessionId) {
+                        // Convert array to Uint8Array and write
+                        const bytes = new Uint8Array(data);
+                        this.terminal.write(bytes);
+                    }
+                });
+
+                // Process exited
+                this.connection.on('OnExit', (sessionId, exitCode) => {
+                    if (sessionId === this.currentSessionId) {
+                        this.terminal.writeln(`\r\n\x1b[90m[Process exited with code ${exitCode}]\x1b[0m`);
+                    }
+                });
+
+                // Error
+                this.connection.on('OnError', (sessionId, error) => {
+                    this.terminal.writeln(`\r\n\x1b[31m[Error: ${error}]\x1b[0m`);
+                });
+
+                // User input - send to process
+                this.terminal.onData(data => {
+                    if (this.currentSessionId && this.isConnected) {
+                        const encoder = new TextEncoder();
+                        const bytes = Array.from(encoder.encode(data));
+                        this.connection.invoke('SendInput', this.currentSessionId, bytes)
+                            .catch(err => console.error('Failed to send input:', err));
+                    }
+                });
+
+                // Resize
+                this.terminal.onResize(({ cols, rows }) => {
+                    if (this.currentSessionId && this.isConnected) {
+                        this.connection.invoke('Resize', this.currentSessionId, cols, rows);
+                    }
+                });
+
+                // Connection events
+                this.connection.onreconnecting(() => {
+                    this.updateStatus('Reconnecting...', false);
+                });
+
+                this.connection.onreconnected(() => {
+                    this.updateStatus('Connected', true);
+                    if (this.currentSessionId) {
+                        this.connection.invoke('JoinSession', this.currentSessionId);
+                    }
+                });
+
+                this.connection.onclose(() => {
+                    this.isConnected = false;
+                    this.updateStatus('Disconnected', false);
+                });
+            }
+
+            async startSession() {
+                if (!this.isConnected) {
+                    this.terminal.writeln('\x1b[31mNot connected to hub\x1b[0m');
+                    return;
+                }
+
+                const command = document.getElementById('command').value || 'claude';
+                const workingDir = document.getElementById('working-dir').value || undefined;
+                const argsStr = document.getElementById('arguments').value;
+                const args = argsStr ? argsStr.split(' ').filter(a => a) : [];
+
+                const request = {
+                    command: command,
+                    arguments: args,
+                    workingDirectory: workingDir,
+                    columns: this.terminal.cols,
+                    rows: this.terminal.rows,
+                    mergeStderr: true,
+                };
+
+                try {
+                    const sessionInfo = await this.connection.invoke('StartSession', request);
+                    this.currentSessionId = sessionInfo.sessionId;
+                    document.getElementById('session-id').textContent = sessionInfo.sessionId;
+
+                    this.terminal.clear();
+                    this.terminal.writeln(`\x1b[90m[Session ${sessionInfo.sessionId} started]\x1b[0m`);
+                    this.terminal.writeln(`\x1b[90m[Running: ${command} ${args.join(' ')}]\x1b[0m\r\n`);
+                } catch (err) {
+                    console.error('Failed to start session:', err);
+                    this.terminal.writeln(`\x1b[31mFailed to start session: ${err.message}\x1b[0m`);
+                }
+            }
+
+            async sendInterrupt() {
+                if (this.currentSessionId && this.isConnected) {
+                    await this.connection.invoke('SendSignal', this.currentSessionId, 'interrupt');
+                    this.terminal.writeln('\r\n\x1b[33m[Sent Ctrl+C]\x1b[0m');
+                }
+            }
+
+            async terminate() {
+                if (this.currentSessionId && this.isConnected) {
+                    await this.connection.invoke('Terminate', this.currentSessionId);
+                    this.terminal.writeln('\r\n\x1b[31m[Session terminated]\x1b[0m');
+                    this.currentSessionId = null;
+                    document.getElementById('session-id').textContent = 'None';
+                }
+            }
+
+            updateStatus(text, connected) {
+                const statusEl = document.getElementById('status');
+                statusEl.textContent = text;
+                statusEl.className = connected ? 'connected' : 'disconnected';
+            }
+        }
+
+        // Initialize
+        const client = new ClaudeTerminal();
+        client.init();
+
+        // Button handlers
+        document.getElementById('btn-new-session').addEventListener('click', () => client.startSession());
+        document.getElementById('btn-interrupt').addEventListener('click', () => client.sendInterrupt());
+        document.getElementById('btn-terminate').addEventListener('click', () => client.terminate());
+
+        // Keyboard shortcut for Ctrl+C (when terminal not focused)
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'c' && document.activeElement.tagName !== 'INPUT') {
+                client.sendInterrupt();
+            }
+        });
+    </script>
+</body>
+</html>

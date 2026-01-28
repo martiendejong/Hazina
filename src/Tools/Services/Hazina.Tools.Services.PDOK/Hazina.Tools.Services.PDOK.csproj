@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Hazina.Tools.Services.PDOK</RootNamespace>
+    <Version>1.0.0</Version>
+    <Description>PDOK (Publieke Dienstverlening Op de Kaart) integration for Hazina - Access Dutch Kadaster open data including BAG, BRK, BGT, and geocoding services</Description>
+    <Authors>Hazina</Authors>
+    <PackageTags>pdok;kadaster;bag;brk;bgt;netherlands;geodata;ogc-api</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Models\Hazina.Tools.Models.csproj" />
+    <ProjectReference Include="..\..\Foundation\Hazina.Tools.Core\Hazina.Tools.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="10.0.2" />
+    <PackageReference Include="NetTopologySuite" Version="2.5.0" />
+    <PackageReference Include="NetTopologySuite.IO.GeoJSON" Version="4.0.0" />
+  </ItemGroup>
+</Project>

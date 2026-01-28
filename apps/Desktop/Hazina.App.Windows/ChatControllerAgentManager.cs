@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Hazina.AgentFactory.Core;
 using Hazina.ChatShared;
 
 namespace Hazina.App.Windows
@@ -23,7 +24,7 @@ namespace Hazina.App.Windows
 
         public ReadOnlyObservableCollection<string> AgentsAndFlows => new ReadOnlyObservableCollection<string>(_agentsAndFlows);
 
-        public string DefaultAgentOrFlow => _agentsAndFlows.FirstOrDefault();
+        public string DefaultAgentOrFlow => _agentsAndFlows.FirstOrDefault() ?? string.Empty;
 
         public void AttachStreaming(Action<string, string, string> onInterimMessage)
         {
