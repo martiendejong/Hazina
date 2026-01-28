@@ -272,15 +272,27 @@ public class ConPtyTerminalSession : ITerminalSession
     private string BuildCommandLine()
     {
         var sb = new StringBuilder();
+        var command = _config.Command;
+
+        // Batch files (.bat, .cmd) need to be run through cmd.exe
+        var isBatchFile = command.EndsWith(".bat", StringComparison.OrdinalIgnoreCase) ||
+                          command.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase);
+
+        if (isBatchFile)
+        {
+            // Use cmd.exe /k to run batch file and keep the shell open for interaction
+            // /k keeps the window open after the batch file completes (important for interactive use)
+            sb.Append("cmd.exe /k ");
+        }
 
         // If the command contains spaces, it should be quoted
-        if (_config.Command.Contains(' '))
+        if (command.Contains(' '))
         {
-            sb.Append('"').Append(_config.Command).Append('"');
+            sb.Append('"').Append(command).Append('"');
         }
         else
         {
-            sb.Append(_config.Command);
+            sb.Append(command);
         }
 
         // Add arguments
