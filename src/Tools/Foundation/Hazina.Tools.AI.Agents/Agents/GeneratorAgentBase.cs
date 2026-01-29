@@ -242,6 +242,19 @@ namespace Hazina.Tools.AI.Agents
             return g;
         }
 
+        /// <summary>
+        /// Respects the caller's generic type parameter instead of forcing GeneratedTextResponse.
+        /// Use this when you need typed responses (e.g., List&lt;MainPage&gt;).
+        /// </summary>
+        public async Task<LLMResponse<T?>> InternalGenerateTyped<T>(string id, string[] systemPrompts, string instruction, string documentName, string path) where T : ChatResponse<T>, new()
+        {
+            return await InternalGenerate<T>(id, systemPrompts, instruction, documentName, path);
+        }
+
+        /// <summary>
+        /// Backward compatibility - forces GeneratedTextResponse wrapper type.
+        /// Consider using InternalGenerateTyped&lt;T&gt; for typed responses.
+        /// </summary>
         public async Task InternalGenerate(string id, string prompt, string[] systemPrompts, string documentName, string path)
         {
             // Direct implementation for backward compatibility
@@ -251,13 +264,17 @@ namespace Hazina.Tools.AI.Agents
             g.BaseMessages.AddRange(systemPrompts.Skip(1).Select(p => new HazinaChatMessage(HazinaMessageRole.System, p)));
             var context = new StoreToolsContext(new OpenAIConfig().Model, Config.ApiSettings.OpenApiKey, store, Projects, Intake, id, "", this);
             var tokenSource = new CancellationTokenSource();
-            
+
             // Call the generic method using reflection or direct call with proper type
             var method = typeof(GeneratorAgentBase).GetMethod(nameof(InternalGenerate), new[] { typeof(string), typeof(string[]), typeof(string), typeof(string), typeof(string) });
             var genericMethod = method.MakeGenericMethod(typeof(GeneratedTextResponse));
             await (Task)genericMethod.Invoke(this, new object[] { id, systemPrompts, prompt, documentName, path });
         }
 
+        /// <summary>
+        /// Backward compatibility - forces GeneratedTextResponse wrapper type.
+        /// Consider using InternalGenerateTyped&lt;T&gt; for typed responses.
+        /// </summary>
         public async Task InternalGenerate(string id, string systemPrompt, string instruction, string documentName, string path)
         {
             // Direct implementation for backward compatibility
@@ -266,7 +283,7 @@ namespace Hazina.Tools.AI.Agents
             DocumentGenerator g = await GetGenerator(project, systemPrompt);
             var context = new StoreToolsContext(new OpenAIConfig().Model, Config.ApiSettings.OpenApiKey, store, Projects, Intake, id, "", this);
             var tokenSource = new CancellationTokenSource();
-            
+
             // Call the generic method using reflection
             var method = typeof(GeneratorAgentBase).GetMethod(nameof(InternalGenerate), new[] { typeof(string), typeof(string[]), typeof(string), typeof(string), typeof(string) });
             var genericMethod = method.MakeGenericMethod(typeof(GeneratedTextResponse));
@@ -312,12 +329,21 @@ namespace Hazina.Tools.AI.Agents
             }
 
             // Serialize to JSON for all other types
-            var json = System.Text.Json.JsonSerializer.Serialize(document);
-            var filePath2 = _fileLocator.GetPath(id, file);
-            var directory2 = Path.GetDirectoryName(filePath2);
-            if (!Directory.Exists(directory2))
-                Directory.CreateDirectory(directory2);
-            _File.WriteAllText(filePath2, json);
+            try
+            {
+                var json = System.Text.Json.JsonSerializer.Serialize(document);
+                var filePath2 = _fileLocator.GetPath(id, file);
+                var directory2 = Path.GetDirectoryName(filePath2);
+                if (!Directory.Exists(directory2))
+                    Directory.CreateDirectory(directory2);
+                _File.WriteAllText(filePath2, json);
+            }
+            catch (Exception ex)
+            {
+                // Log error and propagate instead of silently writing empty file
+                Console.WriteLine($"Error serializing document to JSON for file '{file}': {ex.Message}");
+                throw new InvalidOperationException($"Failed to serialize document of type {typeof(T).Name} to JSON", ex);
+            }
         }
 
         public void Store<T>(string id, GeneratedObject<T> document, string file) where T : Serializer<T>
