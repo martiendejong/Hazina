@@ -74,6 +74,8 @@ public partial class AgentsCardsWindow : Window
     {
         var btn = sender as System.Windows.Controls.Button;
         var store = btn?.CommandParameter as StoreRef;
+        if (store == null) return;
+
         foreach (var card in viewModel.Cards)
         {
             if (card.Stores.Contains(store))
@@ -102,6 +104,8 @@ public partial class AgentsCardsWindow : Window
     {
         var btn = sender as System.Windows.Controls.Button;
         var func = btn?.CommandParameter as string;
+        if (func == null) return;
+
         foreach (var card in viewModel.Cards)
         {
             if (card.Functions.Contains(func))
@@ -130,6 +134,8 @@ public partial class AgentsCardsWindow : Window
     {
         var btn = sender as System.Windows.Controls.Button;
         var agent = btn?.CommandParameter as string;
+        if (agent == null) return;
+
         foreach (var card in viewModel.Cards)
         {
             if (card.CallsAgents.Contains(agent))
@@ -158,6 +164,8 @@ public partial class AgentsCardsWindow : Window
     {
         var btn = sender as System.Windows.Controls.Button;
         var flow = btn?.CommandParameter as string;
+        if (flow == null) return;
+
         foreach (var card in viewModel.Cards)
         {
             if (card.CallsFlows.Contains(flow))

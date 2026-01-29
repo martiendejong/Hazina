@@ -1,0 +1,51 @@
+{
+  "format": "pdn",
+  "canvas": {
+    "width": 1920,
+    "height": 1080
+  },
+  "useVisionContext": true,
+  "layers": [
+    {
+      "name": "Background",
+      "type": "Generated",
+      "shouldGenerate": true,
+      "content": "Abstract neural network visualization, interconnected nodes and synapses, deep blue and purple gradient background, professional and futuristic, digital art style",
+      "size": { "width": 1920, "height": 1080 },
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "name": "Brain Visualization",
+      "type": "Generated",
+      "shouldGenerate": true,
+      "content": "Stylized human brain silhouette with glowing neural pathways, transparent overlay style, cognitive science aesthetic, matching the abstract neural network background",
+      "size": { "width": 800, "height": 600 },
+      "position": { "x": 560, "y": 150 }
+    },
+    {
+      "name": "Social Connection Icons",
+      "type": "Generated",
+      "shouldGenerate": true,
+      "content": "Abstract representation of social connections, small human figures connected by glowing lines, diverse and inclusive, harmonizing with the brain and neural network theme",
+      "size": { "width": 1600, "height": 300 },
+      "position": { "x": 160, "y": 700 },
+      "opacity": 0.8,
+      "blendMode": "Screen"
+    },
+    {
+      "name": "Platform Title",
+      "type": "Text",
+      "content": "Sociaal Cognitief Platform",
+      "fontFamily": "Segoe UI",
+      "fontSize": 72,
+      "fontColor": "#FFFFFF",
+      "size": { "width": 1000, "height": 100 },
+      "position": { "x": 460, "y": 850 }
+    }
+  ],
+  "metadata": {
+    "title": "Sociaal Cognitief Platform",
+    "description": "Branding image for social cognitive platform with neural network visualization and text overlay",
+    "tags": ["branding", "cognitive", "social", "platform", "neural-network"]
+  }
+}

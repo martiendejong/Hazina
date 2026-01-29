@@ -21,8 +21,9 @@ public class ImageChecker
                 if (!response.IsSuccessStatusCode)
                     return false;
 
-                if (response.Content.Headers.ContentType != null &&
-                    response.Content.Headers.ContentType.MediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                var contentType = response.Content.Headers.ContentType;
+                if (contentType?.MediaType != null &&
+                    contentType.MediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
@@ -34,8 +35,9 @@ public class ImageChecker
                 if (!response.IsSuccessStatusCode)
                     return false;
 
-                if (response.Content.Headers.ContentType != null &&
-                    response.Content.Headers.ContentType.MediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                var contentType = response.Content.Headers.ContentType;
+                if (contentType?.MediaType != null &&
+                    contentType.MediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }

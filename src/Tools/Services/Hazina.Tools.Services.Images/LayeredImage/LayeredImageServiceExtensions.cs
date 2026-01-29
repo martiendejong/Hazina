@@ -34,6 +34,9 @@ public static class LayeredImageServiceExtensions
         // Register main service
         services.AddScoped<ILayeredImageService, LayeredImageService>();
 
+        // Register smart (prompt-driven) service
+        services.AddScoped<ISmartLayeredImageService, SmartLayeredImageService>();
+
         return services;
     }
 

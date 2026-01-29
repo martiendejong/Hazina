@@ -116,7 +116,7 @@ async Task<int> Run()
         // Heuristic MIME check
         var looksPng = bytes.Length > 4 && bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47;
         var mime = looksPng ? "image/png" : "image/jpeg";
-        var testImage = new ImageData { Name = "generated", MimeType = mime, BinaryData = image.Result.ImageBytes };
+        var testImage = new ImageData { Name = "generated", MimeType = mime, BinaryData = image.Result.ImageBytes ?? throw new InvalidOperationException("Image bytes are null") };
         var messages = new List<HazinaChatMessage>
         {
             new HazinaChatMessage { Role = HazinaMessageRole.System, Text = "You are a helpful assistant." },

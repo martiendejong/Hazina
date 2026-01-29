@@ -20,7 +20,7 @@ namespace Hazina.App.ExplorerIntegration
             var llm = new OpenAIClientWrapper(config);
 
             var paths = new StorePaths(folder);
-            var creator = new QuickAgentCreator(new Hazina.AgentFactory.Core.AgentFactory(openAIKey, config.LogPath), llm);
+            var creator = new QuickAgentCreator(new Hazina.AgentFactory.Core.AgentFactory(openAIKey, config.LogPath ?? "hazina.log"), llm);
             var store = creator.CreateStore(paths, new DirectoryInfo(folder).Name);
 
             var patterns = filtersCsv.Split(',').Select(s => s.Trim().TrimStart('.')).Where(s => s.Length > 0).ToArray();

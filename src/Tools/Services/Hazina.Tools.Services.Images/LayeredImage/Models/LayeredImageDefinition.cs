@@ -150,6 +150,13 @@ public class LayerDefinition
     public string? FontColor { get; set; }
 
     /// <summary>
+    /// Guidance for vision-based positioning of this layer.
+    /// Used by SmartLayeredImageService for automatic layer placement.
+    /// </summary>
+    [JsonPropertyName("placementGuidance")]
+    public string? PlacementGuidance { get; set; }
+
+    /// <summary>
     /// Parses the layer type string to enum.
     /// </summary>
     public LayerType GetLayerType()
@@ -157,6 +164,8 @@ public class LayerDefinition
         return Type?.ToLowerInvariant() switch
         {
             "generated" => LayerType.Generated,
+            "background" => LayerType.Generated, // Background is a generated layer
+            "element" => LayerType.Generated,    // Element is a generated layer with transparency
             "uploaded" => LayerType.Uploaded,
             "solidcolor" => LayerType.SolidColor,
             "text" => LayerType.Text,
