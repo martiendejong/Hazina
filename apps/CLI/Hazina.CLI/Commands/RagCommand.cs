@@ -1,7 +1,9 @@
 using System.CommandLine;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Hazina.CLI.Infrastructure;
+using Hazina.CLI.Models;
 using Hazina.LLMs;
 using Spectre.Console;
 using Microsoft.Extensions.FileSystemGlobbing;
@@ -24,6 +26,12 @@ public static class RagCommand
         command.AddCommand(CreateStatusCommand());
         command.AddCommand(CreateListStoresCommand());
         command.AddCommand(CreateSyncCommand());
+
+        // Phase 3: Specialized query commands
+        command.AddCommand(CreateFindSymbolCommand());
+        command.AddCommand(CreateFindCallersCommand());
+        command.AddCommand(CreateFindReferencesCommand());
+        command.AddCommand(CreateExpandContextCommand());
 
         return command;
     }
@@ -133,9 +141,13 @@ public static class RagCommand
             var vectorStorePath = Path.Combine(storeConfig.Path, "vectors", "embeddings.json");
             var embeddingStore = EmbeddingStoreFactory.CreateFromSpec(vectorStorePath, client);
 
-            // Load existing chunk texts
+            // Load existing chunk metadata (rich format)
             var chunksFilePath = Path.Combine(storeConfig.Path, "documents", "chunks.json");
-            var chunkTexts = LoadChunkTexts(chunksFilePath);
+            var chunkMetadataStore = LoadChunkMetadata(chunksFilePath);
+
+            // Initialize symbol graph for multi-hop
+            var symbolGraphPath = Path.Combine(storeConfig.Path, "documents", "symbol-graph.json");
+            var symbolGraph = LoadSymbolGraph(symbolGraphPath);
 
             await AnsiConsole.Progress()
                 .StartAsync(async ctx =>
@@ -157,21 +169,69 @@ public static class RagCommand
                                 continue;
                             }
 
-                            // Chunk the text
-                            var chunks = ChunkText(text, chunkSize, chunkSize / 5);
-                            var chunkIds = new List<string>();
                             var relativePath = Path.GetRelativePath(basePath, filePath);
+                            var extension = Path.GetExtension(filePath);
+                            var language = AutoTagger.GetLanguage(extension);
+                            var layer = AutoTagger.GetLayer(relativePath);
 
-                            foreach (var (chunk, index) in chunks.Select((c, i) => (c, i)))
+                            // Auto-detect tags from path, extension, and content
+                            var autoTags = AutoTagger.GetAllTags(relativePath, extension, text);
+
+                            // Add user-specified tags
+                            if (tags != null)
+                            {
+                                foreach (var tag in tags)
+                                    autoTags.Add(tag);
+                            }
+
+                            // Extract symbols from file
+                            var fileSymbols = SymbolExtractor.ExtractDefinedSymbols(text, language);
+                            var fileReferences = SymbolExtractor.ExtractReferences(text, language);
+
+                            // Chunk the text with line tracking
+                            var chunks = ChunkTextWithLines(text, chunkSize, chunkSize / 5);
+                            var chunkIds = new List<string>();
+
+                            foreach (var (chunkText, lineStart, lineEnd, index) in chunks)
                             {
                                 var chunkId = $"{ComputeHash(filePath)}_{index}";
                                 chunkIds.Add(chunkId);
 
-                                // Store embedding
-                                await embeddingStore.StoreEmbedding(chunkId, chunk);
+                                // Extract symbols specific to this chunk
+                                var chunkSymbols = SymbolExtractor.ExtractDefinedSymbols(chunkText, language);
+                                var chunkReferences = SymbolExtractor.ExtractReferences(chunkText, language);
 
-                                // Store chunk text for retrieval
-                                chunkTexts[chunkId] = chunk;
+                                // Store embedding
+                                await embeddingStore.StoreEmbedding(chunkId, chunkText);
+
+                                // Store rich metadata
+                                chunkMetadataStore[chunkId] = new ChunkMetadata
+                                {
+                                    Text = chunkText,
+                                    File = relativePath,
+                                    LineStart = lineStart,
+                                    LineEnd = lineEnd,
+                                    Tags = autoTags.ToList(),
+                                    Language = language,
+                                    Symbols = chunkSymbols.ToList(),
+                                    References = chunkReferences.ToList(),
+                                    Layer = layer,
+                                    Extension = extension,
+                                    IndexedAt = DateTime.UtcNow
+                                };
+
+                                // Update symbol graph
+                                foreach (var symbol in chunkSymbols)
+                                {
+                                    symbolGraph.AddDefinition(symbol, relativePath, chunkId);
+                                }
+                                foreach (var reference in chunkReferences)
+                                {
+                                    foreach (var definedSymbol in chunkSymbols)
+                                    {
+                                        symbolGraph.AddReference(definedSymbol, reference, relativePath);
+                                    }
+                                }
                             }
 
                             // Update file index
@@ -182,7 +242,7 @@ public static class RagCommand
                                 LastModified = File.GetLastWriteTimeUtc(filePath),
                                 ChunkCount = chunks.Count,
                                 ChunkIds = chunkIds,
-                                Tags = tags?.ToList() ?? new List<string>()
+                                Tags = autoTags.ToList()
                             };
 
                             indexed++;
@@ -200,12 +260,16 @@ public static class RagCommand
                     storeConfig.ChunkCount = storeConfig.FileIndex.Values.Sum(f => f.ChunkCount);
                     storeConfig.LastSync = DateTime.UtcNow;
 
-                    // Save chunk texts
-                    SaveChunkTexts(chunksFilePath, chunkTexts);
+                    // Save chunk metadata
+                    SaveChunkMetadata(chunksFilePath, chunkMetadataStore);
+
+                    // Save symbol graph
+                    SaveSymbolGraph(symbolGraphPath, symbolGraph);
 
                     registry.Save();
 
                     AnsiConsole.MarkupLine($"\n[green]✓[/] Indexed {indexed} files ({storeConfig.ChunkCount} chunks)");
+                    AnsiConsole.MarkupLine($"[dim]Symbol graph: {symbolGraph.Symbols.Count} symbols tracked[/]");
                     if (failed > 0)
                     {
                         AnsiConsole.MarkupLine($"[yellow]![/] {failed} files failed");
@@ -227,17 +291,37 @@ public static class RagCommand
         var storeOption = new Option<string>("--store", "Store name") { IsRequired = true };
         var topKOption = new Option<int>("--top-k", () => 5, "Number of results to retrieve");
         var rawOption = new Option<bool>("--raw", "Return raw chunks without LLM generation");
+        var tagsOption = new Option<string[]?>("--tags", "Filter by tags (include only chunks with these tags)");
+        var excludeTagsOption = new Option<string[]?>("--exclude-tags", "Exclude chunks with these tags");
+        var layerOption = new Option<string?>("--layer", "Filter by architectural layer (api, domain, infrastructure, presentation, test)");
+        var multiHopOption = new Option<bool>("--multi-hop", "Enable multi-hop retrieval (follow symbol references)");
+        var maxHopsOption = new Option<int>("--max-hops", () => 2, "Maximum hops for multi-hop retrieval");
 
-        var cmd = new Command("query", "Query the document store")
+        var cmd = new Command("query", "Query the document store with tag filtering and multi-hop retrieval")
         {
             queryArg,
             storeOption,
             topKOption,
-            rawOption
+            rawOption,
+            tagsOption,
+            excludeTagsOption,
+            layerOption,
+            multiHopOption,
+            maxHopsOption
         };
 
-        cmd.SetHandler(async (string query, string storeName, int topK, bool raw) =>
+        cmd.SetHandler(async (context) =>
         {
+            var query = context.ParseResult.GetValueForArgument(queryArg);
+            var storeName = context.ParseResult.GetValueForOption(storeOption)!;
+            var topK = context.ParseResult.GetValueForOption(topKOption);
+            var raw = context.ParseResult.GetValueForOption(rawOption);
+            var tags = context.ParseResult.GetValueForOption(tagsOption);
+            var excludeTags = context.ParseResult.GetValueForOption(excludeTagsOption);
+            var layer = context.ParseResult.GetValueForOption(layerOption);
+            var multiHop = context.ParseResult.GetValueForOption(multiHopOption);
+            var maxHops = context.ParseResult.GetValueForOption(maxHopsOption);
+
             var registry = StoreRegistry.Load();
             var storeConfig = registry.Stores.GetValueOrDefault(storeName);
 
@@ -252,18 +336,64 @@ public static class RagCommand
             var vectorStorePath = Path.Combine(storeConfig.Path, "vectors", "embeddings.json");
             var embeddingStore = EmbeddingStoreFactory.CreateFromSpec(vectorStorePath, client);
 
+            // Load chunk metadata
+            var chunksFilePath = Path.Combine(storeConfig.Path, "documents", "chunks.json");
+            var chunkMetadata = LoadChunkMetadata(chunksFilePath);
+
+            // Load symbol graph for multi-hop
+            var symbolGraphPath = Path.Combine(storeConfig.Path, "documents", "symbol-graph.json");
+            var symbolGraph = LoadSymbolGraph(symbolGraphPath);
+
             await AnsiConsole.Status()
                 .StartAsync("Searching...", async ctx =>
                 {
+                    // Build set of allowed chunk IDs based on tag filters
+                    HashSet<string>? allowedChunkIds = null;
+                    if (tags != null || excludeTags != null || layer != null)
+                    {
+                        allowedChunkIds = new HashSet<string>();
+                        var tagSet = tags != null ? new HashSet<string>(tags, StringComparer.OrdinalIgnoreCase) : null;
+                        var excludeTagSet = excludeTags != null ? new HashSet<string>(excludeTags, StringComparer.OrdinalIgnoreCase) : null;
+
+                        foreach (var (chunkId, metadata) in chunkMetadata)
+                        {
+                            // Check layer filter
+                            if (layer != null && !metadata.Layer.Equals(layer, StringComparison.OrdinalIgnoreCase))
+                                continue;
+
+                            // Check tag inclusion
+                            if (tagSet != null && !metadata.Tags.Any(t => tagSet.Contains(t)))
+                                continue;
+
+                            // Check tag exclusion
+                            if (excludeTagSet != null && metadata.Tags.Any(t => excludeTagSet.Contains(t)))
+                                continue;
+
+                            allowedChunkIds.Add(chunkId);
+                        }
+
+                        if (allowedChunkIds.Count == 0)
+                        {
+                            AnsiConsole.MarkupLine("[yellow]No chunks match the specified filters.[/]");
+                            return;
+                        }
+
+                        AnsiConsole.MarkupLine($"[dim]Searching {allowedChunkIds.Count} chunks (filtered from {chunkMetadata.Count})[/]");
+                    }
+
                     // Get query embedding
                     var queryEmbedding = await client.GenerateEmbedding(query);
 
-                    // Search for similar chunks
+                    // Search for similar chunks (with filtering)
                     var allEmbeddings = embeddingStore.Embeddings;
                     var results = new List<(string key, double score)>();
 
                     foreach (var emb in allEmbeddings)
                     {
+                        // Apply filter if specified
+                        if (allowedChunkIds != null && !allowedChunkIds.Contains(emb.Key))
+                            continue;
+
                         var similarity = queryEmbedding.CosineSimilarity(emb.Data);
                         results.Add((emb.Key, similarity));
                     }
@@ -276,27 +406,50 @@ public static class RagCommand
                         return;
                     }
 
-                    // Load chunk texts from documents store
-                    var chunksFilePath = Path.Combine(storeConfig.Path, "documents", "chunks.json");
-                    var chunkTexts = LoadChunkTexts(chunksFilePath);
-
-                    // Get texts for top results
-                    var chunks = new List<string>();
+                    // Collect chunk metadata for results
+                    var retrievedChunks = new List<(string chunkId, ChunkMetadata metadata, double score)>();
                     foreach (var (key, score) in topResults)
                     {
-                        if (chunkTexts.TryGetValue(key, out var text))
+                        if (chunkMetadata.TryGetValue(key, out var metadata))
                         {
-                            chunks.Add(text);
+                            retrievedChunks.Add((key, metadata, score));
                         }
+                    }
+
+                    // Multi-hop retrieval
+                    if (multiHop && retrievedChunks.Count > 0)
+                    {
+                        ctx.Status("Performing multi-hop retrieval...");
+                        var additionalChunks = await PerformMultiHopRetrieval(
+                            retrievedChunks,
+                            symbolGraph,
+                            chunkMetadata,
+                            maxHops,
+                            topK
+                        );
+
+                        // Merge additional chunks (avoid duplicates)
+                        var existingIds = new HashSet<string>(retrievedChunks.Select(c => c.chunkId));
+                        foreach (var chunk in additionalChunks)
+                        {
+                            if (!existingIds.Contains(chunk.chunkId))
+                            {
+                                retrievedChunks.Add(chunk);
+                                existingIds.Add(chunk.chunkId);
+                            }
+                        }
+
+                        AnsiConsole.MarkupLine($"[dim]Multi-hop: expanded to {retrievedChunks.Count} chunks[/]");
                     }
 
                     if (raw)
                     {
-                        AnsiConsole.MarkupLine($"\n[bold]Top {chunks.Count} results:[/]\n");
-                        for (int i = 0; i < chunks.Count; i++)
+                        AnsiConsole.MarkupLine($"\n[bold]Top {retrievedChunks.Count} results:[/]\n");
+                        foreach (var (chunkId, metadata, score) in retrievedChunks)
                         {
-                            AnsiConsole.MarkupLine($"[dim]Score: {topResults[i].score:P0}[/]");
-                            AnsiConsole.WriteLine(chunks[i]);
+                            AnsiConsole.MarkupLine($"[dim]Score: {score:P0} | File: {metadata.File}:{metadata.LineStart}-{metadata.LineEnd}[/]");
+                            AnsiConsole.MarkupLine($"[dim]Tags: {string.Join(", ", metadata.Tags.Take(5))} | Symbols: {string.Join(", ", metadata.Symbols.Take(3))}[/]");
+                            AnsiConsole.WriteLine(metadata.Text);
                             AnsiConsole.WriteLine();
                         }
                         return;
@@ -305,23 +458,131 @@ public static class RagCommand
                     // Generate answer with LLM
                     ctx.Status("Generating answer...");
 
-                    var context = string.Join("\n\n---\n\n", chunks);
+                    // Build rich context with file info
+                    var contextParts = retrievedChunks.Select(c =>
+                        $"[File: {c.metadata.File}:{c.metadata.LineStart}-{c.metadata.LineEnd}]\n{c.metadata.Text}");
+                    var ragContext = string.Join("\n\n---\n\n", contextParts);
+
                     var messages = new List<HazinaChatMessage>
                     {
-                        new() { Role = HazinaMessageRole.System, Text = "Answer the question based on the provided context. Be concise and cite sources when relevant." },
-                        new() { Role = HazinaMessageRole.User, Text = $"Context:\n{context}\n\nQuestion: {query}" }
+                        new() { Role = HazinaMessageRole.System, Text = "Answer the question based on the provided context. Be concise and cite sources with file paths and line numbers when relevant." },
+                        new() { Role = HazinaMessageRole.User, Text = $"Context:\n{ragContext}\n\nQuestion: {query}" }
                     };
 
                     var response = await client.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, CancellationToken.None);
 
                     AnsiConsole.MarkupLine($"\n[bold]Answer:[/]\n");
                     AnsiConsole.WriteLine(response.Result);
-                    AnsiConsole.MarkupLine($"\n[dim]Sources: {chunks.Count} chunks retrieved[/]");
-                });
 
-        }, queryArg, storeOption, topKOption, rawOption);
+                    // Show source summary
+                    var sourceFiles = retrievedChunks
+                        .Select(c => c.metadata.File)
+                        .Distinct()
+                        .Take(5);
+                    AnsiConsole.MarkupLine($"\n[dim]Sources ({retrievedChunks.Count} chunks from {sourceFiles.Count()} files):[/]");
+                    foreach (var file in sourceFiles)
+                    {
+                        AnsiConsole.MarkupLine($"[dim]  - {file}[/]");
+                    }
+                });
+        });
 
         return cmd;
+    }
+
+    private static Task<List<(string chunkId, ChunkMetadata metadata, double score)>> PerformMultiHopRetrieval(
+        List<(string chunkId, ChunkMetadata metadata, double score)> initialChunks,
+        SymbolGraph symbolGraph,
+        Dictionary<string, ChunkMetadata> chunkMetadata,
+        int maxHops,
+        int maxAdditional)
+    {
+        var additionalChunks = new List<(string chunkId, ChunkMetadata metadata, double score)>();
+        var visitedSymbols = new HashSet<string>();
+        var visitedChunks = new HashSet<string>(initialChunks.Select(c => c.chunkId));
+
+        // Collect symbols from initial chunks
+        var symbolsToFollow = new Queue<(string symbol, int hop)>();
+        foreach (var (_, metadata, _) in initialChunks)
+        {
+            foreach (var symbol in metadata.Symbols)
+            {
+                if (!visitedSymbols.Contains(symbol))
+                {
+                    symbolsToFollow.Enqueue((symbol, 0));
+                    visitedSymbols.Add(symbol);
+                }
+            }
+            foreach (var reference in metadata.References)
+            {
+                if (!visitedSymbols.Contains(reference))
+                {
+                    symbolsToFollow.Enqueue((reference, 0));
+                    visitedSymbols.Add(reference);
+                }
+            }
+        }
+
+        // Follow symbol references
+        while (symbolsToFollow.Count > 0 && additionalChunks.Count < maxAdditional)
+        {
+            var (symbol, hop) = symbolsToFollow.Dequeue();
+
+            if (hop >= maxHops)
+                continue;
+
+            // Get chunks where this symbol is defined
+            var definingChunks = symbolGraph.GetChunksForSymbol(symbol);
+            foreach (var chunkId in definingChunks)
+            {
+                if (visitedChunks.Contains(chunkId))
+                    continue;
+
+                if (chunkMetadata.TryGetValue(chunkId, out var metadata))
+                {
+                    // Score based on hop distance (closer = higher score)
+                    var hopScore = 0.8 - (hop * 0.2);
+                    additionalChunks.Add((chunkId, metadata, hopScore));
+                    visitedChunks.Add(chunkId);
+
+                    // Queue related symbols for next hop
+                    if (hop + 1 < maxHops)
+                    {
+                        foreach (var relatedSymbol in metadata.References)
+                        {
+                            if (!visitedSymbols.Contains(relatedSymbol))
+                            {
+                                symbolsToFollow.Enqueue((relatedSymbol, hop + 1));
+                                visitedSymbols.Add(relatedSymbol);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Also check callers/callees
+            var callers = symbolGraph.GetCallers(symbol);
+            var callees = symbolGraph.GetCallees(symbol);
+
+            foreach (var related in callers.Concat(callees).Take(3))
+            {
+                var relatedChunks = symbolGraph.GetChunksForSymbol(related);
+                foreach (var chunkId in relatedChunks.Take(2))
+                {
+                    if (visitedChunks.Contains(chunkId))
+                        continue;
+
+                    if (chunkMetadata.TryGetValue(chunkId, out var metadata))
+                    {
+                        var hopScore = 0.7 - (hop * 0.2);
+                        additionalChunks.Add((chunkId, metadata, hopScore));
+                        visitedChunks.Add(chunkId);
+                    }
+                }
+            }
+        }
+
+        return Task.FromResult(additionalChunks.Take(maxAdditional).ToList());
     }
 
     #endregion
@@ -475,6 +736,286 @@ public static class RagCommand
 
     #endregion
 
+    #region Phase 3: Specialized Query Commands
+
+    private static Command CreateFindSymbolCommand()
+    {
+        var symbolArg = new Argument<string>("symbol", "Symbol name to find (class, method, interface)");
+        var storeOption = new Option<string>("--store", "Store name") { IsRequired = true };
+
+        var cmd = new Command("find-symbol", "Find where a symbol is defined")
+        {
+            symbolArg,
+            storeOption
+        };
+
+        cmd.SetHandler((string symbol, string storeName) =>
+        {
+            var registry = StoreRegistry.Load();
+            var storeConfig = registry.Stores.GetValueOrDefault(storeName);
+
+            if (storeConfig == null)
+            {
+                AnsiConsole.MarkupLine($"[red]Error:[/] Store '{storeName}' not found.");
+                return;
+            }
+
+            var symbolGraphPath = Path.Combine(storeConfig.Path, "documents", "symbol-graph.json");
+            var symbolGraph = LoadSymbolGraph(symbolGraphPath);
+
+            var chunksFilePath = Path.Combine(storeConfig.Path, "documents", "chunks.json");
+            var chunkMetadata = LoadChunkMetadata(chunksFilePath);
+
+            if (!symbolGraph.Symbols.TryGetValue(symbol, out var symbolInfo))
+            {
+                AnsiConsole.MarkupLine($"[yellow]Symbol '{symbol}' not found in graph.[/]");
+                AnsiConsole.MarkupLine("[dim]Hint: Try a partial match:[/]");
+
+                // Show partial matches
+                var partialMatches = symbolGraph.Symbols.Keys
+                    .Where(s => s.Contains(symbol, StringComparison.OrdinalIgnoreCase))
+                    .Take(10)
+                    .ToList();
+
+                if (partialMatches.Any())
+                {
+                    foreach (var match in partialMatches)
+                        AnsiConsole.MarkupLine($"  - {match}");
+                }
+                return;
+            }
+
+            AnsiConsole.MarkupLine($"\n[bold]Symbol: {symbol}[/]\n");
+
+            // Show where it's defined
+            AnsiConsole.MarkupLine($"[bold]Defined in:[/]");
+            foreach (var file in symbolInfo.DefinedIn)
+            {
+                AnsiConsole.MarkupLine($"  - {file}");
+            }
+
+            // Show chunks
+            AnsiConsole.MarkupLine($"\n[bold]Chunks ({symbolInfo.ChunkIds.Count}):[/]");
+            foreach (var chunkId in symbolInfo.ChunkIds.Take(5))
+            {
+                if (chunkMetadata.TryGetValue(chunkId, out var metadata))
+                {
+                    AnsiConsole.MarkupLine($"  [dim]{metadata.File}:{metadata.LineStart}-{metadata.LineEnd}[/]");
+                    var preview = metadata.Text.Length > 100 ? metadata.Text.Substring(0, 100) + "..." : metadata.Text;
+                    AnsiConsole.MarkupLine($"    {preview.Replace("\n", " ").Replace("\r", "")}");
+                }
+            }
+
+        }, symbolArg, storeOption);
+
+        return cmd;
+    }
+
+    private static Command CreateFindCallersCommand()
+    {
+        var symbolArg = new Argument<string>("symbol", "Symbol to find callers of");
+        var storeOption = new Option<string>("--store", "Store name") { IsRequired = true };
+        var depthOption = new Option<int>("--depth", () => 1, "How many levels of callers to show");
+
+        var cmd = new Command("find-callers", "Find all callers of a symbol")
+        {
+            symbolArg,
+            storeOption,
+            depthOption
+        };
+
+        cmd.SetHandler((string symbol, string storeName, int depth) =>
+        {
+            var registry = StoreRegistry.Load();
+            var storeConfig = registry.Stores.GetValueOrDefault(storeName);
+
+            if (storeConfig == null)
+            {
+                AnsiConsole.MarkupLine($"[red]Error:[/] Store '{storeName}' not found.");
+                return;
+            }
+
+            var symbolGraphPath = Path.Combine(storeConfig.Path, "documents", "symbol-graph.json");
+            var symbolGraph = LoadSymbolGraph(symbolGraphPath);
+
+            var callers = symbolGraph.GetCallers(symbol);
+
+            if (callers.Count == 0)
+            {
+                AnsiConsole.MarkupLine($"[yellow]No callers found for '{symbol}'.[/]");
+                return;
+            }
+
+            AnsiConsole.MarkupLine($"\n[bold]Callers of {symbol} ({callers.Count}):[/]\n");
+
+            var tree = new Tree($"[bold]{symbol}[/]");
+            AddCallersToTree(tree, symbol, symbolGraph, depth, new HashSet<string>());
+            AnsiConsole.Write(tree);
+
+        }, symbolArg, storeOption, depthOption);
+
+        return cmd;
+    }
+
+    private static void AddCallersToTree(IHasTreeNodes parent, string symbol, SymbolGraph graph, int depth, HashSet<string> visited)
+    {
+        if (depth <= 0 || visited.Contains(symbol))
+            return;
+
+        visited.Add(symbol);
+        var callers = graph.GetCallers(symbol);
+
+        foreach (var caller in callers.Take(10))
+        {
+            var node = parent.AddNode($"[blue]{caller}[/]");
+            if (depth > 1)
+            {
+                AddCallersToTree(node, caller, graph, depth - 1, visited);
+            }
+        }
+    }
+
+    private static Command CreateFindReferencesCommand()
+    {
+        var symbolArg = new Argument<string>("symbol", "Symbol to find references to");
+        var storeOption = new Option<string>("--store", "Store name") { IsRequired = true };
+
+        var cmd = new Command("find-references", "Find all references to a symbol")
+        {
+            symbolArg,
+            storeOption
+        };
+
+        cmd.SetHandler((string symbol, string storeName) =>
+        {
+            var registry = StoreRegistry.Load();
+            var storeConfig = registry.Stores.GetValueOrDefault(storeName);
+
+            if (storeConfig == null)
+            {
+                AnsiConsole.MarkupLine($"[red]Error:[/] Store '{storeName}' not found.");
+                return;
+            }
+
+            var chunksFilePath = Path.Combine(storeConfig.Path, "documents", "chunks.json");
+            var chunkMetadata = LoadChunkMetadata(chunksFilePath);
+
+            // Find all chunks that reference this symbol
+            var referencingChunks = chunkMetadata
+                .Where(kv => kv.Value.References.Contains(symbol, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+
+            if (referencingChunks.Count == 0)
+            {
+                AnsiConsole.MarkupLine($"[yellow]No references found to '{symbol}'.[/]");
+                return;
+            }
+
+            AnsiConsole.MarkupLine($"\n[bold]References to {symbol} ({referencingChunks.Count}):[/]\n");
+
+            var table = new Table();
+            table.AddColumn("File");
+            table.AddColumn("Lines");
+            table.AddColumn("Defined Symbols");
+
+            foreach (var (_, metadata) in referencingChunks.Take(20))
+            {
+                table.AddRow(
+                    metadata.File,
+                    $"{metadata.LineStart}-{metadata.LineEnd}",
+                    string.Join(", ", metadata.Symbols.Take(3))
+                );
+            }
+
+            AnsiConsole.Write(table);
+
+        }, symbolArg, storeOption);
+
+        return cmd;
+    }
+
+    private static Command CreateExpandContextCommand()
+    {
+        var fileArg = new Argument<string>("file", "File path to expand context around");
+        var lineOption = new Option<int>("--line", "Line number to center on") { IsRequired = true };
+        var storeOption = new Option<string>("--store", "Store name") { IsRequired = true };
+        var radiusOption = new Option<int>("--radius", () => 2, "Number of chunks to include before/after");
+
+        var cmd = new Command("expand-context", "Get expanded context around a specific location")
+        {
+            fileArg,
+            storeOption,
+            lineOption,
+            radiusOption
+        };
+
+        cmd.SetHandler((string file, string storeName, int line, int radius) =>
+        {
+            var registry = StoreRegistry.Load();
+            var storeConfig = registry.Stores.GetValueOrDefault(storeName);
+
+            if (storeConfig == null)
+            {
+                AnsiConsole.MarkupLine($"[red]Error:[/] Store '{storeName}' not found.");
+                return;
+            }
+
+            var chunksFilePath = Path.Combine(storeConfig.Path, "documents", "chunks.json");
+            var chunkMetadata = LoadChunkMetadata(chunksFilePath);
+
+            // Find chunks in this file
+            var fileChunks = chunkMetadata
+                .Where(kv => kv.Value.File.EndsWith(file, StringComparison.OrdinalIgnoreCase) ||
+                             kv.Value.File.Equals(file, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(kv => kv.Value.LineStart)
+                .ToList();
+
+            if (fileChunks.Count == 0)
+            {
+                AnsiConsole.MarkupLine($"[yellow]No chunks found for file '{file}'.[/]");
+                return;
+            }
+
+            // Find the chunk containing the target line
+            var centerIndex = fileChunks.FindIndex(kv =>
+                kv.Value.LineStart <= line && kv.Value.LineEnd >= line);
+
+            if (centerIndex == -1)
+            {
+                // Find nearest chunk
+                centerIndex = fileChunks.FindIndex(kv => kv.Value.LineStart > line);
+                if (centerIndex == -1) centerIndex = fileChunks.Count - 1;
+                else if (centerIndex > 0) centerIndex--;
+            }
+
+            // Get chunks in radius
+            var startIndex = Math.Max(0, centerIndex - radius);
+            var endIndex = Math.Min(fileChunks.Count - 1, centerIndex + radius);
+
+            AnsiConsole.MarkupLine($"\n[bold]Context around {file}:{line}[/]\n");
+            AnsiConsole.MarkupLine($"[dim]Showing chunks {startIndex + 1} to {endIndex + 1} of {fileChunks.Count}[/]\n");
+
+            for (int i = startIndex; i <= endIndex; i++)
+            {
+                var (chunkId, metadata) = fileChunks[i];
+                var isCurrent = i == centerIndex;
+
+                if (isCurrent)
+                    AnsiConsole.MarkupLine($"[bold green]>>> {metadata.File}:{metadata.LineStart}-{metadata.LineEnd} <<<[/]");
+                else
+                    AnsiConsole.MarkupLine($"[dim]{metadata.File}:{metadata.LineStart}-{metadata.LineEnd}[/]");
+
+                AnsiConsole.WriteLine(metadata.Text);
+                AnsiConsole.WriteLine();
+            }
+
+        }, fileArg, storeOption, lineOption, radiusOption);
+
+        return cmd;
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private static List<string> ChunkText(string text, int chunkSize, int overlap)
@@ -505,6 +1046,53 @@ public static class RagCommand
         if (currentChunk.Length > 0)
         {
             chunks.Add(currentChunk.ToString().Trim());
+        }
+
+        return chunks;
+    }
+
+    private static List<(string text, int lineStart, int lineEnd, int index)> ChunkTextWithLines(string text, int chunkSize, int overlap)
+    {
+        var chunks = new List<(string text, int lineStart, int lineEnd, int index)>();
+        var lines = text.Split('\n');
+        var currentChunk = new StringBuilder();
+        var currentSize = 0;
+        var chunkStartLine = 1;
+        var currentLine = 1;
+        var chunkIndex = 0;
+
+        foreach (var line in lines)
+        {
+            if (currentSize + line.Length > chunkSize && currentSize > 0)
+            {
+                chunks.Add((currentChunk.ToString().Trim(), chunkStartLine, currentLine - 1, chunkIndex));
+                chunkIndex++;
+
+                // Calculate overlap in lines
+                var overlapText = currentChunk.ToString();
+                currentChunk.Clear();
+                if (overlapText.Length > overlap)
+                {
+                    currentChunk.Append(overlapText.Substring(overlapText.Length - overlap));
+                    // Estimate lines in overlap
+                    var overlapLines = overlapText.Substring(overlapText.Length - overlap).Count(c => c == '\n');
+                    chunkStartLine = currentLine - overlapLines;
+                }
+                else
+                {
+                    chunkStartLine = currentLine;
+                }
+                currentSize = currentChunk.Length;
+            }
+
+            currentChunk.AppendLine(line);
+            currentSize += line.Length + 1;
+            currentLine++;
+        }
+
+        if (currentChunk.Length > 0)
+        {
+            chunks.Add((currentChunk.ToString().Trim(), chunkStartLine, currentLine - 1, chunkIndex));
         }
 
         return chunks;
@@ -544,24 +1132,50 @@ public static class RagCommand
         return "";
     }
 
-    private static Dictionary<string, string> LoadChunkTexts(string chunksFilePath)
+    #region Chunk Metadata Storage
+
+    private static Dictionary<string, ChunkMetadata> LoadChunkMetadata(string chunksFilePath)
     {
         if (!File.Exists(chunksFilePath))
-            return new Dictionary<string, string>();
+            return new Dictionary<string, ChunkMetadata>();
 
         try
         {
             var json = File.ReadAllText(chunksFilePath);
-            return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(json)
-                ?? new Dictionary<string, string>();
+
+            // Try to load as new format (ChunkMetadata)
+            try
+            {
+                return JsonSerializer.Deserialize<Dictionary<string, ChunkMetadata>>(json)
+                    ?? new Dictionary<string, ChunkMetadata>();
+            }
+            catch
+            {
+                // Fallback: try to load as old format (simple string) and convert
+                var oldFormat = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+                if (oldFormat != null)
+                {
+                    var converted = new Dictionary<string, ChunkMetadata>();
+                    foreach (var (key, text) in oldFormat)
+                    {
+                        converted[key] = new ChunkMetadata
+                        {
+                            Text = text,
+                            IndexedAt = DateTime.UtcNow
+                        };
+                    }
+                    return converted;
+                }
+                return new Dictionary<string, ChunkMetadata>();
+            }
         }
         catch
         {
-            return new Dictionary<string, string>();
+            return new Dictionary<string, ChunkMetadata>();
         }
     }
 
-    private static void SaveChunkTexts(string chunksFilePath, Dictionary<string, string> chunkTexts)
+    private static void SaveChunkMetadata(string chunksFilePath, Dictionary<string, ChunkMetadata> chunkMetadata)
     {
         var dir = Path.GetDirectoryName(chunksFilePath);
         if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
@@ -569,12 +1183,71 @@ public static class RagCommand
             Directory.CreateDirectory(dir);
         }
 
-        var json = System.Text.Json.JsonSerializer.Serialize(chunkTexts, new System.Text.Json.JsonSerializerOptions
+        var json = JsonSerializer.Serialize(chunkMetadata, new JsonSerializerOptions
         {
-            WriteIndented = true
+            WriteIndented = false, // Save space - can be large
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
         });
         File.WriteAllText(chunksFilePath, json);
     }
+
+    #endregion
+
+    #region Symbol Graph Storage
+
+    private static SymbolGraph LoadSymbolGraph(string symbolGraphPath)
+    {
+        if (!File.Exists(symbolGraphPath))
+            return new SymbolGraph();
+
+        try
+        {
+            var json = File.ReadAllText(symbolGraphPath);
+            return JsonSerializer.Deserialize<SymbolGraph>(json) ?? new SymbolGraph();
+        }
+        catch
+        {
+            return new SymbolGraph();
+        }
+    }
+
+    private static void SaveSymbolGraph(string symbolGraphPath, SymbolGraph symbolGraph)
+    {
+        var dir = Path.GetDirectoryName(symbolGraphPath);
+        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+
+        var json = JsonSerializer.Serialize(symbolGraph, new JsonSerializerOptions
+        {
+            WriteIndented = false
+        });
+        File.WriteAllText(symbolGraphPath, json);
+    }
+
+    #endregion
+
+    #region Legacy Support
+
+    private static Dictionary<string, string> LoadChunkTexts(string chunksFilePath)
+    {
+        // Load metadata and extract just the text (for backward compatibility)
+        var metadata = LoadChunkMetadata(chunksFilePath);
+        return metadata.ToDictionary(kv => kv.Key, kv => kv.Value.Text);
+    }
+
+    private static void SaveChunkTexts(string chunksFilePath, Dictionary<string, string> chunkTexts)
+    {
+        // Convert to metadata format
+        var metadata = chunkTexts.ToDictionary(
+            kv => kv.Key,
+            kv => new ChunkMetadata { Text = kv.Value, IndexedAt = DateTime.UtcNow }
+        );
+        SaveChunkMetadata(chunksFilePath, metadata);
+    }
+
+    #endregion
 
     #endregion
 }
