@@ -1,9 +1,74 @@
 import { useState, useEffect, useRef } from 'react'
+import { Terminal } from '@xterm/xterm'
+import { FitAddon } from '@xterm/addon-fit'
 import { authFetch } from '../auth'
 import type { ArchivedSession, ArchivedSessionsResponse, SessionLogResponse } from '../types'
+import '@xterm/xterm/css/xterm.css'
 
 interface ArchiveViewProps {
   onClose: () => void
+}
+
+// Component to render log content with ANSI escape sequence support using xterm.js
+function LogTerminal({ content }: { content: string }) {
+  const terminalRef = useRef<HTMLDivElement>(null)
+  const xtermRef = useRef<Terminal | null>(null)
+
+  useEffect(() => {
+    if (!terminalRef.current) return
+
+    // Create terminal instance
+    const term = new Terminal({
+      convertEol: true,
+      disableStdin: true, // Read-only
+      cursorBlink: false,
+      cursorStyle: 'bar',
+      fontSize: 13,
+      fontFamily: 'Consolas, "Courier New", monospace',
+      theme: {
+        background: '#1e1e1e',
+        foreground: '#d4d4d4',
+        cursor: '#d4d4d4',
+        cursorAccent: '#1e1e1e',
+        selectionBackground: '#264f78',
+      },
+      scrollback: 100000, // Large scrollback for log viewing
+    })
+
+    const fitAddon = new FitAddon()
+    term.loadAddon(fitAddon)
+
+    term.open(terminalRef.current)
+    fitAddon.fit()
+
+    xtermRef.current = term
+
+    // Write the log content to the terminal
+    // The content may have \r\n or \n line endings
+    term.write(content)
+
+    // Handle resize
+    const handleResize = () => {
+      fitAddon.fit()
+    }
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      term.dispose()
+    }
+  }, [content])
+
+  return (
+    <div
+      ref={terminalRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#1e1e1e',
+      }}
+    />
+  )
 }
 
 export function ArchiveView({ onClose }: ArchiveViewProps) {
@@ -104,7 +169,7 @@ export function ArchiveView({ onClose }: ArchiveViewProps) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
-  // Render session log view
+  // Render session log view with xterm.js for proper ANSI rendering
   if (selectedSession && logContent !== null) {
     const session = sessions.find(s => s.sessionId === selectedSession)
     return (
@@ -125,7 +190,7 @@ export function ArchiveView({ onClose }: ArchiveViewProps) {
         </div>
 
         <div className="log-container" ref={logContainerRef}>
-          <pre className="session-log">{logContent}</pre>
+          <LogTerminal content={logContent} />
         </div>
       </div>
     )
