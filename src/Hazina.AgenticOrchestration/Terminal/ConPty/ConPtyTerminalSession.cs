@@ -275,13 +275,13 @@ public class ConPtyTerminalSession : ITerminalSession
         var command = _config.Command;
 
         // Batch files (.bat, .cmd) need to be run through cmd.exe
+        // This is required for deployed/published builds (VS debug mode handles this automatically)
         var isBatchFile = command.EndsWith(".bat", StringComparison.OrdinalIgnoreCase) ||
                           command.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase);
 
         if (isBatchFile)
         {
             // Use cmd.exe /k to run batch file and keep the shell open for interaction
-            // /k keeps the window open after the batch file completes (important for interactive use)
             sb.Append("cmd.exe /k ");
         }
 

@@ -25,28 +25,48 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const [isConnected, setIsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Voice control - send transcribed speech to terminal
+  // Text input state for composing messages before sending
+  const [inputText, setInputText] = useState('')
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  // Send the composed input text to the terminal
+  const sendInputText = useCallback(() => {
+    if (!inputText.trim()) return
+    if (connection.current?.state !== signalR.HubConnectionState.Connected) return
+
+    const textToSend = inputText.trim()
+    const encoder = new TextEncoder()
+    // Use \r (carriage return) to simulate pressing Enter in terminal
+    const bytes = Array.from(encoder.encode(textToSend + '\r'))
+
+    connection.current.invoke('SendInput', sessionId, bytes)
+      .catch(err => console.error('SendInput failed:', err))
+
+    setInputText('')
+
+    // Focus the terminal after sending
+    terminalInstance.current?.focus()
+  }, [inputText, sessionId])
+
+  // Voice control - append transcribed speech to input text (not send directly)
   const handleVoiceTranscript = useCallback((text: string) => {
-    if (connection.current?.state === signalR.HubConnectionState.Connected) {
-      // Sanitize: trim whitespace, limit length, remove control characters
-      const sanitized = text
-        .trim()
-        .slice(0, 1000) // Reasonable max length
-        .replace(/[\x00-\x1F\x7F]/g, '') // Remove control chars except those we add
+    // Sanitize: trim whitespace, limit length, remove control characters
+    const sanitized = text
+      .trim()
+      .slice(0, 1000) // Reasonable max length
+      .replace(/[\x00-\x1F\x7F]/g, '') // Remove control chars
 
-      if (!sanitized) return
+    if (!sanitized) return
 
-      // Send the text as input with a newline to execute
-      const encoder = new TextEncoder()
-      const bytes = Array.from(encoder.encode(sanitized + '\n'))
-      connection.current.invoke('SendInput', sessionId, bytes)
-        .catch(err => console.error('SendInput (voice) failed:', err))
+    // Append to input text instead of sending directly
+    setInputText(prev => {
+      const newText = prev ? prev + ' ' + sanitized : sanitized
+      return newText
+    })
 
-      // Also show indicator in terminal (escape for display)
-      const displayText = sanitized.length > 50 ? sanitized.slice(0, 50) + '...' : sanitized
-      terminalInstance.current?.writeln(`\r\n\x1b[36m[Voice: "${displayText}"]\x1b[0m`)
-    }
-  }, [sessionId])
+    // Focus the input field
+    inputRef.current?.focus()
+  }, [])
 
   const [voiceState, voiceActions] = useVoiceControl(handleVoiceTranscript)
 
@@ -490,6 +510,14 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     }
   }
 
+  // Handle key press in input - send on Enter (without Shift)
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      sendInputText()
+    }
+  }
+
   return (
     <div className="terminal-view">
       <div className="terminal-toolbar">
@@ -544,6 +572,31 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       </div>
       {error && <div className="terminal-error">{error}</div>}
       <div className="terminal-container" ref={terminalRef} />
+
+      {/* Input box for composing messages before sending */}
+      <div className="terminal-input-container">
+        <textarea
+          ref={inputRef}
+          className="terminal-input"
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          onKeyDown={handleInputKeyDown}
+          placeholder="Type a message or use voice... (Enter to send, Shift+Enter for newline)"
+          rows={1}
+          disabled={!isConnected}
+        />
+        <button
+          className="btn-send-terminal"
+          onClick={sendInputText}
+          disabled={!isConnected || !inputText.trim()}
+          title="Send message (Enter)"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+          Send
+        </button>
+      </div>
     </div>
   )
 }
