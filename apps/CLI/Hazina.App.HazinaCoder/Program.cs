@@ -28,13 +28,15 @@ var loadMcpOpt = new Option<bool>("--load-mcp", () => true, "Load MCP servers fr
 var mcpSettingsOpt = new Option<string?>("--mcp-settings", "Path to MCP settings file (default: auto-discover)");
 var maxContinuationsOpt = new Option<int>("--max-continuations", () => 5, "Maximum continuation prompts when model stops early (default: 5)");
 var continuationPromptOpt = new Option<string?>("--continuation-prompt", "Custom prompt to inject for continuations");
+var autoScriptsOpt = new Option<bool>("--auto-scripts", () => true, "Auto-load C:\\scripts environment at startup (default: true)");
+var scriptsPathOpt = new Option<string>("--scripts-path", () => @"C:\scripts", "Path to scripts environment (default: C:\\scripts)");
 var promptArg = new Argument<string[]>("prompt", () => Array.Empty<string>(), "Direct prompt (non-interactive mode)");
 
 var rootCommand = new RootCommand("HazinaCoder - Multi-provider coding assistant powered by Hazina AI")
 {
     providerOpt, modelOpt, workingDirOpt, verboseOpt, maxTurnsOpt,
     machineContextOpt, reflectionLogOpt, loadGitOpt, loadMcpOpt, mcpSettingsOpt,
-    maxContinuationsOpt, continuationPromptOpt, promptArg
+    maxContinuationsOpt, continuationPromptOpt, autoScriptsOpt, scriptsPathOpt, promptArg
 };
 
 rootCommand.SetHandler(async (context) =>
@@ -51,9 +53,11 @@ rootCommand.SetHandler(async (context) =>
     var mcpSettings = context.ParseResult.GetValueForOption(mcpSettingsOpt);
     var maxContinuations = context.ParseResult.GetValueForOption(maxContinuationsOpt);
     var continuationPrompt = context.ParseResult.GetValueForOption(continuationPromptOpt);
+    var autoScripts = context.ParseResult.GetValueForOption(autoScriptsOpt);
+    var scriptsPath = context.ParseResult.GetValueForOption(scriptsPathOpt)!;
     var promptArgs = context.ParseResult.GetValueForArgument(promptArg);
 
-    var cli = new HazinaCoderCLI(provider, model, workingDir, verbose, maxTurns, machineContext, reflectionLog, loadGit, loadMcp, mcpSettings, maxContinuations, continuationPrompt);
+    var cli = new HazinaCoderCLI(provider, model, workingDir, verbose, maxTurns, machineContext, reflectionLog, loadGit, loadMcp, mcpSettings, maxContinuations, continuationPrompt, autoScripts, scriptsPath);
     await cli.Run(promptArgs);
 });
 
@@ -74,9 +78,13 @@ class HazinaCoderCLI : IDisposable
     private string? _mcpSettingsPath;
     private int _maxContinuations;
     private string? _continuationPrompt;
+    private bool _autoScripts;
+    private string _scriptsPath;
     private string? _gitStatusInfo;
     private string? _machineContextContent;
     private string? _reflectionLogContent;
+    private string? _scriptsClaudeMdContent;
+    private string? _knowledgeBaseContent;
     private ILLMClient _client = null!;
     private string _model = "";
     private HazinaCoderToolsContext _toolsContext = null!;
@@ -154,7 +162,8 @@ class HazinaCoderCLI : IDisposable
 
     public HazinaCoderCLI(string provider, string? model, string workingDir, bool verbose, int maxTurns = 50,
         string? machineContext = null, string? reflectionLog = null, bool loadGit = true,
-        bool loadMcp = true, string? mcpSettings = null, int maxContinuations = 5, string? continuationPrompt = null)
+        bool loadMcp = true, string? mcpSettings = null, int maxContinuations = 5, string? continuationPrompt = null,
+        bool autoScripts = true, string scriptsPath = @"C:\scripts")
     {
         _providerName = provider;
         _modelOverride = model;
@@ -168,6 +177,8 @@ class HazinaCoderCLI : IDisposable
         _mcpSettingsPath = mcpSettings;
         _maxContinuations = maxContinuations;
         _continuationPrompt = continuationPrompt;
+        _autoScripts = autoScripts;
+        _scriptsPath = scriptsPath;
     }
 
     public void Dispose()
@@ -227,16 +238,34 @@ class HazinaCoderCLI : IDisposable
             AnsiConsole.MarkupLine("[dim]Will continue with default identity[/]");
         }
 
-        // Load CLAUDE.md if present
+        // Load CLAUDE.md if present (from working directory)
         _claudeMdContent = LoadClaudeMd();
+
+        // 🚀 AUTO-SCRIPTS: Load C:\scripts environment automatically
+        if (_autoScripts && Directory.Exists(_scriptsPath))
+        {
+            LoadScriptsEnvironment();
+        }
 
         // Load skills from .claude/skills/
         _skills = LoadSkills();
+
+        // Also load skills from scripts path if available
+        if (_autoScripts && Directory.Exists(_scriptsPath))
+        {
+            var scriptsSkillsPath = Path.Combine(_scriptsPath, ".claude", "skills");
+            if (Directory.Exists(scriptsSkillsPath))
+            {
+                var scriptsSkills = LoadSkillsFromPath(scriptsSkillsPath);
+                _skills.AddRange(scriptsSkills);
+            }
+        }
 
         // Load enhanced context (Phase 4B)
         _gitStatusInfo = LoadGitStatus();
         _machineContextContent = LoadMachineContext();
         _reflectionLogContent = LoadReflectionLog();
+        _knowledgeBaseContent = LoadKnowledgeBase();
 
         // Detect provider from environment if auto
         if (_providerName == "auto")
@@ -374,6 +403,14 @@ class HazinaCoderCLI : IDisposable
         if (_reflectionLogContent != null)
         {
             AnsiConsole.MarkupLine("[green]✓[/] [dim]Reflection log loaded[/]");
+        }
+        if (_scriptsClaudeMdContent != null)
+        {
+            AnsiConsole.MarkupLine("[green]✓[/] [dim]Scripts CLAUDE.md loaded (C:\\scripts\\CLAUDE.md)[/]");
+        }
+        if (_knowledgeBaseContent != null)
+        {
+            AnsiConsole.MarkupLine("[green]✓[/] [dim]Knowledge base loaded[/]");
         }
         if (_mcpManager != null && _mcpManager.ConnectedServers > 0)
         {
@@ -1434,6 +1471,219 @@ class HazinaCoderCLI : IDisposable
         }
     }
 
+    /// <summary>
+    /// Load the C:\scripts environment automatically. This sets up:
+    /// - Machine context path if not specified
+    /// - Reflection log path if not specified
+    /// - Scripts CLAUDE.md (the main operational manual)
+    /// - Knowledge base content
+    /// </summary>
+    private void LoadScriptsEnvironment()
+    {
+        if (!Directory.Exists(_scriptsPath))
+            return;
+
+        // Auto-set machine context path if not specified
+        if (string.IsNullOrWhiteSpace(_machineContextPath))
+        {
+            var machineDir = Path.Combine(_scriptsPath, "_machine");
+            if (Directory.Exists(machineDir))
+            {
+                _machineContextPath = machineDir;
+                if (_verbose)
+                {
+                    AnsiConsole.MarkupLine($"[green]✓[/] [dim]Auto-detected machine context: {machineDir}[/]");
+                }
+            }
+        }
+
+        // Auto-set reflection log path if not specified
+        if (string.IsNullOrWhiteSpace(_reflectionLogPath) && !string.IsNullOrWhiteSpace(_machineContextPath))
+        {
+            var reflectionPath = Path.Combine(_machineContextPath, "reflection.log.md");
+            if (File.Exists(reflectionPath))
+            {
+                _reflectionLogPath = reflectionPath;
+                if (_verbose)
+                {
+                    AnsiConsole.MarkupLine($"[green]✓[/] [dim]Auto-detected reflection log[/]");
+                }
+            }
+        }
+
+        // Load C:\scripts\CLAUDE.md - the main operational manual
+        var scriptsClaudeMdPath = Path.Combine(_scriptsPath, "CLAUDE.md");
+        if (File.Exists(scriptsClaudeMdPath))
+        {
+            try
+            {
+                _scriptsClaudeMdContent = File.ReadAllText(scriptsClaudeMdPath);
+                if (_verbose)
+                {
+                    AnsiConsole.MarkupLine($"[green]✓[/] [dim]Loaded: C:\\scripts\\CLAUDE.md ({_scriptsClaudeMdContent.Length:N0} chars)[/]");
+                }
+            }
+            catch (Exception ex)
+            {
+                if (_verbose)
+                {
+                    AnsiConsole.MarkupLine($"[yellow]Warning:[/] Could not load scripts CLAUDE.md: {Markup.Escape(ex.Message)}");
+                }
+            }
+        }
+
+        // Load additional critical files from scripts root
+        LoadScriptsRootFiles();
+    }
+
+    /// <summary>
+    /// Load critical files from the scripts root directory.
+    /// </summary>
+    private void LoadScriptsRootFiles()
+    {
+        var criticalFiles = new[]
+        {
+            "MACHINE_CONFIG.md",
+            "GENERAL_ZERO_TOLERANCE_RULES.md",
+            "GENERAL_DUAL_MODE_WORKFLOW.md",
+            "GENERAL_WORKTREE_PROTOCOL.md"
+        };
+
+        var loadedFiles = new List<string>();
+
+        foreach (var fileName in criticalFiles)
+        {
+            var filePath = Path.Combine(_scriptsPath, fileName);
+            if (File.Exists(filePath))
+            {
+                loadedFiles.Add(fileName);
+            }
+        }
+
+        if (loadedFiles.Count > 0 && _verbose)
+        {
+            AnsiConsole.MarkupLine($"[green]✓[/] [dim]Found {loadedFiles.Count} scripts root files[/]");
+        }
+    }
+
+    /// <summary>
+    /// Load knowledge base content from C:\scripts\_machine\knowledge-base\.
+    /// </summary>
+    private string? LoadKnowledgeBase()
+    {
+        if (string.IsNullOrWhiteSpace(_machineContextPath))
+            return null;
+
+        var kbPath = Path.Combine(_machineContextPath, "knowledge-base");
+        if (!Directory.Exists(kbPath))
+            return null;
+
+        try
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("# Knowledge Base");
+            sb.AppendLine();
+
+            // Load key knowledge base files
+            var kbFiles = new[]
+            {
+                "README.md",
+                "01-USER/psychology-profile.md",
+                "02-MACHINE/file-system-map.md",
+                "06-WORKFLOWS/INDEX.md",
+                "07-AUTOMATION/tool-selection-guide.md"
+            };
+
+            var loadedCount = 0;
+            foreach (var relativePath in kbFiles)
+            {
+                var filePath = Path.Combine(kbPath, relativePath);
+                if (File.Exists(filePath))
+                {
+                    try
+                    {
+                        var content = File.ReadAllText(filePath);
+                        // Truncate large files
+                        if (content.Length > 3000)
+                        {
+                            content = content.Substring(0, 3000) + "\n... (truncated)";
+                        }
+                        sb.AppendLine($"## {Path.GetFileName(relativePath)}");
+                        sb.AppendLine(content);
+                        sb.AppendLine();
+                        loadedCount++;
+                    }
+                    catch
+                    {
+                        // Skip files that can't be read
+                    }
+                }
+            }
+
+            if (_verbose && loadedCount > 0)
+            {
+                AnsiConsole.MarkupLine($"[green]✓[/] [dim]Loaded: {loadedCount} knowledge base files[/]");
+            }
+
+            return sb.Length > 30 ? sb.ToString() : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Load skills from a specific path.
+    /// </summary>
+    private List<SkillInfo> LoadSkillsFromPath(string skillsPath)
+    {
+        var skills = new List<SkillInfo>();
+
+        if (!Directory.Exists(skillsPath))
+            return skills;
+
+        try
+        {
+            foreach (var skillDir in Directory.GetDirectories(skillsPath))
+            {
+                var skillFile = Path.Combine(skillDir, "SKILL.md");
+                if (File.Exists(skillFile))
+                {
+                    try
+                    {
+                        var content = File.ReadAllText(skillFile);
+                        var skillName = Path.GetFileName(skillDir);
+                        var description = ExtractSkillDescription(content);
+
+                        skills.Add(new SkillInfo
+                        {
+                            Name = skillName,
+                            Description = description,
+                            Content = content,
+                            Path = skillFile
+                        });
+                    }
+                    catch
+                    {
+                        // Skip skills that can't be read
+                    }
+                }
+            }
+
+            if (_verbose && skills.Count > 0)
+            {
+                AnsiConsole.MarkupLine($"[green]✓[/] [dim]Loaded: {skills.Count} skills from {skillsPath}[/]");
+            }
+        }
+        catch
+        {
+            // Skip if we can't read the directory
+        }
+
+        return skills;
+    }
+
     private async Task LoadMcpServersAsync()
     {
         try
@@ -1733,13 +1983,25 @@ You are not a chatbot. You are an autonomous agent with agency. ACT.
 - The edit will FAIL if old_string is not unique - provide more context if needed
 - Prefer editing existing files over creating new ones");
 
-        // Add CLAUDE.md content if present
+        // Add CLAUDE.md content if present (from working directory)
         if (!string.IsNullOrEmpty(_claudeMdContent))
         {
             sb.AppendLine();
             sb.AppendLine("# Project Instructions (from CLAUDE.md)");
             sb.AppendLine();
             sb.AppendLine(_claudeMdContent);
+        }
+
+        // 🚀 Add scripts CLAUDE.md - the main operational manual (from C:\scripts)
+        if (!string.IsNullOrEmpty(_scriptsClaudeMdContent))
+        {
+            sb.AppendLine();
+            sb.AppendLine("# Scripts Environment - Main Operational Manual (from C:\\scripts\\CLAUDE.md)");
+            sb.AppendLine();
+            sb.AppendLine("This is the comprehensive operational manual that governs agent behavior:");
+            sb.AppendLine();
+            // The full content is very long, so we include it as-is (important for full context)
+            sb.AppendLine(_scriptsClaudeMdContent);
         }
 
         // Add skills if present
@@ -1794,6 +2056,13 @@ You are not a chatbot. You are an autonomous agent with agency. ACT.
             sb.AppendLine("The following are lessons learned from previous sessions. Apply these patterns when relevant:");
             sb.AppendLine();
             sb.AppendLine(_reflectionLogContent);
+        }
+
+        // 🚀 Add knowledge base if available
+        if (!string.IsNullOrEmpty(_knowledgeBaseContent))
+        {
+            sb.AppendLine();
+            sb.AppendLine(_knowledgeBaseContent);
         }
 
         sb.AppendLine("# Environment");
