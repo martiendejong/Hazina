@@ -1,0 +1,299 @@
+using System.Collections.Concurrent;
+using System.Linq;
+using System.Runtime.InteropServices;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
+using Hazina.AgenticOrchestration.Hubs;
+using Hazina.AgenticOrchestration.Services;
+using Hazina.AgenticOrchestration.Terminal.ConPty;
+
+namespace Hazina.AgenticOrchestration.Terminal;
+
+/// <summary>
+/// Manages multiple terminal sessions.
+/// Thread-safe for concurrent access from SignalR hub.
+/// </summary>
+public interface ITerminalSessionManager
+{
+    /// <summary>
+    /// Create and start a new terminal session
+    /// </summary>
+    Task<ITerminalSession> CreateSessionAsync(TerminalSessionConfig config, CancellationToken ct = default);
+
+    /// <summary>
+    /// Get an existing session by ID
+    /// </summary>
+    ITerminalSession? GetSession(string sessionId);
+
+    /// <summary>
+    /// Get all active sessions
+    /// </summary>
+    IEnumerable<ITerminalSession> GetAllSessions();
+
+    /// <summary>
+    /// Terminate and remove a session
+    /// </summary>
+    Task RemoveSessionAsync(string sessionId);
+
+    /// <summary>
+    /// Get session count
+    /// </summary>
+    int SessionCount { get; }
+}
+
+/// <summary>
+/// Implementation of terminal session manager with SignalR integration.
+/// Uses ConPTY (Windows Pseudo Console) for full interactive terminal support.
+/// </summary>
+public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
+{
+    private readonly ConcurrentDictionary<string, ITerminalSession> _sessions = new();
+    private readonly IHubContext<TerminalHub> _hubContext;
+    private readonly ILogger<TerminalSessionManager> _logger;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly IAgentSessionLogger _sessionLogger;
+    private readonly Timer _cleanupTimer;
+    private readonly bool _useConPty;
+    private bool _disposed;
+
+    public int SessionCount => _sessions.Count;
+
+    public TerminalSessionManager(
+        IHubContext<TerminalHub> hubContext,
+        ILogger<TerminalSessionManager> logger,
+        ILoggerFactory loggerFactory,
+        IAgentSessionLogger sessionLogger)
+    {
+        _hubContext = hubContext;
+        _logger = logger;
+        _loggerFactory = loggerFactory;
+        _sessionLogger = sessionLogger;
+
+        // Use ConPTY on Windows for full interactive terminal support
+        _useConPty = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        _logger.LogInformation("Terminal session manager initialized. ConPTY enabled: {UseConPty}", _useConPty);
+
+        // Cleanup dead sessions every 30 seconds
+        _cleanupTimer = new Timer(CleanupDeadSessions, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    public async Task<ITerminalSession> CreateSessionAsync(TerminalSessionConfig config, CancellationToken ct = default)
+    {
+        var sessionId = GenerateSessionId();
+
+        // Create appropriate session type based on platform
+        ITerminalSession session;
+        if (_useConPty)
+        {
+            var conPtyLogger = _loggerFactory.CreateLogger<ConPtyTerminalSession>();
+            session = new ConPtyTerminalSession(sessionId, config, conPtyLogger);
+            _logger.LogInformation("Creating ConPTY session {SessionId} for command '{Command}'", sessionId, config.Command);
+        }
+        else
+        {
+            var pipeLogger = _loggerFactory.CreateLogger<TerminalSession>();
+            session = new TerminalSession(sessionId, config, pipeLogger);
+            _logger.LogInformation("Creating pipe-based session {SessionId} for command '{Command}'", sessionId, config.Command);
+        }
+
+        // Start session logging
+        await _sessionLogger.StartSessionAsync(sessionId, config.Command, config.WorkingDirectory);
+
+        // Track last state to detect changes
+        bool lastWaitingState = false;
+
+        // Periodic state check timer (check every 2 seconds to avoid flicker)
+        var stateCheckTimer = new System.Threading.Timer(async _ =>
+        {
+            try
+            {
+                var currentWaitingState = session.WaitingForInput;
+                if (currentWaitingState != lastWaitingState)
+                {
+                    lastWaitingState = currentWaitingState;
+                    await _hubContext.Clients
+                        .Group($"terminal-{sessionId}")
+                        .SendAsync("OnStateChanged", sessionId, session.IsRunning, currentWaitingState, CancellationToken.None);
+                    _logger.LogDebug("State changed for session {SessionId}: WaitingForInput={Waiting}", sessionId, currentWaitingState);
+                }
+            }
+            catch { /* ignore timer errors */ }
+        }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
+
+        // Wire up output to SignalR
+        // IMPORTANT: Don't use the request's cancellation token here!
+        // The event handlers run after the HTTP request completes, so ct would be cancelled.
+        session.OnOutput += async (data) =>
+        {
+            try
+            {
+                _logger.LogDebug("OUTPUT: Sending {ByteCount} bytes to session {SessionId}", data.Length, sessionId);
+
+                // Log output to file
+                await _sessionLogger.LogOutputAsync(sessionId, data);
+
+                // Convert byte[] to int[] because System.Text.Json serializes byte[] as Base64 string
+                // but the JavaScript client expects a number array
+                var intArray = data.Select(b => (int)b).ToArray();
+                await _hubContext.Clients
+                    .Group($"terminal-{sessionId}")
+                    .SendAsync("OnOutput", sessionId, intArray, CancellationToken.None);
+
+                // Immediately check state on output too
+                var currentWaitingState = session.WaitingForInput;
+                if (currentWaitingState != lastWaitingState)
+                {
+                    lastWaitingState = currentWaitingState;
+                    await _hubContext.Clients
+                        .Group($"terminal-{sessionId}")
+                        .SendAsync("OnStateChanged", sessionId, session.IsRunning, currentWaitingState, CancellationToken.None);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending {ByteCount} bytes to SignalR for session {SessionId}",
+                    data.Length, sessionId);
+            }
+        };
+
+        session.OnExit += async (exitCode) =>
+        {
+            try
+            {
+                // Stop the state check timer
+                await stateCheckTimer.DisposeAsync();
+
+                // End session logging
+                await _sessionLogger.EndSessionAsync(sessionId, exitCode);
+
+                await _hubContext.Clients
+                    .Group($"terminal-{sessionId}")
+                    .SendAsync("OnExit", sessionId, exitCode, CancellationToken.None);
+
+                // Also notify that session is no longer waiting (it's exited)
+                await _hubContext.Clients
+                    .Group($"terminal-{sessionId}")
+                    .SendAsync("OnStateChanged", sessionId, false, false, CancellationToken.None);
+
+                _logger.LogInformation("Session {SessionId} exited with code {ExitCode}", sessionId, exitCode);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending exit event to SignalR for session {SessionId}", sessionId);
+            }
+        };
+
+        // Wire up title change to SignalR
+        session.OnTitleChanged += async (title) =>
+        {
+            try
+            {
+                await _hubContext.Clients
+                    .Group($"terminal-{sessionId}")
+                    .SendAsync("OnTitleChanged", sessionId, title, CancellationToken.None);
+
+                _logger.LogInformation("Session {SessionId} title changed to '{Title}'", sessionId, title);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending title change to SignalR for session {SessionId}", sessionId);
+            }
+        };
+
+        // Start the process
+        await session.StartAsync(ct);
+
+        if (!_sessions.TryAdd(sessionId, session))
+        {
+            await session.DisposeAsync();
+            throw new InvalidOperationException($"Failed to add session {sessionId}");
+        }
+
+        _logger.LogInformation(
+            "Created {SessionType} session {SessionId} running '{Command}', total sessions: {Count}",
+            _useConPty ? "ConPTY" : "pipe-based", sessionId, config.Command, _sessions.Count);
+
+        return session;
+    }
+
+    public ITerminalSession? GetSession(string sessionId)
+    {
+        return _sessions.TryGetValue(sessionId, out var session) ? session : null;
+    }
+
+    public IEnumerable<ITerminalSession> GetAllSessions()
+    {
+        return _sessions.Values;
+    }
+
+    public async Task RemoveSessionAsync(string sessionId)
+    {
+        if (_sessions.TryRemove(sessionId, out var session))
+        {
+            await session.TerminateAsync();
+            await session.DisposeAsync();
+
+            _logger.LogInformation("Removed terminal session {SessionId}, remaining: {Count}",
+                sessionId, _sessions.Count);
+        }
+    }
+
+    private void CleanupDeadSessions(object? state)
+    {
+        // Only cleanup sessions that have been dead for more than 1 hour
+        // This allows users to view historical output of closed sessions
+        var cutoffTime = DateTime.UtcNow.AddHours(-1);
+
+        var expiredSessions = _sessions
+            .Where(kvp => !kvp.Value.IsRunning && kvp.Value.StartedAt < cutoffTime)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        foreach (var sessionId in expiredSessions)
+        {
+            if (_sessions.TryRemove(sessionId, out var session))
+            {
+                _logger.LogInformation("Cleaned up expired session {SessionId} (dead > 1 hour)", sessionId);
+                _ = session.DisposeAsync();
+            }
+        }
+
+        if (expiredSessions.Count > 0)
+        {
+            _logger.LogDebug("Cleaned up {Count} expired sessions, remaining: {Remaining}",
+                expiredSessions.Count, _sessions.Count);
+        }
+    }
+
+    private string GenerateSessionId()
+    {
+        var timestamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
+        var random = Guid.NewGuid().ToString("N")[..8];
+        return $"{timestamp}-{random}";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+
+        await _cleanupTimer.DisposeAsync();
+
+        var tasks = _sessions.Values.Select(async session =>
+        {
+            try
+            {
+                await session.TerminateAsync();
+                await session.DisposeAsync();
+            }
+            catch { /* ignore */ }
+        });
+
+        await Task.WhenAll(tasks);
+        _sessions.Clear();
+
+        _logger.LogInformation("TerminalSessionManager disposed");
+    }
+}

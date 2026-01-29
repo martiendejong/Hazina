@@ -114,3 +114,7 @@ docs/api/.manifest
 
 # DocFX log files
 docs/obj/
+node_modules
+/apps/Demos/Hazina.Demo.AgenticOrchestration/publish
+embeddings.json
+chunks.json
