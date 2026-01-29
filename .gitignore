@@ -116,3 +116,5 @@ docs/api/.manifest
 docs/obj/
 node_modules
 /apps/Demos/Hazina.Demo.AgenticOrchestration/publish
+embeddings.json
+chunks.json
