@@ -104,6 +104,10 @@ class HazinaCoderCLI : IDisposable
     private int _estimatedContextTokens = 0;
     private const int DefaultContextLimit = 128000; // Most models support at least 128k
     private int _contextWarningThreshold = 100000; // Warn at ~78% capacity
+    private const int AutoCompressThreshold = 90000; // Auto-compress at ~70% capacity
+    private const int TargetTokensAfterCompress = 40000; // Target ~31% after compression
+    private string? _lastConversationSummary; // Summary of compressed conversation
+    private bool _isCompressing = false; // Prevent recursive compression
 
     // Improvement #5: Configuration loaded from file
     private HazinaCoderConfig? _config;
@@ -118,6 +122,11 @@ class HazinaCoderCLI : IDisposable
 
     // #8: Conversation export tracking
     private DateTime _sessionStartTime = DateTime.Now;
+
+    // 🔄 Session logging - write everything to file, show minimal output
+    private string? _sessionLogPath;
+    private StreamWriter? _sessionLogWriter;
+    private bool _quietMode = false; // When true, only show user-facing messages
 
     // Round 3 Improvements
     // #11: Command history
@@ -185,6 +194,55 @@ class HazinaCoderCLI : IDisposable
     {
         _mcpManager?.Dispose();
         _cts.Dispose();
+        CloseSessionLog();
+    }
+
+    private void InitializeSessionLog()
+    {
+        try
+        {
+            var logsDir = Path.Combine(_workingDirectory, ".hazinacoder", "logs");
+            Directory.CreateDirectory(logsDir);
+            _sessionLogPath = Path.Combine(logsDir, $"session-{_sessionStartTime:yyyyMMdd-HHmmss}.log");
+            _sessionLogWriter = new StreamWriter(_sessionLogPath, append: true) { AutoFlush = true };
+            LogToSession($"=== HazinaCoder Session Started ===");
+            LogToSession($"Provider: {_providerName}");
+            LogToSession($"Working Directory: {_workingDirectory}");
+            LogToSession($"Timestamp: {_sessionStartTime:yyyy-MM-dd HH:mm:ss}");
+            LogToSession("===================================\n");
+        }
+        catch (Exception ex)
+        {
+            if (_verbose)
+                AnsiConsole.MarkupLine($"[yellow]Warning: Could not create session log: {Markup.Escape(ex.Message)}[/]");
+        }
+    }
+
+    private void LogToSession(string message)
+    {
+        try
+        {
+            _sessionLogWriter?.WriteLine($"[{DateTime.Now:HH:mm:ss}] {message}");
+        }
+        catch { /* Ignore logging errors */ }
+    }
+
+    private void CloseSessionLog()
+    {
+        try
+        {
+            if (_sessionLogWriter != null)
+            {
+                LogToSession("\n=== Session Ended ===");
+                LogToSession($"Duration: {DateTime.Now - _sessionStartTime}");
+                LogToSession($"Total Cost: ${_sessionCost:F4}");
+                LogToSession($"Total Tokens: {_sessionTokens:N0}");
+                _sessionLogWriter.Close();
+                _sessionLogWriter.Dispose();
+                _sessionLogWriter = null;
+            }
+        }
+        catch { /* Ignore cleanup errors */ }
     }
 
     public async Task Run(string[] promptArgs)
@@ -220,6 +278,9 @@ class HazinaCoderCLI : IDisposable
             AnsiConsole.MarkupLine($"[red]Error:[/] Working directory does not exist: {Markup.Escape(_workingDirectory)}");
             return;
         }
+
+        // 🔄 Initialize session logging
+        InitializeSessionLog();
 
         // Improvement #5: Load configuration file
         _config = LoadConfiguration();
@@ -294,9 +355,22 @@ class HazinaCoderCLI : IDisposable
             SendMessage = (id, toolName, message) =>
             {
                 _currentTurnCount++;
-                var turnDisplay = _verbose ? $" (turn {_currentTurnCount}/{_maxTurns})" : "";
-                AnsiConsole.MarkupLine($"\n[cyan][[Tool: {Markup.Escape(toolName)}{turnDisplay}]][/]");
-                DisplayToolOutput(toolName, message);
+
+                // Always log full output to session file
+                LogToSession($"[TOOL:{toolName}] {message}");
+
+                // In quiet mode, only show "working..." indicator
+                if (_quietMode)
+                {
+                    // Show minimal working indicator (overwrite previous line)
+                    Console.Write($"\r[Working: {toolName}...]".PadRight(60));
+                }
+                else
+                {
+                    var turnDisplay = _verbose ? $" (turn {_currentTurnCount}/{_maxTurns})" : "";
+                    AnsiConsole.MarkupLine($"\n[cyan][[Tool: {Markup.Escape(toolName)}{turnDisplay}]][/]");
+                    DisplayToolOutput(toolName, message);
+                }
             },
             // Continuation hooks - keep the model working until task is complete
             MaxContinuations = _maxContinuations,
@@ -512,11 +586,17 @@ class HazinaCoderCLI : IDisposable
         // Reset turn counter for this conversation turn
         var startTurnCount = _currentTurnCount;
 
+        // Log user input to session log
+        LogToSession($"[USER] {prompt}");
+
         _context.Add(new HazinaChatMessage
         {
             Role = HazinaMessageRole.User,
             Text = prompt
         });
+
+        // 🔄 AUTO-COMPRESS: Check if we need to compress BEFORE making the API call
+        await AutoCompressContextIfNeeded();
 
         // Improvement #2: Token tracking - estimate tokens before sending
         _estimatedContextTokens = EstimateContextTokens();
@@ -526,7 +606,7 @@ class HazinaCoderCLI : IDisposable
             AnsiConsole.MarkupLine($"[yellow]⚠ Context size: ~{_estimatedContextTokens:N0} tokens ({percentage}% of limit)[/]");
             if (_estimatedContextTokens > DefaultContextLimit * 0.9)
             {
-                AnsiConsole.MarkupLine("[red]Consider using /clear to reset context or /compact to summarize.[/]");
+                AnsiConsole.MarkupLine("[yellow]Will auto-compress if needed...[/]");
             }
         }
 
@@ -586,6 +666,15 @@ class HazinaCoderCLI : IDisposable
                         Role = HazinaMessageRole.Assistant,
                         Text = assistantMessage
                     });
+
+                    // Log assistant response to session file
+                    LogToSession($"[ASSISTANT] {assistantMessage}");
+
+                    // In quiet mode, clear the working indicator and show the response
+                    if (_quietMode)
+                    {
+                        Console.Write("\r".PadRight(60) + "\r"); // Clear working indicator
+                    }
                 }
 
                 // Show summary of tool calls made
@@ -609,6 +698,45 @@ class HazinaCoderCLI : IDisposable
             }
             catch (Exception ex)
             {
+                // 🔄 CONTEXT OVERFLOW: Detect and handle by compressing
+                if (IsContextOverflowError(ex))
+                {
+                    AnsiConsole.MarkupLine($"\n[yellow]⚡ Context overflow detected - compressing and retrying...[/]");
+
+                    // Force compression even if below threshold
+                    var compressed = await AutoCompressContextIfNeeded();
+                    if (!compressed)
+                    {
+                        // Force more aggressive compression
+                        AnsiConsole.MarkupLine("[yellow]Performing aggressive compression...[/]");
+                        // Keep only system prompt and last 2 messages
+                        var systemPrompt = _context.FirstOrDefault();
+                        var lastMessages = _context.Skip(1).TakeLast(2).ToList();
+                        _context.Clear();
+                        if (systemPrompt != null) _context.Add(systemPrompt);
+                        if (_lastConversationSummary != null)
+                        {
+                            _context.Add(new HazinaChatMessage
+                            {
+                                Role = HazinaMessageRole.User,
+                                Text = "[CONTEXT COMPRESSED DUE TO OVERFLOW]\n\n" + _lastConversationSummary
+                            });
+                            _context.Add(new HazinaChatMessage
+                            {
+                                Role = HazinaMessageRole.Assistant,
+                                Text = "Understood. Continuing with compressed context."
+                            });
+                        }
+                        foreach (var msg in lastMessages) _context.Add(msg);
+                    }
+
+                    retryCount++;
+                    if (retryCount <= MaxRetries)
+                    {
+                        continue; // Retry with compressed context
+                    }
+                }
+
                 // #10: Rate limit detection
                 var isRateLimit = ex.Message.Contains("rate", StringComparison.OrdinalIgnoreCase) ||
                                   ex.Message.Contains("429") ||
@@ -781,7 +909,15 @@ class HazinaCoderCLI : IDisposable
 
             case "/clear":
                 _context.RemoveRange(1, _context.Count - 1); // Keep system prompt
+                _lastConversationSummary = null;
                 AnsiConsole.MarkupLine("[green]Conversation cleared.[/]");
+                return CommandResult.Handled;
+
+            case "/summarize":
+            case "/compress":
+                AnsiConsole.MarkupLine("[yellow]Compressing conversation context...[/]");
+                await AutoCompressContextIfNeeded();
+                AnsiConsole.MarkupLine("[green]Context compressed. Use /tokens to see new size.[/]");
                 return CommandResult.Handled;
 
             case "/cost":
@@ -951,6 +1087,35 @@ class HazinaCoderCLI : IDisposable
             case "/minimal":
                 _outputMode = OutputMode.Minimal;
                 AnsiConsole.MarkupLine("[green]Output mode:[/] Minimal (up to 400 chars)");
+                return CommandResult.Handled;
+
+            case "/quiet":
+                _quietMode = !_quietMode;
+                if (_quietMode)
+                {
+                    AnsiConsole.MarkupLine("[green]Quiet mode:[/] ON - Only user messages shown, tool output logged to file");
+                    if (_sessionLogPath != null)
+                        AnsiConsole.MarkupLine($"[dim]Session log: {_sessionLogPath}[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[green]Quiet mode:[/] OFF - Full tool output shown");
+                }
+                return CommandResult.Handled;
+
+            case "/log":
+                if (_sessionLogPath != null && File.Exists(_sessionLogPath))
+                {
+                    AnsiConsole.MarkupLine($"[green]Session log:[/] {_sessionLogPath}");
+                    // Show last 20 lines
+                    var logLines = File.ReadAllLines(_sessionLogPath).TakeLast(20);
+                    foreach (var logLine in logLines)
+                        AnsiConsole.MarkupLine($"[dim]{Markup.Escape(logLine)}[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[yellow]No session log available[/]");
+                }
                 return CommandResult.Handled;
 
             case "/permissions":
@@ -2101,6 +2266,145 @@ You are not a chatbot. You are an autonomous agent with agency. ACT.
             // Fallback to rough estimate: ~4 chars per token
             return _context.Sum(m => (m.Text?.Length ?? 0) / 4);
         }
+    }
+
+    /// <summary>
+    /// Automatically compress the conversation context when it gets too large.
+    /// Summarizes older messages while keeping recent context intact.
+    /// </summary>
+    private async Task<bool> AutoCompressContextIfNeeded()
+    {
+        if (_isCompressing) return false; // Prevent recursive compression
+
+        _estimatedContextTokens = EstimateContextTokens();
+
+        if (_estimatedContextTokens < AutoCompressThreshold)
+            return false; // No compression needed
+
+        _isCompressing = true;
+
+        try
+        {
+            AnsiConsole.MarkupLine($"\n[yellow]⚡ Context at {_estimatedContextTokens:N0} tokens ({(int)((_estimatedContextTokens / (double)DefaultContextLimit) * 100)}%) - auto-compressing...[/]");
+
+            // Keep system prompt (first message) and recent messages
+            var systemPrompt = _context.FirstOrDefault();
+            var messagesToKeep = 6; // Keep last 6 messages (3 exchanges)
+            var recentMessages = _context.Skip(1).TakeLast(messagesToKeep).ToList();
+            var messagesToSummarize = _context.Skip(1).SkipLast(messagesToKeep).ToList();
+
+            if (messagesToSummarize.Count < 4)
+            {
+                AnsiConsole.MarkupLine("[dim]Not enough messages to compress, keeping context as-is.[/]");
+                return false;
+            }
+
+            // Build summary request
+            var summaryRequest = new StringBuilder();
+            summaryRequest.AppendLine("Summarize this conversation concisely, preserving:");
+            summaryRequest.AppendLine("1. Key decisions and outcomes");
+            summaryRequest.AppendLine("2. Files edited and changes made");
+            summaryRequest.AppendLine("3. Important context for continuing the work");
+            summaryRequest.AppendLine("4. Any pending tasks or next steps");
+            summaryRequest.AppendLine();
+            summaryRequest.AppendLine("Conversation to summarize:");
+            summaryRequest.AppendLine("---");
+
+            foreach (var msg in messagesToSummarize)
+            {
+                var role = msg.Role == HazinaMessageRole.User ? "User" : "Assistant";
+                var text = msg.Text ?? "";
+                // Truncate very long messages
+                if (text.Length > 2000)
+                    text = text.Substring(0, 2000) + "... (truncated)";
+                summaryRequest.AppendLine($"**{role}:** {text}");
+                summaryRequest.AppendLine();
+            }
+
+            // Use the LLM to generate summary
+            var summaryContext = new List<HazinaChatMessage>
+            {
+                new() { Role = HazinaMessageRole.System, Text = "You are a concise summarizer. Create a brief but complete summary of the conversation. Focus on actions taken, decisions made, and important context. Keep it under 500 words." },
+                new() { Role = HazinaMessageRole.User, Text = summaryRequest.ToString() }
+            };
+
+            var summaryResponse = new StringBuilder();
+            try
+            {
+                await _client.GetResponseStream(
+                    summaryContext,
+                    chunk => summaryResponse.Append(chunk),
+                    HazinaChatResponseFormat.Text,
+                    null, // No tools for summary
+                    null,
+                    _cts.Token
+                );
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[red]Failed to generate summary: {Markup.Escape(ex.Message)}[/]");
+                return false;
+            }
+
+            _lastConversationSummary = summaryResponse.ToString();
+
+            // Rebuild context with summary
+            _context.Clear();
+
+            if (systemPrompt != null)
+                _context.Add(systemPrompt);
+
+            // Add summary as a system message
+            _context.Add(new HazinaChatMessage
+            {
+                Role = HazinaMessageRole.User,
+                Text = "[CONVERSATION SUMMARY - Earlier messages were compressed to save context]\n\n" + _lastConversationSummary
+            });
+
+            _context.Add(new HazinaChatMessage
+            {
+                Role = HazinaMessageRole.Assistant,
+                Text = "I understand. I have the context from our earlier conversation. Let's continue from where we left off."
+            });
+
+            // Add recent messages back
+            foreach (var msg in recentMessages)
+            {
+                _context.Add(msg);
+            }
+
+            var newTokens = EstimateContextTokens();
+            var savedTokens = _estimatedContextTokens - newTokens;
+            var savedPct = (int)((savedTokens / (double)_estimatedContextTokens) * 100);
+
+            AnsiConsole.MarkupLine($"[green]✓ Compressed: {_estimatedContextTokens:N0} → {newTokens:N0} tokens (saved {savedPct}%)[/]");
+            AnsiConsole.MarkupLine($"[dim]Summarized {messagesToSummarize.Count} messages, kept {recentMessages.Count} recent messages[/]");
+
+            _estimatedContextTokens = newTokens;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Compression failed: {Markup.Escape(ex.Message)}[/]");
+            return false;
+        }
+        finally
+        {
+            _isCompressing = false;
+        }
+    }
+
+    /// <summary>
+    /// Handle context overflow errors by compressing and retrying.
+    /// </summary>
+    private bool IsContextOverflowError(Exception ex)
+    {
+        var message = ex.Message.ToLowerInvariant();
+        return message.Contains("context") && (message.Contains("too long") || message.Contains("exceeded") || message.Contains("maximum")) ||
+               message.Contains("token") && (message.Contains("limit") || message.Contains("exceeded") || message.Contains("maximum")) ||
+               message.Contains("request too large") ||
+               message.Contains("payload too large") ||
+               message.Contains("context_length_exceeded");
     }
 
     // #8: Export conversation to markdown
