@@ -441,7 +441,10 @@ public class TerminalController : ControllerBase
             }
 
             var logPath = logFiles[0];
-            var content = System.IO.File.ReadAllText(logPath);
+            // Use FileShare.ReadWrite to allow reading files that are being written to by another process
+            using var fileStream = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(fileStream);
+            var content = reader.ReadToEnd();
 
             return Ok(new SessionLogResponse
             {
@@ -471,7 +474,9 @@ public class TerminalController : ControllerBase
 
         try
         {
-            using var reader = new StreamReader(path);
+            // Use FileShare.ReadWrite to allow reading files that are being written to by another process
+            using var fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(fileStream);
             var lineCount = 0;
             string? line;
 
