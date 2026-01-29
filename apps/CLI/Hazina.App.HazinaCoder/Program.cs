@@ -123,6 +123,11 @@ class HazinaCoderCLI : IDisposable
     // #8: Conversation export tracking
     private DateTime _sessionStartTime = DateTime.Now;
 
+    // 🔄 Session logging - write everything to file, show minimal output
+    private string? _sessionLogPath;
+    private StreamWriter? _sessionLogWriter;
+    private bool _quietMode = false; // When true, only show user-facing messages
+
     // Round 3 Improvements
     // #11: Command history
     private List<string> _commandHistory = new();
@@ -189,6 +194,55 @@ class HazinaCoderCLI : IDisposable
     {
         _mcpManager?.Dispose();
         _cts.Dispose();
+        CloseSessionLog();
+    }
+
+    private void InitializeSessionLog()
+    {
+        try
+        {
+            var logsDir = Path.Combine(_workingDirectory, ".hazinacoder", "logs");
+            Directory.CreateDirectory(logsDir);
+            _sessionLogPath = Path.Combine(logsDir, $"session-{_sessionStartTime:yyyyMMdd-HHmmss}.log");
+            _sessionLogWriter = new StreamWriter(_sessionLogPath, append: true) { AutoFlush = true };
+            LogToSession($"=== HazinaCoder Session Started ===");
+            LogToSession($"Provider: {_providerName}");
+            LogToSession($"Working Directory: {_workingDirectory}");
+            LogToSession($"Timestamp: {_sessionStartTime:yyyy-MM-dd HH:mm:ss}");
+            LogToSession("===================================\n");
+        }
+        catch (Exception ex)
+        {
+            if (_verbose)
+                AnsiConsole.MarkupLine($"[yellow]Warning: Could not create session log: {Markup.Escape(ex.Message)}[/]");
+        }
+    }
+
+    private void LogToSession(string message)
+    {
+        try
+        {
+            _sessionLogWriter?.WriteLine($"[{DateTime.Now:HH:mm:ss}] {message}");
+        }
+        catch { /* Ignore logging errors */ }
+    }
+
+    private void CloseSessionLog()
+    {
+        try
+        {
+            if (_sessionLogWriter != null)
+            {
+                LogToSession("\n=== Session Ended ===");
+                LogToSession($"Duration: {DateTime.Now - _sessionStartTime}");
+                LogToSession($"Total Cost: ${_sessionCost:F4}");
+                LogToSession($"Total Tokens: {_sessionTokens:N0}");
+                _sessionLogWriter.Close();
+                _sessionLogWriter.Dispose();
+                _sessionLogWriter = null;
+            }
+        }
+        catch { /* Ignore cleanup errors */ }
     }
 
     public async Task Run(string[] promptArgs)
@@ -224,6 +278,9 @@ class HazinaCoderCLI : IDisposable
             AnsiConsole.MarkupLine($"[red]Error:[/] Working directory does not exist: {Markup.Escape(_workingDirectory)}");
             return;
         }
+
+        // 🔄 Initialize session logging
+        InitializeSessionLog();
 
         // Improvement #5: Load configuration file
         _config = LoadConfiguration();
@@ -298,9 +355,22 @@ class HazinaCoderCLI : IDisposable
             SendMessage = (id, toolName, message) =>
             {
                 _currentTurnCount++;
-                var turnDisplay = _verbose ? $" (turn {_currentTurnCount}/{_maxTurns})" : "";
-                AnsiConsole.MarkupLine($"\n[cyan][[Tool: {Markup.Escape(toolName)}{turnDisplay}]][/]");
-                DisplayToolOutput(toolName, message);
+
+                // Always log full output to session file
+                LogToSession($"[TOOL:{toolName}] {message}");
+
+                // In quiet mode, only show "working..." indicator
+                if (_quietMode)
+                {
+                    // Show minimal working indicator (overwrite previous line)
+                    Console.Write($"\r[Working: {toolName}...]".PadRight(60));
+                }
+                else
+                {
+                    var turnDisplay = _verbose ? $" (turn {_currentTurnCount}/{_maxTurns})" : "";
+                    AnsiConsole.MarkupLine($"\n[cyan][[Tool: {Markup.Escape(toolName)}{turnDisplay}]][/]");
+                    DisplayToolOutput(toolName, message);
+                }
             },
             // Continuation hooks - keep the model working until task is complete
             MaxContinuations = _maxContinuations,
@@ -516,39 +586,8 @@ class HazinaCoderCLI : IDisposable
         // Reset turn counter for this conversation turn
         var startTurnCount = _currentTurnCount;
 
-        // 🔄 Handle "continue" command specially - inject context about previous work
-        var isContinue = prompt.Trim().Equals("continue", StringComparison.OrdinalIgnoreCase) ||
-                         prompt.Trim().Equals("ga door", StringComparison.OrdinalIgnoreCase) ||
-                         prompt.Trim().Equals("doorgaan", StringComparison.OrdinalIgnoreCase);
-
-        if (isContinue && _context.Count > 1)
-        {
-            // Find the last assistant message to understand where we left off
-            var lastAssistant = _context.LastOrDefault(m => m.Role == HazinaMessageRole.Assistant);
-            var continuePrompt = "Continue from where you left off. ";
-
-            if (_lastConversationSummary != null)
-            {
-                continuePrompt += "Remember the conversation summary from earlier. ";
-            }
-
-            if (lastAssistant != null && !string.IsNullOrEmpty(lastAssistant.Text))
-            {
-                // Check if it seems like work was in progress
-                var lastText = lastAssistant.Text;
-                if (lastText.Length > 200)
-                {
-                    continuePrompt += "Your last response was in progress. Complete the task you were working on.";
-                }
-                else
-                {
-                    continuePrompt += "Pick up where you left off and complete any remaining work.";
-                }
-            }
-
-            prompt = continuePrompt;
-            AnsiConsole.MarkupLine($"[dim]→ Continuing: {prompt}[/]");
-        }
+        // Log user input to session log
+        LogToSession($"[USER] {prompt}");
 
         _context.Add(new HazinaChatMessage
         {
@@ -627,6 +666,15 @@ class HazinaCoderCLI : IDisposable
                         Role = HazinaMessageRole.Assistant,
                         Text = assistantMessage
                     });
+
+                    // Log assistant response to session file
+                    LogToSession($"[ASSISTANT] {assistantMessage}");
+
+                    // In quiet mode, clear the working indicator and show the response
+                    if (_quietMode)
+                    {
+                        Console.Write("\r".PadRight(60) + "\r"); // Clear working indicator
+                    }
                 }
 
                 // Show summary of tool calls made
@@ -1039,6 +1087,35 @@ class HazinaCoderCLI : IDisposable
             case "/minimal":
                 _outputMode = OutputMode.Minimal;
                 AnsiConsole.MarkupLine("[green]Output mode:[/] Minimal (up to 400 chars)");
+                return CommandResult.Handled;
+
+            case "/quiet":
+                _quietMode = !_quietMode;
+                if (_quietMode)
+                {
+                    AnsiConsole.MarkupLine("[green]Quiet mode:[/] ON - Only user messages shown, tool output logged to file");
+                    if (_sessionLogPath != null)
+                        AnsiConsole.MarkupLine($"[dim]Session log: {_sessionLogPath}[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[green]Quiet mode:[/] OFF - Full tool output shown");
+                }
+                return CommandResult.Handled;
+
+            case "/log":
+                if (_sessionLogPath != null && File.Exists(_sessionLogPath))
+                {
+                    AnsiConsole.MarkupLine($"[green]Session log:[/] {_sessionLogPath}");
+                    // Show last 20 lines
+                    var logLines = File.ReadAllLines(_sessionLogPath).TakeLast(20);
+                    foreach (var logLine in logLines)
+                        AnsiConsole.MarkupLine($"[dim]{Markup.Escape(logLine)}[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[yellow]No session log available[/]");
+                }
                 return CommandResult.Handled;
 
             case "/permissions":
