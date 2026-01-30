@@ -339,6 +339,7 @@ public static class RagCommand
             // Load chunk metadata
             var chunksFilePath = Path.Combine(storeConfig.Path, "documents", "chunks.json");
             var chunkMetadata = LoadChunkMetadata(chunksFilePath);
+            Console.WriteLine($"[DEBUG] Loaded {chunkMetadata.Count} chunk metadata entries");
 
             // Load symbol graph for multi-hop
             var symbolGraphPath = Path.Combine(storeConfig.Path, "documents", "symbol-graph.json");
@@ -349,7 +350,11 @@ public static class RagCommand
                 {
                     // Build set of allowed chunk IDs based on tag filters
                     HashSet<string>? allowedChunkIds = null;
-                    if (tags != null || excludeTags != null || layer != null)
+                    var hasFilters = (tags != null && tags.Length > 0) ||
+                                   (excludeTags != null && excludeTags.Length > 0) ||
+                                   !string.IsNullOrEmpty(layer);
+
+                    if (hasFilters)
                     {
                         allowedChunkIds = new HashSet<string>();
                         var tagSet = tags != null ? new HashSet<string>(tags, StringComparer.OrdinalIgnoreCase) : null;
