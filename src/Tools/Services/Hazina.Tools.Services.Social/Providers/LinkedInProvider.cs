@@ -38,7 +38,10 @@ public class LinkedInProvider : ISocialProvider
 
     public string GetAuthorizationUrl(string redirectUri, string state)
     {
-        var scopes = "openid profile email w_member_social r_liteprofile";
+        // NOTE: LinkedIn permissions are product-gated.
+        // `r_liteprofile` is a legacy scope and commonly rejected ("not authorized") unless explicitly granted.
+        // For basic account connection + userinfo, OpenID Connect scopes are sufficient.
+        var scopes = "openid profile email";
         var encodedRedirect = HttpUtility.UrlEncode(redirectUri);
         var encodedScopes = HttpUtility.UrlEncode(scopes);
 
@@ -164,6 +167,33 @@ public class LinkedInProvider : ISocialProvider
             return new SocialProfile { Id = "", Name = "Unknown" };
         }
 
+        // LinkedIn's /userinfo may return locale as either:
+        // - string (legacy)
+        // - object (e.g. { "language": "...", "country": "..." })
+        // Be tolerant to both shapes so we don't fail the OAuth flow.
+        var localeStr = "";
+        try
+        {
+            if (profile.locale.HasValue)
+            {
+                var el = profile.locale.Value;
+                if (el.ValueKind == JsonValueKind.String)
+                {
+                    localeStr = el.GetString() ?? "";
+                }
+                else if (el.ValueKind == JsonValueKind.Object)
+                {
+                    var lang = el.TryGetProperty("language", out var l) && l.ValueKind == JsonValueKind.String ? (l.GetString() ?? "") : "";
+                    var country = el.TryGetProperty("country", out var c) && c.ValueKind == JsonValueKind.String ? (c.GetString() ?? "") : "";
+                    localeStr = string.Join("-", new[] { lang, country }.Where(s => !string.IsNullOrWhiteSpace(s)));
+                }
+            }
+        }
+        catch
+        {
+            localeStr = "";
+        }
+
         return new SocialProfile
         {
             Id = profile.sub ?? "",
@@ -175,7 +205,7 @@ public class LinkedInProvider : ISocialProvider
             {
                 ["given_name"] = profile.given_name ?? "",
                 ["family_name"] = profile.family_name ?? "",
-                ["locale"] = profile.locale ?? ""
+                ["locale"] = localeStr
             }
         };
     }
@@ -418,7 +448,7 @@ public class LinkedInProvider : ISocialProvider
         public string? family_name { get; set; }
         public string? picture { get; set; }
         public string? email { get; set; }
-        public string? locale { get; set; }
+        public JsonElement? locale { get; set; }
     }
 
     private class LinkedInSharesResponse
