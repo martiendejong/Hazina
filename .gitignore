@@ -118,3 +118,4 @@ node_modules
 /apps/Demos/Hazina.Demo.AgenticOrchestration/publish
 embeddings.json
 chunks.json
+appsettings.Secrets.json

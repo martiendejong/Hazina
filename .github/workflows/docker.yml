@@ -1,11 +1,8 @@
 name: Docker Build and Push
 
+# MANUAL ONLY - Save GitHub Actions billing
+# For local Docker builds, use: C:\scripts\tools\local-ci\local-docker-build.ps1
 on:
-  push:
-    branches: [ main ]
-    tags: [ 'v*.*.*' ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
     inputs:
       push_images:
@@ -13,6 +10,10 @@ on:
         required: false
         default: 'false'
         type: boolean
+      reason:
+        description: 'Reason for running this workflow'
+        required: false
+        default: 'Manual Docker build validation'
 
 env:
   REGISTRY: ghcr.io
