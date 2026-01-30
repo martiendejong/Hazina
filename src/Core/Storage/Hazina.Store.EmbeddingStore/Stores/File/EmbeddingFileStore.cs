@@ -82,9 +82,8 @@ public class EmbeddingFileStore : AbstractTextEmbeddingStore, ITextEmbeddingStor
                     {
                         var q = new List<EmbeddingInfo>();
                         var lines = data.Split('\n');
-                        foreach (var line in lines)
+                        foreach (var line in lines.Where(l => !string.IsNullOrWhiteSpace(l)))
                         {
-                            if (string.IsNullOrWhiteSpace(line)) continue;
                             var parts = line.Split(",");
                             if (parts.Length < 4) continue;
                             var b = new EmbeddingInfo(parts[0], parts[2], [.. parts.Skip(3).Select(p => double.Parse(p)).ToList()]);
@@ -103,9 +102,13 @@ public class EmbeddingFileStore : AbstractTextEmbeddingStore, ITextEmbeddingStor
                     }
                 }
             }
-            catch (Exception fileEx)
+            catch (IOException fileEx)
             {
                 Console.WriteLine($"[EmbeddingFileStore] ERROR reading file {EmbeddingsFilePath}: {fileEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EmbeddingFileStore] Unexpected error: {ex.Message}");
             }
         }
         else
