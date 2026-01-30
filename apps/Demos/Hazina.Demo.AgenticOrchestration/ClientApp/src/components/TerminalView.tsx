@@ -48,6 +48,33 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     terminalInstance.current?.focus()
   }, [inputText, sessionId])
 
+  // Helper function to send text in chunks (for paste operations)
+  const sendTextInChunks = useCallback(async (text: string) => {
+    if (!text || connection.current?.state !== signalR.HubConnectionState.Connected) return
+
+    const encoder = new TextEncoder()
+    const CHUNK_SIZE = 100 // Characters per chunk
+    const DELAY_MS = 10 // Delay between chunks
+
+    // Split text into chunks
+    for (let i = 0; i < text.length; i += CHUNK_SIZE) {
+      const chunk = text.substring(i, Math.min(i + CHUNK_SIZE, text.length))
+      const bytes = Array.from(encoder.encode(chunk))
+
+      try {
+        await connection.current.invoke('SendInput', sessionId, bytes)
+
+        // Add delay between chunks to prevent overwhelming the terminal
+        if (i + CHUNK_SIZE < text.length) {
+          await new Promise(resolve => setTimeout(resolve, DELAY_MS))
+        }
+      } catch (err) {
+        console.error('SendInput chunk failed:', err)
+        break
+      }
+    }
+  }, [sessionId])
+
   // Voice control - append transcribed speech to input text (not send directly)
   const handleVoiceTranscript = useCallback((text: string) => {
     // Sanitize: trim whitespace, limit length, remove control characters
@@ -273,14 +300,11 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         return true
       }
 
-      // Handle Ctrl+V - paste
+      // Handle Ctrl+V - paste (chunked for longer text)
       if (event.ctrlKey && event.key === 'v' && event.type === 'keydown') {
         navigator.clipboard.readText().then(text => {
           if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-            const encoder = new TextEncoder()
-            const bytes = Array.from(encoder.encode(text))
-            hubConnection.invoke('SendInput', sessionId, bytes)
-              .catch(err => console.error('Paste failed:', err))
+            sendTextInChunks(text).catch(err => console.error('Paste failed:', err))
           }
         }).catch(err => {
           console.error('Paste failed:', err)
@@ -299,14 +323,11 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         return false
       }
 
-      // Handle Ctrl+Shift+V - always paste (alternative shortcut)
+      // Handle Ctrl+Shift+V - always paste (alternative shortcut, chunked)
       if (event.ctrlKey && event.shiftKey && event.key === 'V' && event.type === 'keydown') {
         navigator.clipboard.readText().then(text => {
           if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-            const encoder = new TextEncoder()
-            const bytes = Array.from(encoder.encode(text))
-            hubConnection.invoke('SendInput', sessionId, bytes)
-              .catch(err => console.error('Paste failed:', err))
+            sendTextInChunks(text).catch(err => console.error('Paste failed:', err))
           }
         }).catch(err => {
           console.error('Paste failed:', err)
@@ -372,15 +393,13 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         !selection || selection.length === 0
       ))
 
-      // Paste option
+      // Paste option (chunked for longer text)
       menu.appendChild(createMenuItem(
         'Paste',
         () => {
           navigator.clipboard.readText().then(text => {
             if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-              const encoder = new TextEncoder()
-              const bytes = Array.from(encoder.encode(text))
-              hubConnection.invoke('SendInput', sessionId, bytes)
+              sendTextInChunks(text).catch(err => console.error('Paste failed:', err))
             }
           })
         }
@@ -486,7 +505,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       }
       terminal.dispose()
     }
-  }, [sessionId, isMobile])
+  }, [sessionId, isMobile, sendTextInChunks, onStateChanged, onTitleChanged])
 
   const handleInterrupt = async () => {
     if (connection.current?.state === signalR.HubConnectionState.Connected) {
