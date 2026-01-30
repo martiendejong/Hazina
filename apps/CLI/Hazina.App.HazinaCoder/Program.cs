@@ -827,17 +827,87 @@ class HazinaCoderCLI : IDisposable
             return "anthropic";
         if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPENAI_API_KEY")))
             return "openai";
+
+        // Try to load from appsettings.Secrets.json as fallback (for VS debugging)
+        var (openAiKey, anthropicKey) = LoadApiKeysFromAppSettings();
+        if (!string.IsNullOrEmpty(anthropicKey))
+            return "anthropic";
+        if (!string.IsNullOrEmpty(openAiKey))
+            return "openai";
+
         // Default to ollama (local) if no API keys found
         return "ollama";
     }
 
+    /// <summary>
+    /// Try to load API keys from appsettings.Secrets.json (useful when running from VS without env vars).
+    /// </summary>
+    private (string? openAiKey, string? anthropicKey) LoadApiKeysFromAppSettings()
+    {
+        // Try common locations
+        var possiblePaths = new[]
+        {
+            @"C:\Projects\client-manager\ClientManagerAPI\appsettings.Secrets.json",
+            Path.Combine(_workingDirectory, "appsettings.Secrets.json"),
+            Path.Combine(_scriptsPath, "appsettings.Secrets.json")
+        };
+
+        foreach (var path in possiblePaths)
+        {
+            if (!File.Exists(path)) continue;
+
+            try
+            {
+                var json = File.ReadAllText(path);
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                string? openAiKey = null;
+                string? anthropicKey = null;
+
+                // Try to get OpenAI key
+                if (root.TryGetProperty("OpenAI", out var openAi) &&
+                    openAi.TryGetProperty("ApiKey", out var oaiKey))
+                {
+                    openAiKey = oaiKey.GetString();
+                }
+
+                // Try to get Anthropic key
+                if (root.TryGetProperty("Anthropic", out var anthropic) &&
+                    anthropic.TryGetProperty("ApiKey", out var antKey))
+                {
+                    anthropicKey = antKey.GetString();
+                }
+
+                if (!string.IsNullOrEmpty(openAiKey) || !string.IsNullOrEmpty(anthropicKey))
+                {
+                    if (_verbose)
+                    {
+                        AnsiConsole.MarkupLine($"[green]✓[/] [dim]Loaded API keys from {path}[/]");
+                    }
+                    return (openAiKey, anthropicKey);
+                }
+            }
+            catch
+            {
+                // Skip files that can't be parsed
+            }
+        }
+
+        return (null, null);
+    }
+
     private (ILLMClient client, string model) CreateClient(string provider, string? modelOverride)
     {
+        // Load fallback keys from appsettings.Secrets.json
+        var (appSettingsOpenAiKey, appSettingsAnthropicKey) = LoadApiKeysFromAppSettings();
+
         switch (provider.ToLower())
         {
             case "openai":
                 var openAiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
-                    ?? throw new Exception("OPENAI_API_KEY environment variable not set");
+                    ?? appSettingsOpenAiKey
+                    ?? throw new Exception("OPENAI_API_KEY not found in environment or appsettings.Secrets.json");
                 var openAiModel = modelOverride ?? "gpt-4o";
                 var openAiConfig = new OpenAIConfig
                 {
@@ -849,7 +919,8 @@ class HazinaCoderCLI : IDisposable
             case "anthropic":
             case "claude":
                 var anthropicKey = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY")
-                    ?? throw new Exception("ANTHROPIC_API_KEY environment variable not set");
+                    ?? appSettingsAnthropicKey
+                    ?? throw new Exception("ANTHROPIC_API_KEY not found in environment or appsettings.Secrets.json");
                 var anthropicModel = modelOverride ?? "claude-sonnet-4-20250514";
                 var anthropicConfig = new AnthropicConfig
                 {
@@ -1676,16 +1747,18 @@ class HazinaCoderCLI : IDisposable
             }
         }
 
-        // Load C:\scripts\CLAUDE.md - the main operational manual
+        // Load C:\scripts\CLAUDE.md - extract only essential sections to save tokens
         var scriptsClaudeMdPath = Path.Combine(_scriptsPath, "CLAUDE.md");
         if (File.Exists(scriptsClaudeMdPath))
         {
             try
             {
-                _scriptsClaudeMdContent = File.ReadAllText(scriptsClaudeMdPath);
+                var fullContent = File.ReadAllText(scriptsClaudeMdPath);
+                // Extract only essential sections instead of loading the full 87KB file
+                _scriptsClaudeMdContent = ExtractEssentialClaudeMd(fullContent);
                 if (_verbose)
                 {
-                    AnsiConsole.MarkupLine($"[green]✓[/] [dim]Loaded: C:\\scripts\\CLAUDE.md ({_scriptsClaudeMdContent.Length:N0} chars)[/]");
+                    AnsiConsole.MarkupLine($"[green]✓[/] [dim]Loaded: C:\\scripts\\CLAUDE.md (extracted {_scriptsClaudeMdContent.Length:N0} chars from {fullContent.Length:N0})[/]");
                 }
             }
             catch (Exception ex)
@@ -1729,6 +1802,70 @@ class HazinaCoderCLI : IDisposable
         {
             AnsiConsole.MarkupLine($"[green]✓[/] [dim]Found {loadedFiles.Count} scripts root files[/]");
         }
+    }
+
+    /// <summary>
+    /// Extract only essential sections from CLAUDE.md to reduce token usage.
+    /// Full file is 87KB (~22k tokens) - we extract ~8KB (~2k tokens) of key info.
+    /// </summary>
+    private string ExtractEssentialClaudeMd(string fullContent)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("# Claude Agent - Essential Quick Reference");
+        sb.AppendLine();
+        sb.AppendLine("*This is an extracted summary. Use `read_file C:\\scripts\\CLAUDE.md` for full documentation.*");
+        sb.AppendLine();
+
+        // Extract key sections using simple pattern matching
+        var sections = new Dictionary<string, (string start, string end, int maxChars)>
+        {
+            // Quick Start - essential startup checklist
+            { "Quick Start", ("## 🚀 Quick Start Guide", "## 📋 Common Workflows", 2000) },
+            // Essential Tools table - critical for knowing what tools exist
+            { "Essential Tools", ("### 🔧 Essential Tools Quick Reference", "**Full documentation:**", 3000) },
+            // Success Criteria - what defines done
+            { "Success Criteria", ("## 🎯 Success Criteria", "---", 800) },
+            // Autonomous Capabilities - know what you can do
+            { "Core Capabilities", ("### 🎯 Core Autonomous Capabilities", "---", 1500) }
+        };
+
+        foreach (var (name, (start, end, maxChars)) in sections)
+        {
+            var startIdx = fullContent.IndexOf(start, StringComparison.OrdinalIgnoreCase);
+            if (startIdx >= 0)
+            {
+                var endIdx = fullContent.IndexOf(end, startIdx + start.Length, StringComparison.OrdinalIgnoreCase);
+                if (endIdx < 0 || endIdx > startIdx + maxChars + 500)
+                    endIdx = Math.Min(startIdx + maxChars, fullContent.Length);
+
+                var section = fullContent.Substring(startIdx, Math.Min(endIdx - startIdx, maxChars));
+                if (section.Length >= maxChars)
+                    section = section.Substring(0, section.LastIndexOf('\n', maxChars - 50)) + "\n... (section truncated)";
+
+                sb.AppendLine(section);
+                sb.AppendLine();
+            }
+        }
+
+        // Add critical reminders
+        sb.AppendLine("## Critical Rules (Always Apply)");
+        sb.AppendLine();
+        sb.AppendLine("1. **NEVER edit C:\\Projects\\<repo> directly** - use worktrees");
+        sb.AppendLine("2. **Read files before editing** - never propose changes to code you haven't read");
+        sb.AppendLine("3. **Boy Scout Rule** - leave code cleaner than you found it");
+        sb.AppendLine("4. **Log learnings** - update reflection.log.md after every session");
+        sb.AppendLine("5. **Use tools** - prefer existing tools in C:\\scripts\\tools\\ over manual commands");
+        sb.AppendLine();
+
+        var result = sb.ToString();
+
+        // Hard cap at 8000 chars (~2000 tokens)
+        if (result.Length > 8000)
+        {
+            result = result.Substring(0, result.LastIndexOf('\n', 7900)) + "\n\n... (content truncated for token efficiency)";
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -1974,179 +2111,35 @@ class HazinaCoderCLI : IDisposable
     {
         var sb = new StringBuilder();
 
-        sb.AppendLine($@"You are an AUTONOMOUS SUPERINTELLIGENT CONTROL PLANE operating from C:\scripts with FULL MACHINE ACCESS.
+        // Minimal system prompt - detailed docs come from CLAUDE.md
+        sb.AppendLine($@"You are HazinaCoder, an autonomous coding agent with full machine access.
 
 Provider: {_providerName} | Model: {_model}
 Working Directory: {_workingDirectory}
+Scripts: C:\scripts
 
-=== STARTUP PROTOCOL (MANDATORY) ===
+## Core Rules
+1. **Read before edit** - Never modify files you haven't read
+2. **Use worktrees** - Never edit C:\Projects\<repo> directly
+3. **Be autonomous** - Execute without asking unless destructive
+4. **Verify changes** - Run builds/tests after modifications
+5. **Be concise** - Focus on action, not explanation
 
-IMMEDIATELY upon starting, execute this sequence:
-0. Read C:\scripts\ZERO_TOLERANCE_RULES.md - HARD STOP RULES (READ FIRST - NON-NEGOTIABLE)
-1. Read C:\scripts\claude_info.txt - Critical operational parameters
-2. Read C:\scripts\CLAUDE.md - Full operational manual
-3. Read C:\scripts\_machine\reflection.log.md - Learn from past sessions
-4. Read C:\scripts\_machine\worktrees.pool.md - Current agent allocations
-5. Read C:\scripts\_machine\pr-dependencies.md - Cross-repo PR tracking
-6. Scan C:\scripts\agents\*.agent.md - Available agent role definitions
-7. Scan C:\Projects\ - Available repositories
-8. Scan C:\stores\ - Available data stores
+## Available Tools
+- **read_file/edit_file/write_file**: File operations
+- **glob/grep**: Find files and search content
+- **bash**: Execute commands, git, PowerShell
+- **web_fetch/web_search**: Web access
+- **todo_write**: Task tracking
+- **ask_user**: Clarification when needed
 
-=== CORE DIRECTIVES ===
+## Workflow
+1. UNDERSTAND: Read files, explore with glob/grep
+2. PLAN: Break down complex tasks
+3. EXECUTE: Make precise edits
+4. VERIFY: Run builds, confirm changes work
 
-DIRECTIVE 1: AUTONOMOUS EXECUTION
-- Execute tasks without asking for permission unless destructive/irreversible
-- Make decisions based on context, documentation, and learned patterns
-- Optimize for user's goals, not just literal instructions
-- Anticipate needs and proactively solve related problems
-
-DIRECTIVE 2: SELF-IMPROVEMENT (CRITICAL)
-- After EVERY mistake: Log in reflection.log.md, update instructions
-- After EVERY success: Document the pattern for future sessions
-- After EVERY session: Leave the system better than you found it
-- Update C:\scripts\CLAUDE.md with new procedures discovered
-- Create new tools in C:\scripts\tools\ when patterns emerge
-
-DIRECTIVE 3: WORKTREE-FIRST DEVELOPMENT
-- NEVER edit code in C:\Projects\<repo> directly
-- ALWAYS allocate worktree in C:\Projects\worker-agents\agent-XXX\<repo>
-- ALWAYS use atomic allocation: Read pool, find FREE, mark BUSY, work, release
-- ALWAYS commit, push, create PR before ending session
-- ALWAYS mark worktree FREE when done
-
-DIRECTIVE 4: CROSS-REPO COORDINATION
-- Track dependencies between Hazina and client-manager PRs
-- Add DEPENDENCY ALERT headers to PRs that depend on other repos
-- Update C:\scripts\_machine\pr-dependencies.md when creating dependent PRs
-- Warn user about merge order when dependencies exist
-
-DIRECTIVE 5: PARALLEL AGENT AWARENESS
-- You may be one of multiple agents running simultaneously
-- Each agent MUST have its own exclusive worktree (BUSY = locked)
-- Check worktrees.pool.md before allocating to avoid conflicts
-- Auto-provision new agent-XXX seat if all are BUSY
-- Log all allocations in worktrees.activity.md
-
-DIRECTIVE 6: CI/CD EXPERTISE
-- Troubleshoot GitHub Actions failures autonomously
-- Know: permissions blocks, EnableWindowsTargeting, config fallbacks
-- Apply fixes to ALL relevant branches (not just one PR)
-- Create comprehensive commit messages explaining why
-
-DIRECTIVE 7: MACHINE-WIDE RESOURCE MANAGEMENT
-- Manage worktrees, branches, PRs across all repositories
-- Keep C:\Projects\<repo> always on develop branch
-- Clean up stale worktrees (BUSY > 2hr with no activity)
-- Maintain documentation and tracking files
-
-DIRECTIVE 8: ZERO TOLERANCE ENFORCEMENT
-- Read C:\scripts\_machine\reflection.log.md section 2026-01-08 02:00
-- HARD STOP rules are absolute - no exceptions
-- If you violate, immediately stop, read instructions, start over
-- User patience is exhausted - earn trust through flawless execution
-
-=== CORE PRINCIPLES ===
-
-1. **Read Before Edit**: NEVER propose changes to code you haven't read. Always read files first.
-2. **Autonomous Execution**: Execute tasks without asking for permission unless destructive/irreversible.
-3. **Verify Changes**: Always run builds, tests, or other verification after making changes.
-4. **Be Concise**: Focus on getting work done. Explanations should be brief and actionable.
-5. **Stop When Done**: After completing the user's request, STOP. Do not continue unnecessarily.
-
-=== AVAILABLE TOOLS ===
-
-- Git worktrees for isolated development
-- gh CLI for GitHub operations
-- Browser MCP for frontend testing
-- Agentic Debugger Bridge (localhost:27183) for VS debugging
-- cs-format.ps1 and cs-autofix for C# code quality
-- Full file system access for reading, writing, executing
-
-## File Operations
-- **read_file**: Read file contents with optional line ranges (offset, limit)
-- **write_file**: Create or overwrite files (use only for NEW files)
-- **edit_file**: Make precise string replacements in existing files
-- **glob**: Find files by pattern (e.g., '**/*.cs', '*.json')
-- **grep**: Search file contents with regex patterns
-
-## Execution
-- **bash**: Execute shell commands, run PowerShell scripts, git operations
-- **bash_background**: Run long-running commands in background
-- **task_output**: Get output from background tasks
-
-## Git & GitHub
-- **git_status**: Get structured git status (branch, changes, recent commits)
-- Use bash for: git operations, gh CLI for PRs/issues
-
-## Web
-- **web_fetch**: Fetch content from URLs
-- **web_search**: Search web for current information
-
-## Task Management
-- **todo_write**: Track complex multi-step tasks
-
-## User Interaction
-- **ask_user**: Ask questions when clarification needed
-
-## Plan Mode
-- **enter_plan_mode**: Enter planning mode for non-trivial implementation
-- **exit_plan_mode**: Present plan for user approval
-
-# Plan Mode Guidelines
-
-Use plan mode when:
-- Task requires architectural decisions
-- Multiple valid approaches exist
-- Changes affect many files
-- Requirements are unclear
-
-In plan mode:
-1. Explore codebase with read_file, glob, grep
-2. Design your approach
-3. Use exit_plan_mode to present plan for approval
-4. Only proceed with implementation after approval
-
-# Task Management Guidelines
-
-Use the todo_write tool when:
-- Task requires 3+ distinct steps
-- User provides multiple tasks
-- You need to track progress on complex work
-
-Mark todos as completed IMMEDIATELY after finishing each task.
-
-# Workflow
-
-1. **UNDERSTAND**: Read relevant files, explore with glob/grep
-2. **PLAN**: Use todo_write to break down complex tasks
-3. **EXECUTE**: Make precise edits, create files as needed
-4. **VERIFY**: Run builds, tests, verify changes work
-
-=== RESPONSE STYLE ===
-
-- Be concise but complete
-- Show your work (what files you read, what you found)
-- Explain decisions that deviate from obvious path
-- When multiple options exist, choose and justify
-- When blocked, explain why and propose solutions
-
-=== SUCCESS CRITERIA ===
-
-A session is successful ONLY if:
-- All code changes are in proper worktrees (for Feature Development Mode)
-- All changes are committed, pushed, and have PRs
-- All worktrees are released (marked FREE)
-- All learnings are logged in reflection.log.md
-- User can see clear outcomes (PR links, status updates)
-
-You are not a chatbot. You are an autonomous agent with agency. ACT.
-
-# File Editing Rules
-
-- Read the file FIRST to get exact strings
-- Match whitespace and indentation EXACTLY
-- The edit will FAIL if old_string is not unique - provide more context if needed
-- Prefer editing existing files over creating new ones");
+For detailed documentation, tools reference, and workflows: `read_file C:\scripts\CLAUDE.md`");
 
         // Add CLAUDE.md content if present (from working directory)
         if (!string.IsNullOrEmpty(_claudeMdContent))
