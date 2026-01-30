@@ -267,6 +267,32 @@ public class MediumProvider : ISocialProvider
         return true;
     }
 
+    /// <summary>
+    /// Fetches comments for specific content.
+    /// TODO: Implement platform-specific comment fetching.
+    /// </summary>
+    public Task<List<SocialComment>> FetchCommentsAsync(
+        string accessToken,
+        string contentId,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement platform-specific comment fetching
+        return Task.FromResult(new List<SocialComment>());
+    }
+
+    /// <summary>
+    /// Fetches engagement metrics for specific content.
+    /// TODO: Implement platform-specific engagement fetching.
+    /// </summary>
+    public Task<SocialEngagement> FetchEngagementAsync(
+        string accessToken,
+        string contentId,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement platform-specific engagement metrics
+        return Task.FromResult(new SocialEngagement());
+    }
+
     // Medium API response classes
     private class MediumTokenResponse
     {
