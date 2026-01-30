@@ -28,6 +28,9 @@
     <!-- LLM Provider for Chat functionality -->
     <ProjectReference Include="..\..\..\src\Core\AI\Hazina.AI.Providers\Hazina.AI.Providers.csproj" />
     <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
+    <!-- OpenAI Provider for Chat Agent -->
+    <ProjectReference Include="..\..\..\src\Core\LLMs.Providers\Hazina.LLMs.OpenAI\Hazina.LLMs.OpenAI.csproj" />
   </ItemGroup>
 
   <ItemGroup>
