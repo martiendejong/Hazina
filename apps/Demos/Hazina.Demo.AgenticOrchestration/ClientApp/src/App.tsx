@@ -243,7 +243,15 @@ function App() {
         )}
 
         {viewMode === 'archive' && (
-          <ArchiveView onClose={() => setViewMode('sessions')} />
+          <ArchiveView
+            onClose={() => setViewMode('sessions')}
+            onRestoreSession={(sessionId) => {
+              setViewMode('sessions')
+              setSelectedSession(sessionId)
+              // Refresh sessions to include the newly restored session
+              fetchSessions()
+            }}
+          />
         )}
       </main>
     </div>

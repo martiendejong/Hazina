@@ -618,7 +618,7 @@ public class TerminalController : ControllerBase
             await Task.Delay(2000, ct);
 
             // Send the archived content as input to the new session
-            await newSession.WriteAsync(instruction + "\r");
+            await newSession.WriteInputAsync(instruction + "\r", ct);
 
             _logger.LogInformation("Sent archived content to restored session {SessionId}", newSession.SessionId);
 
@@ -644,7 +644,7 @@ public class TerminalController : ControllerBase
     }
 
     /// <summary>
-    /// Extract conversation content from log file (remove timestamps and system metadata)
+    /// Extract conversation content from log file (remove timestamps, ANSI codes, and system metadata)
     /// </summary>
     private string ExtractConversationContent(string logContent)
     {
@@ -652,6 +652,7 @@ public class TerminalController : ControllerBase
         var result = new System.Text.StringBuilder();
         var inHeader = true;
         var inFooter = false;
+        var lastLineWasEmpty = false;
 
         foreach (var line in lines)
         {
@@ -691,29 +692,95 @@ public class TerminalController : ControllerBase
                     var type = match.Groups[1].Value;
                     var content = match.Groups[2].Value;
 
+                    // Remove ANSI escape sequences
+                    content = StripAnsiCodes(content);
+
                     if (type == "INPUT")
                     {
                         // Clean up input markers like [CR], [LF]
                         content = content.Replace("[CR]", "").Replace("[LF]", "\n").Replace(">>>", "").Trim();
-                        result.AppendLine($"User: {content}");
+                        if (!string.IsNullOrWhiteSpace(content))
+                        {
+                            result.AppendLine($"User: {content}");
+                            lastLineWasEmpty = false;
+                        }
                     }
                     else
                     {
-                        result.AppendLine(content);
+                        // Collapse multiple empty lines into one
+                        if (string.IsNullOrWhiteSpace(content))
+                        {
+                            if (!lastLineWasEmpty)
+                            {
+                                result.AppendLine();
+                                lastLineWasEmpty = true;
+                            }
+                        }
+                        else
+                        {
+                            result.AppendLine(content);
+                            lastLineWasEmpty = false;
+                        }
                     }
                 }
                 else
                 {
-                    result.AppendLine(trimmed);
+                    // Strip ANSI from non-log lines too
+                    var cleaned = StripAnsiCodes(trimmed);
+                    if (!string.IsNullOrWhiteSpace(cleaned))
+                    {
+                        result.AppendLine(cleaned);
+                        lastLineWasEmpty = false;
+                    }
+                    else if (!lastLineWasEmpty)
+                    {
+                        result.AppendLine();
+                        lastLineWasEmpty = true;
+                    }
                 }
             }
             else
             {
-                result.AppendLine(line);
+                // Strip ANSI from all lines
+                var cleaned = StripAnsiCodes(line);
+                if (!string.IsNullOrWhiteSpace(cleaned))
+                {
+                    result.AppendLine(cleaned);
+                    lastLineWasEmpty = false;
+                }
+                else if (!lastLineWasEmpty)
+                {
+                    result.AppendLine();
+                    lastLineWasEmpty = true;
+                }
             }
         }
 
         return result.ToString();
+    }
+
+    /// <summary>
+    /// Remove ANSI escape sequences from text
+    /// </summary>
+    private static string StripAnsiCodes(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return text;
+
+        // Remove ANSI CSI sequences (ESC [ ... m)
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\x1B\[[0-9;]*m", "");
+
+        // Remove other ANSI escape sequences (ESC followed by any character and parameters)
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\x1B\[[\d;]*[A-Za-z]", "");
+
+        // Remove OSC sequences (ESC ] ... BEL or ESC ] ... ST)
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\x1B\][^\x07]*\x07", "");
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\x1B\][^\x1B]*\x1B\\", "");
+
+        // Remove other escape sequences
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\x1B[@-_][0-?]*[ -/]*[@-~]", "");
+
+        return text;
     }
 
     /// <summary>

@@ -7,6 +7,7 @@ import '@xterm/xterm/css/xterm.css'
 
 interface ArchiveViewProps {
   onClose: () => void
+  onRestoreSession?: (sessionId: string) => void
 }
 
 // Component to render log content with ANSI escape sequence support using xterm.js
@@ -20,7 +21,7 @@ function LogTerminal({ content }: { content: string }) {
     // Create terminal instance
     const term = new Terminal({
       convertEol: true,
-      disableStdin: true, // Read-only
+      disableStdin: true, // Read-only (no keyboard input)
       cursorBlink: false,
       cursorStyle: 'bar',
       fontSize: 13,
@@ -31,8 +32,12 @@ function LogTerminal({ content }: { content: string }) {
         cursor: '#d4d4d4',
         cursorAccent: '#1e1e1e',
         selectionBackground: '#264f78',
+        selectionForeground: '#ffffff',  // Make selected text readable
       },
       scrollback: 100000, // Large scrollback for log viewing
+      allowProposedApi: true,
+      // Enable selection
+      rightClickSelectsWord: true,  // Right-click selects word for easy copy
     })
 
     const fitAddon = new FitAddon()
@@ -71,7 +76,7 @@ function LogTerminal({ content }: { content: string }) {
   )
 }
 
-export function ArchiveView({ onClose }: ArchiveViewProps) {
+export function ArchiveView({ onClose, onRestoreSession }: ArchiveViewProps) {
   const [sessions, setSessions] = useState<ArchivedSession[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -81,6 +86,7 @@ export function ArchiveView({ onClose }: ArchiveViewProps) {
   const [selectedSession, setSelectedSession] = useState<string | null>(null)
   const [logContent, setLogContent] = useState<string | null>(null)
   const [logLoading, setLogLoading] = useState(false)
+  const [restoring, setRestoring] = useState(false)
   const logContainerRef = useRef<HTMLDivElement>(null)
 
   const pageSize = 50
@@ -140,6 +146,32 @@ export function ArchiveView({ onClose }: ArchiveViewProps) {
     setLogContent(null)
   }
 
+  const handleRestoreSession = async (sessionId: string) => {
+    setRestoring(true)
+    setError(null)
+    try {
+      const response = await authFetch(`/api/terminal/archive/${sessionId}/restore`, {
+        method: 'POST',
+      })
+      if (!response.ok) {
+        throw new Error('Failed to restore session')
+      }
+      const data = await response.json()
+
+      // Notify parent to switch to the new session
+      if (onRestoreSession && data.sessionId) {
+        onRestoreSession(data.sessionId)
+      }
+
+      // Close archive view
+      onClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to restore session')
+    } finally {
+      setRestoring(false)
+    }
+  }
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleString()
@@ -172,6 +204,15 @@ export function ArchiveView({ onClose }: ArchiveViewProps) {
   // Render session log view with xterm.js for proper ANSI rendering
   if (selectedSession && logContent !== null) {
     const session = sessions.find(s => s.sessionId === selectedSession)
+
+    const handleCopyLog = () => {
+      if (logContent) {
+        navigator.clipboard.writeText(logContent).catch(err => {
+          console.error('Copy failed:', err)
+        })
+      }
+    }
+
     return (
       <div className="archive-view">
         <div className="archive-header">
@@ -186,7 +227,24 @@ export function ArchiveView({ onClose }: ArchiveViewProps) {
               </span>
             )}
           </div>
-          <button className="btn-close" onClick={onClose}>Close</button>
+          <div className="archive-actions">
+            <button
+              className="btn-copy"
+              onClick={handleCopyLog}
+              title="Copy log to clipboard"
+            >
+              📋 Copy
+            </button>
+            <button
+              className="btn-restore"
+              onClick={() => handleRestoreSession(selectedSession)}
+              disabled={restoring}
+              title="Create new session with this log content"
+            >
+              {restoring ? '⏳ Restoring...' : '🔄 Restore Session'}
+            </button>
+            <button className="btn-close" onClick={onClose}>Close</button>
+          </div>
         </div>
 
         <div className="log-container" ref={logContainerRef}>
