@@ -332,6 +332,32 @@ public class FacebookMessagingProvider : ISocialMessagingProvider
         }
     }
 
+    /// <summary>
+    /// Fetches comments for specific content.
+    /// TODO: Implement platform-specific comment fetching.
+    /// </summary>
+    public Task<List<SocialComment>> FetchCommentsAsync(
+        string accessToken,
+        string contentId,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement platform-specific comment fetching
+        return Task.FromResult(new List<SocialComment>());
+    }
+
+    /// <summary>
+    /// Fetches engagement metrics for specific content.
+    /// TODO: Implement platform-specific engagement fetching.
+    /// </summary>
+    public Task<SocialEngagement> FetchEngagementAsync(
+        string accessToken,
+        string contentId,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement platform-specific engagement metrics
+        return Task.FromResult(new SocialEngagement());
+    }
+
     #region Private Helper Methods
 
     private async Task<List<FacebookPage>> GetUserPagesAsync(

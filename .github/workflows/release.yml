@@ -1,0 +1,296 @@
+name: Release Terminal Orchestration Tool
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.1.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            exe: HazinaOrchestration.exe
+          - os: ubuntu-latest
+            rid: linux-x64
+            exe: HazinaOrchestration
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish self-contained app
+        shell: bash
+        run: |
+          dotnet publish apps/Demos/Hazina.Demo.AgenticOrchestration/Hazina.Demo.AgenticOrchestration.csproj \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained true \
+            -p:Version=${{ steps.version.outputs.version }} \
+            -o ./publish
+
+      - name: Copy distribution config
+        shell: bash
+        run: |
+          cp build/dist/appsettings.dist.json ./publish/appsettings.json
+
+      - name: Create archive (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path ./publish/* -DestinationPath ./terminal-orchestration-${{ steps.version.outputs.version }}-${{ matrix.rid }}.zip
+
+      - name: Create archive (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd publish
+          tar -czf ../terminal-orchestration-${{ steps.version.outputs.version }}-${{ matrix.rid }}.tar.gz *
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terminal-orchestration-${{ matrix.rid }}
+          path: terminal-orchestration-${{ steps.version.outputs.version }}-${{ matrix.rid }}.*
+
+  create-installer:
+    needs: build
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: terminal-orchestration-win-x64
+          path: ./artifacts
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract for installer
+        shell: pwsh
+        run: |
+          Expand-Archive -Path "./artifacts/terminal-orchestration-${{ steps.version.outputs.version }}-win-x64.zip" -DestinationPath ./installer-files
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup -y
+
+      - name: Create Inno Setup script
+        shell: pwsh
+        run: |
+          @"
+          #define MyAppName "Terminal Orchestration Tool"
+          #define MyAppVersion "${{ steps.version.outputs.version }}"
+          #define MyAppPublisher "Hazina"
+          #define MyAppURL "https://martiendejong.nl/hazina"
+          #define MyAppExeName "HazinaOrchestration.exe"
+
+          [Setup]
+          AppId={{B2A3C4D5-E6F7-8901-ABCD-EF2345678901}
+          AppName={#MyAppName}
+          AppVersion={#MyAppVersion}
+          AppVerName={#MyAppName} {#MyAppVersion}
+          AppPublisher={#MyAppPublisher}
+          AppPublisherURL={#MyAppURL}
+          DefaultDirName={autopf}\TerminalOrchestration
+          DefaultGroupName={#MyAppName}
+          AllowNoIcons=yes
+          OutputDir=.
+          OutputBaseFilename=terminal-orchestration-${{ steps.version.outputs.version }}-win-x64-setup
+          Compression=lzma2/ultra64
+          SolidCompression=yes
+          WizardStyle=modern
+          PrivilegesRequired=lowest
+          ArchitecturesInstallIn64BitMode=x64compatible
+
+          [Files]
+          Source: "installer-files\HazinaOrchestration.exe"; DestDir: "{app}"; Flags: ignoreversion
+          Source: "installer-files\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion
+          Source: "installer-files\entities.yaml"; DestDir: "{app}"; Flags: ignoreversion
+          Source: "installer-files\wwwroot\*"; DestDir: "{app}\wwwroot"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+          [Icons]
+          Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+          Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
+
+          [Run]
+          Filename: "{app}\{#MyAppExeName}"; Description: "Launch Terminal Orchestration Tool"; Flags: nowait postinstall skipifsilent
+          "@ | Set-Content -Path setup.iss
+
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terminal-orchestration-installer
+          path: terminal-orchestration-${{ steps.version.outputs.version }}-win-x64-setup.exe
+
+  release:
+    needs: [build, create-installer]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./release-artifacts
+
+      - name: List artifacts
+        run: find ./release-artifacts -type f
+
+      - name: Create install script for Linux
+        run: |
+          cat > ./release-artifacts/install.sh << 'INSTALL_EOF'
+          #!/bin/bash
+          set -e
+
+          GITHUB_REPO="martiendejong/hazina"
+          INSTALL_DIR="${HOME}/.terminal-orchestration"
+
+          echo "================================================"
+          echo "  Terminal Orchestration Tool Installer"
+          echo "================================================"
+          echo ""
+
+          # Get latest version from GitHub
+          VERSION=$(curl -s "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/' 2>/dev/null || echo "")
+          if [ -z "$VERSION" ]; then
+            echo "Error: Could not determine latest version from GitHub"
+            exit 1
+          fi
+          echo "Latest version: $VERSION"
+
+          ARCH=$(uname -m)
+          case $ARCH in
+              x86_64) PLATFORM="linux-x64" ;;
+              *) echo "Error: Unsupported architecture: $ARCH"; exit 1 ;;
+          esac
+
+          echo "Platform: $PLATFORM"
+          echo ""
+
+          mkdir -p "$INSTALL_DIR"
+
+          DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/terminal-orchestration-${VERSION}-${PLATFORM}.tar.gz"
+          TEMP_FILE="/tmp/terminal-orchestration.tar.gz"
+
+          echo "Downloading..."
+          curl -fsSL "$DOWNLOAD_URL" -o "$TEMP_FILE" --progress-bar
+
+          echo "Extracting to $INSTALL_DIR..."
+          tar -xzf "$TEMP_FILE" -C "$INSTALL_DIR"
+
+          chmod +x "$INSTALL_DIR/HazinaOrchestration"
+
+          rm -f "$TEMP_FILE"
+
+          echo ""
+          echo "================================================"
+          echo "  Installation Complete!"
+          echo "================================================"
+          echo ""
+          echo "Installed to: $INSTALL_DIR"
+          echo ""
+          echo "To start the server:"
+          echo "  $INSTALL_DIR/HazinaOrchestration"
+          echo ""
+          echo "Then open http://localhost:5000 in your browser."
+          echo ""
+          echo "Configuration: $INSTALL_DIR/appsettings.json"
+          echo ""
+          INSTALL_EOF
+          chmod +x ./release-artifacts/install.sh
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Terminal Orchestration Tool v${{ steps.version.outputs.version }}
+          tag_name: v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## Terminal Orchestration Tool v${{ steps.version.outputs.version }}
+
+            Web-based interface for managing AI terminal sessions with real-time streaming.
+
+            ### Quick Install
+
+            **Windows:** Download and run the installer, or extract the ZIP.
+            **Linux:** `curl -fsSL https://github.com/martiendejong/hazina/releases/latest/download/install.sh | bash`
+
+            After installing, run the executable and open http://localhost:5000
+
+            ### Downloads
+            | Platform | File |
+            |----------|------|
+            | Windows Installer | `terminal-orchestration-${{ steps.version.outputs.version }}-win-x64-setup.exe` |
+            | Windows ZIP | `terminal-orchestration-${{ steps.version.outputs.version }}-win-x64.zip` |
+            | Linux tar.gz | `terminal-orchestration-${{ steps.version.outputs.version }}-linux-x64.tar.gz` |
+          files: |
+            ./release-artifacts/terminal-orchestration-win-x64/*
+            ./release-artifacts/terminal-orchestration-linux-x64/*
+            ./release-artifacts/terminal-orchestration-installer/*.exe
+            ./release-artifacts/install.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

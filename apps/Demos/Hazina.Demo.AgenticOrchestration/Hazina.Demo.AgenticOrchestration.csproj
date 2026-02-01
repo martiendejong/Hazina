@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Hazina.Demo.AgenticOrchestration</RootNamespace>
+    <SpaRoot>ClientApp\</SpaRoot>
+    <SpaProxyServerUrl>http://localhost:5173</SpaProxyServerUrl>
+
+    <!-- Assembly info for published executables -->
+    <AssemblyName>HazinaOrchestration</AssemblyName>
+    <Product>Hazina Agentic Orchestration</Product>
+    <Description>Web-based orchestration interface for managing Claude Code CLI instances</Description>
+    <Version>1.0.0</Version>
+
+    <!-- Publishing defaults -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Hazina Core Dependencies -->
+    <ProjectReference Include="..\..\..\src\Hazina.AgenticOrchestration\Hazina.AgenticOrchestration.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\API\Hazina.API.Generic\Hazina.API.Generic.csproj" />
+    <!-- LLM Provider for Chat functionality -->
+    <ProjectReference Include="..\..\..\src\Core\AI\Hazina.AI.Providers\Hazina.AI.Providers.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
+    <!-- OpenAI Provider for Chat Agent -->
+    <ProjectReference Include="..\..\..\src\Core\LLMs.Providers\Hazina.LLMs.OpenAI\Hazina.LLMs.OpenAI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ASP.NET Core -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Copy entities.yaml to output -->
+    <None Update="entities.yaml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- Build React app during publish -->
+  <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" />
+    <ItemGroup>
+      <DistFiles Include="wwwroot\**" />
+      <ResolvedFileToPublish Include="@(DistFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
+        <RelativePath>wwwroot\%(RecursiveDir)%(FileName)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
+</Project>
