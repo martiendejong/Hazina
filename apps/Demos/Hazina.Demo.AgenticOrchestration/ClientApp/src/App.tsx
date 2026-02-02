@@ -5,7 +5,7 @@ import { ChatView } from './components/ChatView'
 import { ArchiveView } from './components/ArchiveView'
 import { Login } from './components/Login'
 import { authFetch, hasCredentials, clearCredentials } from './auth'
-import type { TerminalSession, ExternalClaudeInstance, AllSessions, TerminalConfig } from './types'
+import type { TerminalSession, ExternalClaudeInstance, AllSessions, TerminalConfig, PendingRestore } from './types'
 import './App.css'
 
 type ViewMode = 'sessions' | 'chat' | 'archive'
@@ -19,6 +19,7 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [config, setConfig] = useState<TerminalConfig | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('sessions')
+  const [pendingRestore, setPendingRestore] = useState<PendingRestore | null>(null)
 
   const handleUnauthorized = () => {
     clearCredentials()
@@ -161,6 +162,52 @@ function App() {
     ))
   }
 
+  // Handle restoring a session from archive
+  const handleRestoreSession = async (archivedSessionId: string, content: string) => {
+    try {
+      // Calculate terminal size
+      const terminalContainer = document.querySelector('.terminal-section')
+      let cols = config?.defaultColumns ?? 80
+      let rows = config?.defaultRows ?? 24
+      if (terminalContainer) {
+        const rect = terminalContainer.getBoundingClientRect()
+        cols = Math.floor((rect.width - 20) / 9)
+        rows = Math.floor((rect.height - 60) / 17)
+        cols = Math.max(80, Math.min(cols, 200))
+        rows = Math.max(24, Math.min(rows, 50))
+      }
+
+      // Create new session
+      const response = await authFetch('/api/terminal/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ columns: cols, rows: rows })
+      })
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
+      }
+      if (!response.ok) throw new Error('Failed to create session')
+
+      const newSession = await response.json()
+      setSessions(prev => [...prev, newSession])
+
+      // Store pending restore content - will be pasted after Claude loads
+      setPendingRestore({ sessionId: newSession.sessionId, content })
+
+      // Switch to sessions view and select the new session
+      setViewMode('sessions')
+      setSelectedSession(newSession.sessionId)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to restore session')
+    }
+  }
+
+  // Clear pending restore after it's been handled
+  const handleRestoreComplete = () => {
+    setPendingRestore(null)
+  }
+
   // Show login screen if not authenticated
   if (!isAuthenticated) {
     return <Login onLogin={() => setIsAuthenticated(true)} />
@@ -228,6 +275,8 @@ function App() {
                   onClose={() => setSelectedSession(null)}
                   onStateChanged={handleStateChanged}
                   onTitleChanged={handleTitleChanged}
+                  pendingRestore={pendingRestore?.sessionId === selectedSession ? pendingRestore : undefined}
+                  onRestoreComplete={handleRestoreComplete}
                 />
               ) : (
                 <div className="no-session">
@@ -245,12 +294,7 @@ function App() {
         {viewMode === 'archive' && (
           <ArchiveView
             onClose={() => setViewMode('sessions')}
-            onRestoreSession={(sessionId) => {
-              setViewMode('sessions')
-              setSelectedSession(sessionId)
-              // Refresh sessions to include the newly restored session
-              fetchSessions()
-            }}
+            onRestoreSession={handleRestoreSession}
           />
         )}
       </main>

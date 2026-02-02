@@ -101,3 +101,9 @@ export interface SessionLogResponse {
   content: string
   totalBytes: number
 }
+
+// Pending restore request - passed to TerminalView to paste content after Claude loads
+export interface PendingRestore {
+  sessionId: string
+  content: string
+}
