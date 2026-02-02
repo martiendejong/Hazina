@@ -614,11 +614,18 @@ public class TerminalController : ControllerBase
                 return StatusCode(500, new { error = "Session failed to start", sessionId = newSession.SessionId });
             }
 
-            _logger.LogInformation("Created restore session {SessionId} with {ContentSize} bytes of history",
-                newSession.SessionId, sessionContent.Length);
+            // Wait a bit more for Claude to fully initialize
+            await Task.Delay(2000, ct);
+
+            // Send the archived content to Claude as context
+            var instruction = $"This is a restored session. Here is the previous conversation:\n\n{sessionContent}\n\nYou can now continue the conversation.";
+            await newSession.WriteInputAsync(instruction + "\r", ct);
+
+            _logger.LogInformation("Sent {ContentSize} bytes of context to restored session {SessionId}",
+                sessionContent.Length, newSession.SessionId);
 
             // Return the new session with the content to display
-            // Client will show content in terminal and session is ready for new input
+            // Client will show content in terminal and Claude has the context
             return CreatedAtAction(
                 nameof(GetSession),
                 new { sessionId = newSession.SessionId },
