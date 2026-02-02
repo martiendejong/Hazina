@@ -528,35 +528,51 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     // Only proceed if:
     // 1. We have pending restore content for this session
     // 2. We're connected
-    // 3. Claude is waiting for input (ready to receive)
-    // 4. We haven't already handled this restore
+    // 3. We haven't already handled this restore
+    // 4. Either Claude is waiting for input OR 5 seconds have passed
     if (
       pendingRestore &&
       pendingRestore.sessionId === sessionId &&
       isConnected &&
-      isWaitingForInput &&
       !restoreHandledRef.current &&
       connection.current?.state === signalR.HubConnectionState.Connected
     ) {
-      restoreHandledRef.current = true
+      const performRestore = () => {
+        restoreHandledRef.current = true
 
-      // Show restore message in terminal
-      terminalInstance.current?.writeln('\r\n\x1b[36m[Restoring session content...]\x1b[0m\r\n')
+        // Show restore message in terminal
+        terminalInstance.current?.writeln('\r\n\x1b[36m[Restoring session content...]\x1b[0m\r\n')
 
-      // Send the content as input
-      const encoder = new TextEncoder()
-      const bytes = Array.from(encoder.encode(pendingRestore.content))
-      connection.current.invoke('SendInput', sessionId, bytes)
-        .then(() => {
-          console.log('Session content restored successfully')
-          if (onRestoreComplete) {
-            onRestoreComplete()
+        // Send the content as input
+        const encoder = new TextEncoder()
+        const bytes = Array.from(encoder.encode(pendingRestore.content))
+        connection.current!.invoke('SendInput', sessionId, bytes)
+          .then(() => {
+            console.log('Session content restored successfully')
+            if (onRestoreComplete) {
+              onRestoreComplete()
+            }
+          })
+          .catch(err => {
+            console.error('Failed to restore session content:', err)
+            terminalInstance.current?.writeln('\r\n\x1b[31m[Failed to restore session content]\x1b[0m')
+          })
+      }
+
+      // If Claude is already waiting for input, restore immediately
+      if (isWaitingForInput) {
+        performRestore()
+      } else {
+        // Otherwise wait up to 5 seconds for waitingForInput signal
+        const timeout = window.setTimeout(() => {
+          if (!restoreHandledRef.current) {
+            console.log('Restoring content after timeout (waitingForInput not received)')
+            performRestore()
           }
-        })
-        .catch(err => {
-          console.error('Failed to restore session content:', err)
-          terminalInstance.current?.writeln('\r\n\x1b[31m[Failed to restore session content]\x1b[0m')
-        })
+        }, 5000)
+
+        return () => clearTimeout(timeout)
+      }
     }
   }, [pendingRestore, sessionId, isConnected, isWaitingForInput, onRestoreComplete])
 
