@@ -76,10 +76,12 @@ function App() {
 
     // Fetch config once on mount
     fetchConfig()
-    // Fetch sessions initially and refresh every 10 seconds
+    // Fetch sessions initially - no auto-refresh
     fetchSessions()
-    const interval = setInterval(fetchSessions, 10000)
-    return () => clearInterval(interval)
+
+    // Optional: refresh every 30 seconds only if needed
+    // const interval = setInterval(fetchSessions, 30000)
+    // return () => clearInterval(interval)
   }, [isAuthenticated])
 
   const handleCreateSession = async () => {
@@ -180,6 +182,11 @@ function App() {
       }
 
       const result = await response.json()
+      console.log('[DEBUG] Restore response received:', {
+        hasArchivedContent: !!result.archivedContent,
+        contentLength: result.archivedContent?.length,
+        sessionId: result.sessionId
+      })
 
       // Add to sessions list
       setSessions(prev => [...prev, {
@@ -193,16 +200,20 @@ function App() {
 
       // Store the archived content to be displayed in terminal
       if (result.archivedContent) {
+        console.log('[DEBUG] Setting pendingRestore with content length:', result.archivedContent.length)
         setPendingRestore({
           sessionId: result.sessionId,
           content: result.archivedContent
         })
+      } else {
+        console.log('[DEBUG] No archivedContent in response!')
       }
 
       // Switch to sessions view and select the new session
       setViewMode('sessions')
       setSelectedSession(result.sessionId)
     } catch (err) {
+      console.error('[DEBUG] Restore failed:', err)
       setError(err instanceof Error ? err.message : 'Failed to restore session')
     }
   }

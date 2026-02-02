@@ -19,6 +19,13 @@ interface TerminalViewProps {
 }
 
 export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChanged, pendingRestore, onRestoreComplete }: TerminalViewProps) {
+  console.log('[DEBUG TerminalView] Component rendered with props:', {
+    sessionId,
+    hasPendingRestore: !!pendingRestore,
+    pendingRestoreSessionId: pendingRestore?.sessionId,
+    contentLength: pendingRestore?.content?.length
+  })
+
   const terminalRef = useRef<HTMLDivElement>(null)
   const terminalInstance = useRef<Terminal | null>(null)
   const fitAddon = useRef<FitAddon | null>(null)
@@ -530,6 +537,17 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
   // Handle pending restore - paste content when Claude is ready (waiting for input)
   useEffect(() => {
+    console.log('[DEBUG TerminalView] Restore effect triggered:', {
+      hasPendingRestore: !!pendingRestore,
+      pendingRestoreSessionId: pendingRestore?.sessionId,
+      currentSessionId: sessionId,
+      isConnected,
+      restoreHandled: restoreHandledRef.current,
+      hubConnectionState: connection.current?.state,
+      contentLength: pendingRestore?.content?.length,
+      hasTerminalInstance: !!terminalInstance.current
+    })
+
     // Only proceed if:
     // 1. We have pending restore content for this session
     // 2. We're connected
@@ -543,6 +561,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       connection.current?.state === signalR.HubConnectionState.Connected
     ) {
       const performRestore = () => {
+        console.log('[DEBUG TerminalView] Performing restore with content length:', pendingRestore.content.length)
         restoreHandledRef.current = true
 
         // Show restore message in terminal
@@ -556,7 +575,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         terminalInstance.current?.writeln('\r\n\r\n\x1b[36m' + '─'.repeat(80) + '\x1b[0m')
         terminalInstance.current?.writeln('\x1b[32m[Session restored - you can continue the conversation]\x1b[0m\r\n')
 
-        console.log('Session content displayed successfully')
+        console.log('[DEBUG TerminalView] Session content displayed successfully')
 
         if (onRestoreComplete) {
           onRestoreComplete()
@@ -567,6 +586,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       // No need to wait for waitingForInput - we're just showing output
       if (terminalInstance.current) {
         performRestore()
+      } else {
+        console.log('[DEBUG TerminalView] Cannot perform restore - no terminal instance')
       }
     }
   }, [pendingRestore, sessionId, isConnected, isWaitingForInput, onRestoreComplete])
