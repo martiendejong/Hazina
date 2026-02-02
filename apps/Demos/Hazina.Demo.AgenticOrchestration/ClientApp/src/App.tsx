@@ -165,39 +165,29 @@ function App() {
   // Handle restoring a session from archive
   const handleRestoreSession = async (archivedSessionId: string, content: string) => {
     try {
-      // Calculate terminal size
-      const terminalContainer = document.querySelector('.terminal-section')
-      let cols = config?.defaultColumns ?? 80
-      let rows = config?.defaultRows ?? 24
-      if (terminalContainer) {
-        const rect = terminalContainer.getBoundingClientRect()
-        cols = Math.floor((rect.width - 20) / 9)
-        rows = Math.floor((rect.height - 60) / 17)
-        cols = Math.max(80, Math.min(cols, 200))
-        rows = Math.max(24, Math.min(rows, 50))
-      }
-
-      // Create new session
-      const response = await authFetch('/api/terminal/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ columns: cols, rows: rows })
+      // Use backend restore endpoint - it creates the session and sends content server-side
+      // This is much more reliable for large sessions than client-side pasting
+      const response = await authFetch(`/api/terminal/archive/${archivedSessionId}/restore`, {
+        method: 'POST'
       })
+
       if (response.status === 401) {
         handleUnauthorized()
         return
       }
-      if (!response.ok) throw new Error('Failed to create session')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to restore session')
+      }
 
       const newSession = await response.json()
       setSessions(prev => [...prev, newSession])
 
-      // Store pending restore content - will be pasted after Claude loads
-      setPendingRestore({ sessionId: newSession.sessionId, content })
-
       // Switch to sessions view and select the new session
       setViewMode('sessions')
       setSelectedSession(newSession.sessionId)
+
+      // No need for pendingRestore - backend handles content sending
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to restore session')
     }
