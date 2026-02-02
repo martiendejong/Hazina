@@ -219,7 +219,7 @@ public class ChatController : ControllerBase
             execute: async (messages, call, cancel) =>
             {
                 var param = new ChatToolParameter { Name = "instruction" };
-                param.TryGetValue(call, out var instruction);
+                param.TryGetValue(call, out string instruction);
 
                 var config = new TerminalSessionConfig
                 {
@@ -277,12 +277,12 @@ public class ChatController : ControllerBase
                 var sessionIdParam = new ChatToolParameter { Name = "sessionId" };
                 var commandParam = new ChatToolParameter { Name = "command" };
 
-                if (!sessionIdParam.TryGetValue(call, out var sessionId))
+                if (!sessionIdParam.TryGetValue(call, out string sessionId))
                 {
                     return "Error: sessionId parameter is required";
                 }
 
-                if (!commandParam.TryGetValue(call, out var command))
+                if (!commandParam.TryGetValue(call, out string command))
                 {
                     return "Error: command parameter is required";
                 }
@@ -336,7 +336,7 @@ public class ChatController : ControllerBase
             {
                 var limitParam = new ChatToolParameter { Name = "limit" };
                 var limit = 10;
-                if (limitParam.TryGetValue(call, out var limitStr) && int.TryParse(limitStr, out var parsedLimit))
+                if (limitParam.TryGetValue(call, out string limitStr) && int.TryParse(limitStr, out var parsedLimit))
                 {
                     limit = parsedLimit;
                 }
@@ -405,7 +405,7 @@ public class ChatController : ControllerBase
                 var sessionIdParam = new ChatToolParameter { Name = "sessionId" };
                 var timestampsParam = new ChatToolParameter { Name = "includeTimestamps" };
 
-                if (!sessionIdParam.TryGetValue(call, out var sessionId))
+                if (!sessionIdParam.TryGetValue(call, out string sessionId))
                 {
                     return "Error: sessionId parameter is required";
                 }
