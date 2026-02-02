@@ -31,6 +31,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const [isWaitingForInput, setIsWaitingForInput] = useState(false)
   const restoreHandledRef = useRef(false)
   const disconnectTimeoutRef = useRef<number | null>(null)
+  const connectionStableTimeRef = useRef<number | null>(null)
 
   // Voice control - send transcribed speech to terminal
   const handleVoiceTranscript = useCallback((text: string) => {
@@ -78,11 +79,15 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         disconnectTimeoutRef.current = null
       }
       setDisplayConnected(true)
+      // Mark when connection became stable
+      connectionStableTimeRef.current = Date.now()
     } else {
       // Wait 1000ms before showing disconnected
       disconnectTimeoutRef.current = window.setTimeout(() => {
         setDisplayConnected(false)
       }, 1000)
+      // Connection is not stable
+      connectionStableTimeRef.current = null
     }
 
     return () => {
@@ -538,7 +543,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       connection.current?.state === signalR.HubConnectionState.Connected
     ) {
       const performRestore = async (retryCount = 0) => {
-        const maxRetries = 3
+        const maxRetries = 5
+        const minStableTime = 3000 // Connection must be stable for 3 seconds
 
         // Check if connection is actually connected (not reconnecting)
         if (connection.current?.state !== signalR.HubConnectionState.Connected) {
@@ -549,6 +555,20 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
           } else {
             restoreHandledRef.current = true
             terminalInstance.current?.writeln('\r\n\x1b[31m[Failed to restore: connection not stable]\x1b[0m')
+            return
+          }
+        }
+
+        // Check if connection has been stable long enough
+        const stableDuration = connectionStableTimeRef.current
+          ? Date.now() - connectionStableTimeRef.current
+          : 0
+
+        if (stableDuration < minStableTime) {
+          if (retryCount < maxRetries) {
+            const waitTime = minStableTime - stableDuration + 500
+            console.log(`Connection not stable yet (${stableDuration}ms), waiting ${waitTime}ms (attempt ${retryCount + 1}/${maxRetries})`)
+            setTimeout(() => performRestore(retryCount + 1), waitTime)
             return
           }
         }
