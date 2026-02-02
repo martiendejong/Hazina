@@ -308,7 +308,7 @@ public class ChatController : ControllerBase
                 try
                 {
                     // Send the command followed by Enter (\r)
-                    await session.WriteAsync(command + "\r");
+                    await session.WriteInputAsync(command + "\r");
                     return $"Command sent to session {sessionId}: {command}";
                 }
                 catch (Exception ex)
@@ -411,7 +411,7 @@ public class ChatController : ControllerBase
                 }
 
                 var includeTimestamps = false;
-                if (timestampsParam.TryGetValue(call, out var includeTimestampsValue))
+                if (timestampsParam.TryGetValue(call, out string includeTimestampsValue))
                 {
                     bool.TryParse(includeTimestampsValue, out includeTimestamps);
                 }
