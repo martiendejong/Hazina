@@ -6,6 +6,7 @@ import { Unicode11Addon } from '@xterm/addon-unicode11'
 import * as signalR from '@microsoft/signalr'
 import { authFetch, getAuthHeader } from '../auth'
 import { useVoiceControl } from '../hooks/useVoiceControl'
+import type { PendingRestore } from '../types'
 import '@xterm/xterm/css/xterm.css'
 
 interface TerminalViewProps {
@@ -13,9 +14,11 @@ interface TerminalViewProps {
   onClose: () => void
   onStateChanged?: (sessionId: string, isRunning: boolean, waitingForInput: boolean) => void
   onTitleChanged?: (sessionId: string, title: string) => void
+  pendingRestore?: PendingRestore
+  onRestoreComplete?: () => void
 }
 
-export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChanged }: TerminalViewProps) {
+export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChanged, pendingRestore, onRestoreComplete }: TerminalViewProps) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const terminalInstance = useRef<Terminal | null>(null)
   const fitAddon = useRef<FitAddon | null>(null)
@@ -24,108 +27,31 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const lastDimensionsRef = useRef<{ cols: number; rows: number } | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isWaitingForInput, setIsWaitingForInput] = useState(false)
+  const restoreHandledRef = useRef(false)
 
-  // Text input state for composing messages before sending
-  const [inputText, setInputText] = useState('')
-  const inputRef = useRef<HTMLTextAreaElement>(null)
+  // Voice control - send transcribed speech to terminal
+  const handleVoiceTranscript = useCallback((text: string) => {
+    if (connection.current?.state === signalR.HubConnectionState.Connected) {
+      // Sanitize: trim whitespace, limit length, remove control characters
+      const sanitized = text
+        .trim()
+        .slice(0, 1000) // Reasonable max length
+        .replace(/[\x00-\x1F\x7F]/g, '') // Remove control chars except those we add
 
-  // Send the composed input text to the terminal
-  const sendInputText = useCallback(() => {
-    if (!inputText.trim()) return
-    if (connection.current?.state !== signalR.HubConnectionState.Connected) return
+      if (!sanitized) return
 
-    const textToSend = inputText.trim()
-    const encoder = new TextEncoder()
-    // Use \r (carriage return) to simulate pressing Enter in terminal
-    const bytes = Array.from(encoder.encode(textToSend + '\r'))
+      // Send the text as input with a newline to execute
+      const encoder = new TextEncoder()
+      const bytes = Array.from(encoder.encode(sanitized + '\n'))
+      connection.current.invoke('SendInput', sessionId, bytes)
+        .catch(err => console.error('SendInput (voice) failed:', err))
 
-    connection.current.invoke('SendInput', sessionId, bytes)
-      .catch(err => console.error('SendInput failed:', err))
-
-    setInputText('')
-
-    // Focus the terminal after sending
-    terminalInstance.current?.focus()
-  }, [inputText, sessionId])
-
-  // Track last paste to prevent duplicates (terminal's built-in + our custom handler)
-  const lastPasteRef = useRef<{ text: string; timestamp: number } | null>(null)
-
-  // Helper function to send text in chunks (for paste operations)
-  const sendTextInChunks = useCallback(async (text: string) => {
-    if (!text || connection.current?.state !== signalR.HubConnectionState.Connected) return
-
-    // Prevent duplicate paste (if same text pasted within 200ms, ignore)
-    const now = Date.now()
-    if (lastPasteRef.current) {
-      const timeSince = now - lastPasteRef.current.timestamp
-      const isSameText = lastPasteRef.current.text === text
-      if (isSameText && timeSince < 200) {
-        console.log('Duplicate paste detected, ignoring')
-        return
-      }
-    }
-    lastPasteRef.current = { text, timestamp: now }
-
-    const encoder = new TextEncoder()
-
-    // Adaptive chunking: larger chunks for longer text
-    const textLength = text.length
-    let CHUNK_SIZE = 100 // Default for small pastes
-    let DELAY_MS = 10    // Default delay
-
-    if (textLength > 1000) {
-      // For large pastes (>1000 chars), use bigger chunks and longer delays
-      CHUNK_SIZE = 500
-      DELAY_MS = 20
-    }
-
-    if (textLength > 5000) {
-      // For very large pastes (>5000 chars), use even bigger chunks
-      CHUNK_SIZE = 1000
-      DELAY_MS = 30
-    }
-
-    console.log(`Pasting ${textLength} characters in chunks of ${CHUNK_SIZE} with ${DELAY_MS}ms delay`)
-
-    // Split text into chunks
-    for (let i = 0; i < text.length; i += CHUNK_SIZE) {
-      const chunk = text.substring(i, Math.min(i + CHUNK_SIZE, text.length))
-      const bytes = Array.from(encoder.encode(chunk))
-
-      try {
-        await connection.current.invoke('SendInput', sessionId, bytes)
-
-        // Add delay between chunks to prevent overwhelming the terminal
-        if (i + CHUNK_SIZE < text.length) {
-          await new Promise(resolve => setTimeout(resolve, DELAY_MS))
-        }
-      } catch (err) {
-        console.error('SendInput chunk failed:', err)
-        break
-      }
+      // Also show indicator in terminal (escape for display)
+      const displayText = sanitized.length > 50 ? sanitized.slice(0, 50) + '...' : sanitized
+      terminalInstance.current?.writeln(`\r\n\x1b[36m[Voice: "${displayText}"]\x1b[0m`)
     }
   }, [sessionId])
-
-  // Voice control - append transcribed speech to input text (not send directly)
-  const handleVoiceTranscript = useCallback((text: string) => {
-    // Sanitize: trim whitespace, limit length, remove control characters
-    const sanitized = text
-      .trim()
-      .slice(0, 1000) // Reasonable max length
-      .replace(/[\x00-\x1F\x7F]/g, '') // Remove control chars
-
-    if (!sanitized) return
-
-    // Append to input text instead of sending directly
-    setInputText(prev => {
-      const newText = prev ? prev + ' ' + sanitized : sanitized
-      return newText
-    })
-
-    // Focus the input field
-    inputRef.current?.focus()
-  }, [])
 
   const [voiceState, voiceActions] = useVoiceControl(handleVoiceTranscript)
 
@@ -293,8 +219,11 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
     // Handle state changes (Running/Question)
     hubConnection.on('OnStateChanged', (sid: string, isRunning: boolean, waitingForInput: boolean) => {
-      if (sid === sessionId && onStateChanged) {
-        onStateChanged(sid, isRunning, waitingForInput)
+      if (sid === sessionId) {
+        setIsWaitingForInput(waitingForInput)
+        if (onStateChanged) {
+          onStateChanged(sid, isRunning, waitingForInput)
+        }
       }
     })
 
@@ -315,19 +244,6 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       }
     })
 
-    // Intercept native paste event to prevent double-paste
-    // xterm.js has built-in paste handling that we need to disable
-    const handlePaste = (event: ClipboardEvent) => {
-      event.preventDefault()
-      event.stopPropagation()
-
-      const text = event.clipboardData?.getData('text')
-      if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-        sendTextInChunks(text).catch(err => console.error('Paste failed:', err))
-      }
-    }
-    terminalRef.current.addEventListener('paste', handlePaste, { capture: true })
-
     // Custom keyboard handler for copy/paste
     // Ctrl+C: Copy if text selected, otherwise send interrupt
     // Ctrl+V: Paste from clipboard
@@ -345,19 +261,17 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         return true
       }
 
-      // Handle Ctrl+V - paste (chunked for longer text)
+      // Handle Ctrl+V - paste
       if (event.ctrlKey && event.key === 'v' && event.type === 'keydown') {
-        event.preventDefault()
-        event.stopPropagation()
-
-        // Try to read from clipboard (may show permission popup)
         navigator.clipboard.readText().then(text => {
           if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-            sendTextInChunks(text).catch(err => console.error('Paste failed:', err))
+            const encoder = new TextEncoder()
+            const bytes = Array.from(encoder.encode(text))
+            hubConnection.invoke('SendInput', sessionId, bytes)
+              .catch(err => console.error('Paste failed:', err))
           }
         }).catch(err => {
-          // If clipboard API fails (no permission), the native paste event will handle it
-          console.log('Clipboard API not available, falling back to paste event')
+          console.error('Paste failed:', err)
         })
         return false // Prevent default
       }
@@ -373,17 +287,17 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         return false
       }
 
-      // Handle Ctrl+Shift+V - always paste (alternative shortcut, chunked)
+      // Handle Ctrl+Shift+V - always paste (alternative shortcut)
       if (event.ctrlKey && event.shiftKey && event.key === 'V' && event.type === 'keydown') {
-        event.preventDefault()
-        event.stopPropagation()
-
         navigator.clipboard.readText().then(text => {
           if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-            sendTextInChunks(text).catch(err => console.error('Paste failed:', err))
+            const encoder = new TextEncoder()
+            const bytes = Array.from(encoder.encode(text))
+            hubConnection.invoke('SendInput', sessionId, bytes)
+              .catch(err => console.error('Paste failed:', err))
           }
         }).catch(err => {
-          console.log('Clipboard API not available, falling back to paste event')
+          console.error('Paste failed:', err)
         })
         return false
       }
@@ -446,13 +360,15 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         !selection || selection.length === 0
       ))
 
-      // Paste option (chunked for longer text)
+      // Paste option
       menu.appendChild(createMenuItem(
         'Paste',
         () => {
           navigator.clipboard.readText().then(text => {
             if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-              sendTextInChunks(text).catch(err => console.error('Paste failed:', err))
+              const encoder = new TextEncoder()
+              const bytes = Array.from(encoder.encode(text))
+              hubConnection.invoke('SendInput', sessionId, bytes)
             }
           })
         }
@@ -547,8 +463,6 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       // Remove context menu handler
       if (terminalRef.current) {
         terminalRef.current.removeEventListener('contextmenu', handleContextMenu)
-        // Remove paste handler
-        terminalRef.current.removeEventListener('paste', handlePaste, { capture: true })
       }
       // Remove any lingering context menu
       const existingMenu = document.querySelector('.terminal-context-menu')
@@ -560,7 +474,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       }
       terminal.dispose()
     }
-  }, [sessionId, isMobile, sendTextInChunks, onStateChanged, onTitleChanged])
+  }, [sessionId, isMobile])
 
   const handleInterrupt = async () => {
     if (connection.current?.state === signalR.HubConnectionState.Connected) {
@@ -584,13 +498,49 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     }
   }
 
-  // Handle key press in input - send on Enter (without Shift)
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendInputText()
+  // Handle pending restore - paste content when Claude is ready (waiting for input)
+  useEffect(() => {
+    // Only proceed if:
+    // 1. We have pending restore content for this session
+    // 2. We're connected
+    // 3. Claude is waiting for input (ready to receive)
+    // 4. We haven't already handled this restore
+    if (
+      pendingRestore &&
+      pendingRestore.sessionId === sessionId &&
+      isConnected &&
+      isWaitingForInput &&
+      !restoreHandledRef.current &&
+      connection.current?.state === signalR.HubConnectionState.Connected
+    ) {
+      restoreHandledRef.current = true
+
+      // Show restore message in terminal
+      terminalInstance.current?.writeln('\r\n\x1b[36m[Restoring session content...]\x1b[0m\r\n')
+
+      // Send the content as input
+      const encoder = new TextEncoder()
+      const bytes = Array.from(encoder.encode(pendingRestore.content))
+      connection.current.invoke('SendInput', sessionId, bytes)
+        .then(() => {
+          console.log('Session content restored successfully')
+          if (onRestoreComplete) {
+            onRestoreComplete()
+          }
+        })
+        .catch(err => {
+          console.error('Failed to restore session content:', err)
+          terminalInstance.current?.writeln('\r\n\x1b[31m[Failed to restore session content]\x1b[0m')
+        })
     }
-  }
+  }, [pendingRestore, sessionId, isConnected, isWaitingForInput, onRestoreComplete])
+
+  // Reset restore handled flag when pendingRestore changes
+  useEffect(() => {
+    if (!pendingRestore) {
+      restoreHandledRef.current = false
+    }
+  }, [pendingRestore])
 
   return (
     <div className="terminal-view">
@@ -646,31 +596,6 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       </div>
       {error && <div className="terminal-error">{error}</div>}
       <div className="terminal-container" ref={terminalRef} />
-
-      {/* Input box for composing messages before sending */}
-      <div className="terminal-input-container">
-        <textarea
-          ref={inputRef}
-          className="terminal-input"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          onKeyDown={handleInputKeyDown}
-          placeholder="Type a message or use voice... (Enter to send, Shift+Enter for newline)"
-          rows={1}
-          disabled={!isConnected}
-        />
-        <button
-          className="btn-send-terminal"
-          onClick={sendInputText}
-          disabled={!isConnected || !inputText.trim()}
-          title="Send message (Enter)"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-          </svg>
-          Send
-        </button>
-      </div>
     </div>
   )
 }
