@@ -76,9 +76,9 @@ function App() {
 
     // Fetch config once on mount
     fetchConfig()
-    // Fetch sessions initially and refresh every 5 seconds
+    // Fetch sessions initially and refresh every 10 seconds
     fetchSessions()
-    const interval = setInterval(fetchSessions, 5000)
+    const interval = setInterval(fetchSessions, 10000)
     return () => clearInterval(interval)
   }, [isAuthenticated])
 
