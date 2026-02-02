@@ -537,7 +537,22 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       !restoreHandledRef.current &&
       connection.current?.state === signalR.HubConnectionState.Connected
     ) {
-      const performRestore = () => {
+      const performRestore = async (retryCount = 0) => {
+        const maxRetries = 3
+
+        // Check if connection is actually connected (not reconnecting)
+        if (connection.current?.state !== signalR.HubConnectionState.Connected) {
+          if (retryCount < maxRetries) {
+            console.log(`Connection not ready, retrying in 2s (attempt ${retryCount + 1}/${maxRetries})`)
+            setTimeout(() => performRestore(retryCount + 1), 2000)
+            return
+          } else {
+            restoreHandledRef.current = true
+            terminalInstance.current?.writeln('\r\n\x1b[31m[Failed to restore: connection not stable]\x1b[0m')
+            return
+          }
+        }
+
         restoreHandledRef.current = true
 
         // Show restore message in terminal
@@ -546,30 +561,40 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         // Send the content as input
         const encoder = new TextEncoder()
         const bytes = Array.from(encoder.encode(pendingRestore.content))
-        connection.current!.invoke('SendInput', sessionId, bytes)
-          .then(() => {
-            console.log('Session content restored successfully')
-            if (onRestoreComplete) {
-              onRestoreComplete()
-            }
-          })
-          .catch(err => {
-            console.error('Failed to restore session content:', err)
+
+        try {
+          await connection.current.invoke('SendInput', sessionId, bytes)
+          console.log('Session content restored successfully')
+          terminalInstance.current?.writeln('\r\n\x1b[32m[Session restored successfully]\x1b[0m')
+          if (onRestoreComplete) {
+            onRestoreComplete()
+          }
+        } catch (err) {
+          console.error('Failed to restore session content:', err)
+
+          // Retry if connection was lost during send
+          if (retryCount < maxRetries && err instanceof Error && err.message.includes('connection')) {
+            console.log(`Retrying restore (attempt ${retryCount + 1}/${maxRetries})`)
+            restoreHandledRef.current = false // Allow retry
+            setTimeout(() => performRestore(retryCount + 1), 2000)
+          } else {
             terminalInstance.current?.writeln('\r\n\x1b[31m[Failed to restore session content]\x1b[0m')
-          })
+          }
+        }
       }
 
       // If Claude is already waiting for input, restore immediately
       if (isWaitingForInput) {
         performRestore()
       } else {
-        // Otherwise wait up to 5 seconds for waitingForInput signal
+        // Otherwise wait up to 10 seconds for waitingForInput signal
+        // This gives the connection time to stabilize
         const timeout = window.setTimeout(() => {
           if (!restoreHandledRef.current) {
             console.log('Restoring content after timeout (waitingForInput not received)')
             performRestore()
           }
-        }, 5000)
+        }, 10000)
 
         return () => clearTimeout(timeout)
       }
