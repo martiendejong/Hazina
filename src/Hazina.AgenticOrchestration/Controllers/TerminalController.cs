@@ -583,9 +583,6 @@ public class TerminalController : ControllerBase
             // Extract just the conversation (remove timestamps and metadata if requested)
             var sessionContent = includeTimestamps ? fullContent : ExtractConversationContent(fullContent);
 
-            // Create instruction for new session
-            var instruction = $"This is a restored session. Here is the previous conversation:\n\n{sessionContent}";
-
             // Create new session with the archived content as context
             var config = new TerminalSessionConfig
             {
