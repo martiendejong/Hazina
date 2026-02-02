@@ -79,10 +79,10 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       }
       setDisplayConnected(true)
     } else {
-      // Wait 500ms before showing disconnected
+      // Wait 1000ms before showing disconnected
       disconnectTimeoutRef.current = window.setTimeout(() => {
         setDisplayConnected(false)
-      }, 500)
+      }, 1000)
     }
 
     return () => {
