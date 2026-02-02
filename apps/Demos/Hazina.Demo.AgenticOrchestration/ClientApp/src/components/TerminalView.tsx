@@ -55,12 +55,12 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const sendTextInChunks = useCallback(async (text: string) => {
     if (!text || connection.current?.state !== signalR.HubConnectionState.Connected) return
 
-    // Prevent duplicate paste (if same text pasted within 100ms, ignore)
+    // Prevent duplicate paste (if same text pasted within 200ms, ignore)
     const now = Date.now()
     if (lastPasteRef.current) {
       const timeSince = now - lastPasteRef.current.timestamp
       const isSameText = lastPasteRef.current.text === text
-      if (isSameText && timeSince < 100) {
+      if (isSameText && timeSince < 200) {
         console.log('Duplicate paste detected, ignoring')
         return
       }
@@ -68,8 +68,25 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     lastPasteRef.current = { text, timestamp: now }
 
     const encoder = new TextEncoder()
-    const CHUNK_SIZE = 100 // Characters per chunk
-    const DELAY_MS = 10 // Delay between chunks
+
+    // Adaptive chunking: larger chunks for longer text
+    const textLength = text.length
+    let CHUNK_SIZE = 100 // Default for small pastes
+    let DELAY_MS = 10    // Default delay
+
+    if (textLength > 1000) {
+      // For large pastes (>1000 chars), use bigger chunks and longer delays
+      CHUNK_SIZE = 500
+      DELAY_MS = 20
+    }
+
+    if (textLength > 5000) {
+      // For very large pastes (>5000 chars), use even bigger chunks
+      CHUNK_SIZE = 1000
+      DELAY_MS = 30
+    }
+
+    console.log(`Pasting ${textLength} characters in chunks of ${CHUNK_SIZE} with ${DELAY_MS}ms delay`)
 
     // Split text into chunks
     for (let i = 0; i < text.length; i += CHUNK_SIZE) {
@@ -298,6 +315,19 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       }
     })
 
+    // Intercept native paste event to prevent double-paste
+    // xterm.js has built-in paste handling that we need to disable
+    const handlePaste = (event: ClipboardEvent) => {
+      event.preventDefault()
+      event.stopPropagation()
+
+      const text = event.clipboardData?.getData('text')
+      if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
+        sendTextInChunks(text).catch(err => console.error('Paste failed:', err))
+      }
+    }
+    terminalRef.current.addEventListener('paste', handlePaste, { capture: true })
+
     // Custom keyboard handler for copy/paste
     // Ctrl+C: Copy if text selected, otherwise send interrupt
     // Ctrl+V: Paste from clipboard
@@ -319,12 +349,15 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       if (event.ctrlKey && event.key === 'v' && event.type === 'keydown') {
         event.preventDefault()
         event.stopPropagation()
+
+        // Try to read from clipboard (may show permission popup)
         navigator.clipboard.readText().then(text => {
           if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
             sendTextInChunks(text).catch(err => console.error('Paste failed:', err))
           }
         }).catch(err => {
-          console.error('Paste failed:', err)
+          // If clipboard API fails (no permission), the native paste event will handle it
+          console.log('Clipboard API not available, falling back to paste event')
         })
         return false // Prevent default
       }
@@ -344,12 +377,13 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       if (event.ctrlKey && event.shiftKey && event.key === 'V' && event.type === 'keydown') {
         event.preventDefault()
         event.stopPropagation()
+
         navigator.clipboard.readText().then(text => {
           if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
             sendTextInChunks(text).catch(err => console.error('Paste failed:', err))
           }
         }).catch(err => {
-          console.error('Paste failed:', err)
+          console.log('Clipboard API not available, falling back to paste event')
         })
         return false
       }
@@ -513,6 +547,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       // Remove context menu handler
       if (terminalRef.current) {
         terminalRef.current.removeEventListener('contextmenu', handleContextMenu)
+        // Remove paste handler
+        terminalRef.current.removeEventListener('paste', handlePaste, { capture: true })
       }
       // Remove any lingering context menu
       const existingMenu = document.querySelector('.terminal-context-menu')
