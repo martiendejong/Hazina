@@ -542,81 +542,31 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       !restoreHandledRef.current &&
       connection.current?.state === signalR.HubConnectionState.Connected
     ) {
-      const performRestore = async (retryCount = 0) => {
-        const maxRetries = 5
-        const minStableTime = 3000 // Connection must be stable for 3 seconds
-
-        // Check if connection is actually connected (not reconnecting)
-        if (connection.current?.state !== signalR.HubConnectionState.Connected) {
-          if (retryCount < maxRetries) {
-            console.log(`Connection not ready, retrying in 2s (attempt ${retryCount + 1}/${maxRetries})`)
-            setTimeout(() => performRestore(retryCount + 1), 2000)
-            return
-          } else {
-            restoreHandledRef.current = true
-            terminalInstance.current?.writeln('\r\n\x1b[31m[Failed to restore: connection not stable]\x1b[0m')
-            return
-          }
-        }
-
-        // Check if connection has been stable long enough
-        const stableDuration = connectionStableTimeRef.current
-          ? Date.now() - connectionStableTimeRef.current
-          : 0
-
-        if (stableDuration < minStableTime) {
-          if (retryCount < maxRetries) {
-            const waitTime = minStableTime - stableDuration + 500
-            console.log(`Connection not stable yet (${stableDuration}ms), waiting ${waitTime}ms (attempt ${retryCount + 1}/${maxRetries})`)
-            setTimeout(() => performRestore(retryCount + 1), waitTime)
-            return
-          }
-        }
-
+      const performRestore = () => {
         restoreHandledRef.current = true
 
         // Show restore message in terminal
-        terminalInstance.current?.writeln('\r\n\x1b[36m[Restoring session content...]\x1b[0m\r\n')
+        terminalInstance.current?.writeln('\r\n\x1b[36m[Restoring archived session...]\x1b[0m\r\n')
 
-        // Send the content as input
-        const encoder = new TextEncoder()
-        const bytes = Array.from(encoder.encode(pendingRestore.content))
+        // Write the archived content directly to terminal output (not as input)
+        // This makes the previous conversation visible
+        terminalInstance.current?.write(pendingRestore.content)
 
-        try {
-          await connection.current.invoke('SendInput', sessionId, bytes)
-          console.log('Session content restored successfully')
-          terminalInstance.current?.writeln('\r\n\x1b[32m[Session restored successfully]\x1b[0m')
-          if (onRestoreComplete) {
-            onRestoreComplete()
-          }
-        } catch (err) {
-          console.error('Failed to restore session content:', err)
+        // Add separator
+        terminalInstance.current?.writeln('\r\n\r\n\x1b[36m' + '─'.repeat(80) + '\x1b[0m')
+        terminalInstance.current?.writeln('\x1b[32m[Session restored - you can continue the conversation]\x1b[0m\r\n')
 
-          // Retry if connection was lost during send
-          if (retryCount < maxRetries && err instanceof Error && err.message.includes('connection')) {
-            console.log(`Retrying restore (attempt ${retryCount + 1}/${maxRetries})`)
-            restoreHandledRef.current = false // Allow retry
-            setTimeout(() => performRestore(retryCount + 1), 2000)
-          } else {
-            terminalInstance.current?.writeln('\r\n\x1b[31m[Failed to restore session content]\x1b[0m')
-          }
+        console.log('Session content displayed successfully')
+
+        if (onRestoreComplete) {
+          onRestoreComplete()
         }
       }
 
-      // If Claude is already waiting for input, restore immediately
-      if (isWaitingForInput) {
+      // Display content immediately when terminal is ready
+      // No need to wait for waitingForInput - we're just showing output
+      if (terminalInstance.current) {
         performRestore()
-      } else {
-        // Otherwise wait up to 10 seconds for waitingForInput signal
-        // This gives the connection time to stabilize
-        const timeout = window.setTimeout(() => {
-          if (!restoreHandledRef.current) {
-            console.log('Restoring content after timeout (waitingForInput not received)')
-            performRestore()
-          }
-        }, 10000)
-
-        return () => clearTimeout(timeout)
       }
     }
   }, [pendingRestore, sessionId, isConnected, isWaitingForInput, onRestoreComplete])

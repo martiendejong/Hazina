@@ -614,26 +614,25 @@ public class TerminalController : ControllerBase
                 return StatusCode(500, new { error = "Session failed to start", sessionId = newSession.SessionId });
             }
 
-            // Wait a bit more for Claude to fully initialize
-            await Task.Delay(2000, ct);
+            _logger.LogInformation("Created restore session {SessionId} with {ContentSize} bytes of history",
+                newSession.SessionId, sessionContent.Length);
 
-            // Send the archived content as input to the new session
-            await newSession.WriteInputAsync(instruction + "\r", ct);
-
-            _logger.LogInformation("Sent archived content to restored session {SessionId}", newSession.SessionId);
-
+            // Return the new session with the content to display
+            // Client will show content in terminal and session is ready for new input
             return CreatedAtAction(
                 nameof(GetSession),
                 new { sessionId = newSession.SessionId },
-                new TerminalSessionDto
+                new
                 {
-                    SessionId = newSession.SessionId,
-                    Command = newSession.Command,
-                    Title = $"Restored: {sessionId}",
-                    StartedAt = newSession.StartedAt,
-                    IsRunning = newSession.IsRunning,
-                    WaitingForInput = newSession.WaitingForInput,
-                    SignalRHubUrl = "/hubs/terminal"
+                    sessionId = newSession.SessionId,
+                    command = newSession.Command,
+                    title = $"Restored: {sessionId}",
+                    startedAt = newSession.StartedAt,
+                    isRunning = newSession.IsRunning,
+                    waitingForInput = newSession.WaitingForInput,
+                    signalRHubUrl = "/hubs/terminal",
+                    // Include the archived content for client to display
+                    archivedContent = sessionContent
                 });
         }
         catch (Exception ex)

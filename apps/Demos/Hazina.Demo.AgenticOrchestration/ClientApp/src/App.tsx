@@ -165,8 +165,7 @@ function App() {
   // Handle restoring a session from archive
   const handleRestoreSession = async (archivedSessionId: string, content: string) => {
     try {
-      // Use backend restore endpoint - it creates the session and sends content server-side
-      // This is much more reliable for large sessions than client-side pasting
+      // Use backend restore endpoint - it creates the session and returns archived content
       const response = await authFetch(`/api/terminal/archive/${archivedSessionId}/restore`, {
         method: 'POST'
       })
@@ -180,14 +179,29 @@ function App() {
         throw new Error(error.error || 'Failed to restore session')
       }
 
-      const newSession = await response.json()
-      setSessions(prev => [...prev, newSession])
+      const result = await response.json()
+
+      // Add to sessions list
+      setSessions(prev => [...prev, {
+        sessionId: result.sessionId,
+        command: result.command,
+        title: result.title,
+        startedAt: result.startedAt,
+        isRunning: result.isRunning,
+        waitingForInput: result.waitingForInput
+      }])
+
+      // Store the archived content to be displayed in terminal
+      if (result.archivedContent) {
+        setPendingRestore({
+          sessionId: result.sessionId,
+          content: result.archivedContent
+        })
+      }
 
       // Switch to sessions view and select the new session
       setViewMode('sessions')
-      setSelectedSession(newSession.sessionId)
-
-      // No need for pendingRestore - backend handles content sending
+      setSelectedSession(result.sessionId)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to restore session')
     }
