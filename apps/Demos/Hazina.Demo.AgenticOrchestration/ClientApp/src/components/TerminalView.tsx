@@ -26,9 +26,11 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const resizeTimeoutRef = useRef<number | null>(null)
   const lastDimensionsRef = useRef<{ cols: number; rows: number } | null>(null)
   const [isConnected, setIsConnected] = useState(false)
+  const [displayConnected, setDisplayConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isWaitingForInput, setIsWaitingForInput] = useState(false)
   const restoreHandledRef = useRef(false)
+  const disconnectTimeoutRef = useRef<number | null>(null)
 
   // Voice control - send transcribed speech to terminal
   const handleVoiceTranscript = useCallback((text: string) => {
@@ -66,6 +68,29 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [voiceActions])
+
+  // Debounce connection status display to prevent flickering
+  useEffect(() => {
+    if (isConnected) {
+      // Immediately show connected
+      if (disconnectTimeoutRef.current) {
+        clearTimeout(disconnectTimeoutRef.current)
+        disconnectTimeoutRef.current = null
+      }
+      setDisplayConnected(true)
+    } else {
+      // Wait 500ms before showing disconnected
+      disconnectTimeoutRef.current = window.setTimeout(() => {
+        setDisplayConnected(false)
+      }, 500)
+    }
+
+    return () => {
+      if (disconnectTimeoutRef.current) {
+        clearTimeout(disconnectTimeoutRef.current)
+      }
+    }
+  }, [isConnected])
 
   // Detect if we're on a mobile device
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -547,8 +572,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       <div className="terminal-toolbar">
         <div className="terminal-info">
           <span className="session-label">Session: {sessionId.slice(0, 12)}...</span>
-          <span className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
-            {isConnected ? 'Connected' : 'Disconnected'}
+          <span className={`connection-status ${displayConnected ? 'connected' : 'disconnected'}`}>
+            {displayConnected ? 'Connected' : 'Disconnected'}
           </span>
         </div>
         <div className="terminal-actions">
