@@ -623,21 +623,18 @@ public class TerminalController : ControllerBase
 
             // Return the new session with the content to display
             // Client will show content in terminal and Claude has the context
-            return CreatedAtAction(
-                nameof(GetSession),
-                new { sessionId = newSession.SessionId },
-                new
-                {
-                    sessionId = newSession.SessionId,
-                    command = newSession.Command,
-                    title = $"Restored: {sessionId}",
-                    startedAt = newSession.StartedAt,
-                    isRunning = newSession.IsRunning,
-                    waitingForInput = newSession.WaitingForInput,
-                    signalRHubUrl = "/hubs/terminal",
-                    // Include the archived content for client to display
-                    archivedContent = sessionContent
-                });
+            return Ok(new
+            {
+                sessionId = newSession.SessionId,
+                command = newSession.Command,
+                title = $"Restored: {sessionId}",
+                startedAt = newSession.StartedAt,
+                isRunning = newSession.IsRunning,
+                waitingForInput = newSession.WaitingForInput,
+                signalRHubUrl = "/hubs/terminal",
+                // Include the archived content for client to display
+                archivedContent = sessionContent
+            });
         }
         catch (Exception ex)
         {
