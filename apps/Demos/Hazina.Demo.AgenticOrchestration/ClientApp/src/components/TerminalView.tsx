@@ -104,6 +104,14 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     }
   }, [isConnected])
 
+  // Maintain terminal focus after state changes to prevent focus loss
+  useEffect(() => {
+    if (terminalInstance.current && isConnected) {
+      // Focus the terminal when state changes
+      terminalInstance.current.focus()
+    }
+  }, [isWaitingForInput, isConnected])
+
   // Detect if we're on a mobile device
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 
@@ -257,7 +265,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     // Handle state changes (Running/Question)
     hubConnection.on('OnStateChanged', (sid: string, isRunning: boolean, waitingForInput: boolean) => {
       if (sid === sessionId) {
-        setIsWaitingForInput(waitingForInput)
+        // Only update state if value actually changed to prevent unnecessary re-renders
+        setIsWaitingForInput(prev => prev === waitingForInput ? prev : waitingForInput)
         if (onStateChanged) {
           onStateChanged(sid, isRunning, waitingForInput)
         }
@@ -560,7 +569,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       !restoreHandledRef.current &&
       connection.current?.state === signalR.HubConnectionState.Connected
     ) {
-      const performRestore = () => {
+      const performRestore = async () => {
         console.log('[DEBUG TerminalView] Performing restore with content length:', pendingRestore.content.length)
         restoreHandledRef.current = true
 
@@ -573,7 +582,25 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
         // Add separator
         terminalInstance.current?.writeln('\r\n\r\n\x1b[36m' + '─'.repeat(80) + '\x1b[0m')
-        terminalInstance.current?.writeln('\x1b[32m[Session restored - you can continue the conversation]\x1b[0m\r\n')
+        terminalInstance.current?.writeln('\x1b[33m[Sending context to Claude...]\x1b[0m\r\n')
+
+        // IMPORTANT: Also send the context to Claude so it understands the conversation history
+        // We send it as input with a clear instruction that this is restored context
+        try {
+          const contextInstruction = `This is a RESTORED SESSION. The conversation history above should be understood as prior context. Please briefly acknowledge that you understand this context and are ready to continue helping with the same task.\n`
+
+          const encoder = new TextEncoder()
+          const bytes = Array.from(encoder.encode(contextInstruction))
+
+          if (connection.current?.state === signalR.HubConnectionState.Connected) {
+            await connection.current.invoke('SendInput', sessionId, bytes)
+            console.log('[DEBUG TerminalView] Context instruction sent to Claude')
+            terminalInstance.current?.writeln('\x1b[32m[Context sent - Claude will acknowledge shortly]\x1b[0m\r\n')
+          }
+        } catch (err) {
+          console.error('[DEBUG TerminalView] Failed to send context to Claude:', err)
+          terminalInstance.current?.writeln('\x1b[31m[Warning: Failed to send context to Claude]\x1b[0m\r\n')
+        }
 
         console.log('[DEBUG TerminalView] Session content displayed successfully')
 
