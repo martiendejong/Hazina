@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Hazina.AgenticOrchestration.Terminal;
 using Hazina.AgenticOrchestration.Extensions;
 using Hazina.LLMs;
+using Hazina.Demo.AgenticOrchestration.Security;
 
 namespace Hazina.Demo.AgenticOrchestration.Controllers;
 
@@ -287,32 +288,47 @@ public class ChatController : ControllerBase
                     return "Error: command parameter is required";
                 }
 
-                var session = _sessionManager.GetSession(sessionId);
+                // SECURITY: Validate and sanitize session ID
+                if (!InputSanitizer.TryValidateSessionId(sessionId, out var sanitizedSessionId))
+                {
+                    _logger.LogWarning("Invalid session ID rejected: {SessionId}", InputSanitizer.EscapeForLogging(sessionId));
+                    return "Error: Invalid session ID format";
+                }
+
+                // SECURITY: Sanitize command (max 10KB to prevent abuse)
+                if (!InputSanitizer.TrySanitizeCommand(command, 10240, out var sanitizedCommand))
+                {
+                    _logger.LogWarning("Dangerous command rejected: {Command}", InputSanitizer.EscapeForLogging(command));
+                    return "Error: Command contains invalid or dangerous characters";
+                }
+
+                var session = _sessionManager.GetSession(sanitizedSessionId);
                 if (session == null)
                 {
-                    // Try partial match
+                    // Try partial match (still using sanitized ID)
                     session = _sessionManager.GetAllSessions()
-                        .FirstOrDefault(s => s.SessionId.StartsWith(sessionId) || s.SessionId.Contains(sessionId));
+                        .FirstOrDefault(s => s.SessionId.StartsWith(sanitizedSessionId) || s.SessionId.Contains(sanitizedSessionId));
                 }
 
                 if (session == null)
                 {
-                    return $"Session not found: {sessionId}";
+                    return $"Session not found: {sanitizedSessionId}";
                 }
 
                 if (!session.IsRunning)
                 {
-                    return $"Session {sessionId} is not running (exit code: {session.ExitCode})";
+                    return $"Session {sanitizedSessionId} is not running (exit code: {session.ExitCode})";
                 }
 
                 try
                 {
-                    // Send the command followed by Enter (\r)
-                    await session.WriteInputAsync(command + "\r");
-                    return $"Command sent to session {sessionId}: {command}";
+                    // Send the sanitized command followed by Enter (\r)
+                    await session.WriteInputAsync(sanitizedCommand + "\r");
+                    return $"Command sent to session {sanitizedSessionId}: {sanitizedCommand}";
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Failed to send command to session {SessionId}", sanitizedSessionId);
                     return $"Failed to send command: {ex.Message}";
                 }
             }
@@ -336,9 +352,15 @@ public class ChatController : ControllerBase
             {
                 var limitParam = new ChatToolParameter { Name = "limit" };
                 var limit = 10;
-                if (limitParam.TryGetValue(call, out string limitStr) && int.TryParse(limitStr, out var parsedLimit))
+
+                // SECURITY: Validate limit parameter (1-100 range)
+                if (limitParam.TryGetValue(call, out string limitStr))
                 {
-                    limit = parsedLimit;
+                    if (!InputSanitizer.TryValidateInteger(limitStr, 1, 100, out limit))
+                    {
+                        _logger.LogWarning("Invalid limit parameter rejected: {Limit}", InputSanitizer.EscapeForLogging(limitStr));
+                        return "Error: Limit must be between 1 and 100";
+                    }
                 }
 
                 // Call the archive endpoint via HTTP
@@ -410,20 +432,27 @@ public class ChatController : ControllerBase
                     return "Error: sessionId parameter is required";
                 }
 
+                // SECURITY: Validate and sanitize archive session ID
+                if (!InputSanitizer.TryValidateSessionId(sessionId, out var sanitizedSessionId))
+                {
+                    _logger.LogWarning("Invalid archive session ID rejected: {SessionId}", InputSanitizer.EscapeForLogging(sessionId));
+                    return "Error: Invalid session ID format";
+                }
+
                 var includeTimestamps = false;
                 if (timestampsParam.TryGetValue(call, out string includeTimestampsValue))
                 {
                     bool.TryParse(includeTimestampsValue, out includeTimestamps);
                 }
 
-                // Call the restore endpoint via HTTP
+                // Call the restore endpoint via HTTP (using sanitized ID)
                 using var client = new HttpClient { BaseAddress = new Uri("http://localhost:5000") };
-                var response = await client.PostAsync($"/api/terminal/archive/{sessionId}/restore?includeTimestamps={includeTimestamps}", null);
+                var response = await client.PostAsync($"/api/terminal/archive/{Uri.EscapeDataString(sanitizedSessionId)}/restore?includeTimestamps={includeTimestamps}", null);
 
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    return $"Failed to restore session {sessionId}: {response.StatusCode} - {errorContent}";
+                    return $"Failed to restore session {sanitizedSessionId}: {response.StatusCode} - {errorContent}";
                 }
 
                 var json = await response.Content.ReadAsStringAsync();
@@ -436,7 +465,7 @@ public class ChatController : ControllerBase
 
                 return $"✅ Session restored successfully!\n\n" +
                        $"New Session ID: {newSession.SessionId}\n" +
-                       $"Original Session ID: {sessionId}\n" +
+                       $"Original Session ID: {sanitizedSessionId}\n" +
                        $"Status: {(newSession.IsRunning ? "Running" : "Stopped")}\n\n" +
                        $"The archived conversation has been sent to the new session as context.";
             }
