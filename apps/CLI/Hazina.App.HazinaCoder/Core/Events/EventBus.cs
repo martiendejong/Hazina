@@ -256,3 +256,18 @@ public record VisionAnalysisFailedEvent(string ImagePath, string Query, Exceptio
 /// Vision analysis cached event
 /// </summary>
 public record VisionAnalysisCachedEvent(string ImagePath, string Query) : BaseEvent;
+
+/// <summary>
+/// Provider selected event
+/// </summary>
+public record ProviderSelectedEvent(string ProviderName, string Model, string Strategy) : BaseEvent;
+
+/// <summary>
+/// Provider success event
+/// </summary>
+public record ProviderSuccessEvent(string ProviderName, string Model, TimeSpan Duration, double Cost) : BaseEvent;
+
+/// <summary>
+/// Provider failure event
+/// </summary>
+public record ProviderFailureEvent(string ProviderName, string Model, Exception Error) : BaseEvent;
