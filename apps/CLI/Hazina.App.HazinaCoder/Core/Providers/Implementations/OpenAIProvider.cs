@@ -153,11 +153,11 @@ public class OpenAIProvider : ILLMProvider
             {
                 var delta = choices[0].GetProperty("delta");
 
-                if (delta.TryGetProperty("content", out var content))
+                if (delta.TryGetProperty("content", out var contentElement))
                 {
                     yield return new LLMStreamChunk
                     {
-                        Content = content.GetString() ?? string.Empty,
+                        Content = contentElement.GetString() ?? string.Empty,
                         IsComplete = false
                     };
                 }
@@ -330,7 +330,7 @@ public class OpenAIProvider : ILLMProvider
             if (message.Contents?.Any() == true)
             {
                 // Multimodal message
-                var content = message.Contents.Select(c => c.Type switch
+                var content = message.Contents.Select(c => (object)(c.Type switch
                 {
                     "text" => new { type = "text", text = c.Text },
                     "image" => new
@@ -344,7 +344,7 @@ public class OpenAIProvider : ILLMProvider
                         }
                     },
                     _ => throw new ArgumentException($"Unknown content type: {c.Type}")
-                }).ToList();
+                })).ToList();
 
                 messages.Add(new { role = message.Role, content });
             }

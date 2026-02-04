@@ -96,7 +96,7 @@ public class TestGeneratorTool
         }
 
         // Find all source files
-        var sourceFiles = Directory.GetFiles(projectDirectory, filePattern, SearchOption.AllDirectories)
+        var sourceFiles = Directory.GetFiles(projectDirectory, filePattern!, SearchOption.AllDirectories)
             .Where(f => !f.Contains("\\bin\\") && !f.Contains("\\obj\\") && !f.Contains("\\Tests\\"))
             .ToList();
 
