@@ -48,9 +48,24 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     terminalInstance.current?.focus()
   }, [inputText, sessionId])
 
+  // Track last paste to prevent duplicates (terminal's built-in + our custom handler)
+  const lastPasteRef = useRef<{ text: string; timestamp: number } | null>(null)
+
   // Helper function to send text in chunks (for paste operations)
   const sendTextInChunks = useCallback(async (text: string) => {
     if (!text || connection.current?.state !== signalR.HubConnectionState.Connected) return
+
+    // Prevent duplicate paste (if same text pasted within 100ms, ignore)
+    const now = Date.now()
+    if (lastPasteRef.current) {
+      const timeSince = now - lastPasteRef.current.timestamp
+      const isSameText = lastPasteRef.current.text === text
+      if (isSameText && timeSince < 100) {
+        console.log('Duplicate paste detected, ignoring')
+        return
+      }
+    }
+    lastPasteRef.current = { text, timestamp: now }
 
     const encoder = new TextEncoder()
     const CHUNK_SIZE = 100 // Characters per chunk
@@ -302,6 +317,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
       // Handle Ctrl+V - paste (chunked for longer text)
       if (event.ctrlKey && event.key === 'v' && event.type === 'keydown') {
+        event.preventDefault()
+        event.stopPropagation()
         navigator.clipboard.readText().then(text => {
           if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
             sendTextInChunks(text).catch(err => console.error('Paste failed:', err))
@@ -325,6 +342,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
       // Handle Ctrl+Shift+V - always paste (alternative shortcut, chunked)
       if (event.ctrlKey && event.shiftKey && event.key === 'V' && event.type === 'keydown') {
+        event.preventDefault()
+        event.stopPropagation()
         navigator.clipboard.readText().then(text => {
           if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
             sendTextInChunks(text).catch(err => console.error('Paste failed:', err))

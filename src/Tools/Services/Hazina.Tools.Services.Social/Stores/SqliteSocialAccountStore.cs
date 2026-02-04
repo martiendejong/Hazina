@@ -51,7 +51,12 @@ public class SqliteSocialAccountStore : ISocialAccountStore
                 last_import_at TEXT,
                 imported_item_count INTEGER DEFAULT 0,
                 status TEXT NOT NULL,
-                metadata TEXT
+                metadata TEXT,
+                auth_type INTEGER DEFAULT 1,
+                permissions INTEGER DEFAULT 9,
+                provider_category TEXT DEFAULT 'social-network',
+                base_url TEXT,
+                credentials TEXT DEFAULT '{}'
             );
 
             CREATE INDEX IF NOT EXISTS idx_accounts_project ON connected_accounts(project_id);
@@ -62,6 +67,37 @@ public class SqliteSocialAccountStore : ISocialAccountStore
         using var command = connection.CreateCommand();
         command.CommandText = sql;
         await command.ExecuteNonQueryAsync(cancellationToken);
+
+        // Migration: Add new columns to existing tables (safe for both new and existing databases)
+        var migrationSql = @"
+            -- Add auth_type column (default: OAuth = 1)
+            ALTER TABLE connected_accounts ADD COLUMN auth_type INTEGER DEFAULT 1;
+
+            -- Add permissions column (default: ImportPosts | ImportImages = 9)
+            ALTER TABLE connected_accounts ADD COLUMN permissions INTEGER DEFAULT 9;
+
+            -- Add provider_category column (default: social-network)
+            ALTER TABLE connected_accounts ADD COLUMN provider_category TEXT DEFAULT 'social-network';
+
+            -- Add base_url column (nullable)
+            ALTER TABLE connected_accounts ADD COLUMN base_url TEXT;
+
+            -- Add credentials column (default: empty JSON object)
+            ALTER TABLE connected_accounts ADD COLUMN credentials TEXT DEFAULT '{}';
+        ";
+
+        try
+        {
+            using var migrationCmd = connection.CreateCommand();
+            migrationCmd.CommandText = migrationSql;
+            await migrationCmd.ExecuteNonQueryAsync(cancellationToken);
+            _logger.LogDebug("Migration: Added new columns to connected_accounts table");
+        }
+        catch (SqliteException ex) when (ex.Message.Contains("duplicate column name"))
+        {
+            // Columns already exist - this is expected for databases that have already been migrated
+            _logger.LogDebug("Migration: Columns already exist, skipping");
+        }
     }
 
     public async Task SaveAccountAsync(
@@ -76,10 +112,10 @@ public class SqliteSocialAccountStore : ISocialAccountStore
             INSERT OR REPLACE INTO connected_accounts
             (id, project_id, provider_id, provider_user_id, display_name, profile_url, avatar_url,
              access_token, refresh_token, token_expires_at, connected_at, last_import_at,
-             imported_item_count, status, metadata)
+             imported_item_count, status, metadata, auth_type, permissions, provider_category, base_url, credentials)
             VALUES (@id, @project_id, @provider_id, @provider_user_id, @display_name, @profile_url, @avatar_url,
                     @access_token, @refresh_token, @token_expires_at, @connected_at, @last_import_at,
-                    @imported_item_count, @status, @metadata)";
+                    @imported_item_count, @status, @metadata, @auth_type, @permissions, @provider_category, @base_url, @credentials)";
 
         cmd.Parameters.AddWithValue("@id", account.Id);
         cmd.Parameters.AddWithValue("@project_id", projectId);
@@ -96,6 +132,11 @@ public class SqliteSocialAccountStore : ISocialAccountStore
         cmd.Parameters.AddWithValue("@imported_item_count", account.ImportedItemCount);
         cmd.Parameters.AddWithValue("@status", account.Status.ToString());
         cmd.Parameters.AddWithValue("@metadata", JsonSerializer.Serialize(account.Metadata));
+        cmd.Parameters.AddWithValue("@auth_type", (int)account.AuthType);
+        cmd.Parameters.AddWithValue("@permissions", (int)account.Permissions);
+        cmd.Parameters.AddWithValue("@provider_category", account.ProviderCategory);
+        cmd.Parameters.AddWithValue("@base_url", (object?)account.BaseUrl ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("@credentials", JsonSerializer.Serialize(account.Credentials));
 
         await cmd.ExecuteNonQueryAsync(cancellationToken);
         _logger.LogDebug("Saved account {AccountId} for project {ProjectId}", account.Id, projectId);
@@ -199,6 +240,40 @@ public class SqliteSocialAccountStore : ISocialAccountStore
 
     private static ConnectedAccount ReadAccount(SqliteDataReader reader)
     {
+        // Helper function to safely get column value with backward compatibility
+        int GetIntOrDefault(string columnName, int defaultValue)
+        {
+            try
+            {
+                var ordinal = reader.GetOrdinal(columnName);
+                return reader.IsDBNull(ordinal) ? defaultValue : reader.GetInt32(ordinal);
+            }
+            catch (IndexOutOfRangeException)
+            {
+                // Column doesn't exist in this database (pre-migration)
+                return defaultValue;
+            }
+        }
+
+        string? GetStringOrNull(string columnName)
+        {
+            try
+            {
+                var ordinal = reader.GetOrdinal(columnName);
+                return reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
+            }
+            catch (IndexOutOfRangeException)
+            {
+                // Column doesn't exist in this database (pre-migration)
+                return null;
+            }
+        }
+
+        string GetStringOrDefault(string columnName, string defaultValue)
+        {
+            return GetStringOrNull(columnName) ?? defaultValue;
+        }
+
         return new ConnectedAccount
         {
             Id = reader.GetString(reader.GetOrdinal("id")),
@@ -215,7 +290,13 @@ public class SqliteSocialAccountStore : ISocialAccountStore
             LastImportAt = reader.IsDBNull(reader.GetOrdinal("last_import_at")) ? null : DateTime.Parse(reader.GetString(reader.GetOrdinal("last_import_at"))),
             ImportedItemCount = reader.GetInt32(reader.GetOrdinal("imported_item_count")),
             Status = Enum.Parse<AccountStatus>(reader.GetString(reader.GetOrdinal("status"))),
-            Metadata = JsonSerializer.Deserialize<Dictionary<string, string>>(reader.GetString(reader.GetOrdinal("metadata"))) ?? new()
+            Metadata = JsonSerializer.Deserialize<Dictionary<string, string>>(reader.GetString(reader.GetOrdinal("metadata"))) ?? new(),
+            // New fields (with backward compatibility for existing databases)
+            AuthType = (AuthType)GetIntOrDefault("auth_type", 1), // Default: OAuth
+            Permissions = (AccountPermissions)GetIntOrDefault("permissions", 9), // Default: ImportPosts | ImportImages
+            ProviderCategory = GetStringOrDefault("provider_category", "social-network"),
+            BaseUrl = GetStringOrNull("base_url"),
+            Credentials = JsonSerializer.Deserialize<Dictionary<string, string>>(GetStringOrDefault("credentials", "{}")) ?? new()
         };
     }
 }
