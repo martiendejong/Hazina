@@ -63,6 +63,48 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     }
   }, [sessionId])
 
+  // Track last paste to prevent duplicates (terminal's built-in + our custom handler)
+  const lastPasteRef = useRef<{ text: string; timestamp: number } | null>(null)
+
+  // Helper function to send text in chunks (for paste operations)
+  const sendTextInChunks = useCallback(async (text: string) => {
+    if (!text || connection.current?.state !== signalR.HubConnectionState.Connected) return
+
+    // Prevent duplicate paste (if same text pasted within 100ms, ignore)
+    const now = Date.now()
+    if (lastPasteRef.current) {
+      const timeSince = now - lastPasteRef.current.timestamp
+      const isSameText = lastPasteRef.current.text === text
+      if (isSameText && timeSince < 100) {
+        console.log('Duplicate paste detected, ignoring')
+        return
+      }
+    }
+    lastPasteRef.current = { text, timestamp: now }
+
+    const encoder = new TextEncoder()
+    const CHUNK_SIZE = 100 // Characters per chunk
+    const DELAY_MS = 10 // Delay between chunks
+
+    // Split text into chunks
+    for (let i = 0; i < text.length; i += CHUNK_SIZE) {
+      const chunk = text.substring(i, Math.min(i + CHUNK_SIZE, text.length))
+      const bytes = Array.from(encoder.encode(chunk))
+
+      try {
+        await connection.current.invoke('SendInput', sessionId, bytes)
+
+        // Add delay between chunks to prevent overwhelming the terminal
+        if (i + CHUNK_SIZE < text.length) {
+          await new Promise(resolve => setTimeout(resolve, DELAY_MS))
+        }
+      } catch (err) {
+        console.error('SendInput chunk failed:', err)
+        break
+      }
+    }
+  }, [sessionId])
+
   const [voiceState, voiceActions] = useVoiceControl(handleVoiceTranscript)
 
   // Keyboard shortcut: Ctrl+M to toggle voice
@@ -309,6 +351,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
       // Handle Ctrl+V - paste
       if (event.ctrlKey && event.key === 'v' && event.type === 'keydown') {
+        event.preventDefault()
+        event.stopPropagation()
         navigator.clipboard.readText().then(text => {
           if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
             const encoder = new TextEncoder()
@@ -335,6 +379,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
       // Handle Ctrl+Shift+V - always paste (alternative shortcut)
       if (event.ctrlKey && event.shiftKey && event.key === 'V' && event.type === 'keydown') {
+        event.preventDefault()
+        event.stopPropagation()
         navigator.clipboard.readText().then(text => {
           if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
             const encoder = new TextEncoder()
