@@ -236,3 +236,23 @@ public record CacheHitEvent(string CacheType, string Key) : BaseEvent;
 /// Cache miss event
 /// </summary>
 public record CacheMissEvent(string CacheType, string Key) : BaseEvent;
+
+/// <summary>
+/// Vision analysis started event
+/// </summary>
+public record VisionAnalysisStartedEvent(string ImagePath, string Query) : BaseEvent;
+
+/// <summary>
+/// Vision analysis completed event
+/// </summary>
+public record VisionAnalysisCompletedEvent(string ImagePath, string Query, bool Success, TimeSpan Duration) : BaseEvent;
+
+/// <summary>
+/// Vision analysis failed event
+/// </summary>
+public record VisionAnalysisFailedEvent(string ImagePath, string Query, Exception Error) : BaseEvent;
+
+/// <summary>
+/// Vision analysis cached event
+/// </summary>
+public record VisionAnalysisCachedEvent(string ImagePath, string Query) : BaseEvent;
