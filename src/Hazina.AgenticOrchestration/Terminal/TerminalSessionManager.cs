@@ -102,23 +102,28 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
         // Track last state to detect changes
         bool lastWaitingState = false;
 
-        // Periodic state check timer (check every 2 seconds to avoid flicker)
-        var stateCheckTimer = new System.Threading.Timer(async _ =>
-        {
-            try
-            {
-                var currentWaitingState = session.WaitingForInput;
-                if (currentWaitingState != lastWaitingState)
-                {
-                    lastWaitingState = currentWaitingState;
-                    await _hubContext.Clients
-                        .Group($"terminal-{sessionId}")
-                        .SendAsync("OnStateChanged", sessionId, session.IsRunning, currentWaitingState, CancellationToken.None);
-                    _logger.LogDebug("State changed for session {SessionId}: WaitingForInput={Waiting}", sessionId, currentWaitingState);
-                }
-            }
-            catch { /* ignore timer errors */ }
-        }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
+        // NOTE: Periodic state check timer is DISABLED to prevent refresh flickering.
+        // The WaitingForInput property is computed dynamically (checks idle time),
+        // which causes it to flip from false->true when idle time crosses 1000ms.
+        // This creates a race condition with the 2-second polling interval.
+        // State changes are already detected immediately on output (lines 142-150).
+        //
+        // var stateCheckTimer = new System.Threading.Timer(async _ =>
+        // {
+        //     try
+        //     {
+        //         var currentWaitingState = session.WaitingForInput;
+        //         if (currentWaitingState != lastWaitingState)
+        //         {
+        //             lastWaitingState = currentWaitingState;
+        //             await _hubContext.Clients
+        //                 .Group($"terminal-{sessionId}")
+        //                 .SendAsync("OnStateChanged", sessionId, session.IsRunning, currentWaitingState, CancellationToken.None);
+        //             _logger.LogDebug("State changed for session {SessionId}: WaitingForInput={Waiting}", sessionId, currentWaitingState);
+        //         }
+        //     }
+        //     catch { /* ignore timer errors */ }
+        // }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
 
         // Wire up output to SignalR
         // IMPORTANT: Don't use the request's cancellation token here!
@@ -160,8 +165,7 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
         {
             try
             {
-                // Stop the state check timer
-                await stateCheckTimer.DisposeAsync();
+                // NOTE: State check timer disposal removed (timer is disabled)
 
                 // End session logging
                 await _sessionLogger.EndSessionAsync(sessionId, exitCode);
