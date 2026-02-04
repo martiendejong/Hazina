@@ -22,6 +22,8 @@
     <!-- Cognitive AI / Learning System -->
     <PackageReference Include="Qdrant.Client" Version="1.11.0" />
     <PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.17" />
+    <!-- Multi-agent coordination -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
