@@ -9,15 +9,23 @@ namespace Hazina.Tools.Services.Social.Providers;
 
 /// <summary>
 /// WordPress provider implementation for importing content.
-/// Supports self-hosted WordPress and WordPress.com sites using Application Passwords.
+/// Supports self-hosted WordPress and WordPress.com sites.
+/// Supports two authentication modes: NoAuth (public) and Application Passwords.
 /// </summary>
 /// <remarks>
-/// WordPress uses Application Passwords instead of OAuth.
-/// Authentication flow:
+/// WordPress supports two authentication modes:
+///
+/// NoAuth Mode (public access):
+/// 1. User provides: website URL
+/// 2. Test connection with WordPress REST API v2 (public endpoints)
+/// 3. Store URL as access token
+/// 4. Import published pages and posts (no authentication required)
+///
+/// Application Password Mode (authenticated access):
 /// 1. User provides: website URL, username, application password
-/// 2. Test connection with WordPress REST API v2
+/// 2. Test connection with WordPress REST API v2 (authenticated endpoints)
 /// 3. Store credentials (application password as access token)
-/// 4. Import pages, posts, and products (WooCommerce)
+/// 4. Import pages, posts, and products (WooCommerce) including drafts
 /// </remarks>
 public class WordPressProvider : ISocialProvider
 {
@@ -38,19 +46,22 @@ public class WordPressProvider : ISocialProvider
     /// <summary>
     /// WordPress doesn't use OAuth authorization URLs.
     /// Returns a placeholder URL that triggers the custom connection modal.
+    /// Supports both NoAuth (public) and AppPassword authentication.
     /// </summary>
     public string GetAuthorizationUrl(string redirectUri, string state)
     {
-        // WordPress uses Application Passwords, not OAuth
+        // WordPress supports both NoAuth and Application Passwords
         // Return a special URL that the frontend recognizes
-        return $"{redirectUri}?provider=wordpress&state={state}&auth_type=application_password";
+        // Frontend should show auth type selector: NoAuth or AppPassword
+        return $"{redirectUri}?provider=wordpress&state={state}&auth_types=noauth,application_password";
     }
 
     /// <summary>
     /// WordPress doesn't use OAuth code exchange.
     /// Instead, validates credentials and tests connection.
+    /// Supports both NoAuth (public access) and AppPassword modes.
     /// </summary>
-    /// <param name="code">Format: {websiteUrl}|||{username}|||{applicationPassword}</param>
+    /// <param name="code">Format: {websiteUrl} (NoAuth) or {websiteUrl}|||{username}|||{applicationPassword} (AppPassword)</param>
     /// <param name="redirectUri">Not used for WordPress</param>
     /// <param name="cancellationToken">Cancellation token</param>
     public async Task<SocialAuthResult> ExchangeCodeAsync(
@@ -60,52 +71,91 @@ public class WordPressProvider : ISocialProvider
     {
         try
         {
-            // Parse the "code" which contains: websiteUrl|||username|||applicationPassword
+            // Parse the "code" which can be:
+            // - NoAuth: websiteUrl
+            // - AppPassword: websiteUrl|||username|||applicationPassword
             var parts = code.Split("|||");
-            if (parts.Length != 3)
+
+            if (parts.Length == 1)
+            {
+                // NoAuth mode - just validate the URL
+                var websiteUrl = parts[0].Trim().TrimEnd('/');
+
+                // Validate URL format
+                if (!Uri.TryCreate(websiteUrl, UriKind.Absolute, out var uri) ||
+                    (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                {
+                    return new SocialAuthResult
+                    {
+                        Success = false,
+                        Error = "Invalid website URL. Must be a valid HTTP or HTTPS URL."
+                    };
+                }
+
+                // Test if WordPress API is accessible
+                var testResult = await TestConnectionAsync(websiteUrl, null, null, cancellationToken);
+                if (!testResult.Success)
+                {
+                    return testResult;
+                }
+
+                // Create access token (just the URL for NoAuth)
+                return new SocialAuthResult
+                {
+                    Success = true,
+                    AccessToken = websiteUrl,
+                    RefreshToken = null,
+                    ExpiresAt = null,
+                    UserId = "wordpress-public"
+                };
+            }
+            else if (parts.Length == 3)
+            {
+                // AppPassword mode
+                var websiteUrl = parts[0].Trim().TrimEnd('/');
+                var username = parts[1].Trim();
+                var applicationPassword = parts[2].Trim();
+
+                // Validate URL format
+                if (!Uri.TryCreate(websiteUrl, UriKind.Absolute, out var uri) ||
+                    (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                {
+                    return new SocialAuthResult
+                    {
+                        Success = false,
+                        Error = "Invalid website URL. Must be a valid HTTP or HTTPS URL."
+                    };
+                }
+
+                // Test connection with WordPress REST API
+                var testResult = await TestConnectionAsync(websiteUrl, username, applicationPassword, cancellationToken);
+                if (!testResult.Success)
+                {
+                    return testResult;
+                }
+
+                // Create access token (Format: websiteUrl|||Base64Credentials)
+                // This allows us to reconstruct the full URL during import operations
+                var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{applicationPassword}"));
+                var accessToken = $"{websiteUrl}|||{credentials}";
+
+                return new SocialAuthResult
+                {
+                    Success = true,
+                    AccessToken = accessToken,
+                    RefreshToken = null, // WordPress doesn't use refresh tokens
+                    ExpiresAt = null, // Application passwords don't expire
+                    UserId = testResult.UserId
+                };
+            }
+            else
             {
                 return new SocialAuthResult
                 {
                     Success = false,
-                    Error = "Invalid WordPress credentials format. Expected: websiteUrl|||username|||applicationPassword"
+                    Error = "Invalid WordPress credentials format. Expected: websiteUrl (NoAuth) or websiteUrl|||username|||applicationPassword (AppPassword)"
                 };
             }
-
-            var websiteUrl = parts[0].Trim().TrimEnd('/');
-            var username = parts[1].Trim();
-            var applicationPassword = parts[2].Trim();
-
-            // Validate URL format
-            if (!Uri.TryCreate(websiteUrl, UriKind.Absolute, out var uri) ||
-                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
-            {
-                return new SocialAuthResult
-                {
-                    Success = false,
-                    Error = "Invalid website URL. Must be a valid HTTP or HTTPS URL."
-                };
-            }
-
-            // Test connection with WordPress REST API
-            var testResult = await TestConnectionAsync(websiteUrl, username, applicationPassword, cancellationToken);
-            if (!testResult.Success)
-            {
-                return testResult;
-            }
-
-            // Create access token (Format: websiteUrl|||Base64Credentials)
-            // This allows us to reconstruct the full URL during import operations
-            var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{applicationPassword}"));
-            var accessToken = $"{websiteUrl}|||{credentials}";
-
-            return new SocialAuthResult
-            {
-                Success = true,
-                AccessToken = accessToken,
-                RefreshToken = null, // WordPress doesn't use refresh tokens
-                ExpiresAt = null, // Application passwords don't expire
-                UserId = testResult.UserId
-            };
         }
         catch (Exception ex)
         {
@@ -131,6 +181,7 @@ public class WordPressProvider : ISocialProvider
 
     /// <summary>
     /// Gets the connected WordPress user's profile.
+    /// For NoAuth mode, returns a placeholder profile with website info.
     /// </summary>
     public async Task<SocialProfile> GetProfileAsync(
         string accessToken,
@@ -141,6 +192,28 @@ public class WordPressProvider : ISocialProvider
             // Extract website URL and credentials from access token
             var (websiteUrl, credentials) = ParseAccessToken(accessToken);
 
+            // NoAuth mode - return placeholder profile
+            if (credentials == null)
+            {
+                _logger.LogInformation("WordPress NoAuth mode - returning placeholder profile for {WebsiteUrl}", websiteUrl);
+                return new SocialProfile
+                {
+                    Id = "wordpress-public",
+                    Name = $"WordPress: {new Uri(websiteUrl).Host}",
+                    Email = null,
+                    ProfileUrl = websiteUrl,
+                    AvatarUrl = null,
+                    Headline = "Public WordPress content (NoAuth)",
+                    Metadata = new Dictionary<string, string>
+                    {
+                        ["website_url"] = websiteUrl,
+                        ["auth_type"] = "NoAuth",
+                        ["access_level"] = "public"
+                    }
+                };
+            }
+
+            // AppPassword mode - fetch authenticated user profile
             var request = new HttpRequestMessage(HttpMethod.Get, $"{websiteUrl}/wp-json/wp/v2/users/me");
             request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
@@ -176,7 +249,8 @@ public class WordPressProvider : ISocialProvider
                     ["website_url"] = websiteUrl,
                     ["username"] = user.Slug ?? "",
                     ["registered_date"] = user.RegisteredDate?.ToString("O") ?? "",
-                    ["roles"] = string.Join(",", user.Roles ?? new List<string>())
+                    ["roles"] = string.Join(",", user.Roles ?? new List<string>()),
+                    ["auth_type"] = "AppPassword"
                 }
             };
         }
@@ -248,6 +322,32 @@ public class WordPressProvider : ISocialProvider
         return Task.FromResult(true);
     }
 
+    /// <summary>
+    /// Fetches comments for specific content.
+    /// TODO: Implement platform-specific comment fetching.
+    /// </summary>
+    public Task<List<SocialComment>> FetchCommentsAsync(
+        string accessToken,
+        string contentId,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement platform-specific comment fetching
+        return Task.FromResult(new List<SocialComment>());
+    }
+
+    /// <summary>
+    /// Fetches engagement metrics for specific content.
+    /// TODO: Implement platform-specific engagement fetching.
+    /// </summary>
+    public Task<SocialEngagement> FetchEngagementAsync(
+        string accessToken,
+        string contentId,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement platform-specific engagement metrics
+        return Task.FromResult(new SocialEngagement());
+    }
+
     // ============================================
     // Private Helper Methods
     // ============================================
@@ -255,45 +355,80 @@ public class WordPressProvider : ISocialProvider
     /// <summary>
     /// Parses the WordPress access token to extract website URL and credentials.
     /// </summary>
-    /// <param name="accessToken">Format: websiteUrl|||Base64Credentials</param>
-    /// <returns>Tuple of (websiteUrl, credentials)</returns>
-    private static (string websiteUrl, string credentials) ParseAccessToken(string accessToken)
+    /// <param name="accessToken">Format: websiteUrl (NoAuth) or websiteUrl|||Base64Credentials (AppPassword)</param>
+    /// <returns>Tuple of (websiteUrl, credentials). Credentials is null for NoAuth mode.</returns>
+    private static (string websiteUrl, string? credentials) ParseAccessToken(string accessToken)
     {
         var parts = accessToken.Split("|||");
-        if (parts.Length != 2)
+        if (parts.Length == 1)
         {
-            throw new ArgumentException("Invalid WordPress access token format");
+            // NoAuth mode - just the website URL
+            return (parts[0].Trim(), null);
         }
-        return (parts[0], parts[1]);
+        else if (parts.Length == 2)
+        {
+            // AppPassword mode - websiteUrl|||Base64Credentials
+            return (parts[0].Trim(), parts[1].Trim());
+        }
+        else
+        {
+            throw new ArgumentException("Invalid WordPress access token format. Expected: websiteUrl or websiteUrl|||credentials");
+        }
     }
 
     private async Task<SocialAuthResult> TestConnectionAsync(
         string websiteUrl,
-        string username,
-        string applicationPassword,
+        string? username,
+        string? applicationPassword,
         CancellationToken cancellationToken)
     {
         try
         {
+            // NoAuth mode - test public API access
+            if (username == null || applicationPassword == null)
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{websiteUrl}/wp-json/wp/v2/posts?per_page=1");
+                var response = await _httpClient.SendAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("WordPress public API test failed: {StatusCode}", response.StatusCode);
+                    return new SocialAuthResult
+                    {
+                        Success = false,
+                        Error = $"WordPress API not accessible at {websiteUrl}. Ensure the site has REST API enabled."
+                    };
+                }
+
+                _logger.LogInformation("WordPress NoAuth connection test successful for {WebsiteUrl}", websiteUrl);
+                return new SocialAuthResult
+                {
+                    Success = true,
+                    UserId = "wordpress-public",
+                    AccessToken = websiteUrl
+                };
+            }
+
+            // AppPassword mode - test authenticated access
             var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{applicationPassword}"));
 
-            var request = new HttpRequestMessage(HttpMethod.Get, $"{websiteUrl}/wp-json/wp/v2/users/me");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+            var authRequest = new HttpRequestMessage(HttpMethod.Get, $"{websiteUrl}/wp-json/wp/v2/users/me");
+            authRequest.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
-            var response = await _httpClient.SendAsync(request, cancellationToken);
-            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            var authResponse = await _httpClient.SendAsync(authRequest, cancellationToken);
+            var json = await authResponse.Content.ReadAsStringAsync(cancellationToken);
 
-            if (!response.IsSuccessStatusCode)
+            if (!authResponse.IsSuccessStatusCode)
             {
                 _logger.LogWarning("WordPress connection test failed: {StatusCode} - {Response}",
-                    response.StatusCode, json);
+                    authResponse.StatusCode, json);
 
                 return new SocialAuthResult
                 {
                     Success = false,
-                    Error = response.StatusCode == System.Net.HttpStatusCode.Unauthorized
+                    Error = authResponse.StatusCode == System.Net.HttpStatusCode.Unauthorized
                         ? "Invalid username or application password"
-                        : $"WordPress API error: {response.StatusCode}"
+                        : $"WordPress API error: {authResponse.StatusCode}"
                 };
             }
 
@@ -302,6 +437,7 @@ public class WordPressProvider : ISocialProvider
                 PropertyNameCaseInsensitive = true
             });
 
+            _logger.LogInformation("WordPress AppPassword connection test successful for {WebsiteUrl}", websiteUrl);
             return new SocialAuthResult
             {
                 Success = true,
@@ -348,7 +484,10 @@ public class WordPressProvider : ISocialProvider
                 var request = new HttpRequestMessage(
                     HttpMethod.Get,
                     $"{websiteUrl}/wp-json/wp/v2/posts?per_page={perPage}&page={page}&_embed");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                if (credentials != null)
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                }
 
                 var response = await _httpClient.SendAsync(request, cancellationToken);
                 if (!response.IsSuccessStatusCode)
@@ -423,7 +562,10 @@ public class WordPressProvider : ISocialProvider
                 var request = new HttpRequestMessage(
                     HttpMethod.Get,
                     $"{websiteUrl}/wp-json/wp/v2/pages?per_page={perPage}&page={page}&_embed");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                if (credentials != null)
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                }
 
                 var response = await _httpClient.SendAsync(request, cancellationToken);
                 if (!response.IsSuccessStatusCode)
@@ -501,7 +643,10 @@ public class WordPressProvider : ISocialProvider
                 var request = new HttpRequestMessage(
                     HttpMethod.Get,
                     $"{websiteUrl}/wp-json/wc/v3/products?per_page={perPage}&page={page}");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                if (credentials != null)
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                }
 
                 var response = await _httpClient.SendAsync(request, cancellationToken);
 
@@ -627,7 +772,10 @@ public class WordPressProvider : ISocialProvider
                 }
 
                 var request = new HttpRequestMessage(HttpMethod.Get, url);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                if (credentials != null)
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                }
 
                 var response = await _httpClient.SendAsync(request, cancellationToken);
                 if (!response.IsSuccessStatusCode) break;
@@ -683,7 +831,10 @@ public class WordPressProvider : ISocialProvider
                 }
 
                 var request = new HttpRequestMessage(HttpMethod.Get, url);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                if (credentials != null)
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                }
 
                 var response = await _httpClient.SendAsync(request, cancellationToken);
                 if (!response.IsSuccessStatusCode) break;
@@ -739,7 +890,10 @@ public class WordPressProvider : ISocialProvider
                 }
 
                 var request = new HttpRequestMessage(HttpMethod.Get, url);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                if (credentials != null)
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                }
 
                 var response = await _httpClient.SendAsync(request, cancellationToken);
 

@@ -401,10 +401,133 @@ button:hover {
 
 .terminal-view .terminal-container .xterm-viewport {
   overflow-y: auto !important;
+
+  /* Visible scrollbar styling (desktop and mobile) */
+  scrollbar-width: thin;  /* Firefox */
+  scrollbar-color: #6e7681 #21262d;  /* Firefox: thumb, track */
+}
+
+/* Webkit scrollbar styling (Chrome, Safari, Edge) */
+.terminal-view .terminal-container .xterm-viewport::-webkit-scrollbar {
+  width: 10px;  /* Desktop width */
+}
+
+.terminal-view .terminal-container .xterm-viewport::-webkit-scrollbar-track {
+  background: #21262d;
+  border-radius: 4px;
+}
+
+.terminal-view .terminal-container .xterm-viewport::-webkit-scrollbar-thumb {
+  background: #6e7681;
+  border-radius: 4px;
+  border: 2px solid #21262d;
+}
+
+.terminal-view .terminal-container .xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: #8b949e;
+}
+
+.terminal-view .terminal-container .xterm-viewport::-webkit-scrollbar-thumb:active {
+  background: #c9d1d9;
 }
 
 .terminal-view .terminal-container .xterm-screen {
   height: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TERMINAL INPUT BOX (Compose messages before sending)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.terminal-input-container {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #161b22;
+  border-top: 1px solid #30363d;
+  align-items: flex-end;
+}
+
+.terminal-input {
+  flex: 1;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #c9d1d9;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  resize: none;
+  min-height: 44px;
+  max-height: 120px;
+  line-height: 1.4;
+}
+
+.terminal-input:focus {
+  outline: none;
+  border-color: #58a6ff;
+}
+
+.terminal-input::placeholder {
+  color: #6e7681;
+}
+
+.terminal-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-send-terminal {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.625rem 1rem;
+  background: #238636;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-height: 44px;
+}
+
+.btn-send-terminal:hover:not(:disabled) {
+  background: #2ea043;
+}
+
+.btn-send-terminal:disabled {
+  background: #21262d;
+  color: #6e7681;
+  cursor: not-allowed;
+}
+
+.btn-send-terminal svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Mobile: Stack input and button or make more compact */
+@media (max-width: 768px) {
+  .terminal-input-container {
+    padding: 0.5rem;
+  }
+
+  .terminal-input {
+    font-size: 16px; /* Prevent iOS zoom on focus */
+    padding: 0.625rem 0.75rem;
+  }
+
+  .btn-send-terminal {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .btn-send-terminal span {
+    display: none; /* Hide "Send" text on mobile, keep icon */
+  }
 }
 
 /* Section Headers */
@@ -612,15 +735,51 @@ button:hover {
   /* Fix xterm container height on mobile - THIS IS THE KEY FIX */
   .terminal-view .terminal-container {
     flex: 1;
-    min-height: 0;  /* Allow shrinking below content size */
+    min-height: 100px;  /* Minimum height so terminal doesn't disappear */
     overflow: hidden;  /* Container doesn't scroll - xterm handles it */
     position: relative;
+  }
+
+  /* Terminal input container on mobile */
+  .terminal-input-container {
+    flex-shrink: 0;  /* Don't shrink - always visible */
   }
 
   /* xterm viewport handles all scrolling */
   .terminal-view .terminal-container .xterm-viewport {
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;  /* Smooth scroll on iOS */
+
+    /* CRITICAL FIX: Force visible scrollbar on mobile */
+    scrollbar-width: thin;  /* Firefox */
+    scrollbar-color: #6e7681 #21262d;  /* Firefox: thumb, track */
+  }
+
+  /* Webkit scrollbar styling for mobile (Chrome, Safari, Edge) */
+  .terminal-view .terminal-container .xterm-viewport::-webkit-scrollbar {
+    width: 12px;  /* Wider for easier touch interaction */
+    display: block !important;  /* Force visibility */
+  }
+
+  .terminal-view .terminal-container .xterm-viewport::-webkit-scrollbar-track {
+    background: #21262d;
+    border-radius: 6px;
+    margin: 4px 0;  /* Spacing from top/bottom */
+  }
+
+  .terminal-view .terminal-container .xterm-viewport::-webkit-scrollbar-thumb {
+    background: #6e7681;
+    border-radius: 6px;
+    border: 2px solid #21262d;  /* Gap around thumb */
+    min-height: 40px;  /* Minimum touch target */
+  }
+
+  .terminal-view .terminal-container .xterm-viewport::-webkit-scrollbar-thumb:hover {
+    background: #8b949e;
+  }
+
+  .terminal-view .terminal-container .xterm-viewport::-webkit-scrollbar-thumb:active {
+    background: #c9d1d9;
   }
 
   /* Session list compact mode on mobile */

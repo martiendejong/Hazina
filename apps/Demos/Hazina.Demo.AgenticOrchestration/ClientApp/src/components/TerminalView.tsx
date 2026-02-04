@@ -19,6 +19,13 @@ interface TerminalViewProps {
 }
 
 export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChanged, pendingRestore, onRestoreComplete }: TerminalViewProps) {
+  console.log('[DEBUG TerminalView] Component rendered with props:', {
+    sessionId,
+    hasPendingRestore: !!pendingRestore,
+    pendingRestoreSessionId: pendingRestore?.sessionId,
+    contentLength: pendingRestore?.content?.length
+  })
+
   const terminalRef = useRef<HTMLDivElement>(null)
   const terminalInstance = useRef<Terminal | null>(null)
   const fitAddon = useRef<FitAddon | null>(null)
@@ -26,9 +33,12 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const resizeTimeoutRef = useRef<number | null>(null)
   const lastDimensionsRef = useRef<{ cols: number; rows: number } | null>(null)
   const [isConnected, setIsConnected] = useState(false)
+  const [displayConnected, setDisplayConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isWaitingForInput, setIsWaitingForInput] = useState(false)
   const restoreHandledRef = useRef(false)
+  const disconnectTimeoutRef = useRef<number | null>(null)
+  const connectionStableTimeRef = useRef<number | null>(null)
 
   // Voice control - send transcribed speech to terminal
   const handleVoiceTranscript = useCallback((text: string) => {
@@ -66,6 +76,41 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [voiceActions])
+
+  // Debounce connection status display to prevent flickering
+  useEffect(() => {
+    if (isConnected) {
+      // Immediately show connected
+      if (disconnectTimeoutRef.current) {
+        clearTimeout(disconnectTimeoutRef.current)
+        disconnectTimeoutRef.current = null
+      }
+      setDisplayConnected(true)
+      // Mark when connection became stable
+      connectionStableTimeRef.current = Date.now()
+    } else {
+      // Wait 1000ms before showing disconnected
+      disconnectTimeoutRef.current = window.setTimeout(() => {
+        setDisplayConnected(false)
+      }, 1000)
+      // Connection is not stable
+      connectionStableTimeRef.current = null
+    }
+
+    return () => {
+      if (disconnectTimeoutRef.current) {
+        clearTimeout(disconnectTimeoutRef.current)
+      }
+    }
+  }, [isConnected])
+
+  // Maintain terminal focus after state changes to prevent focus loss
+  useEffect(() => {
+    if (terminalInstance.current && isConnected) {
+      // Focus the terminal when state changes
+      terminalInstance.current.focus()
+    }
+  }, [isWaitingForInput, isConnected])
 
   // Detect if we're on a mobile device
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -220,7 +265,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     // Handle state changes (Running/Question)
     hubConnection.on('OnStateChanged', (sid: string, isRunning: boolean, waitingForInput: boolean) => {
       if (sid === sessionId) {
-        setIsWaitingForInput(waitingForInput)
+        // Only update state if value actually changed to prevent unnecessary re-renders
+        setIsWaitingForInput(prev => prev === waitingForInput ? prev : waitingForInput)
         if (onStateChanged) {
           onStateChanged(sid, isRunning, waitingForInput)
         }
@@ -500,38 +546,76 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
   // Handle pending restore - paste content when Claude is ready (waiting for input)
   useEffect(() => {
+    console.log('[DEBUG TerminalView] Restore effect triggered:', {
+      hasPendingRestore: !!pendingRestore,
+      pendingRestoreSessionId: pendingRestore?.sessionId,
+      currentSessionId: sessionId,
+      isConnected,
+      restoreHandled: restoreHandledRef.current,
+      hubConnectionState: connection.current?.state,
+      contentLength: pendingRestore?.content?.length,
+      hasTerminalInstance: !!terminalInstance.current
+    })
+
     // Only proceed if:
     // 1. We have pending restore content for this session
     // 2. We're connected
-    // 3. Claude is waiting for input (ready to receive)
-    // 4. We haven't already handled this restore
+    // 3. We haven't already handled this restore
+    // 4. Either Claude is waiting for input OR 5 seconds have passed
     if (
       pendingRestore &&
       pendingRestore.sessionId === sessionId &&
       isConnected &&
-      isWaitingForInput &&
       !restoreHandledRef.current &&
       connection.current?.state === signalR.HubConnectionState.Connected
     ) {
-      restoreHandledRef.current = true
+      const performRestore = async () => {
+        console.log('[DEBUG TerminalView] Performing restore with content length:', pendingRestore.content.length)
+        restoreHandledRef.current = true
 
-      // Show restore message in terminal
-      terminalInstance.current?.writeln('\r\n\x1b[36m[Restoring session content...]\x1b[0m\r\n')
+        // Show restore message in terminal
+        terminalInstance.current?.writeln('\r\n\x1b[36m[Restoring archived session...]\x1b[0m\r\n')
 
-      // Send the content as input
-      const encoder = new TextEncoder()
-      const bytes = Array.from(encoder.encode(pendingRestore.content))
-      connection.current.invoke('SendInput', sessionId, bytes)
-        .then(() => {
-          console.log('Session content restored successfully')
-          if (onRestoreComplete) {
-            onRestoreComplete()
+        // Write the archived content directly to terminal output (not as input)
+        // This makes the previous conversation visible
+        terminalInstance.current?.write(pendingRestore.content)
+
+        // Add separator
+        terminalInstance.current?.writeln('\r\n\r\n\x1b[36m' + '─'.repeat(80) + '\x1b[0m')
+        terminalInstance.current?.writeln('\x1b[33m[Sending context to Claude...]\x1b[0m\r\n')
+
+        // IMPORTANT: Also send the context to Claude so it understands the conversation history
+        // We send it as input with a clear instruction that this is restored context
+        try {
+          const contextInstruction = `This is a RESTORED SESSION. The conversation history above should be understood as prior context. Please briefly acknowledge that you understand this context and are ready to continue helping with the same task.\n`
+
+          const encoder = new TextEncoder()
+          const bytes = Array.from(encoder.encode(contextInstruction))
+
+          if (connection.current?.state === signalR.HubConnectionState.Connected) {
+            await connection.current.invoke('SendInput', sessionId, bytes)
+            console.log('[DEBUG TerminalView] Context instruction sent to Claude')
+            terminalInstance.current?.writeln('\x1b[32m[Context sent - Claude will acknowledge shortly]\x1b[0m\r\n')
           }
-        })
-        .catch(err => {
-          console.error('Failed to restore session content:', err)
-          terminalInstance.current?.writeln('\r\n\x1b[31m[Failed to restore session content]\x1b[0m')
-        })
+        } catch (err) {
+          console.error('[DEBUG TerminalView] Failed to send context to Claude:', err)
+          terminalInstance.current?.writeln('\x1b[31m[Warning: Failed to send context to Claude]\x1b[0m\r\n')
+        }
+
+        console.log('[DEBUG TerminalView] Session content displayed successfully')
+
+        if (onRestoreComplete) {
+          onRestoreComplete()
+        }
+      }
+
+      // Display content immediately when terminal is ready
+      // No need to wait for waitingForInput - we're just showing output
+      if (terminalInstance.current) {
+        performRestore()
+      } else {
+        console.log('[DEBUG TerminalView] Cannot perform restore - no terminal instance')
+      }
     }
   }, [pendingRestore, sessionId, isConnected, isWaitingForInput, onRestoreComplete])
 
@@ -547,8 +631,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       <div className="terminal-toolbar">
         <div className="terminal-info">
           <span className="session-label">Session: {sessionId.slice(0, 12)}...</span>
-          <span className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
-            {isConnected ? 'Connected' : 'Disconnected'}
+          <span className={`connection-status ${displayConnected ? 'connected' : 'disconnected'}`}>
+            {displayConnected ? 'Connected' : 'Disconnected'}
           </span>
         </div>
         <div className="terminal-actions">

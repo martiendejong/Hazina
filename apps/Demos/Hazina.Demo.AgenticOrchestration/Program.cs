@@ -1,9 +1,14 @@
 using Hazina.AgenticOrchestration.Extensions;
 using Hazina.AgenticOrchestration.Services;
 using Hazina.Demo.AgenticOrchestration.Authentication;
+using Hazina.LLMs;
+using Hazina.LLMs.OpenAI;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Load secrets file (not committed to git)
+builder.Configuration.AddJsonFile("appsettings.Secrets.json", optional: true, reloadOnChange: true);
 
 // ═══════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -73,6 +78,11 @@ builder.Services.AddHazinaAgenticOrchestration(options =>
     options.AgentSessionLogsPath = sessionLogsBasePath;
 });
 Console.WriteLine("✅ Hazina Agentic Orchestration services registered (declarative)");
+
+// OpenAI LLM Client for Chat Agent
+var openAIConfig = OpenAIConfig.FromConfiguration(builder.Configuration);
+builder.Services.AddSingleton<ILLMClient>(new OpenAIClientWrapper(openAIConfig));
+Console.WriteLine($"✅ OpenAI LLM Client registered (model: {openAIConfig.Model})");
 
 // Authentication
 builder.Services.AddAuthentication(BasicAuthenticationExtensions.SchemeName)

@@ -130,6 +130,9 @@ public static class ServiceCollectionExtensions
                     sp.GetRequiredService<IAgentSessionLogger>()));
         }
 
+        // Register Prompt Template Service for predefined prompts
+        services.AddSingleton<IPromptTemplateService, PromptTemplateService>();
+
         return services;
     }
 

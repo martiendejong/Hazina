@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Hazina.AgenticOrchestration.Services;
 using Hazina.AgenticOrchestration.Terminal;
+using Hazina.AgenticOrchestration.Models;
 
 namespace Hazina.AgenticOrchestration.Hubs;
 
@@ -32,15 +33,18 @@ public class TerminalHub : Hub
     private readonly ITerminalSessionManager _sessionManager;
     private readonly ILogger<TerminalHub> _logger;
     private readonly IAgentSessionLogger _sessionLogger;
+    private readonly IPromptTemplateService _promptTemplateService;
 
     public TerminalHub(
         ITerminalSessionManager sessionManager,
         ILogger<TerminalHub> logger,
-        IAgentSessionLogger sessionLogger)
+        IAgentSessionLogger sessionLogger,
+        IPromptTemplateService promptTemplateService)
     {
         _sessionManager = sessionManager;
         _logger = logger;
         _sessionLogger = sessionLogger;
+        _promptTemplateService = promptTemplateService;
     }
 
     /// <summary>
@@ -77,6 +81,43 @@ public class TerminalHub : Hub
 
         _logger.LogInformation("Session {SessionId} created by client {ConnectionId}",
             session.SessionId, Context.ConnectionId);
+
+        // Handle prompt template if provided
+        PromptTemplate? template = null;
+        if (!string.IsNullOrWhiteSpace(request.PromptTemplateId))
+        {
+            template = await _promptTemplateService.GetTemplateAsync(request.PromptTemplateId);
+            if (template != null)
+            {
+                _logger.LogInformation("Session {SessionId} will auto-execute prompt template '{Name}' ({Id})",
+                    session.SessionId, template.Name, template.Id);
+
+                // Record template usage
+                await _promptTemplateService.RecordTemplateUsageAsync(template.Id);
+
+                // Schedule auto-execution after delay
+                if (template.AutoExecute)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        // Wait for Claude to load (configurable delay)
+                        await Task.Delay(template.AutoExecuteDelayMs);
+
+                        // Send the prompt text + Enter key
+                        var promptWithEnter = template.PromptText + "\n";
+                        await session.WriteInputAsync(promptWithEnter);
+
+                        _logger.LogInformation("Auto-executed prompt template '{Name}' in session {SessionId}",
+                            template.Name, session.SessionId);
+                    });
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Prompt template {TemplateId} not found for session {SessionId}",
+                    request.PromptTemplateId, session.SessionId);
+            }
+        }
 
         // Notify all clients about new session (optional)
         await Clients.All.SendAsync("OnSessionCreated", new TerminalSessionInfo
@@ -269,6 +310,11 @@ public class TerminalStartRequest
     public int? Rows { get; set; }
     public bool? MergeStderr { get; set; }
     public Dictionary<string, string>? Environment { get; set; }
+
+    /// <summary>
+    /// Optional prompt template ID to auto-execute after session loads
+    /// </summary>
+    public string? PromptTemplateId { get; set; }
 }
 
 /// <summary>

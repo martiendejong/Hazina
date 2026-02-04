@@ -4,6 +4,9 @@ import { TerminalView } from './components/TerminalView'
 import { ChatView } from './components/ChatView'
 import { ArchiveView } from './components/ArchiveView'
 import { Login } from './components/Login'
+import { SplitPane } from './components/SplitPane'
+import { SessionTabs } from './components/SessionTabs'
+import { CommandPalette, useCommandPalette } from './components/CommandPalette'
 import { authFetch, hasCredentials, clearCredentials } from './auth'
 import type { TerminalSession, ExternalClaudeInstance, AllSessions, TerminalConfig, PendingRestore } from './types'
 import './App.css'
@@ -14,12 +17,17 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(hasCredentials())
   const [sessions, setSessions] = useState<TerminalSession[]>([])
   const [externalInstances, setExternalInstances] = useState<ExternalClaudeInstance[]>([])
-  const [selectedSession, setSelectedSession] = useState<string | null>(null)
+  const [openSessions, setOpenSessions] = useState<string[]>([])
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [config, setConfig] = useState<TerminalConfig | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('sessions')
   const [pendingRestore, setPendingRestore] = useState<PendingRestore | null>(null)
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+
+  // Command palette keyboard shortcut (Cmd+K / Ctrl+K)
+  useCommandPalette(() => setCommandPaletteOpen(prev => !prev))
 
   const handleUnauthorized = () => {
     clearCredentials()
@@ -76,11 +84,31 @@ function App() {
 
     // Fetch config once on mount
     fetchConfig()
-    // Fetch sessions initially and refresh every 5 seconds
+    // Fetch sessions initially - no auto-refresh
     fetchSessions()
-    const interval = setInterval(fetchSessions, 5000)
-    return () => clearInterval(interval)
+
+    // Optional: refresh every 30 seconds only if needed
+    // const interval = setInterval(fetchSessions, 30000)
+    // return () => clearInterval(interval)
   }, [isAuthenticated])
+
+  const handleSelectSession = (sessionId: string) => {
+    // Open session in a new tab if not already open
+    if (!openSessions.includes(sessionId)) {
+      setOpenSessions(prev => [...prev, sessionId])
+    }
+    setActiveSessionId(sessionId)
+  }
+
+  const handleCloseTab = (sessionId: string) => {
+    // Close tab (remove from open sessions) but don't terminate the session
+    setOpenSessions(prev => prev.filter(id => id !== sessionId))
+    if (activeSessionId === sessionId) {
+      // Switch to another open session or null
+      const remaining = openSessions.filter(id => id !== sessionId)
+      setActiveSessionId(remaining.length > 0 ? remaining[0] : null)
+    }
+  }
 
   const handleCreateSession = async () => {
     try {
@@ -116,7 +144,9 @@ function App() {
       if (!response.ok) throw new Error('Failed to create session')
       const newSession = await response.json()
       setSessions(prev => [...prev, newSession])
-      setSelectedSession(newSession.sessionId)
+      // Open new session in tab and make it active
+      setOpenSessions(prev => [...prev, newSession.sessionId])
+      setActiveSessionId(newSession.sessionId)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create session')
     }
@@ -130,8 +160,11 @@ function App() {
         return
       }
       setSessions(prev => prev.filter(s => s.sessionId !== sessionId))
-      if (selectedSession === sessionId) {
-        setSelectedSession(null)
+      // Also close the tab if it was open
+      setOpenSessions(prev => prev.filter(id => id !== sessionId))
+      if (activeSessionId === sessionId) {
+        const remaining = openSessions.filter(id => id !== sessionId)
+        setActiveSessionId(remaining.length > 0 ? remaining[0] : null)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to terminate session')
@@ -143,7 +176,8 @@ function App() {
     setIsAuthenticated(false)
     setSessions([])
     setExternalInstances([])
-    setSelectedSession(null)
+    setOpenSessions([])
+    setActiveSessionId(null)
   }
 
   const handleStateChanged = (sessionId: string, isRunning: boolean, waitingForInput: boolean) => {
@@ -165,40 +199,54 @@ function App() {
   // Handle restoring a session from archive
   const handleRestoreSession = async (archivedSessionId: string, content: string) => {
     try {
-      // Calculate terminal size
-      const terminalContainer = document.querySelector('.terminal-section')
-      let cols = config?.defaultColumns ?? 80
-      let rows = config?.defaultRows ?? 24
-      if (terminalContainer) {
-        const rect = terminalContainer.getBoundingClientRect()
-        cols = Math.floor((rect.width - 20) / 9)
-        rows = Math.floor((rect.height - 60) / 17)
-        cols = Math.max(80, Math.min(cols, 200))
-        rows = Math.max(24, Math.min(rows, 50))
-      }
-
-      // Create new session
-      const response = await authFetch('/api/terminal/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ columns: cols, rows: rows })
+      // Use backend restore endpoint - it creates the session and returns archived content
+      const response = await authFetch(`/api/terminal/archive/${archivedSessionId}/restore`, {
+        method: 'POST'
       })
+
       if (response.status === 401) {
         handleUnauthorized()
         return
       }
-      if (!response.ok) throw new Error('Failed to create session')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to restore session')
+      }
 
-      const newSession = await response.json()
-      setSessions(prev => [...prev, newSession])
+      const result = await response.json()
+      console.log('[DEBUG] Restore response received:', {
+        hasArchivedContent: !!result.archivedContent,
+        contentLength: result.archivedContent?.length,
+        sessionId: result.sessionId
+      })
 
-      // Store pending restore content - will be pasted after Claude loads
-      setPendingRestore({ sessionId: newSession.sessionId, content })
+      // Add to sessions list
+      setSessions(prev => [...prev, {
+        sessionId: result.sessionId,
+        command: result.command,
+        title: result.title,
+        startedAt: result.startedAt,
+        isRunning: result.isRunning,
+        waitingForInput: result.waitingForInput
+      }])
 
-      // Switch to sessions view and select the new session
+      // Store the archived content to be displayed in terminal
+      if (result.archivedContent) {
+        console.log('[DEBUG] Setting pendingRestore with content length:', result.archivedContent.length)
+        setPendingRestore({
+          sessionId: result.sessionId,
+          content: result.archivedContent
+        })
+      } else {
+        console.log('[DEBUG] No archivedContent in response!')
+      }
+
+      // Switch to sessions view and open session in tab
       setViewMode('sessions')
-      setSelectedSession(newSession.sessionId)
+      setOpenSessions(prev => [...prev, result.sessionId])
+      setActiveSessionId(result.sessionId)
     } catch (err) {
+      console.error('[DEBUG] Restore failed:', err)
       setError(err instanceof Error ? err.message : 'Failed to restore session')
     }
   }
@@ -220,7 +268,7 @@ function App() {
         <div className="header-actions">
           <button
             className={`btn-nav ${viewMode === 'sessions' ? 'active' : ''}`}
-            onClick={() => { setViewMode('sessions'); setSelectedSession(null) }}
+            onClick={() => setViewMode('sessions')}
           >
             Sessions
           </button>
@@ -257,33 +305,62 @@ function App() {
       <main className="app-main">
         {viewMode === 'sessions' && (
           <>
-            <aside className={`sidebar ${selectedSession ? 'session-active' : ''}`}>
-              <SessionList
-                sessions={sessions}
-                externalInstances={externalInstances}
-                selectedSession={selectedSession}
-                loading={loading}
-                onSelect={setSelectedSession}
-                onTerminate={handleTerminateSession}
-              />
-            </aside>
-
-            <section className={`terminal-section ${selectedSession ? 'has-session' : ''}`}>
-              {selectedSession ? (
-                <TerminalView
-                  sessionId={selectedSession}
-                  onClose={() => setSelectedSession(null)}
-                  onStateChanged={handleStateChanged}
-                  onTitleChanged={handleTitleChanged}
-                  pendingRestore={pendingRestore?.sessionId === selectedSession ? pendingRestore : undefined}
-                  onRestoreComplete={handleRestoreComplete}
+            <SplitPane
+              left={
+                <SessionList
+                  sessions={sessions}
+                  externalInstances={externalInstances}
+                  selectedSession={activeSessionId}
+                  loading={loading}
+                  onSelect={handleSelectSession}
+                  onTerminate={handleTerminateSession}
                 />
-              ) : (
-                <div className="no-session">
-                  <p>Select a session or create a new one</p>
+              }
+              right={
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  {openSessions.length > 0 && (
+                    <SessionTabs
+                      sessions={sessions.filter(s => openSessions.includes(s.sessionId))}
+                      activeSessionId={activeSessionId}
+                      onSelect={setActiveSessionId}
+                      onClose={handleCloseTab}
+                    />
+                  )}
+                  <div style={{ flex: 1, overflow: 'hidden' }}>
+                    {activeSessionId ? (
+                      <TerminalView
+                        sessionId={activeSessionId}
+                        onClose={() => handleCloseTab(activeSessionId)}
+                        onStateChanged={handleStateChanged}
+                        onTitleChanged={handleTitleChanged}
+                        pendingRestore={pendingRestore?.sessionId === activeSessionId ? pendingRestore : undefined}
+                        onRestoreComplete={handleRestoreComplete}
+                      />
+                    ) : (
+                      <div className="no-session">
+                        <p>Select a session or create a new one</p>
+                        <p style={{ fontSize: '0.875rem', color: '#8b949e', marginTop: '0.5rem' }}>
+                          Press Cmd+K or Ctrl+K to open command palette
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-            </section>
+              }
+              defaultSize={320}
+              minSize={250}
+              maxSize={500}
+              storageKey="terminal-orchestrator-split"
+            />
+
+            <CommandPalette
+              sessions={sessions}
+              onSelectSession={handleSelectSession}
+              onCreateSession={handleCreateSession}
+              onNavigate={setViewMode}
+              isOpen={commandPaletteOpen}
+              onClose={() => setCommandPaletteOpen(false)}
+            />
           </>
         )}
 

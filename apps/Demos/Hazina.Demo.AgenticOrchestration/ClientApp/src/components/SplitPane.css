@@ -1,0 +1,71 @@
+.split-pane {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.split-pane-left {
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.split-pane-handle {
+  width: 6px;
+  background: #21262d;
+  cursor: ew-resize;
+  position: relative;
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.split-pane-handle:hover,
+.split-pane-handle.dragging {
+  background: #58a6ff;
+}
+
+.split-pane-handle-bar {
+  width: 2px;
+  height: 40px;
+  background: #30363d;
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+.split-pane-handle:hover .split-pane-handle-bar,
+.split-pane-handle.dragging .split-pane-handle-bar {
+  background: #ffffff;
+}
+
+.split-pane-right {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Mobile: disable resize, stack vertically */
+@media (max-width: 768px) {
+  .split-pane {
+    flex-direction: column;
+  }
+
+  .split-pane-left {
+    width: 100% !important;
+    flex: 0 0 auto;
+    max-height: 40%;
+  }
+
+  .split-pane-handle {
+    display: none;
+  }
+
+  .split-pane-right {
+    flex: 1;
+  }
+}
