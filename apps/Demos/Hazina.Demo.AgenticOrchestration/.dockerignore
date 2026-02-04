@@ -1,0 +1,57 @@
+# Docker ignore file - exclude unnecessary files from build context
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Build outputs
+bin/
+obj/
+publish/
+wwwroot/
+
+# Node modules (will be installed in container)
+ClientApp/node_modules/
+ClientApp/dist/
+
+# IDE and editor files
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~
+
+# Documentation (not needed in image)
+*.md
+!README.md
+
+# Test files
+**/tests/
+**/*.Test.*/
+**/*.Tests.*/
+
+# Development configs
+appsettings.Development.json
+appsettings.Secrets.json
+
+# Docker files (don't need in image)
+Dockerfile
+docker-compose*.yml
+.dockerignore
