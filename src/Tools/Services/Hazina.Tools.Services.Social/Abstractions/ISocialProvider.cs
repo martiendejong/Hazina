@@ -57,6 +57,24 @@ public interface ISocialProvider
     Task<bool> RevokeAccessAsync(
         string accessToken,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Fetches comments for a specific piece of content.
+    /// Used to sync engagement data for already-imported content.
+    /// </summary>
+    Task<List<SocialComment>> FetchCommentsAsync(
+        string accessToken,
+        string contentId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Fetches engagement metrics (likes, shares, views) for specific content.
+    /// Used to update engagement stats without re-importing the full content.
+    /// </summary>
+    Task<SocialEngagement> FetchEngagementAsync(
+        string accessToken,
+        string contentId,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -170,9 +188,28 @@ public class SocialArticle
 public class SocialComment
 {
     public string Id { get; set; } = "";
+    public string? ParentCommentId { get; set; } // For threaded comments
     public string AuthorName { get; set; } = "";
     public string? AuthorId { get; set; }
+    public string? AuthorAvatarUrl { get; set; }
+    public string? AuthorProfileUrl { get; set; }
     public string Content { get; set; } = "";
+    public string? ContentHtml { get; set; }
     public DateTime CreatedAt { get; set; }
     public int LikeCount { get; set; }
+    public int ReplyCount { get; set; }
+    public List<SocialComment> Replies { get; set; } = new();
+}
+
+/// <summary>
+/// Engagement metrics for a piece of content.
+/// </summary>
+public class SocialEngagement
+{
+    public int LikeCount { get; set; }
+    public int CommentCount { get; set; }
+    public int ShareCount { get; set; }
+    public int ViewCount { get; set; }
+    public double EngagementRate { get; set; }
+    public DateTime FetchedAt { get; set; } = DateTime.UtcNow;
 }
