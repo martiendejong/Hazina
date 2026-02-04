@@ -4,9 +4,10 @@ import type { ArchivedSession, ArchivedSessionsResponse, SessionLogResponse } fr
 
 interface ArchiveViewProps {
   onClose: () => void
+  onRestoreSession?: (sessionId: string, content: string) => void
 }
 
-export function ArchiveView({ onClose }: ArchiveViewProps) {
+export function ArchiveView({ onClose, onRestoreSession }: ArchiveViewProps) {
   const [sessions, setSessions] = useState<ArchivedSession[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -104,6 +105,12 @@ export function ArchiveView({ onClose }: ArchiveViewProps) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
+  const handleRestoreSession = () => {
+    if (selectedSession && logContent && onRestoreSession) {
+      onRestoreSession(selectedSession, logContent)
+    }
+  }
+
   // Render session log view
   if (selectedSession && logContent !== null) {
     const session = sessions.find(s => s.sessionId === selectedSession)
@@ -121,7 +128,18 @@ export function ArchiveView({ onClose }: ArchiveViewProps) {
               </span>
             )}
           </div>
-          <button className="btn-close" onClick={onClose}>Close</button>
+          <div className="archive-header-actions">
+            {onRestoreSession && (
+              <button
+                className="btn-restore"
+                onClick={handleRestoreSession}
+                title="Open a new session and paste this log content"
+              >
+                ↻ Restore Session
+              </button>
+            )}
+            <button className="btn-close" onClick={onClose}>Close</button>
+          </div>
         </div>
 
         <div className="log-container" ref={logContainerRef}>

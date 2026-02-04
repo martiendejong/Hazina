@@ -6,6 +6,7 @@ import { Unicode11Addon } from '@xterm/addon-unicode11'
 import * as signalR from '@microsoft/signalr'
 import { authFetch, getAuthHeader } from '../auth'
 import { useVoiceControl } from '../hooks/useVoiceControl'
+import type { PendingRestore } from '../types'
 import '@xterm/xterm/css/xterm.css'
 
 interface TerminalViewProps {
@@ -13,9 +14,11 @@ interface TerminalViewProps {
   onClose: () => void
   onStateChanged?: (sessionId: string, isRunning: boolean, waitingForInput: boolean) => void
   onTitleChanged?: (sessionId: string, title: string) => void
+  pendingRestore?: PendingRestore
+  onRestoreComplete?: () => void
 }
 
-export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChanged }: TerminalViewProps) {
+export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChanged, pendingRestore, onRestoreComplete }: TerminalViewProps) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const terminalInstance = useRef<Terminal | null>(null)
   const fitAddon = useRef<FitAddon | null>(null)
@@ -24,6 +27,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const lastDimensionsRef = useRef<{ cols: number; rows: number } | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isWaitingForInput, setIsWaitingForInput] = useState(false)
+  const restoreHandledRef = useRef(false)
 
   // Voice control - send transcribed speech to terminal
   const handleVoiceTranscript = useCallback((text: string) => {
@@ -214,8 +219,11 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
     // Handle state changes (Running/Question)
     hubConnection.on('OnStateChanged', (sid: string, isRunning: boolean, waitingForInput: boolean) => {
-      if (sid === sessionId && onStateChanged) {
-        onStateChanged(sid, isRunning, waitingForInput)
+      if (sid === sessionId) {
+        setIsWaitingForInput(waitingForInput)
+        if (onStateChanged) {
+          onStateChanged(sid, isRunning, waitingForInput)
+        }
       }
     })
 
@@ -489,6 +497,50 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       }
     }
   }
+
+  // Handle pending restore - paste content when Claude is ready (waiting for input)
+  useEffect(() => {
+    // Only proceed if:
+    // 1. We have pending restore content for this session
+    // 2. We're connected
+    // 3. Claude is waiting for input (ready to receive)
+    // 4. We haven't already handled this restore
+    if (
+      pendingRestore &&
+      pendingRestore.sessionId === sessionId &&
+      isConnected &&
+      isWaitingForInput &&
+      !restoreHandledRef.current &&
+      connection.current?.state === signalR.HubConnectionState.Connected
+    ) {
+      restoreHandledRef.current = true
+
+      // Show restore message in terminal
+      terminalInstance.current?.writeln('\r\n\x1b[36m[Restoring session content...]\x1b[0m\r\n')
+
+      // Send the content as input
+      const encoder = new TextEncoder()
+      const bytes = Array.from(encoder.encode(pendingRestore.content))
+      connection.current.invoke('SendInput', sessionId, bytes)
+        .then(() => {
+          console.log('Session content restored successfully')
+          if (onRestoreComplete) {
+            onRestoreComplete()
+          }
+        })
+        .catch(err => {
+          console.error('Failed to restore session content:', err)
+          terminalInstance.current?.writeln('\r\n\x1b[31m[Failed to restore session content]\x1b[0m')
+        })
+    }
+  }, [pendingRestore, sessionId, isConnected, isWaitingForInput, onRestoreComplete])
+
+  // Reset restore handled flag when pendingRestore changes
+  useEffect(() => {
+    if (!pendingRestore) {
+      restoreHandledRef.current = false
+    }
+  }, [pendingRestore])
 
   return (
     <div className="terminal-view">
