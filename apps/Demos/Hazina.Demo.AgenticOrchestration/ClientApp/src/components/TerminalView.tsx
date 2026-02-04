@@ -6,6 +6,7 @@ import { Unicode11Addon } from '@xterm/addon-unicode11'
 import * as signalR from '@microsoft/signalr'
 import { authFetch, getAuthHeader } from '../auth'
 import { useVoiceControl } from '../hooks/useVoiceControl'
+import type { PendingRestore } from '../types'
 import '@xterm/xterm/css/xterm.css'
 
 interface TerminalViewProps {
@@ -13,9 +14,18 @@ interface TerminalViewProps {
   onClose: () => void
   onStateChanged?: (sessionId: string, isRunning: boolean, waitingForInput: boolean) => void
   onTitleChanged?: (sessionId: string, title: string) => void
+  pendingRestore?: PendingRestore
+  onRestoreComplete?: () => void
 }
 
-export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChanged }: TerminalViewProps) {
+export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChanged, pendingRestore, onRestoreComplete }: TerminalViewProps) {
+  console.log('[DEBUG TerminalView] Component rendered with props:', {
+    sessionId,
+    hasPendingRestore: !!pendingRestore,
+    pendingRestoreSessionId: pendingRestore?.sessionId,
+    contentLength: pendingRestore?.content?.length
+  })
+
   const terminalRef = useRef<HTMLDivElement>(null)
   const terminalInstance = useRef<Terminal | null>(null)
   const fitAddon = useRef<FitAddon | null>(null)
@@ -23,30 +33,35 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const resizeTimeoutRef = useRef<number | null>(null)
   const lastDimensionsRef = useRef<{ cols: number; rows: number } | null>(null)
   const [isConnected, setIsConnected] = useState(false)
+  const [displayConnected, setDisplayConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isWaitingForInput, setIsWaitingForInput] = useState(false)
+  const restoreHandledRef = useRef(false)
+  const disconnectTimeoutRef = useRef<number | null>(null)
+  const connectionStableTimeRef = useRef<number | null>(null)
 
-  // Text input state for composing messages before sending
-  const [inputText, setInputText] = useState('')
-  const inputRef = useRef<HTMLTextAreaElement>(null)
+  // Voice control - send transcribed speech to terminal
+  const handleVoiceTranscript = useCallback((text: string) => {
+    if (connection.current?.state === signalR.HubConnectionState.Connected) {
+      // Sanitize: trim whitespace, limit length, remove control characters
+      const sanitized = text
+        .trim()
+        .slice(0, 1000) // Reasonable max length
+        .replace(/[\x00-\x1F\x7F]/g, '') // Remove control chars except those we add
 
-  // Send the composed input text to the terminal
-  const sendInputText = useCallback(() => {
-    if (!inputText.trim()) return
-    if (connection.current?.state !== signalR.HubConnectionState.Connected) return
+      if (!sanitized) return
 
-    const textToSend = inputText.trim()
-    const encoder = new TextEncoder()
-    // Use \r (carriage return) to simulate pressing Enter in terminal
-    const bytes = Array.from(encoder.encode(textToSend + '\r'))
+      // Send the text as input with a newline to execute
+      const encoder = new TextEncoder()
+      const bytes = Array.from(encoder.encode(sanitized + '\n'))
+      connection.current.invoke('SendInput', sessionId, bytes)
+        .catch(err => console.error('SendInput (voice) failed:', err))
 
-    connection.current.invoke('SendInput', sessionId, bytes)
-      .catch(err => console.error('SendInput failed:', err))
-
-    setInputText('')
-
-    // Focus the terminal after sending
-    terminalInstance.current?.focus()
-  }, [inputText, sessionId])
+      // Also show indicator in terminal (escape for display)
+      const displayText = sanitized.length > 50 ? sanitized.slice(0, 50) + '...' : sanitized
+      terminalInstance.current?.writeln(`\r\n\x1b[36m[Voice: "${displayText}"]\x1b[0m`)
+    }
+  }, [sessionId])
 
   // Track last paste to prevent duplicates (terminal's built-in + our custom handler)
   const lastPasteRef = useRef<{ text: string; timestamp: number } | null>(null)
@@ -90,26 +105,6 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     }
   }, [sessionId])
 
-  // Voice control - append transcribed speech to input text (not send directly)
-  const handleVoiceTranscript = useCallback((text: string) => {
-    // Sanitize: trim whitespace, limit length, remove control characters
-    const sanitized = text
-      .trim()
-      .slice(0, 1000) // Reasonable max length
-      .replace(/[\x00-\x1F\x7F]/g, '') // Remove control chars
-
-    if (!sanitized) return
-
-    // Append to input text instead of sending directly
-    setInputText(prev => {
-      const newText = prev ? prev + ' ' + sanitized : sanitized
-      return newText
-    })
-
-    // Focus the input field
-    inputRef.current?.focus()
-  }, [])
-
   const [voiceState, voiceActions] = useVoiceControl(handleVoiceTranscript)
 
   // Keyboard shortcut: Ctrl+M to toggle voice
@@ -123,6 +118,41 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [voiceActions])
+
+  // Debounce connection status display to prevent flickering
+  useEffect(() => {
+    if (isConnected) {
+      // Immediately show connected
+      if (disconnectTimeoutRef.current) {
+        clearTimeout(disconnectTimeoutRef.current)
+        disconnectTimeoutRef.current = null
+      }
+      setDisplayConnected(true)
+      // Mark when connection became stable
+      connectionStableTimeRef.current = Date.now()
+    } else {
+      // Wait 1000ms before showing disconnected
+      disconnectTimeoutRef.current = window.setTimeout(() => {
+        setDisplayConnected(false)
+      }, 1000)
+      // Connection is not stable
+      connectionStableTimeRef.current = null
+    }
+
+    return () => {
+      if (disconnectTimeoutRef.current) {
+        clearTimeout(disconnectTimeoutRef.current)
+      }
+    }
+  }, [isConnected])
+
+  // Maintain terminal focus after state changes to prevent focus loss
+  useEffect(() => {
+    if (terminalInstance.current && isConnected) {
+      // Focus the terminal when state changes
+      terminalInstance.current.focus()
+    }
+  }, [isWaitingForInput, isConnected])
 
   // Detect if we're on a mobile device
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -276,8 +306,12 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
     // Handle state changes (Running/Question)
     hubConnection.on('OnStateChanged', (sid: string, isRunning: boolean, waitingForInput: boolean) => {
-      if (sid === sessionId && onStateChanged) {
-        onStateChanged(sid, isRunning, waitingForInput)
+      if (sid === sessionId) {
+        // Only update state if value actually changed to prevent unnecessary re-renders
+        setIsWaitingForInput(prev => prev === waitingForInput ? prev : waitingForInput)
+        if (onStateChanged) {
+          onStateChanged(sid, isRunning, waitingForInput)
+        }
       }
     })
 
@@ -315,13 +349,16 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         return true
       }
 
-      // Handle Ctrl+V - paste (chunked for longer text)
+      // Handle Ctrl+V - paste
       if (event.ctrlKey && event.key === 'v' && event.type === 'keydown') {
         event.preventDefault()
         event.stopPropagation()
         navigator.clipboard.readText().then(text => {
           if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-            sendTextInChunks(text).catch(err => console.error('Paste failed:', err))
+            const encoder = new TextEncoder()
+            const bytes = Array.from(encoder.encode(text))
+            hubConnection.invoke('SendInput', sessionId, bytes)
+              .catch(err => console.error('Paste failed:', err))
           }
         }).catch(err => {
           console.error('Paste failed:', err)
@@ -340,13 +377,16 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         return false
       }
 
-      // Handle Ctrl+Shift+V - always paste (alternative shortcut, chunked)
+      // Handle Ctrl+Shift+V - always paste (alternative shortcut)
       if (event.ctrlKey && event.shiftKey && event.key === 'V' && event.type === 'keydown') {
         event.preventDefault()
         event.stopPropagation()
         navigator.clipboard.readText().then(text => {
           if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-            sendTextInChunks(text).catch(err => console.error('Paste failed:', err))
+            const encoder = new TextEncoder()
+            const bytes = Array.from(encoder.encode(text))
+            hubConnection.invoke('SendInput', sessionId, bytes)
+              .catch(err => console.error('Paste failed:', err))
           }
         }).catch(err => {
           console.error('Paste failed:', err)
@@ -412,13 +452,15 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         !selection || selection.length === 0
       ))
 
-      // Paste option (chunked for longer text)
+      // Paste option
       menu.appendChild(createMenuItem(
         'Paste',
         () => {
           navigator.clipboard.readText().then(text => {
             if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-              sendTextInChunks(text).catch(err => console.error('Paste failed:', err))
+              const encoder = new TextEncoder()
+              const bytes = Array.from(encoder.encode(text))
+              hubConnection.invoke('SendInput', sessionId, bytes)
             }
           })
         }
@@ -524,7 +566,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       }
       terminal.dispose()
     }
-  }, [sessionId, isMobile, sendTextInChunks, onStateChanged, onTitleChanged])
+  }, [sessionId, isMobile])
 
   const handleInterrupt = async () => {
     if (connection.current?.state === signalR.HubConnectionState.Connected) {
@@ -548,21 +590,95 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     }
   }
 
-  // Handle key press in input - send on Enter (without Shift)
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendInputText()
+  // Handle pending restore - paste content when Claude is ready (waiting for input)
+  useEffect(() => {
+    console.log('[DEBUG TerminalView] Restore effect triggered:', {
+      hasPendingRestore: !!pendingRestore,
+      pendingRestoreSessionId: pendingRestore?.sessionId,
+      currentSessionId: sessionId,
+      isConnected,
+      restoreHandled: restoreHandledRef.current,
+      hubConnectionState: connection.current?.state,
+      contentLength: pendingRestore?.content?.length,
+      hasTerminalInstance: !!terminalInstance.current
+    })
+
+    // Only proceed if:
+    // 1. We have pending restore content for this session
+    // 2. We're connected
+    // 3. We haven't already handled this restore
+    // 4. Either Claude is waiting for input OR 5 seconds have passed
+    if (
+      pendingRestore &&
+      pendingRestore.sessionId === sessionId &&
+      isConnected &&
+      !restoreHandledRef.current &&
+      connection.current?.state === signalR.HubConnectionState.Connected
+    ) {
+      const performRestore = async () => {
+        console.log('[DEBUG TerminalView] Performing restore with content length:', pendingRestore.content.length)
+        restoreHandledRef.current = true
+
+        // Show restore message in terminal
+        terminalInstance.current?.writeln('\r\n\x1b[36m[Restoring archived session...]\x1b[0m\r\n')
+
+        // Write the archived content directly to terminal output (not as input)
+        // This makes the previous conversation visible
+        terminalInstance.current?.write(pendingRestore.content)
+
+        // Add separator
+        terminalInstance.current?.writeln('\r\n\r\n\x1b[36m' + '─'.repeat(80) + '\x1b[0m')
+        terminalInstance.current?.writeln('\x1b[33m[Sending context to Claude...]\x1b[0m\r\n')
+
+        // IMPORTANT: Also send the context to Claude so it understands the conversation history
+        // We send it as input with a clear instruction that this is restored context
+        try {
+          const contextInstruction = `This is a RESTORED SESSION. The conversation history above should be understood as prior context. Please briefly acknowledge that you understand this context and are ready to continue helping with the same task.\n`
+
+          const encoder = new TextEncoder()
+          const bytes = Array.from(encoder.encode(contextInstruction))
+
+          if (connection.current?.state === signalR.HubConnectionState.Connected) {
+            await connection.current.invoke('SendInput', sessionId, bytes)
+            console.log('[DEBUG TerminalView] Context instruction sent to Claude')
+            terminalInstance.current?.writeln('\x1b[32m[Context sent - Claude will acknowledge shortly]\x1b[0m\r\n')
+          }
+        } catch (err) {
+          console.error('[DEBUG TerminalView] Failed to send context to Claude:', err)
+          terminalInstance.current?.writeln('\x1b[31m[Warning: Failed to send context to Claude]\x1b[0m\r\n')
+        }
+
+        console.log('[DEBUG TerminalView] Session content displayed successfully')
+
+        if (onRestoreComplete) {
+          onRestoreComplete()
+        }
+      }
+
+      // Display content immediately when terminal is ready
+      // No need to wait for waitingForInput - we're just showing output
+      if (terminalInstance.current) {
+        performRestore()
+      } else {
+        console.log('[DEBUG TerminalView] Cannot perform restore - no terminal instance')
+      }
     }
-  }
+  }, [pendingRestore, sessionId, isConnected, isWaitingForInput, onRestoreComplete])
+
+  // Reset restore handled flag when pendingRestore changes
+  useEffect(() => {
+    if (!pendingRestore) {
+      restoreHandledRef.current = false
+    }
+  }, [pendingRestore])
 
   return (
     <div className="terminal-view">
       <div className="terminal-toolbar">
         <div className="terminal-info">
           <span className="session-label">Session: {sessionId.slice(0, 12)}...</span>
-          <span className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
-            {isConnected ? 'Connected' : 'Disconnected'}
+          <span className={`connection-status ${displayConnected ? 'connected' : 'disconnected'}`}>
+            {displayConnected ? 'Connected' : 'Disconnected'}
           </span>
         </div>
         <div className="terminal-actions">
@@ -610,31 +726,6 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       </div>
       {error && <div className="terminal-error">{error}</div>}
       <div className="terminal-container" ref={terminalRef} />
-
-      {/* Input box for composing messages before sending */}
-      <div className="terminal-input-container">
-        <textarea
-          ref={inputRef}
-          className="terminal-input"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          onKeyDown={handleInputKeyDown}
-          placeholder="Type a message or use voice... (Enter to send, Shift+Enter for newline)"
-          rows={1}
-          disabled={!isConnected}
-        />
-        <button
-          className="btn-send-terminal"
-          onClick={sendInputText}
-          disabled={!isConnected || !inputText.trim()}
-          title="Send message (Enter)"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-          </svg>
-          Send
-        </button>
-      </div>
     </div>
   )
 }

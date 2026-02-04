@@ -545,6 +545,245 @@ public class TerminalController : ControllerBase
     }
 
     /// <summary>
+    /// Restore an archived session - creates a new session and sends the archived log content as input
+    /// </summary>
+    [HttpPost("archive/{sessionId}/restore")]
+    public async Task<ActionResult<TerminalSessionDto>> RestoreArchivedSession(
+        string sessionId,
+        [FromQuery] bool includeTimestamps = false,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrEmpty(_options.AgentSessionLogsPath) || !Directory.Exists(_options.AgentSessionLogsPath))
+        {
+            return NotFound(new { error = "Session logs not configured" });
+        }
+
+        try
+        {
+            // Find the log file for this session
+            var logFiles = Directory.GetFiles(_options.AgentSessionLogsPath, $"session-{sessionId}.log", SearchOption.AllDirectories);
+            if (logFiles.Length == 0)
+            {
+                // Try a partial match
+                logFiles = Directory.GetFiles(_options.AgentSessionLogsPath, $"session-*{sessionId}*.log", SearchOption.AllDirectories);
+            }
+
+            if (logFiles.Length == 0)
+            {
+                return NotFound(new { error = "Session log not found", sessionId });
+            }
+
+            var logPath = logFiles[0];
+
+            // Read the log content
+            using var fileStream = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(fileStream);
+            var fullContent = await reader.ReadToEndAsync();
+
+            // Extract just the conversation (remove timestamps and metadata if requested)
+            var sessionContent = includeTimestamps ? fullContent : ExtractConversationContent(fullContent);
+
+            // Create new session with the archived content as context
+            var config = new TerminalSessionConfig
+            {
+                Command = _options.DefaultCommand,
+                Arguments = _options.DefaultArguments,
+                WorkingDirectory = _options.DefaultWorkingDirectory,
+                Columns = _options.DefaultTerminalColumns,
+                Rows = _options.DefaultTerminalRows
+            };
+
+            var newSession = await _sessionManager.CreateSessionAsync(config, ct);
+
+            _logger.LogInformation("Created restore session {NewSessionId} from archived session {OriginalSessionId}",
+                newSession.SessionId, sessionId);
+
+            // Wait for session to be running (with timeout)
+            var timeout = DateTime.UtcNow.AddSeconds(10);
+            while (!newSession.IsRunning && DateTime.UtcNow < timeout)
+            {
+                await Task.Delay(100, ct);
+            }
+
+            if (!newSession.IsRunning)
+            {
+                _logger.LogWarning("Session {SessionId} not running after 10 seconds", newSession.SessionId);
+                return StatusCode(500, new { error = "Session failed to start", sessionId = newSession.SessionId });
+            }
+
+            // Wait a bit more for Claude to fully initialize
+            await Task.Delay(2000, ct);
+
+            // Send the archived content to Claude as context
+            var instruction = $"This is a restored session. Here is the previous conversation:\n\n{sessionContent}\n\nYou can now continue the conversation.";
+            await newSession.WriteInputAsync(instruction + "\r", ct);
+
+            _logger.LogInformation("Sent {ContentSize} bytes of context to restored session {SessionId}",
+                sessionContent.Length, newSession.SessionId);
+
+            // Return the new session with the content to display
+            // Client will show content in terminal and Claude has the context
+            return Ok(new
+            {
+                sessionId = newSession.SessionId,
+                command = newSession.Command,
+                title = $"Restored: {sessionId}",
+                startedAt = newSession.StartedAt,
+                isRunning = newSession.IsRunning,
+                waitingForInput = newSession.WaitingForInput,
+                signalRHubUrl = "/hubs/terminal",
+                // Include the archived content for client to display
+                archivedContent = sessionContent
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to restore session {SessionId}", sessionId);
+            return StatusCode(500, new { error = "Failed to restore session", message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Extract conversation content from log file (remove timestamps, ANSI codes, and system metadata)
+    /// </summary>
+    private string ExtractConversationContent(string logContent)
+    {
+        var lines = logContent.Split('\n');
+        var result = new System.Text.StringBuilder();
+        var inHeader = true;
+        var inFooter = false;
+        var lastLineWasEmpty = false;
+
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+
+            // Skip header (everything before first output)
+            if (inHeader)
+            {
+                if (trimmed.StartsWith("[") && trimmed.Contains("[OUT]"))
+                {
+                    inHeader = false;
+                }
+                else
+                {
+                    continue;
+                }
+            }
+
+            // Skip footer (SESSION ENDED block)
+            if (trimmed.Contains("SESSION ENDED"))
+            {
+                inFooter = true;
+                continue;
+            }
+
+            if (inFooter)
+            {
+                continue;
+            }
+
+            // Remove timestamps from lines like "[12:34:56.789] [OUT] text"
+            if (trimmed.StartsWith("[") && trimmed.Contains("]"))
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(trimmed, @"^\[\d{2}:\d{2}:\d{2}\.\d{3}\] \[(OUT|INPUT)\] (.*)$");
+                if (match.Success)
+                {
+                    var type = match.Groups[1].Value;
+                    var content = match.Groups[2].Value;
+
+                    // Remove ANSI escape sequences
+                    content = StripAnsiCodes(content);
+
+                    if (type == "INPUT")
+                    {
+                        // Clean up input markers like [CR], [LF]
+                        content = content.Replace("[CR]", "").Replace("[LF]", "\n").Replace(">>>", "").Trim();
+                        if (!string.IsNullOrWhiteSpace(content))
+                        {
+                            result.AppendLine($"User: {content}");
+                            lastLineWasEmpty = false;
+                        }
+                    }
+                    else
+                    {
+                        // Collapse multiple empty lines into one
+                        if (string.IsNullOrWhiteSpace(content))
+                        {
+                            if (!lastLineWasEmpty)
+                            {
+                                result.AppendLine();
+                                lastLineWasEmpty = true;
+                            }
+                        }
+                        else
+                        {
+                            result.AppendLine(content);
+                            lastLineWasEmpty = false;
+                        }
+                    }
+                }
+                else
+                {
+                    // Strip ANSI from non-log lines too
+                    var cleaned = StripAnsiCodes(trimmed);
+                    if (!string.IsNullOrWhiteSpace(cleaned))
+                    {
+                        result.AppendLine(cleaned);
+                        lastLineWasEmpty = false;
+                    }
+                    else if (!lastLineWasEmpty)
+                    {
+                        result.AppendLine();
+                        lastLineWasEmpty = true;
+                    }
+                }
+            }
+            else
+            {
+                // Strip ANSI from all lines
+                var cleaned = StripAnsiCodes(line);
+                if (!string.IsNullOrWhiteSpace(cleaned))
+                {
+                    result.AppendLine(cleaned);
+                    lastLineWasEmpty = false;
+                }
+                else if (!lastLineWasEmpty)
+                {
+                    result.AppendLine();
+                    lastLineWasEmpty = true;
+                }
+            }
+        }
+
+        return result.ToString();
+    }
+
+    /// <summary>
+    /// Remove ANSI escape sequences from text
+    /// </summary>
+    private static string StripAnsiCodes(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return text;
+
+        // Remove ANSI CSI sequences (ESC [ ... m)
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\x1B\[[0-9;]*m", "");
+
+        // Remove other ANSI escape sequences (ESC followed by any character and parameters)
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\x1B\[[\d;]*[A-Za-z]", "");
+
+        // Remove OSC sequences (ESC ] ... BEL or ESC ] ... ST)
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\x1B\][^\x07]*\x07", "");
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\x1B\][^\x1B]*\x1B\\", "");
+
+        // Remove other escape sequences
+        text = System.Text.RegularExpressions.Regex.Replace(text, @"\x1B[@-_][0-?]*[ -/]*[@-~]", "");
+
+        return text;
+    }
+
+    /// <summary>
     /// Get all sessions including external instances (combined view)
     /// </summary>
     [HttpGet("all-sessions")]

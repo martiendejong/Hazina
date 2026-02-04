@@ -119,3 +119,4 @@ node_modules
 embeddings.json
 chunks.json
 appsettings.Secrets.json
+/scp

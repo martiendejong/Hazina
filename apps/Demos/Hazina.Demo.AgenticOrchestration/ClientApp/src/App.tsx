@@ -5,7 +5,7 @@ import { ChatView } from './components/ChatView'
 import { ArchiveView } from './components/ArchiveView'
 import { Login } from './components/Login'
 import { authFetch, hasCredentials, clearCredentials } from './auth'
-import type { TerminalSession, ExternalClaudeInstance, AllSessions, TerminalConfig } from './types'
+import type { TerminalSession, ExternalClaudeInstance, AllSessions, TerminalConfig, PendingRestore } from './types'
 import './App.css'
 
 type ViewMode = 'sessions' | 'chat' | 'archive'
@@ -19,6 +19,7 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [config, setConfig] = useState<TerminalConfig | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('sessions')
+  const [pendingRestore, setPendingRestore] = useState<PendingRestore | null>(null)
 
   const handleUnauthorized = () => {
     clearCredentials()
@@ -75,10 +76,12 @@ function App() {
 
     // Fetch config once on mount
     fetchConfig()
-    // Fetch sessions initially and refresh every 5 seconds
+    // Fetch sessions initially - no auto-refresh
     fetchSessions()
-    const interval = setInterval(fetchSessions, 5000)
-    return () => clearInterval(interval)
+
+    // Optional: refresh every 30 seconds only if needed
+    // const interval = setInterval(fetchSessions, 30000)
+    // return () => clearInterval(interval)
   }, [isAuthenticated])
 
   const handleCreateSession = async () => {
@@ -161,6 +164,65 @@ function App() {
     ))
   }
 
+  // Handle restoring a session from archive
+  const handleRestoreSession = async (archivedSessionId: string, content: string) => {
+    try {
+      // Use backend restore endpoint - it creates the session and returns archived content
+      const response = await authFetch(`/api/terminal/archive/${archivedSessionId}/restore`, {
+        method: 'POST'
+      })
+
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
+      }
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to restore session')
+      }
+
+      const result = await response.json()
+      console.log('[DEBUG] Restore response received:', {
+        hasArchivedContent: !!result.archivedContent,
+        contentLength: result.archivedContent?.length,
+        sessionId: result.sessionId
+      })
+
+      // Add to sessions list
+      setSessions(prev => [...prev, {
+        sessionId: result.sessionId,
+        command: result.command,
+        title: result.title,
+        startedAt: result.startedAt,
+        isRunning: result.isRunning,
+        waitingForInput: result.waitingForInput
+      }])
+
+      // Store the archived content to be displayed in terminal
+      if (result.archivedContent) {
+        console.log('[DEBUG] Setting pendingRestore with content length:', result.archivedContent.length)
+        setPendingRestore({
+          sessionId: result.sessionId,
+          content: result.archivedContent
+        })
+      } else {
+        console.log('[DEBUG] No archivedContent in response!')
+      }
+
+      // Switch to sessions view and select the new session
+      setViewMode('sessions')
+      setSelectedSession(result.sessionId)
+    } catch (err) {
+      console.error('[DEBUG] Restore failed:', err)
+      setError(err instanceof Error ? err.message : 'Failed to restore session')
+    }
+  }
+
+  // Clear pending restore after it's been handled
+  const handleRestoreComplete = () => {
+    setPendingRestore(null)
+  }
+
   // Show login screen if not authenticated
   if (!isAuthenticated) {
     return <Login onLogin={() => setIsAuthenticated(true)} />
@@ -228,6 +290,8 @@ function App() {
                   onClose={() => setSelectedSession(null)}
                   onStateChanged={handleStateChanged}
                   onTitleChanged={handleTitleChanged}
+                  pendingRestore={pendingRestore?.sessionId === selectedSession ? pendingRestore : undefined}
+                  onRestoreComplete={handleRestoreComplete}
                 />
               ) : (
                 <div className="no-session">
@@ -243,7 +307,10 @@ function App() {
         )}
 
         {viewMode === 'archive' && (
-          <ArchiveView onClose={() => setViewMode('sessions')} />
+          <ArchiveView
+            onClose={() => setViewMode('sessions')}
+            onRestoreSession={handleRestoreSession}
+          />
         )}
       </main>
     </div>
