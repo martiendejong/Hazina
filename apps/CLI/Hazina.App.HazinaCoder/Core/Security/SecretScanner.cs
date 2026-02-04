@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using Spectre.Console;
 using static Hazina.App.HazinaCoder.Core.Security.SecretPatterns;
 
@@ -216,7 +217,7 @@ public class SecretScanner
         var results = new List<(string, double)>();
 
         // Find quoted strings
-        var stringPattern = new System.Text.RegularExpressions.Regex(@"['\"]([^'\"]{20,})['\"]");
+        var stringPattern = new System.Text.RegularExpressions.Regex(@"[""']([^""']{20,})[""']");
         var matches = stringPattern.Matches(line);
 
         foreach (System.Text.RegularExpressions.Match match in matches)

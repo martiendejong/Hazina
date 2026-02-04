@@ -39,7 +39,7 @@ public static class SecretPatterns
         new SecretPattern(
             Name: "AWS Secret Access Key",
             Description: "AWS Secret Access Key detected",
-            Pattern: new Regex(@"aws_secret_access_key\s*=\s*['\"]([A-Za-z0-9/+=]{40})['\"]", RegexOptions.Compiled | RegexOptions.IgnoreCase),
+            Pattern: new Regex(@"aws_secret_access_key\s*=\s*[""']([A-Za-z0-9/+=]{40})[""']", RegexOptions.Compiled | RegexOptions.IgnoreCase),
             Severity: SecretSeverity.Critical,
             Remediation: "Use AWS Secrets Manager or environment variables."
         ),
@@ -103,21 +103,21 @@ public static class SecretPatterns
         new SecretPattern(
             Name: "Generic API Key",
             Description: "Generic API key pattern detected",
-            Pattern: new Regex(@"[Aa]pi[_-]?[Kk]ey\s*[:=]\s*['\"]([0-9a-zA-Z_\-]{32,})['\"]", RegexOptions.Compiled),
+            Pattern: new Regex(@"[Aa]pi[_-]?[Kk]ey\s*[:=]\s*[""']([0-9a-zA-Z_\-]{32,})[""']", RegexOptions.Compiled),
             Severity: SecretSeverity.High,
             Remediation: "Use environment variables or secure credential storage."
         ),
         new SecretPattern(
             Name: "Generic Secret",
             Description: "Generic secret pattern detected",
-            Pattern: new Regex(@"[Ss]ecret\s*[:=]\s*['\"]([0-9a-zA-Z_\-]{16,})['\"]", RegexOptions.Compiled),
+            Pattern: new Regex(@"[Ss]ecret\s*[:=]\s*[""']([0-9a-zA-Z_\-]{16,})[""']", RegexOptions.Compiled),
             Severity: SecretSeverity.Medium,
             Remediation: "Use environment variables or configuration files excluded from git."
         ),
         new SecretPattern(
             Name: "Password in Code",
             Description: "Password literal detected",
-            Pattern: new Regex(@"[Pp]assword\s*[:=]\s*['\"]([^'\"]{8,})['\"]", RegexOptions.Compiled),
+            Pattern: new Regex(@"[Pp]assword\s*[:=]\s*[""']([^""']{8,})[""']", RegexOptions.Compiled),
             Severity: SecretSeverity.High,
             Remediation: "Never hardcode passwords. Use secure credential storage."
         ),
@@ -203,7 +203,7 @@ public static class SecretPatterns
         new SecretPattern(
             Name: "High Entropy String",
             Description: "High entropy string detected (possible secret)",
-            Pattern: new Regex(@"['\"]([a-zA-Z0-9+/=_-]{40,})['\"]", RegexOptions.Compiled),
+            Pattern: new Regex(@"[""']([a-zA-Z0-9+/=_-]{40,})[""']", RegexOptions.Compiled),
             Severity: SecretSeverity.Low,
             Remediation: "If this is a secret, use environment variables or secure storage."
         )
