@@ -271,3 +271,18 @@ public record ProviderSuccessEvent(string ProviderName, string Model, TimeSpan D
 /// Provider failure event
 /// </summary>
 public record ProviderFailureEvent(string ProviderName, string Model, Exception Error) : BaseEvent;
+
+/// <summary>
+/// Test generation started event
+/// </summary>
+public record TestGenerationStartedEvent(string ClassName) : BaseEvent;
+
+/// <summary>
+/// Test generation completed event
+/// </summary>
+public record TestGenerationCompletedEvent(string ClassName, int TestCount, TimeSpan Duration) : BaseEvent;
+
+/// <summary>
+/// Test generation failed event
+/// </summary>
+public record TestGenerationFailedEvent(string ClassName, Exception Error) : BaseEvent;
