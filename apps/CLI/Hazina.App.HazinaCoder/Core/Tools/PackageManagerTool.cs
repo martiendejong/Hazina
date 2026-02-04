@@ -71,7 +71,7 @@ public class PackageManagerTool
             _ => throw new NotSupportedException($"Package manager {manager} not supported")
         };
 
-        return await ExecuteCommandAsync(command, manager.ToString());
+        return await ExecuteCommandAsync(command, manager.ToString()!);
     }
 
     /// <summary>
@@ -91,7 +91,7 @@ public class PackageManagerTool
             _ => throw new NotSupportedException($"Package manager {manager} not supported")
         };
 
-        return await ExecuteCommandAsync(command, manager.ToString());
+        return await ExecuteCommandAsync(command, manager.ToString()!);
     }
 
     /// <summary>
@@ -111,7 +111,7 @@ public class PackageManagerTool
             _ => throw new NotSupportedException($"Package manager {manager} not supported")
         };
 
-        var result = await ExecuteCommandAsync(command, manager.ToString());
+        var result = await ExecuteCommandAsync(command, manager.ToString()!);
 
         if (!result.Success)
         {
@@ -138,7 +138,7 @@ public class PackageManagerTool
             _ => throw new NotSupportedException($"Security audit not available for {manager}")
         };
 
-        var result = await ExecuteCommandAsync(command, manager.ToString(), throwOnError: false);
+        var result = await ExecuteCommandAsync(command, manager.ToString()!, throwOnError: false);
 
         // npm audit returns exit code 1 if vulnerabilities found
         if (!result.Success && !result.Output.Contains("vulnerabilities"))
@@ -168,7 +168,7 @@ public class PackageManagerTool
             _ => throw new NotSupportedException($"Search not available for {manager}")
         };
 
-        var result = await ExecuteCommandAsync(command, manager.ToString(), throwOnError: false);
+        var result = await ExecuteCommandAsync(command, manager.ToString()!, throwOnError: false);
 
         if (!result.Success)
         {

@@ -274,7 +274,7 @@ public class AnthropicProvider : ILLMProvider
             if (message.Contents?.Any() == true)
             {
                 // Multimodal message
-                var content = message.Contents.Select(c => c.Type switch
+                var content = message.Contents.Select(c => (object)(c.Type switch
                 {
                     "text" => new { type = "text", text = c.Text },
                     "image" => new
@@ -288,7 +288,7 @@ public class AnthropicProvider : ILLMProvider
                         }
                     },
                     _ => throw new ArgumentException($"Unknown content type: {c.Type}")
-                }).ToList();
+                })).ToList();
 
                 messages.Add(new { role = message.Role, content });
             }

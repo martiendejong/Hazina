@@ -18,7 +18,7 @@ public class VisionTools
 
         // Try Claude first, fallback to OpenAI
         IVisionProvider provider;
-        var claudeProvider = new ClaudeVisionProvider(eventBus: eventBus);
+        var claudeProvider = new ClaudeVisionProvider();
         var openAIProvider = new OpenAIVisionProvider();
 
         if (claudeProvider.IsAvailable)

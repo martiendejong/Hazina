@@ -1,3 +1,4 @@
+using System.Text;
 using Hazina.App.HazinaCoder.Core.Events;
 using Hazina.App.HazinaCoder.Core.Providers;
 using Hazina.App.HazinaCoder.Core.State;
@@ -47,7 +48,7 @@ public class HazinaCoderAPI : IDisposable
 
         if (config.EnableVision)
         {
-            var visionProvider = new Vision.Providers.ClaudeVisionProvider(eventBus: _eventBus);
+            var visionProvider = new Vision.Providers.ClaudeVisionProvider();
             var visionCache = new VisionCache();
             _visionAnalyzer = new VisionAnalyzer(visionProvider, visionCache, _eventBus);
         }
