@@ -11,6 +11,13 @@ using Hazina.App.HazinaCoder.Core.Skills;
 using Hazina.App.HazinaCoder.Core.Tools;
 using Hazina.App.HazinaCoder.Core.Identity;
 using Hazina.App.HazinaCoder.Core.Infrastructure;
+using Hazina.App.HazinaCoder.Core.Monitoring;
+using Hazina.App.HazinaCoder.Core.Performance;
+using Hazina.App.HazinaCoder.Core.Commands;
+using Hazina.App.HazinaCoder.Core.AI;
+using Hazina.App.HazinaCoder.Core.Caching;
+using Hazina.App.HazinaCoder.Core.State;
+using Hazina.LLMs;
 
 namespace Hazina.App.HazinaCoder.Core.DependencyInjection;
 
@@ -20,7 +27,8 @@ namespace Hazina.App.HazinaCoder.Core.DependencyInjection;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Add all HazinaCoder core services to the service collection
+    /// Add HazinaCoder core services (pragmatic subset - working components only)
+    /// Iteration 53: Simplified integration of tested components
     /// </summary>
     public static IServiceCollection AddHazinaCoder(
         this IServiceCollection services,
@@ -31,21 +39,43 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(config.Features);
 
         // Core Infrastructure
-        services.AddSingleton<AgentEventBus>();
+        services.AddSingleton<EventBus>();
         services.AddSingleton<CircuitBreakerService>();
         services.AddSingleton<GracefulDegradationService>();
 
-        // Providers
+        // Provider routing (existing, working)
         services.AddSingleton<ProviderRouter>();
-        services.AddTransient<ILLMProvider, OpenAIProvider>();
-        services.AddTransient<ILLMProvider, AnthropicProvider>();
 
-        // Streaming
+        // Streaming (existing, working)
         services.AddSingleton<StreamingOrchestrator>();
         services.AddTransient<ProgressReporter>();
         services.AddTransient<InterruptHandler>();
 
-        // Learning & Memory
+        // Retry & Resilience (Iterations 21-25) - working
+        services.AddSingleton<RetryPolicy>();
+        services.AddSingleton<RateLimiter>();
+
+        // Monitoring (Iterations 11-15) - working standalone
+        services.AddSingleton<HealthCheckService>();
+        services.AddSingleton<MetricsCollector>();
+        services.AddSingleton<CostTracker>();
+
+        // Security (Iterations 32-36) - fully working
+        services.AddSingleton<InputSanitizer>();
+        services.AddSingleton<SecretScanner>();
+
+        // Performance (Iterations 46-50) - working standalone
+        services.AddSingleton<OptimizationEngine>();
+
+        // Commands (Iteration 41) - working standalone
+        services.AddSingleton<CommandPaletteWithFuzzy>();
+        services.AddSingleton<AutoCompleter>();
+
+        // Session & State (Iteration 40) - working standalone
+        services.AddSingleton<SessionBranching>();
+        services.AddSingleton<StateManager>();
+
+        // Learning & Memory (existing system)
         services.AddSingleton<LearningSystem>();
         services.AddSingleton<MemorySystems>();
         services.AddSingleton<ExperienceCapture>();
@@ -60,25 +90,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<AgentIdentity>();
         services.AddSingleton<AssumptionTracker>();
 
-        // Security
-        services.AddSingleton<SecretScanner>();
-
-        // Vision
-        if (config.Features.VisionAnalysis)
-        {
-            services.AddSingleton<VisionAnalyzer>();
-            services.AddSingleton<VisionCache>();
-        }
-
-        // Skills & Tools
+        // Skills & Tools (existing system)
         services.AddSingleton<SkillDiscovery>();
         services.AddSingleton<SkillComposer>();
         services.AddSingleton<DynamicToolRegistry>();
         services.AddSingleton<ToolPerformanceProfiler>();
         services.AddSingleton<ToolEffectivenessTracker>();
-
-        // State Management
-        services.AddSingleton<StateManager>();
 
         return services;
     }

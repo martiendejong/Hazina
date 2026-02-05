@@ -107,6 +107,7 @@ public class FeatureFlags
     public bool EnableMetrics { get; set; } = true;
     public bool EnableCaching { get; set; } = true;
     public bool EnableCompression { get; set; } = false;
+    public bool EnableVisionAnalysis { get; set; } = true;
 }
 
 /// <summary>

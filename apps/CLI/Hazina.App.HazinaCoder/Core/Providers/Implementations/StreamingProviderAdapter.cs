@@ -11,12 +11,12 @@ namespace Hazina.App.HazinaCoder.Core.Providers.Implementations;
 public class StreamingProviderAdapter
 {
     private readonly ILLMClient _client;
-    private readonly AgentEventBus _eventBus;
+    private readonly EventBus _eventBus;
     private readonly StreamingOrchestrator _orchestrator;
 
     public StreamingProviderAdapter(
         ILLMClient client,
-        AgentEventBus eventBus,
+        EventBus eventBus,
         StreamingOrchestrator orchestrator)
     {
         _client = client;
