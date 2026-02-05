@@ -2,6 +2,8 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Polly;
+using Polly.Retry;
 using Hazina.Tools.Services.Social.Abstractions;
 
 namespace Hazina.Tools.Services.Social.Publishers;
@@ -15,6 +17,7 @@ public class LinkedInPublisher : ISocialPublisher
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<LinkedInPublisher> _logger;
+    private readonly AsyncRetryPolicy<HttpResponseMessage> _retryPolicy;
 
     private const string ApiBaseUrl = "https://api.linkedin.com/v2";
 
@@ -27,6 +30,21 @@ public class LinkedInPublisher : ISocialPublisher
     {
         _httpClient = httpClient;
         _logger = logger;
+
+        // Configure retry policy with exponential backoff for rate limits and transient errors
+        _retryPolicy = Policy
+            .HandleResult<HttpResponseMessage>(r =>
+                (int)r.StatusCode == 429 || // Rate limit
+                (int)r.StatusCode >= 500)    // Server errors
+            .WaitAndRetryAsync(
+                retryCount: 3,
+                sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)),
+                onRetry: (outcome, timespan, retryAttempt, context) =>
+                {
+                    _logger.LogWarning(
+                        "[LinkedIn] Retry {RetryAttempt} after {Delay}s. Status: {StatusCode}",
+                        retryAttempt, timespan.TotalSeconds, outcome.Result?.StatusCode);
+                });
     }
 
     public async Task<PublishResult> PublishPostAsync(
@@ -57,12 +75,16 @@ public class LinkedInPublisher : ISocialPublisher
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
 
-            // Publish to LinkedIn
-            var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{ApiBaseUrl}/ugcPosts");
-            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-            httpRequest.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            // Publish to LinkedIn with retry policy
+            var response = await _retryPolicy.ExecuteAsync(async () =>
+            {
+                var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{ApiBaseUrl}/ugcPosts");
+                httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                httpRequest.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+                return await _httpClient.SendAsync(httpRequest, cancellationToken);
+            });
+
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
             if (!response.IsSuccessStatusCode)
@@ -134,10 +156,13 @@ public class LinkedInPublisher : ISocialPublisher
         {
             _logger.LogInformation("[LinkedIn] Deleting post: {PostId}", externalPostId);
 
-            var request = new HttpRequestMessage(HttpMethod.Delete, $"{ApiBaseUrl}/ugcPosts/{externalPostId}");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var response = await _retryPolicy.ExecuteAsync(async () =>
+            {
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"{ApiBaseUrl}/ugcPosts/{externalPostId}");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-            var response = await _httpClient.SendAsync(request, cancellationToken);
+                return await _httpClient.SendAsync(request, cancellationToken);
+            });
 
             if (response.IsSuccessStatusCode)
             {
@@ -171,10 +196,14 @@ public class LinkedInPublisher : ISocialPublisher
             var shareId = ExtractShareId(externalPostId);
             var url = $"{ApiBaseUrl}/socialActions/{externalPostId}";
 
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var response = await _retryPolicy.ExecuteAsync(async () =>
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-            var response = await _httpClient.SendAsync(request, cancellationToken);
+                return await _httpClient.SendAsync(request, cancellationToken);
+            });
+
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
             if (!response.IsSuccessStatusCode)
