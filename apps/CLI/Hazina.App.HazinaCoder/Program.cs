@@ -847,7 +847,13 @@ class HazinaCoderCLI : IDisposable
         // Try common locations
         var possiblePaths = new[]
         {
+            // Check next to the executable first (for VS debugging)
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.Secrets.json"),
+            // Check HazinaCoder project directory
+            @"C:\Projects\hazina\apps\CLI\Hazina.App.HazinaCoder\appsettings.Secrets.json",
+            // Check client-manager (shared secrets)
             @"C:\Projects\client-manager\ClientManagerAPI\appsettings.Secrets.json",
+            // Check working directory and scripts path
             Path.Combine(_workingDirectory, "appsettings.Secrets.json"),
             Path.Combine(_scriptsPath, "appsettings.Secrets.json")
         };

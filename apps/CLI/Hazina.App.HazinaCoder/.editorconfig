@@ -1,0 +1,36 @@
+# EditorConfig for HazinaCoder
+# Iteration 5: Code style consistency
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.cs]
+indent_style = space
+indent_size = 4
+
+# .NET code style
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# C# code style
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+
+# Disable specific warnings
+dotnet_diagnostic.CS1570.severity = suggestion  # XML comment warnings
+dotnet_diagnostic.CS8600.severity = suggestion  # Nullable reference warnings
+dotnet_diagnostic.CS8625.severity = suggestion
+dotnet_diagnostic.CA2000.severity = suggestion  # Dispose warnings
+
+[*.{json,yaml,yml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
