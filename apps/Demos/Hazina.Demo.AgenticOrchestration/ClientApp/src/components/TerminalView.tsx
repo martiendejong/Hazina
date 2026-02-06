@@ -19,12 +19,7 @@ interface TerminalViewProps {
 }
 
 export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChanged, pendingRestore, onRestoreComplete }: TerminalViewProps) {
-  console.log('[DEBUG TerminalView] Component rendered with props:', {
-    sessionId,
-    hasPendingRestore: !!pendingRestore,
-    pendingRestoreSessionId: pendingRestore?.sessionId,
-    contentLength: pendingRestore?.content?.length
-  })
+  // Debug logs removed - were causing unnecessary re-renders
 
   const terminalRef = useRef<HTMLDivElement>(null)
   const terminalInstance = useRef<Terminal | null>(null)
@@ -104,13 +99,10 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     }
   }, [isConnected])
 
-  // Maintain terminal focus after state changes to prevent focus loss
-  useEffect(() => {
-    if (terminalInstance.current && isConnected) {
-      // Focus the terminal when state changes
-      terminalInstance.current.focus()
-    }
-  }, [isWaitingForInput, isConnected])
+  // NOTE: Removed focus() useEffect that was causing refresh flickering
+  // The original issue (focus loss) was already fixed by the OnStateChanged handler
+  // that only updates state when value actually changes (line 269).
+  // The focus() call on every isWaitingForInput change caused visual disruption.
 
   // Detect if we're on a mobile device
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -546,17 +538,6 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
   // Handle pending restore - paste content when Claude is ready (waiting for input)
   useEffect(() => {
-    console.log('[DEBUG TerminalView] Restore effect triggered:', {
-      hasPendingRestore: !!pendingRestore,
-      pendingRestoreSessionId: pendingRestore?.sessionId,
-      currentSessionId: sessionId,
-      isConnected,
-      restoreHandled: restoreHandledRef.current,
-      hubConnectionState: connection.current?.state,
-      contentLength: pendingRestore?.content?.length,
-      hasTerminalInstance: !!terminalInstance.current
-    })
-
     // Only proceed if:
     // 1. We have pending restore content for this session
     // 2. We're connected
@@ -570,7 +551,6 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       connection.current?.state === signalR.HubConnectionState.Connected
     ) {
       const performRestore = async () => {
-        console.log('[DEBUG TerminalView] Performing restore with content length:', pendingRestore.content.length)
         restoreHandledRef.current = true
 
         // Show restore message in terminal
@@ -594,15 +574,12 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
           if (connection.current?.state === signalR.HubConnectionState.Connected) {
             await connection.current.invoke('SendInput', sessionId, bytes)
-            console.log('[DEBUG TerminalView] Context instruction sent to Claude')
             terminalInstance.current?.writeln('\x1b[32m[Context sent - Claude will acknowledge shortly]\x1b[0m\r\n')
           }
         } catch (err) {
-          console.error('[DEBUG TerminalView] Failed to send context to Claude:', err)
+          console.error('Failed to send context to Claude:', err)
           terminalInstance.current?.writeln('\x1b[31m[Warning: Failed to send context to Claude]\x1b[0m\r\n')
         }
-
-        console.log('[DEBUG TerminalView] Session content displayed successfully')
 
         if (onRestoreComplete) {
           onRestoreComplete()
@@ -613,8 +590,6 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       // No need to wait for waitingForInput - we're just showing output
       if (terminalInstance.current) {
         performRestore()
-      } else {
-        console.log('[DEBUG TerminalView] Cannot perform restore - no terminal instance')
       }
     }
   }, [pendingRestore, sessionId, isConnected, isWaitingForInput, onRestoreComplete])
