@@ -129,7 +129,7 @@ public class WorkflowEngine
             Console.WriteLine($"\n[Workflow] ✅ Workflow completed successfully: {workflow.Name}");
             Console.WriteLine($"[Workflow] Duration: {execution.Duration}");
 
-            return WorkflowResult.Success(workflow.Name, execution);
+            return WorkflowResult.CreateSuccess(workflow.Name, execution);
         }
         catch (Exception ex)
         {
@@ -411,7 +411,7 @@ public class WorkflowResult
     public string? Error { get; init; }
     public WorkflowExecution Execution { get; init; } = null!;
 
-    public static WorkflowResult Success(string workflowName, WorkflowExecution execution) =>
+    public static WorkflowResult CreateSuccess(string workflowName, WorkflowExecution execution) =>
         new() { Success = true, WorkflowName = workflowName, Execution = execution };
 
     public static WorkflowResult Failed(string workflowName, string error, WorkflowExecution execution) =>
@@ -424,7 +424,7 @@ public class StepResult
     public object? Output { get; init; }
     public string? Error { get; init; }
 
-    public static StepResult Success(object? output = null) =>
+    public static StepResult CreateSuccess(object? output = null) =>
         new() { Success = true, Output = output };
 
     public static StepResult Failed(string error) =>
@@ -448,7 +448,7 @@ public class ReadClickUpTaskStep : IWorkflowStep
     {
         Console.WriteLine("[Step] Reading ClickUp task...");
         // TODO: Use ClickUpClient to fetch task
-        return StepResult.Success(new { taskId = "example", requirements = "..." });
+        return StepResult.CreateSuccess(new { taskId = "example", requirements = "..." });
     }
 }
 
@@ -458,7 +458,7 @@ public class InvestigateCodebaseStep : IWorkflowStep
     {
         Console.WriteLine("[Step] Investigating codebase...");
         // TODO: Use Grep/Find to locate relevant files
-        return StepResult.Success(new { relevantFiles = new List<string>() });
+        return StepResult.CreateSuccess(new { relevantFiles = new List<string>() });
     }
 }
 
@@ -468,7 +468,7 @@ public class AllocateWorktreeStep : IWorkflowStep
     {
         Console.WriteLine("[Step] Allocating worktree...");
         // TODO: Use GitClient.Worktree.AddAsync()
-        return StepResult.Success(new { worktreePath = "example-path" });
+        return StepResult.CreateSuccess(new { worktreePath = "example-path" });
     }
 }
 
@@ -478,7 +478,7 @@ public class ImplementChangesStep : IWorkflowStep
     {
         Console.WriteLine("[Step] Implementing changes...");
         // TODO: Invoke LLM for actual implementation
-        return StepResult.Success();
+        return StepResult.CreateSuccess();
     }
 }
 
@@ -488,7 +488,7 @@ public class MergeDevelopStep : IWorkflowStep
     {
         Console.WriteLine("[Step] Merging develop branch...");
         // TODO: Use GitClient.Remote.PullAsync()
-        return StepResult.Success();
+        return StepResult.CreateSuccess();
     }
 }
 
@@ -498,7 +498,7 @@ public class BuildTestStep : IWorkflowStep
     {
         Console.WriteLine("[Step] Building and testing...");
         // TODO: Use CommandExecutor to run dotnet build/test
-        return StepResult.Success(new { exitCode = 0 });
+        return StepResult.CreateSuccess(new { exitCode = 0 });
     }
 }
 
@@ -508,7 +508,7 @@ public class CreatePRStep : IWorkflowStep
     {
         Console.WriteLine("[Step] Creating pull request...");
         // TODO: Use CommandExecutor for gh pr create
-        return StepResult.Success(new { prUrl = "https://github.com/..." });
+        return StepResult.CreateSuccess(new { prUrl = "https://github.com/..." });
     }
 }
 
@@ -518,7 +518,7 @@ public class UpdateClickUpStep : IWorkflowStep
     {
         Console.WriteLine("[Step] Updating ClickUp task...");
         // TODO: Use ClickUpClient.LinkPullRequestAsync()
-        return StepResult.Success();
+        return StepResult.CreateSuccess();
     }
 }
 

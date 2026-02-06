@@ -67,7 +67,7 @@ public class ErrorRemediationEngine
         {
             // Success! Reset attempt counter for this pattern
             _attemptCounts.Remove(attemptKey);
-            return RemediationResult.Success(remediatedCommand, rule.Name);
+            return RemediationResult.CreateSuccess(remediatedCommand, rule.Name);
         }
         else
         {
@@ -302,7 +302,7 @@ public class RemediationResult
     public string? Message { get; init; }
     public string? RemainingError { get; init; }
 
-    public static RemediationResult Success(string fixedCommand, string ruleName) =>
+    public static RemediationResult CreateSuccess(string fixedCommand, string ruleName) =>
         new()
         {
             WasRemediated = true,

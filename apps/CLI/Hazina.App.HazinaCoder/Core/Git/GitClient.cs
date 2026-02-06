@@ -121,7 +121,7 @@ public class GitWorktreeOps
             return WorktreeAddResult.Failed($"Git worktree add failed:\n{result.StandardError}");
         }
 
-        return WorktreeAddResult.Success(fullPath, branchName);
+        return WorktreeAddResult.CreateSuccess(fullPath, branchName);
     }
 
     /// <summary>
@@ -192,7 +192,7 @@ public class WorktreeAddResult
     public string? WorktreePath { get; init; }
     public string? BranchName { get; init; }
 
-    public static WorktreeAddResult Success(string path, string branch) =>
+    public static WorktreeAddResult CreateSuccess(string path, string branch) =>
         new() { Success = true, WorktreePath = path, BranchName = branch };
 
     public static WorktreeAddResult Failed(string error) =>
@@ -290,9 +290,9 @@ public class GitCommitOps
         return await _git.ExecuteGitAsync(args.ToArray(), cancellationToken: cancellationToken);
     }
 
-    public async Task<string> GetStatusAsync(bool short = false, CancellationToken cancellationToken = default)
+    public async Task<string> GetStatusAsync(bool shortFormat = false, CancellationToken cancellationToken = default)
     {
-        var args = short ? new[] { "status", "--short" } : new[] { "status" };
+        var args = shortFormat ? new[] { "status", "--short" } : new[] { "status" };
         var result = await _git.ExecuteGitAsync(args, cancellationToken: cancellationToken);
         return result.StandardOutput;
     }
