@@ -196,7 +196,7 @@ function App() {
   }
 
   // Handle restoring a session from archive
-  const handleRestoreSession = async (archivedSessionId: string, content: string) => {
+  const handleRestoreSession = async (archivedSessionId: string) => {
     try {
       // Use backend restore endpoint - it creates the session and returns archived content
       const response = await authFetch(`/api/terminal/archive/${archivedSessionId}/restore`, {
