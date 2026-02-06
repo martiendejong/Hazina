@@ -5,7 +5,6 @@ import { ChatView } from './components/ChatView'
 import { ArchiveView } from './components/ArchiveView'
 import { Login } from './components/Login'
 import { SplitPane } from './components/SplitPane'
-import { SessionTabs } from './components/SessionTabs'
 import { CommandPalette, useCommandPalette } from './components/CommandPalette'
 import { authFetch, hasCredentials, clearCredentials } from './auth'
 import type { TerminalSession, ExternalClaudeInstance, AllSessions, TerminalConfig, PendingRestore } from './types'
@@ -197,7 +196,7 @@ function App() {
   }
 
   // Handle restoring a session from archive
-  const handleRestoreSession = async (archivedSessionId: string, content: string) => {
+  const handleRestoreSession = async (archivedSessionId: string) => {
     try {
       // Use backend restore endpoint - it creates the session and returns archived content
       const response = await authFetch(`/api/terminal/archive/${archivedSessionId}/restore`, {
@@ -317,35 +316,23 @@ function App() {
                 />
               }
               right={
-                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                  {openSessions.length > 0 && (
-                    <SessionTabs
-                      sessions={sessions.filter(s => openSessions.includes(s.sessionId))}
-                      activeSessionId={activeSessionId}
-                      onSelect={setActiveSessionId}
-                      onClose={handleCloseTab}
-                    />
-                  )}
-                  <div style={{ flex: 1, overflow: 'hidden' }}>
-                    {activeSessionId ? (
-                      <TerminalView
-                        sessionId={activeSessionId}
-                        onClose={() => handleCloseTab(activeSessionId)}
-                        onStateChanged={handleStateChanged}
-                        onTitleChanged={handleTitleChanged}
-                        pendingRestore={pendingRestore?.sessionId === activeSessionId ? pendingRestore : undefined}
-                        onRestoreComplete={handleRestoreComplete}
-                      />
-                    ) : (
-                      <div className="no-session">
-                        <p>Select a session or create a new one</p>
-                        <p style={{ fontSize: '0.875rem', color: '#8b949e', marginTop: '0.5rem' }}>
-                          Press Cmd+K or Ctrl+K to open command palette
-                        </p>
-                      </div>
-                    )}
+                activeSessionId ? (
+                  <TerminalView
+                    sessionId={activeSessionId}
+                    onClose={() => handleCloseTab(activeSessionId)}
+                    onStateChanged={handleStateChanged}
+                    onTitleChanged={handleTitleChanged}
+                    pendingRestore={pendingRestore?.sessionId === activeSessionId ? pendingRestore : undefined}
+                    onRestoreComplete={handleRestoreComplete}
+                  />
+                ) : (
+                  <div className="no-session">
+                    <p>Select a session or create a new one</p>
+                    <p style={{ fontSize: '0.875rem', color: '#8b949e', marginTop: '0.5rem' }}>
+                      Press Cmd+K or Ctrl+K to open command palette
+                    </p>
                   </div>
-                </div>
+                )
               }
               defaultSize={320}
               minSize={250}
