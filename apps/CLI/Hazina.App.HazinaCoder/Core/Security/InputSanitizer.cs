@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using System.Security;
 
 namespace Hazina.App.HazinaCoder.Core.Security;
 

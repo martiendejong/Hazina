@@ -23,11 +23,16 @@ public class ProviderFactory
     /// </summary>
     public ILLMClient CreateOpenAI()
     {
-        var apiKey = ResolveApiKey(_config.Provider.OpenAI?.ApiKey);
+        var providerConfig = _config.Provider.Providers.GetValueOrDefault("openai");
+        var apiKey = ResolveApiKey(providerConfig?.ApiKey);
         if (string.IsNullOrEmpty(apiKey))
             throw new InvalidOperationException("OpenAI API key not configured");
 
-        return new OpenAIClientWrapper(apiKey);
+        var openAIConfig = new OpenAIConfig(apiKey);
+        if (providerConfig?.DefaultModel != null)
+            openAIConfig.Model = providerConfig.DefaultModel;
+
+        return new OpenAIClientWrapper(openAIConfig);
     }
 
     /// <summary>
@@ -35,11 +40,13 @@ public class ProviderFactory
     /// </summary>
     public ILLMClient CreateAnthropic()
     {
-        var apiKey = ResolveApiKey(_config.Provider.Anthropic?.ApiKey);
+        var providerConfig = _config.Provider.Providers.GetValueOrDefault("anthropic");
+        var apiKey = ResolveApiKey(providerConfig?.ApiKey);
         if (string.IsNullOrEmpty(apiKey))
             throw new InvalidOperationException("Anthropic API key not configured");
 
-        return new AnthropicClientWrapper(apiKey);
+        // TODO: Update when AnthropicClientWrapper constructor signature is available
+        throw new NotImplementedException("AnthropicClientWrapper needs config parameter");
     }
 
     /// <summary>
@@ -47,7 +54,8 @@ public class ProviderFactory
     /// </summary>
     public ILLMClient CreateOllama()
     {
-        var endpoint = _config.Provider.Ollama?.Endpoint ?? "http://localhost:11434";
+        var providerConfig = _config.Provider.Providers.GetValueOrDefault("ollama");
+        var endpoint = providerConfig?.Endpoint ?? "http://localhost:11434";
         // Ollama doesn't require API key
         throw new NotImplementedException("Ollama provider not yet implemented");
     }
@@ -90,13 +98,16 @@ public class ProviderFactory
     {
         var providers = new List<string>();
 
-        if (!string.IsNullOrEmpty(ResolveApiKey(_config.Provider.OpenAI?.ApiKey)))
+        var openAIConfig = _config.Provider.Providers.GetValueOrDefault("openai");
+        if (!string.IsNullOrEmpty(ResolveApiKey(openAIConfig?.ApiKey)))
             providers.Add("openai");
 
-        if (!string.IsNullOrEmpty(ResolveApiKey(_config.Provider.Anthropic?.ApiKey)))
+        var anthropicConfig = _config.Provider.Providers.GetValueOrDefault("anthropic");
+        if (!string.IsNullOrEmpty(ResolveApiKey(anthropicConfig?.ApiKey)))
             providers.Add("anthropic");
 
-        if (!string.IsNullOrEmpty(_config.Provider.Ollama?.Endpoint))
+        var ollamaConfig = _config.Provider.Providers.GetValueOrDefault("ollama");
+        if (!string.IsNullOrEmpty(ollamaConfig?.Endpoint))
             providers.Add("ollama");
 
         return providers;

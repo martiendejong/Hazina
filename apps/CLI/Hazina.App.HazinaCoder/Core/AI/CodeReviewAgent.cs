@@ -45,18 +45,18 @@ Format as JSON:
 
         var messages = new List<HazinaChatMessage>
         {
-            new() { Role = "user", Content = prompt }
+            new() { Role = HazinaMessageRole.User, Text = prompt }
         };
 
-        var interaction = _client.StartChatInteraction(messages);
-        var response = await interaction.GetResponseAsync();
+        var response = await _client.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, CancellationToken.None);
+        var result = response.Result;
 
         // Parse JSON response (simplified for iteration speed)
         return new ReviewResult(
             Issues: new List<string> { "Example issue" },
             Suggestions: new List<string> { "Example suggestion" },
             QualityScore: 85,
-            Summary: response
+            Summary: result
         );
     }
 }
@@ -86,14 +86,14 @@ Suggest 3 likely completions:";
 
         var messages = new List<HazinaChatMessage>
         {
-            new() { Role = "user", Content = prompt }
+            new() { Role = HazinaMessageRole.User, Text = prompt }
         };
 
-        var interaction = _client.StartChatInteraction(messages);
-        var response = await interaction.GetResponseAsync();
+        var response = await _client.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, CancellationToken.None);
+        var result = response.Result;
 
         // Parse suggestions (simplified)
-        return response.Split('\n')
+        return result.Split('\n')
             .Where(line => !string.IsNullOrWhiteSpace(line))
             .Take(3)
             .ToList();

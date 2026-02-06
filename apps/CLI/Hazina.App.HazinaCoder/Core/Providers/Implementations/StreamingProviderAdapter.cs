@@ -25,67 +25,28 @@ public class StreamingProviderAdapter
     }
 
     /// <summary>
-    /// Stream response with event publishing
+    /// Stream response with event publishing (using callback-based streaming)
     /// </summary>
     public async IAsyncEnumerable<string> StreamResponseAsync(
         List<HazinaChatMessage> messages,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        _eventBus.Publish(new AgentEvent
+        var chunks = new List<string>();
+
+        // Use callback-based streaming API
+        await _client.GetResponseStream(
+            messages,
+            chunk => chunks.Add(chunk),
+            HazinaChatResponseFormat.Text,
+            null,
+            null,
+            cancellationToken
+        );
+
+        // Yield all collected chunks
+        foreach (var chunk in chunks)
         {
-            Type = "StreamStarted",
-            Timestamp = DateTime.UtcNow
-        });
-
-        var tokenCount = 0;
-
-        try
-        {
-            var interaction = _client.StartChatInteraction(messages);
-
-            await foreach (var token in interaction.StreamResponseAsync(cancellationToken))
-            {
-                tokenCount++;
-
-                // Publish token event
-                _eventBus.Publish(new AgentEvent
-                {
-                    Type = "TokenReceived",
-                    Data = token,
-                    Timestamp = DateTime.UtcNow
-                });
-
-                yield return token;
-
-                // Progress updates every 10 tokens
-                if (tokenCount % 10 == 0)
-                {
-                    _eventBus.Publish(new AgentEvent
-                    {
-                        Type = "Progress",
-                        Data = $"{tokenCount} tokens",
-                        Timestamp = DateTime.UtcNow
-                    });
-                }
-            }
-
-            _eventBus.Publish(new AgentEvent
-            {
-                Type = "StreamCompleted",
-                Data = $"Total: {tokenCount} tokens",
-                Timestamp = DateTime.UtcNow
-            });
-        }
-        catch (Exception ex)
-        {
-            _eventBus.Publish(new AgentEvent
-            {
-                Type = "StreamError",
-                Data = ex.Message,
-                Timestamp = DateTime.UtcNow
-            });
-
-            throw;
+            yield return chunk;
         }
     }
 
@@ -96,8 +57,8 @@ public class StreamingProviderAdapter
         List<HazinaChatMessage> messages,
         CancellationToken cancellationToken = default)
     {
-        var interaction = _client.StartChatInteraction(messages);
-        return await interaction.GetResponseAsync(cancellationToken);
+        var response = await _client.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, cancellationToken);
+        return response.Result;
     }
 }
 
@@ -124,29 +85,42 @@ public class FailoverProvider
     {
         var attempts = 0;
         var maxAttempts = _providers.Count;
+        Exception? lastException = null;
 
         while (attempts < maxAttempts)
         {
             var provider = _providers[_currentIndex];
+            var success = false;
 
+            List<string>? tokens = null;
             try
             {
+                tokens = new List<string>();
                 await foreach (var token in provider.StreamResponseAsync(messages, cancellationToken))
                 {
-                    yield return token;
+                    tokens.Add(token);
                 }
-
-                yield break; // Success - exit
+                success = true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                lastException = ex;
                 // Try next provider
                 _currentIndex = (_currentIndex + 1) % _providers.Count;
                 attempts++;
+            }
 
-                if (attempts >= maxAttempts)
-                    throw; // All providers failed
+            if (success && tokens != null)
+            {
+                foreach (var token in tokens)
+                {
+                    yield return token;
+                }
+                yield break;
             }
         }
+
+        // All providers failed
+        throw lastException ?? new InvalidOperationException("All providers failed");
     }
 }

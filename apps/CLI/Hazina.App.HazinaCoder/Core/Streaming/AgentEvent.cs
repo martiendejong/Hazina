@@ -171,3 +171,12 @@ public class SummaryEvent : AgentEvent
     public TimeSpan TotalDuration { get; set; }
     public decimal TotalCostUSD { get; set; }
 }
+
+/// <summary>
+/// Generic streaming message event (for LLM token streaming)
+/// </summary>
+public class StreamingMessageEvent : AgentEvent
+{
+    public string Data { get; set; } = string.Empty;
+    public int TokenCount { get; set; }
+}

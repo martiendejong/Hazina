@@ -21,35 +21,64 @@ public class VisionProviderIntegration
     {
         // Check cache
         var cacheKey = $"{imagePath}:{prompt}";
-        var cached = _cache.Get(cacheKey);
+        var cached = await _cache.GetAsync(cacheKey);
         if (cached != null)
-            return cached;
+            return cached.Analysis; // Return the analysis from cached result
 
         // Load image
         var imageBytes = await File.ReadAllBytesAsync(imagePath);
-        var base64 = Convert.ToBase64String(imageBytes);
+        var binaryData = BinaryData.FromBytes(imageBytes);
 
-        // Analyze with LLM
+        // Analyze with LLM (images passed as separate parameter)
         var messages = new List<HazinaChatMessage>
         {
             new()
             {
-                Role = "user",
-                Content = prompt,
-                Images = new List<ImageData>
-                {
-                    new() { Base64Data = base64 }
-                }
+                Role = HazinaMessageRole.User,
+                Text = prompt
             }
         };
 
-        var interaction = _client.StartChatInteraction(messages);
-        var result = await interaction.GetResponseAsync();
+        var images = new List<ImageData>
+        {
+            new()
+            {
+                BinaryData = binaryData,
+                MimeType = GetMimeType(imagePath),
+                Name = Path.GetFileName(imagePath)
+            }
+        };
+
+        var response = await _client.GetResponse(messages, HazinaChatResponseFormat.Text, null, images, CancellationToken.None);
+        var result = response.Result;
 
         // Cache result
-        _cache.Set(cacheKey, result);
+        var analysisResult = new VisionAnalysisResult
+        {
+            Analysis = result,
+            ImagePath = imagePath,
+            Query = prompt,
+            Success = true,
+            Confidence = 1.0,
+            Duration = TimeSpan.Zero // Would need to track actual duration
+        };
+        await _cache.SetAsync(cacheKey, analysisResult);
 
         return result;
+    }
+
+    private string GetMimeType(string filePath)
+    {
+        var extension = Path.GetExtension(filePath).ToLowerInvariant();
+        return extension switch
+        {
+            ".png" => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".gif" => "image/gif",
+            ".bmp" => "image/bmp",
+            ".webp" => "image/webp",
+            _ => "application/octet-stream"
+        };
     }
 
     public async Task<List<string>> BatchAnalyzeAsync(List<string> imagePaths, string prompt)
