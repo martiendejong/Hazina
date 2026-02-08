@@ -294,6 +294,19 @@
                 // Handle resize
                 window.addEventListener('resize', () => this.fitAddon.fit());
 
+                // Disable browser's native paste handling - xterm.js handles paste internally
+                document.addEventListener('paste', (e) => {
+                    // Only prevent if terminal is focused/active
+                    const activeElement = document.activeElement;
+                    const terminalElement = container.querySelector('.xterm');
+                    if (terminalElement && terminalElement.contains(activeElement)) {
+                        // Prevent browser's default paste (which may show permission dialog)
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // xterm.js will handle paste through its own onData mechanism
+                    }
+                });
+
                 // Create SignalR connection
                 this.connection = new signalR.HubConnectionBuilder()
                     .withUrl('/hubs/terminal')
