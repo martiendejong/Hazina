@@ -1,6 +1,7 @@
 using Hazina.AgenticOrchestration.Data;
 using Hazina.AgenticOrchestration.Hubs;
 using Hazina.AgenticOrchestration.Services;
+using Hazina.AgenticOrchestration.Services.Chat;
 using Hazina.AgenticOrchestration.Terminal;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
@@ -132,6 +133,9 @@ public static class ServiceCollectionExtensions
 
         // Register Prompt Template Service for predefined prompts
         services.AddSingleton<IPromptTemplateService, PromptTemplateService>();
+
+        // Register OrchestrationChatService for LLM-powered chat
+        services.AddSingleton<OrchestrationChatService>();
 
         return services;
     }
