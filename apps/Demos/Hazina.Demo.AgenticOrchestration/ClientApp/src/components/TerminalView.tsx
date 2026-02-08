@@ -39,6 +39,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const restoreHandledRef = useRef(false)
   const disconnectTimeoutRef = useRef<number | null>(null)
   const connectionStableTimeRef = useRef<number | null>(null)
+  const [mobileInput, setMobileInput] = useState('')
 
   // Voice control - send transcribed speech to terminal
   const handleVoiceTranscript = useCallback((text: string) => {
@@ -64,6 +65,17 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   }, [sessionId])
 
   const [voiceState, voiceActions] = useVoiceControl(handleVoiceTranscript)
+
+  // Mobile input handler - send whole message at once
+  const handleSendMobileInput = useCallback(() => {
+    if (connection.current?.state === signalR.HubConnectionState.Connected && mobileInput.trim()) {
+      const encoder = new TextEncoder()
+      const bytes = Array.from(encoder.encode(mobileInput))
+      connection.current.invoke('SendInput', sessionId, bytes)
+        .catch(err => console.error('SendInput (mobile) failed:', err))
+      setMobileInput('')
+    }
+  }, [sessionId, mobileInput])
 
   // Keyboard shortcut: Ctrl+M to toggle voice
   useEffect(() => {
@@ -680,6 +692,23 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       </div>
       {error && <div className="terminal-error">{error}</div>}
       <div className="terminal-container" ref={terminalRef} />
+      <div className="terminal-input-container">
+        <textarea
+          className="terminal-input"
+          placeholder="Type command for mobile..."
+          value={mobileInput}
+          onChange={(e) => setMobileInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              handleSendMobileInput()
+            }
+          }}
+        />
+        <button className="btn-send-terminal" onClick={handleSendMobileInput}>
+          <span>Send</span>
+        </button>
+      </div>
     </div>
   )
 }

@@ -153,20 +153,29 @@ function App() {
 
   const handleTerminateSession = async (sessionId: string) => {
     try {
-      const response = await authFetch(`/api/terminal/sessions/${sessionId}`, { method: 'DELETE' })
-      if (response.status === 401) {
-        handleUnauthorized()
-        return
-      }
+      // Optimistically remove from UI immediately
       setSessions(prev => prev.filter(s => s.sessionId !== sessionId))
-      // Also close the tab if it was open
       setOpenSessions(prev => prev.filter(id => id !== sessionId))
       if (activeSessionId === sessionId) {
         const remaining = openSessions.filter(id => id !== sessionId)
         setActiveSessionId(remaining.length > 0 ? remaining[0] : null)
       }
+
+      // Then call the API
+      const response = await authFetch(`/api/terminal/sessions/${sessionId}`, { method: 'DELETE' })
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
+      }
+      if (!response.ok) {
+        // If DELETE fails, re-fetch to restore correct state
+        fetchSessions()
+        throw new Error('Failed to terminate session')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to terminate session')
+      // Re-fetch sessions to restore correct state after error
+      fetchSessions()
     }
   }
 

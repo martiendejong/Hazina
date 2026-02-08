@@ -95,6 +95,32 @@ button:hover {
   background: #161b22;
   border-right: 1px solid #30363d;
   overflow-y: auto;
+  scrollbar-width: thin;  /* Firefox */
+  scrollbar-color: #6e7681 #21262d;  /* Firefox: thumb, track */
+}
+
+/* Webkit scrollbar styling for sidebar (Chrome, Safari, Edge) */
+.sidebar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: #21262d;
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #6e7681;
+  border-radius: 4px;
+  border: 2px solid #21262d;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: #8b949e;
+}
+
+.sidebar::-webkit-scrollbar-thumb:active {
+  background: #c9d1d9;
 }
 
 /* Session List */
