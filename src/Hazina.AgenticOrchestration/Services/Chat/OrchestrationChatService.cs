@@ -1,7 +1,5 @@
 using Hazina.LLMs;
 using Hazina.LLMs.OpenAI;
-using Hazina.Tools.AI.Agents;
-using Hazina.Tools.Data;
 using Hazina.Tools.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -10,7 +8,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -76,7 +73,7 @@ Guidelines:
                 ApiKey = apiKey
             };
 
-            _llmClient = new OpenAIClientWrapper(config, logger);
+            _llmClient = new OpenAIClientWrapper(config);
 
             _logger.LogInformation("OrchestrationChatService initialized with model {Model}", model);
         }
@@ -124,94 +121,17 @@ Guidelines:
                 // Build messages for LLM (system + history)
                 var messages = BuildLLMMessages(conversation);
 
-                // Stream response with tool calling
-                var responseText = string.Empty;
-                var totalTokens = 0;
-                var toolCalls = new List<ToolCall>();
-
-                // First LLM call
-                var response = await _llmClient.StreamResponseAsync(
+                // Stream response with tool calling via OpenAIClientWrapper
+                var response = await _llmClient.GetResponseStream(
                     messages,
-                    toolsContext?.GetToolDefinitions() ?? new List<HazinaChatTool>(),
-                    chunk =>
-                    {
-                        responseText += chunk;
-                        onChunk?.Invoke(chunk);
-                    },
+                    onChunk ?? (_ => { }),
+                    HazinaChatResponseFormat.Text,
+                    toolsContext,
+                    images: null,
                     cancellationToken);
 
-                totalTokens += response.TokenUsage?.TotalTokens ?? 0;
-
-                // Handle tool calls in a loop (max 5 iterations to prevent infinite loops)
-                int maxToolIterations = 5;
-                int currentIteration = 0;
-
-                while (response.ToolCalls?.Any() == true && currentIteration < maxToolIterations)
-                {
-                    currentIteration++;
-                    _logger.LogInformation("Processing {Count} tool calls (iteration {Iteration})", response.ToolCalls.Count, currentIteration);
-
-                    foreach (var toolCall in response.ToolCalls)
-                    {
-                        toolCalls.Add(toolCall);
-
-                        // Execute tool with 30s timeout
-                        using var toolCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                        toolCts.CancelAfter(TimeSpan.FromSeconds(30));
-
-                        try
-                        {
-                            var toolResult = await toolsContext.ExecuteAsync(
-                                toolCall.FunctionName,
-                                toolCall.Arguments,
-                                string.Empty, // context
-                                toolCts.Token);
-
-                            // Add tool result to messages
-                            messages.Add(new HazinaChatMessage
-                            {
-                                Role = ChatMessageRole.Tool,
-                                Content = toolResult.ResultData ?? "Tool executed successfully",
-                                ToolCallId = toolCall.Id
-                            });
-
-                            _logger.LogInformation("Tool {ToolName} executed successfully", toolCall.FunctionName);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            _logger.LogWarning("Tool {ToolName} execution timed out after 30s", toolCall.FunctionName);
-                            messages.Add(new HazinaChatMessage
-                            {
-                                Role = ChatMessageRole.Tool,
-                                Content = $"Error: Tool execution timed out after 30 seconds",
-                                ToolCallId = toolCall.Id
-                            });
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error executing tool {ToolName}", toolCall.FunctionName);
-                            messages.Add(new HazinaChatMessage
-                            {
-                                Role = ChatMessageRole.Tool,
-                                Content = $"Error: {ex.Message}",
-                                ToolCallId = toolCall.Id
-                            });
-                        }
-                    }
-
-                    // Call LLM again with tool results
-                    response = await _llmClient.StreamResponseAsync(
-                        messages,
-                        toolsContext?.GetToolDefinitions() ?? new List<HazinaChatTool>(),
-                        chunk =>
-                        {
-                            responseText += chunk;
-                            onChunk?.Invoke(chunk);
-                        },
-                        cancellationToken);
-
-                    totalTokens += response.TokenUsage?.TotalTokens ?? 0;
-                }
+                var responseText = response.Result;
+                var tokenUsage = response.TokenUsage;
 
                 // Add assistant response to conversation
                 conversation.ChatMessages.Add(new ConversationMessage
@@ -224,8 +144,7 @@ Guidelines:
                 {
                     Success = true,
                     ResponseMessage = responseText,
-                    TotalTokensUsed = totalTokens,
-                    ToolCalls = toolCalls
+                    TotalTokensUsed = tokenUsage?.TotalTokens ?? 0
                 };
             }
             catch (Exception ex)
@@ -267,17 +186,21 @@ Guidelines:
             // System prompt
             messages.Add(new HazinaChatMessage
             {
-                Role = ChatMessageRole.System,
-                Content = SYSTEM_PROMPT
+                Role = HazinaMessageRole.System,
+                Text = SYSTEM_PROMPT
             });
 
             // Conversation history
             foreach (var msg in conversation.ChatMessages)
             {
+                var role = msg.Role == ChatMessageRole.User
+                    ? HazinaMessageRole.User
+                    : HazinaMessageRole.Assistant;
+
                 messages.Add(new HazinaChatMessage
                 {
-                    Role = msg.Role,
-                    Content = msg.Text ?? string.Empty
+                    Role = role,
+                    Text = msg.Text ?? string.Empty
                 });
             }
 
@@ -339,16 +262,5 @@ Guidelines:
         public string? ResponseMessage { get; set; }
         public string? ErrorMessage { get; set; }
         public int TotalTokensUsed { get; set; }
-        public List<ToolCall>? ToolCalls { get; set; }
-    }
-
-    /// <summary>
-    /// Tool call record
-    /// </summary>
-    public class ToolCall
-    {
-        public string Id { get; set; } = string.Empty;
-        public string FunctionName { get; set; } = string.Empty;
-        public string Arguments { get; set; } = string.Empty;
     }
 }

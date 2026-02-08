@@ -88,7 +88,6 @@ namespace Hazina.AgenticOrchestration.Controllers
                         sessionId,
                         message = response.ResponseMessage,
                         tokensUsed = response.TotalTokensUsed,
-                        toolCalls = response.ToolCalls?.Count ?? 0,
                         timestamp = DateTime.UtcNow
                     }, cancellationToken);
 
@@ -96,8 +95,7 @@ namespace Hazina.AgenticOrchestration.Controllers
                 {
                     success = true,
                     message = response.ResponseMessage,
-                    tokensUsed = response.TotalTokensUsed,
-                    toolCalls = response.ToolCalls?.Count ?? 0
+                    tokensUsed = response.TotalTokensUsed
                 });
             }
             catch (OperationCanceledException)
