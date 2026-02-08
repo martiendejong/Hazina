@@ -50,8 +50,8 @@ namespace Hazina.AgenticOrchestration.Controllers
                 return BadRequest(new { error = "Message cannot be empty" });
             }
 
-            _logger.LogInformation("Chat message received for session {SessionId}: {Message}",
-                sessionId, request.Message);
+            _logger.LogInformation("Chat message received for session {SessionId} (length: {Length} chars)",
+                sessionId, request.Message?.Length ?? 0);
 
             try
             {
@@ -106,7 +106,7 @@ namespace Hazina.AgenticOrchestration.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing chat message for session {SessionId}", sessionId);
-                return StatusCode(500, new { error = "Internal server error", details = ex.Message });
+                return StatusCode(500, new { error = "Internal server error" });
             }
         }
 
