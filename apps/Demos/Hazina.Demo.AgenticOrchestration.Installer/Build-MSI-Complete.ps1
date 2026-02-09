@@ -1,0 +1,511 @@
+<#
+.SYNOPSIS
+    Complete MSI build script for Hazina Agentic Orchestration
+
+.DESCRIPTION
+    This script:
+    1. Downloads WiX Toolset if not present (portable)
+    2. Publishes the ASP.NET Core app (clean single-file)
+    3. Dynamically generates WiX source for ALL published files
+    4. Builds the MSI installer
+
+    The MSI installs a Windows Service on port 5123 with auto-start.
+
+.PARAMETER Configuration
+    Build configuration (default: Release)
+
+.PARAMETER Platform
+    Target platform (default: win-x64)
+
+.EXAMPLE
+    .\Build-MSI-Complete.ps1
+#>
+
+param(
+    [string]$Configuration = "Release",
+    [string]$Platform = "win-x64"
+)
+
+$ErrorActionPreference = "Stop"
+
+Write-Host "=================================================================" -ForegroundColor Cyan
+Write-Host "  Hazina Orchestration - MSI Build (Port 5123)" -ForegroundColor Cyan
+Write-Host "=================================================================" -ForegroundColor Cyan
+Write-Host ""
+
+# Paths
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$projectDir = Join-Path (Split-Path -Parent $scriptDir) "Hazina.Demo.AgenticOrchestration"
+$appProjectPath = Join-Path $projectDir "Hazina.Demo.AgenticOrchestration.csproj"
+$publishDir = Join-Path $projectDir "bin\$Configuration\net9.0\$Platform\publish"
+$msiOutputDir = Join-Path $scriptDir "bin\$Configuration"
+$wixDir = Join-Path $scriptDir "wix-tools"
+
+Write-Host "Project: $appProjectPath" -ForegroundColor Gray
+Write-Host "Publish: $publishDir" -ForegroundColor Gray
+Write-Host "Output:  $msiOutputDir" -ForegroundColor Gray
+Write-Host ""
+
+# Verify project exists
+if (-not (Test-Path $appProjectPath)) {
+    Write-Host "[FATAL] Project not found: $appProjectPath" -ForegroundColor Red
+    exit 1
+}
+
+# ===================================================================
+# STEP 1: Download WiX if not present
+# ===================================================================
+Write-Host "STEP 1: Checking WiX Toolset..." -ForegroundColor Cyan
+
+$candleExe = Join-Path $wixDir "candle.exe"
+$lightExe = Join-Path $wixDir "light.exe"
+
+if (-not (Test-Path $candleExe)) {
+    Write-Host "  Downloading WiX 3.14 portable..." -ForegroundColor Yellow
+    New-Item -ItemType Directory -Path $wixDir -Force | Out-Null
+
+    $wixUrl = "https://github.com/wixtoolset/wix3/releases/download/wix314rtm/wix314-binaries.zip"
+    $wixZip = Join-Path $wixDir "wix-binaries.zip"
+
+    try {
+        Invoke-WebRequest -Uri $wixUrl -OutFile $wixZip -UseBasicParsing
+        Expand-Archive -Path $wixZip -DestinationPath $wixDir -Force
+        Remove-Item $wixZip -Force
+        Write-Host "  [OK] WiX extracted" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "  [FAILED] Download failed: $_" -ForegroundColor Red
+        exit 1
+    }
+} else {
+    Write-Host "  [OK] WiX found" -ForegroundColor Green
+}
+Write-Host ""
+
+# ===================================================================
+# STEP 2: Clean publish and rebuild
+# ===================================================================
+Write-Host "STEP 2: Publishing application..." -ForegroundColor Cyan
+
+# Clean old publish output
+if (Test-Path $publishDir) {
+    Write-Host "  Cleaning old publish..." -ForegroundColor Gray
+    Remove-Item $publishDir -Recurse -Force
+}
+
+$publishArgs = @(
+    "publish"
+    $appProjectPath
+    "--configuration", $Configuration
+    "--runtime", $Platform
+    "--self-contained", "true"
+    "/p:PublishSingleFile=true"
+    "/p:IncludeNativeLibrariesForSelfExtract=true"
+    "/p:EnableCompressionInSingleFile=true"
+    "--output", $publishDir
+)
+
+Write-Host "  Running: dotnet publish..." -ForegroundColor Gray
+& dotnet @publishArgs
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  [FAILED] Publish failed" -ForegroundColor Red
+    exit 1
+}
+
+$exePath = Join-Path $publishDir "HazinaOrchestration.exe"
+if (-not (Test-Path $exePath)) {
+    Write-Host "  [FAILED] HazinaOrchestration.exe not found" -ForegroundColor Red
+    exit 1
+}
+
+$exeSize = [math]::Round((Get-Item $exePath).Length / 1MB, 2)
+Write-Host "  [OK] Published: HazinaOrchestration.exe ($exeSize MB)" -ForegroundColor Green
+
+# ===================================================================
+# STEP 2b: Clean publish directory (remove unwanted files)
+# ===================================================================
+Write-Host "  Cleaning publish directory..." -ForegroundColor Gray
+
+# Remove secrets, PDBs, XML docs
+$removePatterns = @("*.Secrets.json", "*.pdb")
+foreach ($pattern in $removePatterns) {
+    Get-ChildItem $publishDir -Filter $pattern -ErrorAction SilentlyContinue | ForEach-Object {
+        Write-Host "    Removed: $($_.Name)" -ForegroundColor DarkGray
+        Remove-Item $_.FullName -Force
+    }
+}
+
+# Remove XML doc files (not needed at runtime)
+Get-ChildItem $publishDir -Filter "*.xml" -ErrorAction SilentlyContinue | ForEach-Object {
+    # Keep web.config, remove all other XML files
+    if ($_.Name -ne "web.config") {
+        Write-Host "    Removed: $($_.Name)" -ForegroundColor DarkGray
+        Remove-Item $_.FullName -Force
+    }
+}
+
+# Remove stale directories
+$removeDirs = @("linux-x64", "win-x64", "publish", "ClientApp")
+foreach ($dir in $removeDirs) {
+    $dirPath = Join-Path $publishDir $dir
+    if (Test-Path $dirPath) {
+        Write-Host "    Removed dir: $dir/" -ForegroundColor DarkGray
+        Remove-Item $dirPath -Recurse -Force
+    }
+}
+
+Write-Host ""
+
+# ===================================================================
+# STEP 3: Inventory all published files
+# ===================================================================
+Write-Host "STEP 3: Inventorying published files..." -ForegroundColor Cyan
+
+# Core files that MUST exist
+$coreFiles = @{
+    "HazinaOrchestration.exe" = $true
+    "appsettings.json" = $true
+    "appsettings.Production.json" = $true
+}
+
+# Optional core files
+$optionalCoreFiles = @(
+    "web.config",
+    "entities.yaml",
+    "HazinaOrchestration.staticwebassets.endpoints.json"
+)
+
+# Check core files
+foreach ($file in $coreFiles.Keys) {
+    $path = Join-Path $publishDir $file
+    if (-not (Test-Path $path)) {
+        Write-Host "  [FATAL] Missing required file: $file" -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  [OK] $file" -ForegroundColor Green
+}
+
+# Check optional files
+$presentOptional = @()
+foreach ($file in $optionalCoreFiles) {
+    $path = Join-Path $publishDir $file
+    if (Test-Path $path) {
+        $presentOptional += $file
+        Write-Host "  [OK] $file" -ForegroundColor Green
+    } else {
+        Write-Host "  [--] $file (not present, skipping)" -ForegroundColor DarkGray
+    }
+}
+
+# wwwroot files
+$wwwrootDir = Join-Path $publishDir "wwwroot"
+$assetsDir = Join-Path $wwwrootDir "assets"
+
+if (-not (Test-Path (Join-Path $wwwrootDir "index.html"))) {
+    Write-Host "  [FATAL] wwwroot/index.html missing (React SPA not built)" -ForegroundColor Red
+    exit 1
+}
+Write-Host "  [OK] wwwroot/index.html" -ForegroundColor Green
+
+# Discover ALL asset files (JS, CSS, and their .br/.gz compressed variants)
+$assetFiles = @()
+if (Test-Path $assetsDir) {
+    $assetFiles = Get-ChildItem $assetsDir -File | Sort-Object Name
+    Write-Host "  [OK] wwwroot/assets/ ($($assetFiles.Count) files)" -ForegroundColor Green
+    foreach ($af in $assetFiles) {
+        $size = if ($af.Length -gt 1KB) { "$([math]::Round($af.Length / 1KB, 1)) KB" } else { "$($af.Length) B" }
+        Write-Host "       $($af.Name) ($size)" -ForegroundColor DarkGray
+    }
+}
+
+# Discover any other wwwroot files (besides index.html and assets/)
+$wwwrootExtraFiles = Get-ChildItem $wwwrootDir -File | Where-Object { $_.Name -ne "index.html" }
+
+Write-Host ""
+
+# ===================================================================
+# STEP 4: Generate WiX source dynamically
+# ===================================================================
+Write-Host "STEP 4: Generating WiX installer definition..." -ForegroundColor Cyan
+
+# Helper: make a WiX-safe ID from a filename
+function Get-WixId {
+    param([string]$prefix, [string]$name)
+    $safe = $name -replace '[^a-zA-Z0-9]', '_'
+    return "${prefix}_${safe}"
+}
+
+# Helper: generate a deterministic GUID from a string (for stable component GUIDs)
+function Get-DeterministicGuid {
+    param([string]$seed)
+    $md5 = [System.Security.Cryptography.MD5]::Create()
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($seed)
+    $hash = $md5.ComputeHash($bytes)
+    $guid = [guid]::new($hash)
+    return $guid.ToString("D").ToUpper()
+}
+
+# Generate complete WiX XML - using absolute paths (no WiX variables = no resolution bugs)
+$pubEsc = $publishDir -replace '\\', '\'  # Ensure clean backslashes
+
+# Build the WXS as a .NET StringBuilder for clean string handling
+$sb = [System.Text.StringBuilder]::new()
+[void]$sb.AppendLine('<?xml version="1.0" encoding="UTF-8"?>')
+[void]$sb.AppendLine('<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('  <Product Id="*"')
+[void]$sb.AppendLine('           Name="Hazina Agentic Orchestration"')
+[void]$sb.AppendLine('           Language="1033"')
+[void]$sb.AppendLine('           Version="2.0.0"')
+[void]$sb.AppendLine('           Manufacturer="Hazina Framework"')
+[void]$sb.AppendLine('           UpgradeCode="12345678-1234-1234-1234-123456789012">')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <Package InstallerVersion="500"')
+[void]$sb.AppendLine('             Compressed="yes"')
+[void]$sb.AppendLine('             InstallScope="perMachine"')
+[void]$sb.AppendLine('             Description="Hazina Agentic Orchestration Desktop App"')
+[void]$sb.AppendLine('             Comments="Installs Hazina Agentic Orchestration as a desktop tray application (Port 5123)" />')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />')
+[void]$sb.AppendLine('    <MediaTemplate EmbedCab="yes" />')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <!-- Kill any running HazinaOrchestration.exe before install/upgrade -->')
+[void]$sb.AppendLine('    <Property Id="TASKKILL" Value="taskkill.exe" />')
+[void]$sb.AppendLine('    <CustomAction Id="KillRunningProcess"')
+[void]$sb.AppendLine('                  Property="TASKKILL"')
+[void]$sb.AppendLine('                  ExeCommand="/F /IM HazinaOrchestration.exe"')
+[void]$sb.AppendLine('                  Execute="immediate"')
+[void]$sb.AppendLine('                  Return="ignore" />')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <!-- Remove old Windows Service if it exists (migration from v1) -->')
+[void]$sb.AppendLine('    <Property Id="SC_EXE" Value="sc.exe" />')
+[void]$sb.AppendLine('    <CustomAction Id="StopOldService"')
+[void]$sb.AppendLine('                  Property="SC_EXE"')
+[void]$sb.AppendLine('                  ExeCommand="stop HazinaOrchestration"')
+[void]$sb.AppendLine('                  Execute="immediate"')
+[void]$sb.AppendLine('                  Return="ignore" />')
+[void]$sb.AppendLine('    <CustomAction Id="DeleteOldService"')
+[void]$sb.AppendLine('                  Property="SC_EXE"')
+[void]$sb.AppendLine('                  ExeCommand="delete HazinaOrchestration"')
+[void]$sb.AppendLine('                  Execute="immediate"')
+[void]$sb.AppendLine('                  Return="ignore" />')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <InstallExecuteSequence>')
+[void]$sb.AppendLine('      <Custom Action="KillRunningProcess" Before="InstallValidate">1</Custom>')
+[void]$sb.AppendLine('      <Custom Action="StopOldService" After="KillRunningProcess">1</Custom>')
+[void]$sb.AppendLine('      <Custom Action="DeleteOldService" After="StopOldService">1</Custom>')
+[void]$sb.AppendLine('    </InstallExecuteSequence>')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <Feature Id="ProductFeature" Title="Hazina Agentic Orchestration" Level="1">')
+[void]$sb.AppendLine('      <ComponentRef Id="MainExecutable" />')
+[void]$sb.AppendLine('      <ComponentRef Id="StartMenuShortcut" />')
+[void]$sb.AppendLine('      <ComponentRef Id="AppSettingsConfig" />')
+[void]$sb.AppendLine('      <ComponentRef Id="ProductionConfig" />')
+foreach ($file in $presentOptional) {
+    $compId = Get-WixId "Core" $file
+    [void]$sb.AppendLine("      <ComponentRef Id=`"$compId`" />")
+}
+[void]$sb.AppendLine('      <ComponentRef Id="IndexHtml" />')
+foreach ($wf in $wwwrootExtraFiles) {
+    $compId = Get-WixId "WwwRoot" $wf.Name
+    [void]$sb.AppendLine("      <ComponentRef Id=`"$compId`" />")
+}
+foreach ($af in $assetFiles) {
+    $compId = Get-WixId "AssetFile" $af.Name
+    [void]$sb.AppendLine("      <ComponentRef Id=`"$compId`" />")
+}
+[void]$sb.AppendLine('      <ComponentRef Id="DataDirectory" />')
+[void]$sb.AppendLine('      <ComponentRef Id="LogsDirectory" />')
+[void]$sb.AppendLine('      <ComponentRef Id="SessionLogsDirectory" />')
+[void]$sb.AppendLine('    </Feature>')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />')
+[void]$sb.AppendLine("    <Icon Id=`"AppIcon`" SourceFile=`"$pubEsc\HazinaOrchestration.exe`" />")
+[void]$sb.AppendLine('    <Property Id="ARPPRODUCTICON" Value="AppIcon" />')
+[void]$sb.AppendLine('  </Product>')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('  <!-- Directory Structure -->')
+[void]$sb.AppendLine('  <Fragment>')
+[void]$sb.AppendLine('    <Directory Id="TARGETDIR" Name="SourceDir">')
+[void]$sb.AppendLine('      <Directory Id="ProgramFilesFolder">')
+[void]$sb.AppendLine('        <Directory Id="INSTALLFOLDER" Name="Hazina Orchestration">')
+[void]$sb.AppendLine('          <Directory Id="WWWROOT" Name="wwwroot">')
+[void]$sb.AppendLine('            <Directory Id="WWWROOT_ASSETS" Name="assets" />')
+[void]$sb.AppendLine('          </Directory>')
+[void]$sb.AppendLine('          <Directory Id="DATADIR" Name="data" />')
+[void]$sb.AppendLine('          <Directory Id="LOGSDIR" Name="logs">')
+[void]$sb.AppendLine('            <Directory Id="LOGS_SESSIONS" Name="agent-sessions" />')
+[void]$sb.AppendLine('          </Directory>')
+[void]$sb.AppendLine('        </Directory>')
+[void]$sb.AppendLine('      </Directory>')
+[void]$sb.AppendLine('      <Directory Id="ProgramMenuFolder">')
+[void]$sb.AppendLine('        <Directory Id="ApplicationProgramsFolder" Name="Hazina Orchestration" />')
+[void]$sb.AppendLine('      </Directory>')
+[void]$sb.AppendLine('    </Directory>')
+[void]$sb.AppendLine('  </Fragment>')
+[void]$sb.AppendLine('')
+
+# Main components fragment
+[void]$sb.AppendLine('  <Fragment>')
+[void]$sb.AppendLine('    <Component Id="MainExecutable" Directory="INSTALLFOLDER" Guid="11111111-1111-1111-1111-111111111111">')
+[void]$sb.AppendLine("      <File Id=`"HazinaOrchestrationExe`" Source=`"$pubEsc\HazinaOrchestration.exe`" KeyPath=`"yes`" />")
+[void]$sb.AppendLine('    </Component>')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <!-- Start Menu shortcut -->')
+[void]$sb.AppendLine('    <Component Id="StartMenuShortcut" Directory="ApplicationProgramsFolder" Guid="44444444-4444-4444-4444-444444444444">')
+[void]$sb.AppendLine('      <Shortcut Id="ApplicationStartMenuShortcut"')
+[void]$sb.AppendLine('                Name="Hazina Orchestration"')
+[void]$sb.AppendLine('                Description="Hazina Agentic Orchestration Desktop App"')
+[void]$sb.AppendLine('                Target="[INSTALLFOLDER]HazinaOrchestration.exe"')
+[void]$sb.AppendLine('                WorkingDirectory="INSTALLFOLDER"')
+[void]$sb.AppendLine('                Icon="AppIcon" />')
+[void]$sb.AppendLine('      <RemoveFolder Id="CleanUpShortcutFolder" On="uninstall" />')
+[void]$sb.AppendLine('      <RegistryValue Root="HKCU" Key="Software\Hazina\Orchestration" Name="installed" Type="integer" Value="1" KeyPath="yes" />')
+[void]$sb.AppendLine('    </Component>')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <Component Id="AppSettingsConfig" Directory="INSTALLFOLDER" Guid="22222222-2222-2222-2222-222222222222">')
+[void]$sb.AppendLine("      <File Id=`"AppSettingsJson`" Source=`"$pubEsc\appsettings.json`" KeyPath=`"yes`" />")
+[void]$sb.AppendLine('    </Component>')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <Component Id="ProductionConfig" Directory="INSTALLFOLDER" Guid="33333333-3333-3333-3333-333333333333">')
+[void]$sb.AppendLine("      <File Id=`"AppSettingsProductionJson`" Source=`"$pubEsc\appsettings.Production.json`" KeyPath=`"yes`" />")
+[void]$sb.AppendLine('    </Component>')
+
+# Optional core files
+foreach ($file in $presentOptional) {
+    $compId = Get-WixId "Core" $file
+    $fileId = Get-WixId "CF" $file
+    $guid = Get-DeterministicGuid "core:$file"
+    [void]$sb.AppendLine('')
+    [void]$sb.AppendLine("    <Component Id=`"$compId`" Directory=`"INSTALLFOLDER`" Guid=`"$guid`">")
+    [void]$sb.AppendLine("      <File Id=`"$fileId`" Source=`"$pubEsc\$file`" KeyPath=`"yes`" />")
+    [void]$sb.AppendLine('    </Component>')
+}
+[void]$sb.AppendLine('  </Fragment>')
+[void]$sb.AppendLine('')
+
+# wwwroot fragment
+[void]$sb.AppendLine('  <Fragment>')
+[void]$sb.AppendLine('    <Component Id="IndexHtml" Directory="WWWROOT" Guid="AAAA1111-1111-1111-1111-111111111111">')
+[void]$sb.AppendLine("      <File Id=`"IndexHtmlFile`" Source=`"$pubEsc\wwwroot\index.html`" KeyPath=`"yes`" />")
+[void]$sb.AppendLine('    </Component>')
+foreach ($wf in $wwwrootExtraFiles) {
+    $compId = Get-WixId "WwwRoot" $wf.Name
+    $fileId = Get-WixId "WR" $wf.Name
+    $guid = Get-DeterministicGuid "wwwroot:$($wf.Name)"
+    [void]$sb.AppendLine('')
+    [void]$sb.AppendLine("    <Component Id=`"$compId`" Directory=`"WWWROOT`" Guid=`"$guid`">")
+    [void]$sb.AppendLine("      <File Id=`"$fileId`" Source=`"$pubEsc\wwwroot\$($wf.Name)`" KeyPath=`"yes`" />")
+    [void]$sb.AppendLine('    </Component>')
+}
+[void]$sb.AppendLine('  </Fragment>')
+[void]$sb.AppendLine('')
+
+# Assets fragment
+[void]$sb.AppendLine('  <Fragment>')
+$assetCounter = 0
+foreach ($af in $assetFiles) {
+    $assetCounter++
+    $compId = Get-WixId "AssetFile" $af.Name
+    $fileId = Get-WixId "AF" $af.Name
+    $guid = Get-DeterministicGuid "asset:$($af.Name)"
+    [void]$sb.AppendLine("    <Component Id=`"$compId`" Directory=`"WWWROOT_ASSETS`" Guid=`"$guid`">")
+    [void]$sb.AppendLine("      <File Id=`"$fileId`" Source=`"$pubEsc\wwwroot\assets\$($af.Name)`" KeyPath=`"yes`" />")
+    [void]$sb.AppendLine('    </Component>')
+}
+[void]$sb.AppendLine('  </Fragment>')
+[void]$sb.AppendLine('')
+
+# Empty directories
+[void]$sb.AppendLine('  <Fragment>')
+[void]$sb.AppendLine('    <Component Id="DataDirectory" Directory="DATADIR" Guid="CCCC1111-1111-1111-1111-111111111111">')
+[void]$sb.AppendLine('      <CreateFolder />')
+[void]$sb.AppendLine('    </Component>')
+[void]$sb.AppendLine('    <Component Id="LogsDirectory" Directory="LOGSDIR" Guid="CCCC2222-2222-2222-2222-222222222222">')
+[void]$sb.AppendLine('      <CreateFolder />')
+[void]$sb.AppendLine('    </Component>')
+[void]$sb.AppendLine('    <Component Id="SessionLogsDirectory" Directory="LOGS_SESSIONS" Guid="CCCC3333-3333-3333-3333-333333333333">')
+[void]$sb.AppendLine('      <CreateFolder />')
+[void]$sb.AppendLine('    </Component>')
+[void]$sb.AppendLine('  </Fragment>')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('</Wix>')
+
+$generatedWxs = Join-Path $scriptDir "Product-Generated.wxs"
+[System.IO.File]::WriteAllText($generatedWxs, $sb.ToString(), [System.Text.Encoding]::UTF8)
+Write-Host "  [OK] Generated WiX source ($assetCounter asset files, $($presentOptional.Count) optional core files)" -ForegroundColor Green
+
+$totalComponents = 3 + $presentOptional.Count + 1 + $wwwrootExtraFiles.Count + $assetFiles.Count + 3
+Write-Host "  Total components: $totalComponents" -ForegroundColor Gray
+Write-Host ""
+
+# ===================================================================
+# STEP 5: Build MSI
+# ===================================================================
+Write-Host "STEP 5: Building MSI..." -ForegroundColor Cyan
+
+# Clean old MSI to avoid stale builds
+if (Test-Path (Join-Path $msiOutputDir "HazinaOrchestrationSetup.msi")) {
+    Remove-Item (Join-Path $msiOutputDir "HazinaOrchestrationSetup.msi") -Force
+}
+
+New-Item -ItemType Directory -Path $msiOutputDir -Force | Out-Null
+$objDir = Join-Path $scriptDir "obj\$Configuration"
+New-Item -ItemType Directory -Path $objDir -Force | Out-Null
+
+Push-Location $scriptDir
+
+Write-Host "  Compiling (candle.exe)..." -ForegroundColor Gray
+& $candleExe "Product-Generated.wxs" -out "obj\$Configuration\" 2>&1
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  [FAILED] candle.exe failed" -ForegroundColor Red
+    Pop-Location
+    exit 1
+}
+
+Write-Host "  Linking (light.exe)..." -ForegroundColor Gray
+& $lightExe "obj\$Configuration\Product-Generated.wixobj" -out "$msiOutputDir\HazinaOrchestrationSetup.msi" -sval 2>&1
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  [FAILED] light.exe failed" -ForegroundColor Red
+    Pop-Location
+    exit 1
+}
+
+Pop-Location
+
+$msiPath = Join-Path $msiOutputDir "HazinaOrchestrationSetup.msi"
+if (-not (Test-Path $msiPath)) {
+    Write-Host "  [FAILED] MSI not created" -ForegroundColor Red
+    exit 1
+}
+
+$msiSize = [math]::Round((Get-Item $msiPath).Length / 1MB, 2)
+Write-Host "  [OK] MSI created: $msiSize MB" -ForegroundColor Green
+Write-Host ""
+
+# ===================================================================
+# SUCCESS
+# ===================================================================
+Write-Host "=================================================================" -ForegroundColor Green
+Write-Host "  BUILD COMPLETE" -ForegroundColor Green
+Write-Host "=================================================================" -ForegroundColor Green
+Write-Host ""
+Write-Host "  MSI: $msiPath" -ForegroundColor White
+Write-Host ""
+Write-Host "  What the MSI does:" -ForegroundColor Cyan
+Write-Host "    - Kills any running HazinaOrchestration.exe" -ForegroundColor Gray
+Write-Host "    - Removes old Windows Service (if exists, migration from v1)" -ForegroundColor Gray
+Write-Host "    - Installs to: C:\Program Files\Hazina Orchestration\" -ForegroundColor Gray
+Write-Host "    - Creates Start Menu shortcut" -ForegroundColor Gray
+Write-Host "    - Includes React SPA + $assetCounter asset files" -ForegroundColor Gray
+Write-Host ""
+Write-Host "  After install:" -ForegroundColor Cyan
+Write-Host "    Launch from Start Menu or run HazinaOrchestration.exe" -ForegroundColor Gray
+Write-Host "    System tray icon with context menu (dashboard, swagger, exit)" -ForegroundColor Gray
+Write-Host "    Toggle 'Start with Windows' from tray menu" -ForegroundColor Gray
+Write-Host "    Web UI:  https://localhost:5123" -ForegroundColor Gray
+Write-Host "    Swagger: https://localhost:5123/swagger" -ForegroundColor Gray
+Write-Host ""

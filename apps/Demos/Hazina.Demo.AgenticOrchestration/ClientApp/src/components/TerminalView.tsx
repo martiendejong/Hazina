@@ -292,6 +292,28 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       }
     })
 
+    // Chunked paste: sends large text in 4KB chunks to avoid SignalR message size limits
+    const PASTE_CHUNK_SIZE = 4096
+    const sendPasteChunked = async (text: string) => {
+      if (!text || hubConnection.state !== signalR.HubConnectionState.Connected) return
+      const encoder = new TextEncoder()
+      const fullBytes = encoder.encode(text)
+
+      for (let offset = 0; offset < fullBytes.length; offset += PASTE_CHUNK_SIZE) {
+        const chunk = Array.from(fullBytes.slice(offset, offset + PASTE_CHUNK_SIZE))
+        try {
+          await hubConnection.invoke('SendInput', sessionId, chunk)
+        } catch (err) {
+          console.error('Paste chunk failed at offset', offset, err)
+          return
+        }
+        // Small delay between chunks to let ConPTY process
+        if (offset + PASTE_CHUNK_SIZE < fullBytes.length) {
+          await new Promise(resolve => setTimeout(resolve, 10))
+        }
+      }
+    }
+
     // Handle user input
     terminal.onData(data => {
       if (hubConnection.state === signalR.HubConnectionState.Connected) {
@@ -304,7 +326,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
     // Custom keyboard handler for copy/paste
     // Ctrl+C: Copy if text selected, otherwise send interrupt
-    // Ctrl+V: Paste from clipboard
+    // Ctrl+V: Paste from clipboard (chunked for large text)
     terminal.attachCustomKeyEventHandler((event) => {
       // Handle Ctrl+C - copy if selection exists
       if (event.ctrlKey && event.key === 'c' && event.type === 'keydown') {
@@ -319,18 +341,11 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         return true
       }
 
-      // Handle Ctrl+V - paste
+      // Handle Ctrl+V - paste (chunked)
       if (event.ctrlKey && event.key === 'v' && event.type === 'keydown') {
-        navigator.clipboard.readText().then(text => {
-          if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-            const encoder = new TextEncoder()
-            const bytes = Array.from(encoder.encode(text))
-            hubConnection.invoke('SendInput', sessionId, bytes)
-              .catch(err => console.error('Paste failed:', err))
-          }
-        }).catch(err => {
-          console.error('Paste failed:', err)
-        })
+        navigator.clipboard.readText()
+          .then(text => sendPasteChunked(text))
+          .catch(err => console.error('Paste failed:', err))
         return false // Prevent default
       }
 
@@ -345,23 +360,46 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         return false
       }
 
-      // Handle Ctrl+Shift+V - always paste (alternative shortcut)
+      // Handle Ctrl+Shift+V - always paste (alternative shortcut, chunked)
       if (event.ctrlKey && event.shiftKey && event.key === 'V' && event.type === 'keydown') {
-        navigator.clipboard.readText().then(text => {
-          if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-            const encoder = new TextEncoder()
-            const bytes = Array.from(encoder.encode(text))
-            hubConnection.invoke('SendInput', sessionId, bytes)
-              .catch(err => console.error('Paste failed:', err))
-          }
-        }).catch(err => {
-          console.error('Paste failed:', err)
-        })
+        navigator.clipboard.readText()
+          .then(text => sendPasteChunked(text))
+          .catch(err => console.error('Paste failed:', err))
         return false
       }
 
       return true // Allow all other keys
     })
+
+    // Document-level paste fallback: catches paste when xterm's textarea doesn't have focus
+    // but the terminal container is visible. Fixes "need to press space first" issue.
+    const handleDocumentPaste = (e: ClipboardEvent) => {
+      // Only handle if terminal container is visible and no other input is focused
+      const activeEl = document.activeElement
+      const isInputFocused = activeEl instanceof HTMLInputElement ||
+        activeEl instanceof HTMLTextAreaElement ||
+        (activeEl as HTMLElement)?.isContentEditable
+      // Skip if user is typing in an input/textarea (e.g. mobile input box)
+      if (isInputFocused) return
+      // Skip if terminal container is not in the DOM
+      if (!terminalRef.current) return
+
+      e.preventDefault()
+      e.stopPropagation()
+      const text = e.clipboardData?.getData('text')
+      if (text) {
+        // Focus terminal so subsequent keystrokes go there
+        terminal.focus()
+        sendPasteChunked(text)
+      }
+    }
+    document.addEventListener('paste', handleDocumentPaste)
+
+    // Click-to-focus: ensure clicking terminal area always focuses xterm
+    const handleContainerClick = () => {
+      terminal.focus()
+    }
+    terminalRef.current.addEventListener('click', handleContainerClick)
 
     // Right-click context menu for copy/paste
     const handleContextMenu = (e: MouseEvent) => {
@@ -418,17 +456,13 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         !selection || selection.length === 0
       ))
 
-      // Paste option
+      // Paste option (chunked for large text)
       menu.appendChild(createMenuItem(
         'Paste',
         () => {
-          navigator.clipboard.readText().then(text => {
-            if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-              const encoder = new TextEncoder()
-              const bytes = Array.from(encoder.encode(text))
-              hubConnection.invoke('SendInput', sessionId, bytes)
-            }
-          })
+          navigator.clipboard.readText()
+            .then(text => sendPasteChunked(text))
+            .catch(err => console.error('Context menu paste failed:', err))
         }
       ))
 
@@ -512,15 +546,17 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize)
+      document.removeEventListener('paste', handleDocumentPaste)
       if (resizeObserver) {
         resizeObserver.disconnect()
       }
       if (resizeTimeoutRef.current) {
         clearTimeout(resizeTimeoutRef.current)
       }
-      // Remove context menu handler
+      // Remove context menu and click handlers
       if (terminalRef.current) {
         terminalRef.current.removeEventListener('contextmenu', handleContextMenu)
+        terminalRef.current.removeEventListener('click', handleContainerClick)
       }
       // Remove any lingering context menu
       const existingMenu = document.querySelector('.terminal-context-menu')
@@ -692,23 +728,25 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       </div>
       {error && <div className="terminal-error">{error}</div>}
       <div className="terminal-container" ref={terminalRef} />
-      <div className="terminal-input-container">
-        <textarea
-          className="terminal-input"
-          placeholder="Type command for mobile..."
-          value={mobileInput}
-          onChange={(e) => setMobileInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault()
-              handleSendMobileInput()
-            }
-          }}
-        />
-        <button className="btn-send-terminal" onClick={handleSendMobileInput}>
-          <span>Send</span>
-        </button>
-      </div>
+      {isMobile && (
+        <div className="terminal-input-container">
+          <textarea
+            className="terminal-input"
+            placeholder="Type command for mobile..."
+            value={mobileInput}
+            onChange={(e) => setMobileInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                handleSendMobileInput()
+              }
+            }}
+          />
+          <button className="btn-send-terminal" onClick={handleSendMobileInput}>
+            <span>Send</span>
+          </button>
+        </div>
+      )}
     </div>
   )
 }

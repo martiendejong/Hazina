@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <Product Id="*"
+           Name="Hazina Agentic Orchestration"
+           Language="1033"
+           Version="2.0.0"
+           Manufacturer="Hazina Framework"
+           UpgradeCode="12345678-1234-1234-1234-123456789012">
+
+    <Package InstallerVersion="500"
+             Compressed="yes"
+             InstallScope="perMachine"
+             Description="Hazina Agentic Orchestration Desktop App"
+             Comments="Installs Hazina Agentic Orchestration as a desktop tray application (Port 5123)" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Kill any running HazinaOrchestration.exe before install/upgrade -->
+    <Property Id="TASKKILL" Value="taskkill.exe" />
+    <CustomAction Id="KillRunningProcess"
+                  Property="TASKKILL"
+                  ExeCommand="/F /IM HazinaOrchestration.exe"
+                  Execute="immediate"
+                  Return="ignore" />
+
+    <!-- Remove old Windows Service if it exists (migration from v1) -->
+    <Property Id="SC_EXE" Value="sc.exe" />
+    <CustomAction Id="StopOldService"
+                  Property="SC_EXE"
+                  ExeCommand="stop HazinaOrchestration"
+                  Execute="immediate"
+                  Return="ignore" />
+    <CustomAction Id="DeleteOldService"
+                  Property="SC_EXE"
+                  ExeCommand="delete HazinaOrchestration"
+                  Execute="immediate"
+                  Return="ignore" />
+
+    <InstallExecuteSequence>
+      <Custom Action="KillRunningProcess" Before="InstallValidate">1</Custom>
+      <Custom Action="StopOldService" After="KillRunningProcess">1</Custom>
+      <Custom Action="DeleteOldService" After="StopOldService">1</Custom>
+    </InstallExecuteSequence>
+
+    <Feature Id="ProductFeature" Title="Hazina Agentic Orchestration" Level="1">
+      <ComponentRef Id="MainExecutable" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="AppSettingsConfig" />
+      <ComponentRef Id="ProductionConfig" />
+      <ComponentRef Id="Core_web_config" />
+      <ComponentRef Id="Core_entities_yaml" />
+      <ComponentRef Id="Core_HazinaOrchestration_staticwebassets_endpoints_json" />
+      <ComponentRef Id="IndexHtml" />
+      <ComponentRef Id="WwwRoot_index_html_br" />
+      <ComponentRef Id="WwwRoot_index_html_gz" />
+      <ComponentRef Id="WwwRoot_vite_svg" />
+      <ComponentRef Id="WwwRoot_vite_svg_br" />
+      <ComponentRef Id="WwwRoot_vite_svg_gz" />
+      <ComponentRef Id="AssetFile_index_DpVaZMHw_js" />
+      <ComponentRef Id="AssetFile_index_DpVaZMHw_js_br" />
+      <ComponentRef Id="AssetFile_index_DpVaZMHw_js_gz" />
+      <ComponentRef Id="AssetFile_index_jxsYKLC3_css" />
+      <ComponentRef Id="AssetFile_index_jxsYKLC3_css_br" />
+      <ComponentRef Id="AssetFile_index_jxsYKLC3_css_gz" />
+      <ComponentRef Id="DataDirectory" />
+      <ComponentRef Id="LogsDirectory" />
+      <ComponentRef Id="SessionLogsDirectory" />
+    </Feature>
+
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    <Icon Id="AppIcon" SourceFile="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\HazinaOrchestration.exe" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+  </Product>
+
+  <!-- Directory Structure -->
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="Hazina Orchestration">
+          <Directory Id="WWWROOT" Name="wwwroot">
+            <Directory Id="WWWROOT_ASSETS" Name="assets" />
+          </Directory>
+          <Directory Id="DATADIR" Name="data" />
+          <Directory Id="LOGSDIR" Name="logs">
+            <Directory Id="LOGS_SESSIONS" Name="agent-sessions" />
+          </Directory>
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Hazina Orchestration" />
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <Component Id="MainExecutable" Directory="INSTALLFOLDER" Guid="11111111-1111-1111-1111-111111111111">
+      <File Id="HazinaOrchestrationExe" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\HazinaOrchestration.exe" KeyPath="yes" />
+    </Component>
+
+    <!-- Start Menu shortcut -->
+    <Component Id="StartMenuShortcut" Directory="ApplicationProgramsFolder" Guid="44444444-4444-4444-4444-444444444444">
+      <Shortcut Id="ApplicationStartMenuShortcut"
+                Name="Hazina Orchestration"
+                Description="Hazina Agentic Orchestration Desktop App"
+                Target="[INSTALLFOLDER]HazinaOrchestration.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="AppIcon" />
+      <RemoveFolder Id="CleanUpShortcutFolder" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\Hazina\Orchestration" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="AppSettingsConfig" Directory="INSTALLFOLDER" Guid="22222222-2222-2222-2222-222222222222">
+      <File Id="AppSettingsJson" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\appsettings.json" KeyPath="yes" />
+    </Component>
+
+    <Component Id="ProductionConfig" Directory="INSTALLFOLDER" Guid="33333333-3333-3333-3333-333333333333">
+      <File Id="AppSettingsProductionJson" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\appsettings.Production.json" KeyPath="yes" />
+    </Component>
+
+    <Component Id="Core_web_config" Directory="INSTALLFOLDER" Guid="F8DBBFD7-25F8-A085-C706-2AA5AA56D320">
+      <File Id="CF_web_config" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\web.config" KeyPath="yes" />
+    </Component>
+
+    <Component Id="Core_entities_yaml" Directory="INSTALLFOLDER" Guid="A91409EB-FC1D-E2C4-A552-BAC0540002F6">
+      <File Id="CF_entities_yaml" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\entities.yaml" KeyPath="yes" />
+    </Component>
+
+    <Component Id="Core_HazinaOrchestration_staticwebassets_endpoints_json" Directory="INSTALLFOLDER" Guid="F05A4A25-474E-8107-7D8E-BF3CA37B474F">
+      <File Id="CF_HazinaOrchestration_staticwebassets_endpoints_json" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\HazinaOrchestration.staticwebassets.endpoints.json" KeyPath="yes" />
+    </Component>
+  </Fragment>
+
+  <Fragment>
+    <Component Id="IndexHtml" Directory="WWWROOT" Guid="AAAA1111-1111-1111-1111-111111111111">
+      <File Id="IndexHtmlFile" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\index.html" KeyPath="yes" />
+    </Component>
+
+    <Component Id="WwwRoot_index_html_br" Directory="WWWROOT" Guid="3AE0F71E-A1C8-CA52-F146-CE28BAFFF211">
+      <File Id="WR_index_html_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\index.html.br" KeyPath="yes" />
+    </Component>
+
+    <Component Id="WwwRoot_index_html_gz" Directory="WWWROOT" Guid="61B7DE27-7194-A21E-99A5-D05EA614CEF6">
+      <File Id="WR_index_html_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\index.html.gz" KeyPath="yes" />
+    </Component>
+
+    <Component Id="WwwRoot_vite_svg" Directory="WWWROOT" Guid="1E66F9CB-08C8-AEF0-356E-28F728CA00C4">
+      <File Id="WR_vite_svg" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\vite.svg" KeyPath="yes" />
+    </Component>
+
+    <Component Id="WwwRoot_vite_svg_br" Directory="WWWROOT" Guid="57128E00-EEA4-DA00-252C-522BD7860935">
+      <File Id="WR_vite_svg_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\vite.svg.br" KeyPath="yes" />
+    </Component>
+
+    <Component Id="WwwRoot_vite_svg_gz" Directory="WWWROOT" Guid="BF5410A3-D947-AAE8-1A1A-4C8B61AD6E5D">
+      <File Id="WR_vite_svg_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\vite.svg.gz" KeyPath="yes" />
+    </Component>
+  </Fragment>
+
+  <Fragment>
+    <Component Id="AssetFile_index_DpVaZMHw_js" Directory="WWWROOT_ASSETS" Guid="C3E61188-9FEB-CE8C-89F6-D0043B75F9E7">
+      <File Id="AF_index_DpVaZMHw_js" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-DpVaZMHw.js" KeyPath="yes" />
+    </Component>
+    <Component Id="AssetFile_index_DpVaZMHw_js_br" Directory="WWWROOT_ASSETS" Guid="508F9D61-A9A2-6568-E04F-0E6CE37B191F">
+      <File Id="AF_index_DpVaZMHw_js_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-DpVaZMHw.js.br" KeyPath="yes" />
+    </Component>
+    <Component Id="AssetFile_index_DpVaZMHw_js_gz" Directory="WWWROOT_ASSETS" Guid="44BE2A3B-B5F2-D5A9-9B44-EF1C147124DE">
+      <File Id="AF_index_DpVaZMHw_js_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-DpVaZMHw.js.gz" KeyPath="yes" />
+    </Component>
+    <Component Id="AssetFile_index_jxsYKLC3_css" Directory="WWWROOT_ASSETS" Guid="43903075-E14F-72DB-7D58-2ABECB1C13B1">
+      <File Id="AF_index_jxsYKLC3_css" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-jxsYKLC3.css" KeyPath="yes" />
+    </Component>
+    <Component Id="AssetFile_index_jxsYKLC3_css_br" Directory="WWWROOT_ASSETS" Guid="EBB948CF-9EE3-2730-B49E-D2B775D3EF8F">
+      <File Id="AF_index_jxsYKLC3_css_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-jxsYKLC3.css.br" KeyPath="yes" />
+    </Component>
+    <Component Id="AssetFile_index_jxsYKLC3_css_gz" Directory="WWWROOT_ASSETS" Guid="84561C7E-BDD1-93E0-99D5-8508970CBD75">
+      <File Id="AF_index_jxsYKLC3_css_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-jxsYKLC3.css.gz" KeyPath="yes" />
+    </Component>
+  </Fragment>
+
+  <Fragment>
+    <Component Id="DataDirectory" Directory="DATADIR" Guid="CCCC1111-1111-1111-1111-111111111111">
+      <CreateFolder />
+    </Component>
+    <Component Id="LogsDirectory" Directory="LOGSDIR" Guid="CCCC2222-2222-2222-2222-222222222222">
+      <CreateFolder />
+    </Component>
+    <Component Id="SessionLogsDirectory" Directory="LOGS_SESSIONS" Guid="CCCC3333-3333-3333-3333-333333333333">
+      <CreateFolder />
+    </Component>
+  </Fragment>
+
+</Wix>
