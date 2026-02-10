@@ -158,6 +158,24 @@ foreach ($dir in $removeDirs) {
 Write-Host ""
 
 # ===================================================================
+# STEP 2c: Copy setup files to publish directory
+# ===================================================================
+Write-Host "  Copying setup files to publish directory..." -ForegroundColor Gray
+
+$setupFiles = @("Setup.ps1", "Setup.cmd", "Setup-Config.example.json", "License.rtf")
+foreach ($sf in $setupFiles) {
+    $srcPath = Join-Path $scriptDir $sf
+    if (Test-Path $srcPath) {
+        Copy-Item $srcPath -Destination $publishDir -Force
+        Write-Host "    Copied: $sf" -ForegroundColor DarkGray
+    } else {
+        Write-Host "    [WARN] Setup file not found: $sf" -ForegroundColor Yellow
+    }
+}
+
+Write-Host ""
+
+# ===================================================================
 # STEP 3: Inventory all published files
 # ===================================================================
 Write-Host "STEP 3: Inventorying published files..." -ForegroundColor Cyan
@@ -315,6 +333,9 @@ foreach ($af in $assetFiles) {
     $compId = Get-WixId "AssetFile" $af.Name
     [void]$sb.AppendLine("      <ComponentRef Id=`"$compId`" />")
 }
+[void]$sb.AppendLine('      <ComponentRef Id="SetupScript" />')
+[void]$sb.AppendLine('      <ComponentRef Id="SetupCmd" />')
+[void]$sb.AppendLine('      <ComponentRef Id="SetupConfigExample" />')
 [void]$sb.AppendLine('      <ComponentRef Id="DataDirectory" />')
 [void]$sb.AppendLine('      <ComponentRef Id="LogsDirectory" />')
 [void]$sb.AppendLine('      <ComponentRef Id="SessionLogsDirectory" />')
@@ -323,6 +344,26 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine('    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />')
 [void]$sb.AppendLine("    <Icon Id=`"AppIcon`" SourceFile=`"$pubEsc\HazinaOrchestration.exe`" />")
 [void]$sb.AppendLine('    <Property Id="ARPPRODUCTICON" Value="AppIcon" />')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <!-- WiX UI with license dialog -->')
+[void]$sb.AppendLine('    <UIRef Id="WixUI_InstallDir" />')
+[void]$sb.AppendLine("    <WixVariable Id=`"WixUILicenseRtf`" Value=`"$pubEsc\License.rtf`" />")
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <!-- Exit dialog checkbox (checked by default) -->')
+[void]$sb.AppendLine('    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"')
+[void]$sb.AppendLine('              Value="Configure network access and security (recommended)" />')
+[void]$sb.AppendLine('    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <!-- Launch Setup.cmd via ShellExecute after install -->')
+[void]$sb.AppendLine('    <Property Id="WixShellExecTarget" Value="[#SetupCmdFile]" />')
+[void]$sb.AppendLine('    <CustomAction Id="LaunchSetup" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <UI>')
+[void]$sb.AppendLine('      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchSetup">')
+[void]$sb.AppendLine('        WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed')
+[void]$sb.AppendLine('      </Publish>')
+[void]$sb.AppendLine('    </UI>')
+[void]$sb.AppendLine('')
 [void]$sb.AppendLine('  </Product>')
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('  <!-- Directory Structure -->')
@@ -370,6 +411,19 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <Component Id="ProductionConfig" Directory="INSTALLFOLDER" Guid="33333333-3333-3333-3333-333333333333">')
 [void]$sb.AppendLine("      <File Id=`"AppSettingsProductionJson`" Source=`"$pubEsc\appsettings.Production.json`" KeyPath=`"yes`" />")
+[void]$sb.AppendLine('    </Component>')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <!-- Setup files (for post-install Tailscale/HTTPS configuration) -->')
+[void]$sb.AppendLine('    <Component Id="SetupScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555501">')
+[void]$sb.AppendLine("      <File Id=`"SetupPs1File`" Source=`"$pubEsc\Setup.ps1`" KeyPath=`"yes`" />")
+[void]$sb.AppendLine('    </Component>')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <Component Id="SetupCmd" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555502">')
+[void]$sb.AppendLine("      <File Id=`"SetupCmdFile`" Source=`"$pubEsc\Setup.cmd`" KeyPath=`"yes`" />")
+[void]$sb.AppendLine('    </Component>')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <Component Id="SetupConfigExample" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555503">')
+[void]$sb.AppendLine("      <File Id=`"SetupConfigExampleFile`" Source=`"$pubEsc\Setup-Config.example.json`" KeyPath=`"yes`" />")
 [void]$sb.AppendLine('    </Component>')
 
 # Optional core files
@@ -436,7 +490,7 @@ $generatedWxs = Join-Path $scriptDir "Product-Generated.wxs"
 [System.IO.File]::WriteAllText($generatedWxs, $sb.ToString(), [System.Text.Encoding]::UTF8)
 Write-Host "  [OK] Generated WiX source ($assetCounter asset files, $($presentOptional.Count) optional core files)" -ForegroundColor Green
 
-$totalComponents = 3 + $presentOptional.Count + 1 + $wwwrootExtraFiles.Count + $assetFiles.Count + 3
+$totalComponents = 3 + 3 + $presentOptional.Count + 1 + $wwwrootExtraFiles.Count + $assetFiles.Count + 3  # 3 core + 3 setup + optional + index + wwwroot extras + assets + 3 dirs
 Write-Host "  Total components: $totalComponents" -ForegroundColor Gray
 Write-Host ""
 
@@ -457,7 +511,7 @@ New-Item -ItemType Directory -Path $objDir -Force | Out-Null
 Push-Location $scriptDir
 
 Write-Host "  Compiling (candle.exe)..." -ForegroundColor Gray
-& $candleExe "Product-Generated.wxs" -out "obj\$Configuration\" 2>&1
+& $candleExe "Product-Generated.wxs" -ext WixUIExtension -ext WixUtilExtension -out "obj\$Configuration\" 2>&1
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "  [FAILED] candle.exe failed" -ForegroundColor Red
@@ -466,7 +520,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "  Linking (light.exe)..." -ForegroundColor Gray
-& $lightExe "obj\$Configuration\Product-Generated.wixobj" -out "$msiOutputDir\HazinaOrchestrationSetup.msi" -sval 2>&1
+& $lightExe "obj\$Configuration\Product-Generated.wixobj" -ext WixUIExtension -ext WixUtilExtension -out "$msiOutputDir\HazinaOrchestrationSetup.msi" -sval 2>&1
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "  [FAILED] light.exe failed" -ForegroundColor Red
@@ -501,9 +555,12 @@ Write-Host "    - Removes old Windows Service (if exists, migration from v1)" -F
 Write-Host "    - Installs to: C:\Program Files\Hazina Orchestration\" -ForegroundColor Gray
 Write-Host "    - Creates Start Menu shortcut" -ForegroundColor Gray
 Write-Host "    - Includes React SPA + $assetCounter asset files" -ForegroundColor Gray
+Write-Host "    - Shows license agreement during install" -ForegroundColor Gray
+Write-Host "    - Finish dialog offers to run Setup.ps1 (Tailscale/HTTPS config)" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  After install:" -ForegroundColor Cyan
-Write-Host "    Launch from Start Menu or run HazinaOrchestration.exe" -ForegroundColor Gray
+Write-Host "    Finish dialog checkbox launches Setup.ps1 for Tailscale/HTTPS setup" -ForegroundColor Gray
+Write-Host "    Or launch from Start Menu / run HazinaOrchestration.exe" -ForegroundColor Gray
 Write-Host "    System tray icon with context menu (dashboard, swagger, exit)" -ForegroundColor Gray
 Write-Host "    Toggle 'Start with Windows' from tray menu" -ForegroundColor Gray
 Write-Host "    Web UI:  https://localhost:5123" -ForegroundColor Gray

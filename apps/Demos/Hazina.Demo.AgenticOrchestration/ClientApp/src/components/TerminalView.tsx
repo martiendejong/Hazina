@@ -70,7 +70,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const handleSendMobileInput = useCallback(() => {
     if (connection.current?.state === signalR.HubConnectionState.Connected && mobileInput.trim()) {
       const encoder = new TextEncoder()
-      const bytes = Array.from(encoder.encode(mobileInput))
+      const bytes = Array.from(encoder.encode(mobileInput + '\n'))
       connection.current.invoke('SendInput', sessionId, bytes)
         .catch(err => console.error('SendInput (mobile) failed:', err))
       setMobileInput('')
@@ -343,10 +343,11 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
       // Handle Ctrl+V - paste (chunked)
       if (event.ctrlKey && event.key === 'v' && event.type === 'keydown') {
+        event.preventDefault() // Stop browser native paste (prevents double paste via onData)
         navigator.clipboard.readText()
           .then(text => sendPasteChunked(text))
           .catch(err => console.error('Paste failed:', err))
-        return false // Prevent default
+        return false
       }
 
       // Handle Ctrl+Shift+C - always copy (alternative shortcut)
@@ -362,6 +363,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
       // Handle Ctrl+Shift+V - always paste (alternative shortcut, chunked)
       if (event.ctrlKey && event.shiftKey && event.key === 'V' && event.type === 'keydown') {
+        event.preventDefault()
         navigator.clipboard.readText()
           .then(text => sendPasteChunked(text))
           .catch(err => console.error('Paste failed:', err))
@@ -570,17 +572,6 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     }
   }, [sessionId, isMobile])
 
-  const handleInterrupt = async () => {
-    if (connection.current?.state === signalR.HubConnectionState.Connected) {
-      try {
-        await connection.current.invoke('SendSignal', sessionId, 'interrupt')
-        terminalInstance.current?.writeln('\r\n\x1b[33m[Sent Ctrl+C]\x1b[0m')
-      } catch (err) {
-        console.error('SendSignal failed:', err)
-      }
-    }
-  }
-
   const handleTerminate = async () => {
     if (connection.current?.state === signalR.HubConnectionState.Connected) {
       try {
@@ -715,9 +706,6 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
           {voiceState.error && (
             <span className="voice-error" aria-hidden="true">{voiceState.error}</span>
           )}
-          <button className="btn-interrupt" onClick={handleInterrupt} title="Send Ctrl+C">
-            Ctrl+C
-          </button>
           <button className="btn-terminate" onClick={handleTerminate} title="Terminate process">
             Terminate
           </button>

@@ -316,15 +316,6 @@ button:hover {
   font-size: 0.75rem;
 }
 
-.btn-interrupt {
-  background: #9e6a03;
-  border-color: #9e6a03;
-}
-
-.btn-interrupt:hover {
-  background: #bb8009;
-}
-
 .btn-close {
   background: transparent;
   border-color: #30363d;
@@ -682,34 +673,12 @@ button:hover {
     overflow: hidden;
   }
 
-  /* Session list fills screen on mobile when no session selected */
-  .sidebar {
+  /* Mobile: session list takes full screen */
+  .session-list {
     width: 100%;
     flex: 1;
-    max-height: none;
-    border-right: none;
-    border-bottom: none;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;  /* Smooth scroll on iOS */
-  }
-
-  /* Hide sidebar when a session is active on mobile */
-  .sidebar.session-active {
-    display: none;
-  }
-
-  /* Hide terminal section when no session (show only sidebar) */
-  .terminal-section:not(.has-session) {
-    display: none;
-  }
-
-  /* Terminal fills available space on mobile when session is active */
-  .terminal-section.has-session {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;  /* Critical: allows flex container to shrink */
-    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Mobile toolbar layout */

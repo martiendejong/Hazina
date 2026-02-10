@@ -58,12 +58,15 @@
       <ComponentRef Id="WwwRoot_vite_svg" />
       <ComponentRef Id="WwwRoot_vite_svg_br" />
       <ComponentRef Id="WwwRoot_vite_svg_gz" />
-      <ComponentRef Id="AssetFile_index_DpVaZMHw_js" />
-      <ComponentRef Id="AssetFile_index_DpVaZMHw_js_br" />
-      <ComponentRef Id="AssetFile_index_DpVaZMHw_js_gz" />
-      <ComponentRef Id="AssetFile_index_jxsYKLC3_css" />
-      <ComponentRef Id="AssetFile_index_jxsYKLC3_css_br" />
-      <ComponentRef Id="AssetFile_index_jxsYKLC3_css_gz" />
+      <ComponentRef Id="AssetFile_index_DojJCWps_css" />
+      <ComponentRef Id="AssetFile_index_DojJCWps_css_br" />
+      <ComponentRef Id="AssetFile_index_DojJCWps_css_gz" />
+      <ComponentRef Id="AssetFile_index_M8RkG1bN_js" />
+      <ComponentRef Id="AssetFile_index_M8RkG1bN_js_br" />
+      <ComponentRef Id="AssetFile_index_M8RkG1bN_js_gz" />
+      <ComponentRef Id="SetupScript" />
+      <ComponentRef Id="SetupCmd" />
+      <ComponentRef Id="SetupConfigExample" />
       <ComponentRef Id="DataDirectory" />
       <ComponentRef Id="LogsDirectory" />
       <ComponentRef Id="SessionLogsDirectory" />
@@ -72,6 +75,26 @@
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
     <Icon Id="AppIcon" SourceFile="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\HazinaOrchestration.exe" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+
+    <!-- WiX UI with license dialog -->
+    <UIRef Id="WixUI_InstallDir" />
+    <WixVariable Id="WixUILicenseRtf" Value="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\License.rtf" />
+
+    <!-- Exit dialog checkbox (checked by default) -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
+              Value="Configure network access and security (recommended)" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+
+    <!-- Launch Setup.cmd via ShellExecute after install -->
+    <Property Id="WixShellExecTarget" Value="[#SetupCmdFile]" />
+    <CustomAction Id="LaunchSetup" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+
+    <UI>
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchSetup">
+        WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed
+      </Publish>
+    </UI>
+
   </Product>
 
   <!-- Directory Structure -->
@@ -119,6 +142,19 @@
       <File Id="AppSettingsProductionJson" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\appsettings.Production.json" KeyPath="yes" />
     </Component>
 
+    <!-- Setup files (for post-install Tailscale/HTTPS configuration) -->
+    <Component Id="SetupScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555501">
+      <File Id="SetupPs1File" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\Setup.ps1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="SetupCmd" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555502">
+      <File Id="SetupCmdFile" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\Setup.cmd" KeyPath="yes" />
+    </Component>
+
+    <Component Id="SetupConfigExample" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555503">
+      <File Id="SetupConfigExampleFile" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\Setup-Config.example.json" KeyPath="yes" />
+    </Component>
+
     <Component Id="Core_web_config" Directory="INSTALLFOLDER" Guid="F8DBBFD7-25F8-A085-C706-2AA5AA56D320">
       <File Id="CF_web_config" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\web.config" KeyPath="yes" />
     </Component>
@@ -159,23 +195,23 @@
   </Fragment>
 
   <Fragment>
-    <Component Id="AssetFile_index_DpVaZMHw_js" Directory="WWWROOT_ASSETS" Guid="C3E61188-9FEB-CE8C-89F6-D0043B75F9E7">
-      <File Id="AF_index_DpVaZMHw_js" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-DpVaZMHw.js" KeyPath="yes" />
+    <Component Id="AssetFile_index_DojJCWps_css" Directory="WWWROOT_ASSETS" Guid="8B5D4B63-2C76-940C-5B11-E2DE3CF979C0">
+      <File Id="AF_index_DojJCWps_css" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-DojJCWps.css" KeyPath="yes" />
     </Component>
-    <Component Id="AssetFile_index_DpVaZMHw_js_br" Directory="WWWROOT_ASSETS" Guid="508F9D61-A9A2-6568-E04F-0E6CE37B191F">
-      <File Id="AF_index_DpVaZMHw_js_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-DpVaZMHw.js.br" KeyPath="yes" />
+    <Component Id="AssetFile_index_DojJCWps_css_br" Directory="WWWROOT_ASSETS" Guid="18B58CB7-5509-71D5-6E12-094AB0CFE66E">
+      <File Id="AF_index_DojJCWps_css_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-DojJCWps.css.br" KeyPath="yes" />
     </Component>
-    <Component Id="AssetFile_index_DpVaZMHw_js_gz" Directory="WWWROOT_ASSETS" Guid="44BE2A3B-B5F2-D5A9-9B44-EF1C147124DE">
-      <File Id="AF_index_DpVaZMHw_js_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-DpVaZMHw.js.gz" KeyPath="yes" />
+    <Component Id="AssetFile_index_DojJCWps_css_gz" Directory="WWWROOT_ASSETS" Guid="6C615A7C-D88D-A5E0-C140-974227846638">
+      <File Id="AF_index_DojJCWps_css_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-DojJCWps.css.gz" KeyPath="yes" />
     </Component>
-    <Component Id="AssetFile_index_jxsYKLC3_css" Directory="WWWROOT_ASSETS" Guid="43903075-E14F-72DB-7D58-2ABECB1C13B1">
-      <File Id="AF_index_jxsYKLC3_css" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-jxsYKLC3.css" KeyPath="yes" />
+    <Component Id="AssetFile_index_M8RkG1bN_js" Directory="WWWROOT_ASSETS" Guid="7CC4BD6C-F089-D39A-952C-48453FC29C60">
+      <File Id="AF_index_M8RkG1bN_js" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-M8RkG1bN.js" KeyPath="yes" />
     </Component>
-    <Component Id="AssetFile_index_jxsYKLC3_css_br" Directory="WWWROOT_ASSETS" Guid="EBB948CF-9EE3-2730-B49E-D2B775D3EF8F">
-      <File Id="AF_index_jxsYKLC3_css_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-jxsYKLC3.css.br" KeyPath="yes" />
+    <Component Id="AssetFile_index_M8RkG1bN_js_br" Directory="WWWROOT_ASSETS" Guid="FA395428-8739-A684-711D-679E351DC79E">
+      <File Id="AF_index_M8RkG1bN_js_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-M8RkG1bN.js.br" KeyPath="yes" />
     </Component>
-    <Component Id="AssetFile_index_jxsYKLC3_css_gz" Directory="WWWROOT_ASSETS" Guid="84561C7E-BDD1-93E0-99D5-8508970CBD75">
-      <File Id="AF_index_jxsYKLC3_css_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-jxsYKLC3.css.gz" KeyPath="yes" />
+    <Component Id="AssetFile_index_M8RkG1bN_js_gz" Directory="WWWROOT_ASSETS" Guid="EA4C7BC8-1BB0-A123-1500-0A7CE6373F06">
+      <File Id="AF_index_M8RkG1bN_js_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-M8RkG1bN.js.gz" KeyPath="yes" />
     </Component>
   </Fragment>
 

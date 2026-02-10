@@ -13,6 +13,7 @@ import './App.css'
 type ViewMode = 'sessions' | 'chat' | 'archive'
 
 function App() {
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
   const [isAuthenticated, setIsAuthenticated] = useState(hasCredentials())
   const [sessions, setSessions] = useState<TerminalSession[]>([])
   const [externalInstances, setExternalInstances] = useState<ExternalClaudeInstance[]>([])
@@ -319,8 +320,18 @@ function App() {
       <main className="app-main">
         {viewMode === 'sessions' && (
           <>
-            <SplitPane
-              left={
+            {isMobile ? (
+              // Mobile: full-screen session list OR full-screen terminal
+              activeSessionId ? (
+                <TerminalView
+                  sessionId={activeSessionId}
+                  onClose={() => handleCloseTab(activeSessionId)}
+                  onStateChanged={handleStateChanged}
+                  onTitleChanged={handleTitleChanged}
+                  pendingRestore={pendingRestore?.sessionId === activeSessionId ? pendingRestore : undefined}
+                  onRestoreComplete={handleRestoreComplete}
+                />
+              ) : (
                 <SessionList
                   sessions={sessions}
                   externalInstances={externalInstances}
@@ -329,31 +340,45 @@ function App() {
                   onSelect={handleSelectSession}
                   onTerminate={handleTerminateSession}
                 />
-              }
-              right={
-                activeSessionId ? (
-                  <TerminalView
-                    sessionId={activeSessionId}
-                    onClose={() => handleCloseTab(activeSessionId)}
-                    onStateChanged={handleStateChanged}
-                    onTitleChanged={handleTitleChanged}
-                    pendingRestore={pendingRestore?.sessionId === activeSessionId ? pendingRestore : undefined}
-                    onRestoreComplete={handleRestoreComplete}
+              )
+            ) : (
+              // Desktop: split pane layout
+              <SplitPane
+                left={
+                  <SessionList
+                    sessions={sessions}
+                    externalInstances={externalInstances}
+                    selectedSession={activeSessionId}
+                    loading={loading}
+                    onSelect={handleSelectSession}
+                    onTerminate={handleTerminateSession}
                   />
-                ) : (
-                  <div className="no-session">
-                    <p>Select a session or create a new one</p>
-                    <p style={{ fontSize: '0.875rem', color: '#8b949e', marginTop: '0.5rem' }}>
-                      Press Cmd+K or Ctrl+K to open command palette
-                    </p>
-                  </div>
-                )
-              }
-              defaultSize={320}
-              minSize={250}
-              maxSize={500}
-              storageKey="terminal-orchestrator-split"
-            />
+                }
+                right={
+                  activeSessionId ? (
+                    <TerminalView
+                      sessionId={activeSessionId}
+                      onClose={() => handleCloseTab(activeSessionId)}
+                      onStateChanged={handleStateChanged}
+                      onTitleChanged={handleTitleChanged}
+                      pendingRestore={pendingRestore?.sessionId === activeSessionId ? pendingRestore : undefined}
+                      onRestoreComplete={handleRestoreComplete}
+                    />
+                  ) : (
+                    <div className="no-session">
+                      <p>Select a session or create a new one</p>
+                      <p style={{ fontSize: '0.875rem', color: '#8b949e', marginTop: '0.5rem' }}>
+                        Press Cmd+K or Ctrl+K to open command palette
+                      </p>
+                    </div>
+                  )
+                }
+                defaultSize={320}
+                minSize={250}
+                maxSize={500}
+                storageKey="terminal-orchestrator-split"
+              />
+            )}
 
             <CommandPalette
               sessions={sessions}
