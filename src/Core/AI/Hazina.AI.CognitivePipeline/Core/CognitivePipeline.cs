@@ -18,8 +18,8 @@ public class CognitivePipeline : ICognitivePipeline
         IEnumerable<ISCPStage> stages,
         ILogger<CognitivePipeline> logger)
     {
-        _stages = stages;
-        _logger = logger;
+        _stages = stages ?? throw new ArgumentNullException(nameof(stages));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<CognitivePipelineResult> ExecuteAsync(
