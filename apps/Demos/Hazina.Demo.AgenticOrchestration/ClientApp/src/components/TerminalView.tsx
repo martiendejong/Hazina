@@ -678,7 +678,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     <div className="terminal-view">
       <div className="terminal-toolbar">
         <div className="terminal-info">
-          <span className="session-label">Session: {sessionId.slice(0, 12)}...</span>
+          <span className="session-label">Session: {sessionId}</span>
           <span className={`connection-status ${displayConnected ? 'connected' : 'disconnected'}`}>
             {displayConnected ? 'Connected' : 'Disconnected'}
           </span>

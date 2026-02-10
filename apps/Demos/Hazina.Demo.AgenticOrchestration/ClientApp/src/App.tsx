@@ -197,9 +197,15 @@ function App() {
   }
 
   const handleTitleChanged = (sessionId: string, title: string) => {
+    // Strip ANSI escape sequences (ESC[...X patterns) from title
+    const cleanTitle = title
+      .replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')  // CSI sequences like ESC[111C, ESC[K, ESC[0m
+      .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '')  // OSC sequences
+      .replace(/\x1b[()][0-2]/g, '')  // Character set sequences
+      .trim()
     setSessions(prev => prev.map(s =>
       s.sessionId === sessionId
-        ? { ...s, title }
+        ? { ...s, title: cleanTitle }
         : s
     ))
   }
