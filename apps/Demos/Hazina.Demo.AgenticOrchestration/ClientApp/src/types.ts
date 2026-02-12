@@ -119,7 +119,6 @@ export interface UploadResponse {
   fileName: string
   originalName: string
   size: number
-  path: string
 }
 
 // Uploaded file from /api/terminal/uploads

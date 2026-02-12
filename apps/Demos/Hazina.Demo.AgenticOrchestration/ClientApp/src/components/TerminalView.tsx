@@ -96,12 +96,16 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       if (response.ok) {
         const result = await response.json()
         terminalInstance.current?.writeln(`\r\n\x1b[32m[Uploaded: ${result.originalName} (${(result.size / 1024).toFixed(1)} KB)]\x1b[0m`)
-        terminalInstance.current?.writeln(`\x1b[90m[Path: ${result.path}]\x1b[0m`)
-        // Pre-fill the input with the file path for easy reference
-        setMobileInput(result.path)
+        terminalInstance.current?.writeln(`\x1b[90m[File: ${result.fileName}]\x1b[0m`)
+        // Pre-fill the input with the filename for easy reference
+        setMobileInput(result.fileName)
       } else {
-        const err = await response.json()
-        terminalInstance.current?.writeln(`\r\n\x1b[31m[Upload failed: ${err.error}]\x1b[0m`)
+        try {
+          const err = await response.json()
+          terminalInstance.current?.writeln(`\r\n\x1b[31m[Upload failed: ${err.error}]\x1b[0m`)
+        } catch {
+          terminalInstance.current?.writeln(`\r\n\x1b[31m[Upload failed: ${response.statusText}]\x1b[0m`)
+        }
       }
     } catch (err) {
       console.error('Upload failed:', err)

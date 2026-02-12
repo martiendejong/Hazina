@@ -925,13 +925,13 @@ public class TerminalController : ControllerBase
                 FileName = uniqueName,
                 OriginalName = safeFileName,
                 Size = file.Length,
-                Path = filePath
+                Path = uniqueName
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to upload file {FileName}", file.FileName);
-            return StatusCode(500, new { error = "Failed to upload file", message = ex.Message });
+            return StatusCode(500, new { error = "Failed to upload file" });
         }
     }
 
@@ -968,7 +968,7 @@ public class TerminalController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to list uploaded files");
-            return StatusCode(500, new { error = "Failed to list files", message = ex.Message });
+            return StatusCode(500, new { error = "Failed to list files" });
         }
     }
 }
