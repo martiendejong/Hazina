@@ -14,10 +14,19 @@ public sealed class TrayApplicationContext : ApplicationContext
     private readonly WebApplication _webApp;
     private readonly CancellationTokenSource _cts = new();
     private readonly ToolStripMenuItem _autoStartItem;
+    private readonly string _baseUrl;
 
     public TrayApplicationContext(WebApplication webApp)
     {
         _webApp = webApp;
+
+        // Resolve the actual base URL from the running web host
+        _baseUrl = webApp.Urls.FirstOrDefault(u => u.StartsWith("https://"))
+                   ?? webApp.Urls.FirstOrDefault()
+                   ?? "https://localhost:5123";
+
+        // Normalize 0.0.0.0 to localhost for browser URLs
+        _baseUrl = _baseUrl.Replace("://0.0.0.0:", "://localhost:");
 
         // Load icon from embedded resource, fall back to system icon
         var icon = LoadEmbeddedIcon() ?? SystemIcons.Application;
@@ -48,11 +57,11 @@ public sealed class TrayApplicationContext : ApplicationContext
 
         _notifyIcon.DoubleClick += OnOpenDashboard;
 
-        // Show a balloon tip on startup
+        // Show a balloon tip on startup with the actual URL
         _notifyIcon.ShowBalloonTip(
             2000,
             "Hazina Orchestration",
-            "Running on https://localhost:5123",
+            $"Running on {_baseUrl}",
             ToolTipIcon.Info);
     }
 
@@ -72,12 +81,12 @@ public sealed class TrayApplicationContext : ApplicationContext
 
     private void OnOpenDashboard(object? sender, EventArgs e)
     {
-        OpenUrl("https://localhost:5123");
+        OpenUrl(_baseUrl);
     }
 
     private void OnOpenSwagger(object? sender, EventArgs e)
     {
-        OpenUrl("https://localhost:5123/swagger");
+        OpenUrl($"{_baseUrl}/swagger");
     }
 
     private void OnAutoStartToggle(object? sender, EventArgs e)
