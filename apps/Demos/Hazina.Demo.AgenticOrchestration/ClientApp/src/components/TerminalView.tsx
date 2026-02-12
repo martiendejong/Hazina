@@ -40,6 +40,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const disconnectTimeoutRef = useRef<number | null>(null)
   const connectionStableTimeRef = useRef<number | null>(null)
   const [mobileInput, setMobileInput] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showSpecialKeys, setShowSpecialKeys] = useState(false)
 
   // Voice control - send transcribed speech to terminal
   const handleVoiceTranscript = useCallback((text: string) => {
@@ -76,6 +78,51 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       setMobileInput('')
     }
   }, [sessionId, mobileInput])
+
+  // File upload handler
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await authFetch('/api/terminal/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        terminalInstance.current?.writeln(`\r\n\x1b[32m[Uploaded: ${result.originalName} (${(result.size / 1024).toFixed(1)} KB)]\x1b[0m`)
+        terminalInstance.current?.writeln(`\x1b[90m[File: ${result.fileName}]\x1b[0m`)
+        // Pre-fill the input with the filename for easy reference
+        setMobileInput(result.fileName)
+      } else {
+        try {
+          const err = await response.json()
+          terminalInstance.current?.writeln(`\r\n\x1b[31m[Upload failed: ${err.error}]\x1b[0m`)
+        } catch {
+          terminalInstance.current?.writeln(`\r\n\x1b[31m[Upload failed: ${response.statusText}]\x1b[0m`)
+        }
+      }
+    } catch (err) {
+      console.error('Upload failed:', err)
+      terminalInstance.current?.writeln(`\r\n\x1b[31m[Upload failed: network error]\x1b[0m`)
+    }
+
+    // Reset file input so same file can be selected again
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }, [])
+
+  // Send special key sequence (escape codes) to terminal
+  const sendSpecialKey = useCallback((sequence: number[]) => {
+    if (connection.current?.state === signalR.HubConnectionState.Connected) {
+      connection.current.invoke('SendInput', sessionId, sequence)
+        .catch(err => console.error('SendSpecialKey failed:', err))
+    }
+  }, [sessionId])
 
   // Keyboard shortcut: Ctrl+M to toggle voice
   useEffect(() => {
@@ -716,23 +763,60 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       </div>
       {error && <div className="terminal-error">{error}</div>}
       <div className="terminal-container" ref={terminalRef} />
-      {isMobile && (
-        <div className="terminal-input-container">
-          <textarea
-            className="terminal-input"
-            placeholder="Type command for mobile..."
-            value={mobileInput}
-            onChange={(e) => setMobileInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                handleSendMobileInput()
-              }
-            }}
-          />
-          <button className="btn-send-terminal" onClick={handleSendMobileInput}>
-            <span>Send</span>
+      <div className="terminal-input-container">
+        <button
+          className="btn-upload"
+          onClick={() => fileInputRef.current?.click()}
+          title="Upload file"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+            <path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/>
+          </svg>
+        </button>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          style={{ display: 'none' }}
+        />
+        <textarea
+          className="terminal-input"
+          placeholder={isMobile ? 'Type command...' : 'Type command here (Enter to send)...'}
+          value={mobileInput}
+          onChange={(e) => setMobileInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              handleSendMobileInput()
+            }
+          }}
+        />
+        {isMobile && (
+          <button
+            className={`btn-special-keys ${showSpecialKeys ? 'active' : ''}`}
+            onClick={() => setShowSpecialKeys(prev => !prev)}
+            title="Special keys"
+          >
+            +
           </button>
+        )}
+        <button className="btn-send-terminal" onClick={handleSendMobileInput}>
+          <span>Send</span>
+        </button>
+      </div>
+      {showSpecialKeys && isMobile && (
+        <div className="special-keys-panel">
+          <div className="special-keys-row">
+            <button onClick={() => sendSpecialKey([0x1b, 0x5b, 0x41])}>Up</button>
+            <button onClick={() => sendSpecialKey([0x1b, 0x5b, 0x42])}>Down</button>
+            <button onClick={() => sendSpecialKey([0x1b, 0x5b, 0x44])}>Left</button>
+            <button onClick={() => sendSpecialKey([0x1b, 0x5b, 0x43])}>Right</button>
+          </div>
+          <div className="special-keys-row">
+            <button onClick={() => sendSpecialKey([0x1b])}>ESC</button>
+            <button onClick={() => sendSpecialKey([0x09])}>Tab</button>
+            <button onClick={() => sendSpecialKey([0x03])}>Ctrl+C</button>
+          </div>
         </div>
       )}
     </div>

@@ -84,6 +84,8 @@ public static class ServiceCollectionExtensions
                 opt.DefaultArguments = options.DefaultArguments;
                 opt.EnableSessionLogging = options.EnableSessionLogging;
                 opt.AgentSessionLogsPath = options.AgentSessionLogsPath;
+                opt.UploadsPath = options.UploadsPath;
+                opt.MaxUploadFileSizeMB = options.MaxUploadFileSizeMB;
             });
 
         // Register core services
@@ -273,4 +275,16 @@ public class AgenticOrchestrationOptions
     /// Default: C:\scripts\logs\agent-sessions
     /// </summary>
     public string AgentSessionLogsPath { get; set; } = @"C:\scripts\logs\agent-sessions";
+
+    /// <summary>
+    /// Path for uploaded files.
+    /// Default: uploads (relative to app directory)
+    /// </summary>
+    public string? UploadsPath { get; set; }
+
+    /// <summary>
+    /// Maximum upload file size in megabytes.
+    /// Default: 50
+    /// </summary>
+    public int MaxUploadFileSizeMB { get; set; } = 50;
 }

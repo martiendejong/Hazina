@@ -107,3 +107,23 @@ export interface PendingRestore {
   sessionId: string
   content: string
 }
+
+// Version info from /api/terminal/version
+export interface VersionInfo {
+  version: string
+  assemblyVersion: string
+}
+
+// Upload response from /api/terminal/upload
+export interface UploadResponse {
+  fileName: string
+  originalName: string
+  size: number
+}
+
+// Uploaded file from /api/terminal/uploads
+export interface UploadedFile {
+  fileName: string
+  size: number
+  uploadedAt: string
+}

@@ -64,6 +64,15 @@ var sessionLogsBasePath = sessionLoggingConfig["BasePath"] ?? @"C:\scripts\logs\
 try { Directory.CreateDirectory(sessionLogsBasePath); }
 catch (Exception ex) { Console.WriteLine($"Warning: Could not create session logs directory: {ex.Message}"); }
 
+// Uploads configuration
+var uploadsConfig = config.GetSection("Uploads");
+var uploadsPath = uploadsConfig["Path"] ?? "uploads";
+var maxUploadFileSizeMB = int.TryParse(uploadsConfig["MaxFileSizeMB"], out var uploadSize) ? uploadSize : 50;
+
+// Ensure uploads directory exists
+try { Directory.CreateDirectory(uploadsPath); }
+catch (Exception ex) { Console.WriteLine($"Warning: Could not create uploads directory: {ex.Message}"); }
+
 // Authentication configuration
 var authConfig = builder.Configuration.GetSection("Authentication");
 var authEnabled = bool.TryParse(authConfig["Enabled"], out var enabled) && enabled;
@@ -108,6 +117,9 @@ builder.Services.AddHazinaAgenticOrchestration(options =>
     // Session logging
     options.EnableSessionLogging = sessionLoggingEnabled;
     options.AgentSessionLogsPath = sessionLogsBasePath;
+    // Uploads
+    options.UploadsPath = uploadsPath;
+    options.MaxUploadFileSizeMB = maxUploadFileSizeMB;
 });
 Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Hazina Agentic Orchestration services registered (declarative)");
 
@@ -147,6 +159,12 @@ Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Basic Authentication configured (e
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(Hazina.AgenticOrchestration.Controllers.TerminalController).Assembly);
 builder.Services.AddEndpointsApiExplorer();
+
+// Configure max upload size for multipart form data
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = (long)maxUploadFileSizeMB * 1024 * 1024;
+});
 
 // Swagger
 builder.Services.AddSwaggerGen(c =>

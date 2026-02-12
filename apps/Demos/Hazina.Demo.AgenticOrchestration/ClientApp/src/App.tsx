@@ -25,6 +25,7 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('sessions')
   const [pendingRestore, setPendingRestore] = useState<PendingRestore | null>(null)
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const [version, setVersion] = useState<string | null>(null)
 
   // Command palette keyboard shortcut (Cmd+K / Ctrl+K)
   useCommandPalette(() => setCommandPaletteOpen(prev => !prev))
@@ -82,8 +83,12 @@ function App() {
   useEffect(() => {
     if (!isAuthenticated) return
 
-    // Fetch config once on mount
+    // Fetch config and version once on mount
     fetchConfig()
+    authFetch('/api/terminal/version')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.version) setVersion(data.version) })
+      .catch(() => {})
     // Fetch sessions initially - no auto-refresh
     fetchSessions()
 
@@ -279,7 +284,7 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Claude Terminal Orchestration</h1>
+        <h1>Claude Terminal Orchestration{version && <span className="version-badge">v{version}</span>}</h1>
         <div className="header-actions">
           <button
             className={`btn-nav ${viewMode === 'sessions' ? 'active' : ''}`}
