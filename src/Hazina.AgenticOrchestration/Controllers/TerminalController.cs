@@ -924,8 +924,7 @@ public class TerminalController : ControllerBase
             {
                 FileName = uniqueName,
                 OriginalName = safeFileName,
-                Size = file.Length,
-                Path = uniqueName
+                Size = file.Length
             });
         }
         catch (Exception ex)
@@ -1129,7 +1128,6 @@ public class UploadResponseDto
     public string FileName { get; set; } = "";
     public string OriginalName { get; set; } = "";
     public long Size { get; set; }
-    public string Path { get; set; } = "";
 }
 
 public class UploadedFileDto
