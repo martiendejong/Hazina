@@ -361,44 +361,52 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       }
     }
 
-    // Handle user input
+    // Handle user input (with chunking for large pastes)
     terminal.onData(data => {
       if (hubConnection.state === signalR.HubConnectionState.Connected) {
         const encoder = new TextEncoder()
-        const bytes = Array.from(encoder.encode(data))
-        hubConnection.invoke('SendInput', sessionId, bytes)
-          .catch(err => console.error('SendInput failed:', err))
+        const fullBytes = encoder.encode(data)
+
+        if (fullBytes.length > PASTE_CHUNK_SIZE) {
+          // Large input (likely a paste) - send in chunks to avoid SignalR limits
+          sendPasteChunked(data)
+        } else {
+          hubConnection.invoke('SendInput', sessionId, Array.from(fullBytes))
+            .catch(err => console.error('SendInput failed:', err))
+        }
       }
     })
 
     // Custom keyboard handler for copy/paste
-    // Ctrl+C: Copy if text selected, otherwise send interrupt
-    // Ctrl+V: Paste from clipboard (chunked for large text)
+    // Strategy: Use browser-native paste flow (reliable, no permission issues)
+    // instead of navigator.clipboard.readText() which silently fails on permission denial.
+    // Native flow: Ctrl+V keydown -> browser paste event -> xterm textarea -> onData -> chunked send
     terminal.attachCustomKeyEventHandler((event) => {
-      // Handle Ctrl+C - copy if selection exists
-      if (event.ctrlKey && event.key === 'c' && event.type === 'keydown') {
+      // Handle Ctrl+C - copy if selection exists, otherwise send interrupt
+      if (event.ctrlKey && !event.shiftKey && event.key === 'c' && event.type === 'keydown') {
         const selection = terminal.getSelection()
         if (selection && selection.length > 0) {
+          event.preventDefault() // Stop native copy from overwriting our clipboard write
           navigator.clipboard.writeText(selection).catch(err => {
             console.error('Copy failed:', err)
           })
-          return false // Prevent default (don't send to terminal)
+          return false // Prevent xterm from processing
         }
-        // No selection - let it pass through as interrupt (Ctrl+C)
+        // No selection - let it through as interrupt signal (sends \x03)
         return true
       }
 
-      // Handle Ctrl+V - paste (chunked)
-      if (event.ctrlKey && event.key === 'v' && event.type === 'keydown') {
-        event.preventDefault() // Stop browser native paste (prevents double paste via onData)
-        navigator.clipboard.readText()
-          .then(text => sendPasteChunked(text))
-          .catch(err => console.error('Paste failed:', err))
+      // Handle Ctrl+V - let browser native paste work
+      // Return false to prevent xterm sending \x16 control code,
+      // but do NOT preventDefault so the browser paste event fires normally.
+      // Xterm catches the paste via its hidden textarea and fires onData.
+      if (event.ctrlKey && !event.shiftKey && event.key === 'v' && event.type === 'keydown') {
         return false
       }
 
       // Handle Ctrl+Shift+C - always copy (alternative shortcut)
       if (event.ctrlKey && event.shiftKey && event.key === 'C' && event.type === 'keydown') {
+        event.preventDefault()
         const selection = terminal.getSelection()
         if (selection && selection.length > 0) {
           navigator.clipboard.writeText(selection).catch(err => {
@@ -408,12 +416,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         return false
       }
 
-      // Handle Ctrl+Shift+V - always paste (alternative shortcut, chunked)
+      // Handle Ctrl+Shift+V - let browser native paste work (alternative shortcut)
       if (event.ctrlKey && event.shiftKey && event.key === 'V' && event.type === 'keydown') {
-        event.preventDefault()
-        navigator.clipboard.readText()
-          .then(text => sendPasteChunked(text))
-          .catch(err => console.error('Paste failed:', err))
         return false
       }
 
@@ -505,13 +509,22 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         !selection || selection.length === 0
       ))
 
-      // Paste option (chunked for large text)
+      // Paste option - uses Clipboard API with fallback
       menu.appendChild(createMenuItem(
         'Paste',
         () => {
           navigator.clipboard.readText()
-            .then(text => sendPasteChunked(text))
-            .catch(err => console.error('Context menu paste failed:', err))
+            .then(text => {
+              if (text) {
+                terminal.focus()
+                sendPasteChunked(text)
+              }
+            })
+            .catch(() => {
+              // Clipboard API denied - trigger native paste as fallback
+              terminal.focus()
+              document.execCommand('paste')
+            })
         }
       ))
 
