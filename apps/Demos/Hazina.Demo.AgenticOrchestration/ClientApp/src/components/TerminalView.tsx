@@ -339,41 +339,59 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       }
     })
 
-    // Chunked paste: sends large text in 4KB chunks to avoid SignalR message size limits
+    // Chunked send: splits large input into 4KB chunks to avoid SignalR message size limits.
+    // Uses a lock to prevent interleaving when user types during a multi-chunk paste.
     const PASTE_CHUNK_SIZE = 4096
-    const sendPasteChunked = async (text: string) => {
-      if (!text || hubConnection.state !== signalR.HubConnectionState.Connected) return
-      const encoder = new TextEncoder()
-      const fullBytes = encoder.encode(text)
+    let sendingChunks = false
+    const pendingInputs: Uint8Array[] = []
 
-      for (let offset = 0; offset < fullBytes.length; offset += PASTE_CHUNK_SIZE) {
-        const chunk = Array.from(fullBytes.slice(offset, offset + PASTE_CHUNK_SIZE))
-        try {
-          await hubConnection.invoke('SendInput', sessionId, chunk)
-        } catch (err) {
-          console.error('Paste chunk failed at offset', offset, err)
-          return
-        }
-        // Small delay between chunks to let ConPTY process
-        if (offset + PASTE_CHUNK_SIZE < fullBytes.length) {
+    const sendBytes = async (bytes: Uint8Array) => {
+      if (hubConnection.state !== signalR.HubConnectionState.Connected) return
+
+      if (bytes.length <= PASTE_CHUNK_SIZE) {
+        // Small input - send directly
+        await hubConnection.invoke('SendInput', sessionId, Array.from(bytes))
+        return
+      }
+
+      // Large input - send in chunks with delays
+      for (let offset = 0; offset < bytes.length; offset += PASTE_CHUNK_SIZE) {
+        const chunk = Array.from(bytes.slice(offset, offset + PASTE_CHUNK_SIZE))
+        await hubConnection.invoke('SendInput', sessionId, chunk)
+        if (offset + PASTE_CHUNK_SIZE < bytes.length) {
           await new Promise(resolve => setTimeout(resolve, 10))
         }
       }
     }
 
-    // Handle user input (with chunking for large pastes)
+    const enqueueInput = (bytes: Uint8Array) => {
+      pendingInputs.push(bytes)
+      if (sendingChunks) return // Already processing queue
+      const processQueue = async () => {
+        sendingChunks = true
+        while (pendingInputs.length > 0) {
+          const next = pendingInputs.shift()!
+          try {
+            await sendBytes(next)
+          } catch (err) {
+            console.error('SendInput failed:', err)
+          }
+        }
+        sendingChunks = false
+      }
+      processQueue()
+    }
+
+    // Convenience wrapper for string input (used by context menu paste)
+    const sendPasteChunked = (text: string) => {
+      if (!text) return
+      enqueueInput(new TextEncoder().encode(text))
+    }
+
+    // Handle user input - all input goes through the queue to prevent interleaving
     terminal.onData(data => {
       if (hubConnection.state === signalR.HubConnectionState.Connected) {
-        const encoder = new TextEncoder()
-        const fullBytes = encoder.encode(data)
-
-        if (fullBytes.length > PASTE_CHUNK_SIZE) {
-          // Large input (likely a paste) - send in chunks to avoid SignalR limits
-          sendPasteChunked(data)
-        } else {
-          hubConnection.invoke('SendInput', sessionId, Array.from(fullBytes))
-            .catch(err => console.error('SendInput failed:', err))
-        }
+        enqueueInput(new TextEncoder().encode(data))
       }
     })
 
@@ -381,6 +399,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     // Strategy: Use browser-native paste flow (reliable, no permission issues)
     // instead of navigator.clipboard.readText() which silently fails on permission denial.
     // Native flow: Ctrl+V keydown -> browser paste event -> xterm textarea -> onData -> chunked send
+    // NOTE: This relies on @xterm/xterm 6.x firing onData from native paste events independently
+    // of attachCustomKeyEventHandler. Retest paste on xterm major version upgrades.
     terminal.attachCustomKeyEventHandler((event) => {
       // Handle Ctrl+C - copy if selection exists, otherwise send interrupt
       if (event.ctrlKey && !event.shiftKey && event.key === 'c' && event.type === 'keydown') {
@@ -416,8 +436,11 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         return false
       }
 
-      // Handle Ctrl+Shift+V - let browser native paste work (alternative shortcut)
+      // Handle Ctrl+Shift+V - explicit clipboard read (not all browsers fire native paste for this combo)
       if (event.ctrlKey && event.shiftKey && event.key === 'V' && event.type === 'keydown') {
+        navigator.clipboard.readText()
+          .then(text => text && sendPasteChunked(text))
+          .catch(() => { /* permission denied - browser may still handle natively */ })
         return false
       }
 
@@ -509,7 +532,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         !selection || selection.length === 0
       ))
 
-      // Paste option - uses Clipboard API with fallback
+      // Paste option - uses Clipboard API (requires permission)
       menu.appendChild(createMenuItem(
         'Paste',
         () => {
@@ -521,9 +544,9 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
               }
             })
             .catch(() => {
-              // Clipboard API denied - trigger native paste as fallback
+              // Clipboard API permission denied - show hint
               terminal.focus()
-              document.execCommand('paste')
+              terminal.writeln('\r\n\x1b[33m[Clipboard access denied. Use Ctrl+V to paste.]\x1b[0m')
             })
         }
       ))
