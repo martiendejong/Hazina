@@ -354,10 +354,22 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         return
       }
 
-      // Large input - send in chunks with delays
+      // Large input - send in chunks with delays. Retry each chunk once on failure.
       for (let offset = 0; offset < bytes.length; offset += PASTE_CHUNK_SIZE) {
         const chunk = Array.from(bytes.slice(offset, offset + PASTE_CHUNK_SIZE))
-        await hubConnection.invoke('SendInput', sessionId, chunk)
+        try {
+          await hubConnection.invoke('SendInput', sessionId, chunk)
+        } catch {
+          // Retry once after a short delay
+          await new Promise(resolve => setTimeout(resolve, 50))
+          try {
+            await hubConnection.invoke('SendInput', sessionId, chunk)
+          } catch {
+            // Chunk permanently failed - remaining chunks would arrive out of context
+            terminal.writeln('\r\n\x1b[31m[Paste incomplete - connection error]\x1b[0m')
+            return
+          }
+        }
         if (offset + PASTE_CHUNK_SIZE < bytes.length) {
           await new Promise(resolve => setTimeout(resolve, 10))
         }
@@ -436,11 +448,14 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         return false
       }
 
-      // Handle Ctrl+Shift+V - explicit clipboard read (not all browsers fire native paste for this combo)
+      // Handle Ctrl+Shift+V - explicit clipboard read with preventDefault to avoid double paste.
+      // Chrome fires native paste for Ctrl+Shift+V, so without preventDefault both readText
+      // AND native paste would fire, sending the text twice through the queue.
       if (event.ctrlKey && event.shiftKey && event.key === 'V' && event.type === 'keydown') {
+        event.preventDefault()
         navigator.clipboard.readText()
           .then(text => text && sendPasteChunked(text))
-          .catch(() => { /* permission denied - browser may still handle natively */ })
+          .catch(() => { /* permission denied - user should use Ctrl+V instead */ })
         return false
       }
 
@@ -544,9 +559,21 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
               }
             })
             .catch(() => {
-              // Clipboard API permission denied - show hint
+              // Clipboard API permission denied - show non-intrusive toast
+              // (writeln would corrupt full-screen TUI apps like vim/nano)
               terminal.focus()
-              terminal.writeln('\r\n\x1b[33m[Clipboard access denied. Use Ctrl+V to paste.]\x1b[0m')
+              if (terminalRef.current) {
+                const toast = document.createElement('div')
+                toast.textContent = 'Clipboard access denied. Use Ctrl+V to paste.'
+                toast.style.cssText = `
+                  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+                  background: #d29922; color: #1e1e1e; padding: 6px 16px; border-radius: 4px;
+                  font-size: 13px; z-index: 1001; pointer-events: none;
+                `
+                terminalRef.current.style.position = 'relative'
+                terminalRef.current.appendChild(toast)
+                setTimeout(() => toast.remove(), 3000)
+              }
             })
         }
       ))
@@ -646,6 +673,10 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       // Remove any lingering context menu
       const existingMenu = document.querySelector('.terminal-context-menu')
       if (existingMenu) existingMenu.remove()
+
+      // Drain input queue to stop stale async processing
+      pendingInputs.length = 0
+      sendingChunks = false
 
       if (hubConnection.state === signalR.HubConnectionState.Connected) {
         hubConnection.invoke('LeaveSession', sessionId).catch(() => {})
