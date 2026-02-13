@@ -231,6 +231,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
     // Open terminal
     terminal.open(terminalRef.current)
+    // Establish positioning context for toast overlays (clipboard denied, etc.)
+    terminalRef.current.style.position = 'relative'
 
     // Initial fit after DOM is ready
     requestAnimationFrame(() => {
@@ -339,6 +341,21 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       }
     })
 
+    // Toast helper for clipboard/connection errors (non-intrusive, won't corrupt TUI apps)
+    const showToast = (message: string, color = '#d29922') => {
+      if (!terminalRef.current) return
+      const toast = document.createElement('div')
+      toast.className = 'terminal-toast'
+      toast.textContent = message
+      toast.style.cssText = `
+        position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+        background: ${color}; color: #1e1e1e; padding: 6px 16px; border-radius: 4px;
+        font-size: 13px; z-index: 1001; pointer-events: none;
+      `
+      terminalRef.current.appendChild(toast)
+      setTimeout(() => toast.remove(), 3000)
+    }
+
     // Chunked send: splits large input into 4KB chunks to avoid SignalR message size limits.
     // Uses a lock to prevent interleaving when user types during a multi-chunk paste.
     const PASTE_CHUNK_SIZE = 4096
@@ -350,7 +367,12 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
       if (bytes.length <= PASTE_CHUNK_SIZE) {
         // Small input - send directly
-        await hubConnection.invoke('SendInput', sessionId, Array.from(bytes))
+        try {
+          await hubConnection.invoke('SendInput', sessionId, Array.from(bytes))
+        } catch {
+          // Show error for paste-sized input (>10 bytes), ignore single keystroke failures
+          if (bytes.length > 10) showToast('Send failed - connection error', '#f14c4c')
+        }
         return
       }
 
@@ -366,7 +388,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
             await hubConnection.invoke('SendInput', sessionId, chunk)
           } catch {
             // Chunk permanently failed - remaining chunks would arrive out of context
-            terminal.writeln('\r\n\x1b[31m[Paste incomplete - connection error]\x1b[0m')
+            showToast('Paste incomplete - connection error', '#f14c4c')
             return
           }
         }
@@ -455,7 +477,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         event.preventDefault()
         navigator.clipboard.readText()
           .then(text => text && sendPasteChunked(text))
-          .catch(() => { /* permission denied - user should use Ctrl+V instead */ })
+          .catch(() => showToast('Clipboard access denied. Use Ctrl+V to paste.'))
         return false
       }
 
@@ -559,21 +581,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
               }
             })
             .catch(() => {
-              // Clipboard API permission denied - show non-intrusive toast
-              // (writeln would corrupt full-screen TUI apps like vim/nano)
               terminal.focus()
-              if (terminalRef.current) {
-                const toast = document.createElement('div')
-                toast.textContent = 'Clipboard access denied. Use Ctrl+V to paste.'
-                toast.style.cssText = `
-                  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-                  background: #d29922; color: #1e1e1e; padding: 6px 16px; border-radius: 4px;
-                  font-size: 13px; z-index: 1001; pointer-events: none;
-                `
-                terminalRef.current.style.position = 'relative'
-                terminalRef.current.appendChild(toast)
-                setTimeout(() => toast.remove(), 3000)
-              }
+              showToast('Clipboard access denied. Use Ctrl+V to paste.')
             })
         }
       ))
