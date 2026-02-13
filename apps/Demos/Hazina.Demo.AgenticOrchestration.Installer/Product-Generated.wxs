@@ -58,8 +58,8 @@
       <ComponentRef Id="WwwRoot_vite_svg" />
       <ComponentRef Id="WwwRoot_vite_svg_br" />
       <ComponentRef Id="WwwRoot_vite_svg_gz" />
-      <ComponentRef Id="AssetFile_index_Cb902RDV_js" />
-      <ComponentRef Id="AssetFile_index_D5eGdngN_css" />
+      <ComponentRef Id="AssetFile_index_B24UAhMd_css" />
+      <ComponentRef Id="AssetFile_index_Dj8rbhPP_js" />
       <ComponentRef Id="SetupScript" />
       <ComponentRef Id="SetupCmd" />
       <ComponentRef Id="SetupConfigExample" />
@@ -191,11 +191,11 @@
   </Fragment>
 
   <Fragment>
-    <Component Id="AssetFile_index_Cb902RDV_js" Directory="WWWROOT_ASSETS" Guid="DDFB6E2A-2AD4-9653-50A5-8716E3C23BB1">
-      <File Id="AF_index_Cb902RDV_js" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-Cb902RDV.js" KeyPath="yes" />
+    <Component Id="AssetFile_index_B24UAhMd_css" Directory="WWWROOT_ASSETS" Guid="288EFAED-C073-E760-CC98-7AE0B7AC6A67">
+      <File Id="AF_index_B24UAhMd_css" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-B24UAhMd.css" KeyPath="yes" />
     </Component>
-    <Component Id="AssetFile_index_D5eGdngN_css" Directory="WWWROOT_ASSETS" Guid="A61B1D01-29A7-6CE3-8CF2-D7A7B8330EA9">
-      <File Id="AF_index_D5eGdngN_css" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-D5eGdngN.css" KeyPath="yes" />
+    <Component Id="AssetFile_index_Dj8rbhPP_js" Directory="WWWROOT_ASSETS" Guid="3562C4C8-C85E-F588-FF16-DA26F17F52F1">
+      <File Id="AF_index_Dj8rbhPP_js" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-Dj8rbhPP.js" KeyPath="yes" />
     </Component>
   </Fragment>
 
