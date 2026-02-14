@@ -46,6 +46,50 @@ namespace HazinaStore.Services
             }
         }
 
+        public async Task<(bool success, string url)> UpdateBlogPostAsync(int postId, string title, string body, string status = "publish", List<int> categoryIds = null)
+        {
+            try
+            {
+                var url = $"{_baseUrl}/wp-json/wp/v2/posts/{postId}";
+                var payload = new Dictionary<string, object>
+                {
+                    { "title", title },
+                    { "content", body },
+                    { "status", status }
+                };
+
+                if (categoryIds != null && categoryIds.Any())
+                {
+                    payload["categories"] = categoryIds;
+                }
+
+                var jsonContent = JsonSerializer.Serialize(payload);
+                using var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+                using var request = CreateHttpRequest(HttpMethod.Post, url, httpContent);
+                var response = await SendWithRetryAsync(request, nameof(UpdateBlogPostAsync));
+                var resultString = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    using var doc = JsonDocument.Parse(resultString);
+                    var root = doc.RootElement;
+                    var link = root.TryGetProperty("link", out var uri) ? uri.GetString() : null;
+                    return (true, link);
+                }
+                else
+                {
+                    Console.Error.WriteLine($"[UpdateBlogPostAsync] Error: {response.StatusCode}. Response: {resultString}");
+                    return (false, null);
+                }
+            }
+            catch (Exception ex)
+            {
+                var msg = $"[UpdateBlogPostAsync] Error updating blog post: {ex.Message}";
+                Console.Error.WriteLine(msg);
+                return (false, null);
+            }
+        }
+
         public async Task<List<WordPressCategory>> GetCategoriesAsync()
         {
             var allCategories = new List<WordPressCategory>();
