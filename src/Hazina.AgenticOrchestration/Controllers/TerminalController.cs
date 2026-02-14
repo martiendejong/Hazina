@@ -199,6 +199,61 @@ public class TerminalController : ControllerBase
     }
 
     /// <summary>
+    /// Execute a prompt in an existing terminal session.
+    /// This is a convenience endpoint that sends a prompt with automatic Enter submission.
+    ///
+    /// Difference from SendInput:
+    /// - SendInput: Sends raw text without Enter (for interactive typing)
+    /// - Execute: Sends prompt + Enter (for automated instruction execution)
+    ///
+    /// Use case: Remote agent sends instructions to an existing Claude session.
+    /// </summary>
+    [HttpPost("sessions/{sessionId}/execute")]
+    public async Task<IActionResult> ExecutePromptInSession(
+        string sessionId,
+        [FromBody] ExecuteInSessionRequest request,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Prompt))
+        {
+            return BadRequest(new { error = "Prompt is required" });
+        }
+
+        var session = _sessionManager.GetSession(sessionId);
+        if (session == null)
+        {
+            return NotFound(new { error = "Session not found", sessionId });
+        }
+
+        if (!session.IsRunning)
+        {
+            return BadRequest(new { error = "Session is not running", sessionId });
+        }
+
+        _logger.LogInformation("Executing prompt in session {SessionId}: {Prompt}",
+            sessionId, request.Prompt.Length > 50 ? request.Prompt.Substring(0, 50) + "..." : request.Prompt);
+
+        try
+        {
+            // Send prompt with Enter (carriage return for raw terminal mode)
+            var promptWithEnter = request.Prompt + "\r";
+            await session.WriteInputAsync(promptWithEnter, ct);
+
+            return Ok(new
+            {
+                message = "Prompt executed",
+                sessionId,
+                promptLength = request.Prompt.Length
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to execute prompt in session {SessionId}", sessionId);
+            return StatusCode(500, new { error = "Failed to execute prompt", message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Get terminal output history for a session
     /// </summary>
     [HttpGet("sessions/{sessionId}/history")]
@@ -1003,6 +1058,16 @@ public class SendInputRequest
 
     /// <summary>Raw bytes input (base64 encoded)</summary>
     public byte[]? Bytes { get; set; }
+}
+
+/// <summary>
+/// Request to execute a prompt in an existing session.
+/// Automatically appends Enter to submit the prompt.
+/// </summary>
+public class ExecuteInSessionRequest
+{
+    /// <summary>The prompt to execute (required)</summary>
+    public string Prompt { get; set; } = "";
 }
 
 public class SendSignalRequest
