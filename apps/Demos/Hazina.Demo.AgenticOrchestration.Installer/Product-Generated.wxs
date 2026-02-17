@@ -4,7 +4,7 @@
   <Product Id="*"
            Name="Hazina Agentic Orchestration"
            Language="1033"
-           Version="2.2.0"
+           Version="2.3.0"
            Manufacturer="Hazina Framework"
            UpgradeCode="12345678-1234-1234-1234-123456789012">
 
@@ -94,8 +94,8 @@
     <Icon Id="AppIcon" SourceFile="C:\Projects\worker-agents\agent-001\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\HazinaOrchestration.exe" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon" />
 
-    <!-- WiX UI with license dialog -->
-    <UIRef Id="WixUI_InstallDir" />
+    <!-- Custom UI sequence (WixUI_Common base + our dialogs) -->
+    <UIRef Id="WixUI_Common" />
     <WixVariable Id="WixUILicenseRtf" Value="C:\Projects\worker-agents\agent-001\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\License.rtf" />
 
     <!-- Exit dialog checkbox (checked by default) -->
@@ -107,9 +107,29 @@
     <Property Id="WixShellExecTarget" Value="[#SetupCmdFile]" />
     <CustomAction Id="LaunchSetup" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
 
-    <!-- Custom UI: credentials dialog + navigation overrides -->
+    <!-- Complete custom UI sequence -->
     <UI>
-      <!-- Custom credentials dialog -->
+      <!-- Font definitions -->
+      <TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
+      <TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="12" />
+      <TextStyle Id="WixUI_Font_Title" FaceName="Tahoma" Size="9" Bold="yes" />
+
+      <!-- Import standard WiX dialogs -->
+      <DialogRef Id="ErrorDlg" />
+      <DialogRef Id="FatalError" />
+      <DialogRef Id="FilesInUse" />
+      <DialogRef Id="MsiRMFilesInUse" />
+      <DialogRef Id="PrepareDlg" />
+      <DialogRef Id="ProgressDlg" />
+      <DialogRef Id="ResumeDlg" />
+      <DialogRef Id="UserExit" />
+      <DialogRef Id="WelcomeDlg" />
+      <DialogRef Id="LicenseAgreementDlg" />
+      <DialogRef Id="InstallDirDlg" />
+      <DialogRef Id="VerifyReadyDlg" />
+      <DialogRef Id="ExitDialog" />
+
+      <!-- Our custom credentials dialog -->
       <Dialog Id="CredentialsDlg" Width="370" Height="320" Title="[ProductName] - Configuration">
         <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Set Login Credentials" />
         <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="20" Transparent="yes" NoPrefix="yes" Text="Configure login credentials and terminal settings." />
@@ -125,7 +145,7 @@
         <Control Id="ShellCommandEdit" Type="Edit" X="20" Y="195" Width="320" Height="18" Property="SHELL_COMMAND" />
         <Control Id="WorkingDirectoryLabel" Type="Text" X="20" Y="220" Width="290" Height="15" NoPrefix="yes" Text="Working Directory:" />
         <Control Id="WorkingDirectoryEdit" Type="Edit" X="20" Y="235" Width="320" Height="18" Property="WORKING_DIRECTORY" />
-        <Control Id="ErrorText" Type="Text" X="20" Y="260" Width="330" Height="20" NoPrefix="yes" Text="{\WixUI_Font_Normal_Red}Passwords do not match!" Hidden="yes">
+        <Control Id="ErrorText" Type="Text" X="20" Y="260" Width="330" Height="20" NoPrefix="yes" Text="Passwords do not match!" Hidden="yes">
           <Condition Action="show">AUTH_PASSWORD &lt;&gt; AUTH_PASSWORD_CONFIRM AND AUTH_PASSWORD_CONFIRM &lt;&gt; ""</Condition>
           <Condition Action="hide">AUTH_PASSWORD = AUTH_PASSWORD_CONFIRM OR AUTH_PASSWORD_CONFIRM = ""</Condition>
         </Control>
@@ -140,9 +160,21 @@
         </Control>
       </Dialog>
 
-      <!-- Override InstallDirDlg Next button to go to CredentialsDlg -->
+      <!-- COMPLETE navigation graph for fresh install -->
+      <!-- Welcome -> License -->
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">NOT Installed</Publish>
+      <!-- License -> InstallDir -->
+      <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">LicenseAccepted = "1"</Publish>
+      <Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
+      <!-- InstallDir -> Credentials (THE KEY CHANGE) -->
       <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="CredentialsDlg">1</Publish>
-
+      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
+      <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
+      <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish>
+      <!-- NOTE: Credentials dialog navigation defined IN the dialog controls above -->
+      <!-- VerifyReady -> Back to Credentials -->
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="CredentialsDlg" Order="1">NOT Installed</Publish>
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2">Installed AND NOT PATCH</Publish>
       <!-- Exit dialog: launch setup script -->
       <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchSetup">
         WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed
