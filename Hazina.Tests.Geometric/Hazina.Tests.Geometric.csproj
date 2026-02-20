@@ -19,5 +19,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Hazina.Core\Hazina.Core.csproj" />
     <ProjectReference Include="..\Hazina.Data\Hazina.Data.csproj" />
+    <ProjectReference Include="..\Hazina.Services.Geometric\Hazina.Services.Geometric.csproj" />
   </ItemGroup>
 </Project>
