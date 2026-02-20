@@ -2,15 +2,6 @@ import { useState, useEffect } from 'react'
 import { authFetch } from '../auth'
 import '../styles/ChatAdminDashboard.css'
 
-interface ChatMetrics {
-  sessionId: string
-  messageCount: number
-  totalTokens: number
-  totalToolCalls: number
-  averageDurationMs: number
-  lastMessageAt: string
-}
-
 interface ChatServiceHealth {
   isHealthy: boolean
   activeConversations: number

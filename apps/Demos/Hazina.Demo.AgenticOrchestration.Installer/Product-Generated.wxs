@@ -51,7 +51,7 @@
                   Property="POWERSHELL_EXE"
                   ExeCommand="-ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetCredentials.ps1&quot; -InstallDir &quot;[INSTALLFOLDER]&quot; -Username &quot;[AUTH_USERNAME]&quot; -Password &quot;[AUTH_PASSWORD]&quot; -ShellCommand &quot;[SHELL_COMMAND]&quot; -WorkingDirectory &quot;[WORKING_DIRECTORY]&quot;"
                   Execute="immediate"
-                  Return="check" />
+                  Return="ignore" />
 
     <InstallExecuteSequence>
       <Custom Action="KillRunningProcess" Before="InstallValidate">1</Custom>

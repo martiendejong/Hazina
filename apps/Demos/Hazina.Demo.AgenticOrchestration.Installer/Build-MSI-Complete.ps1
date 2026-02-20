@@ -589,14 +589,19 @@ Write-Host ""
 # ===================================================================
 Write-Host "STEP 5: Building MSI..." -ForegroundColor Cyan
 
-# Clean old MSI to avoid stale builds
+# Clean old MSI to avoid stale builds (skip if locked)
 if (Test-Path (Join-Path $msiOutputDir "HazinaOrchestrationSetup.msi")) {
-    Remove-Item (Join-Path $msiOutputDir "HazinaOrchestrationSetup.msi") -Force
+    Remove-Item (Join-Path $msiOutputDir "HazinaOrchestrationSetup.msi") -Force -ErrorAction SilentlyContinue
 }
 
 New-Item -ItemType Directory -Path $msiOutputDir -Force | Out-Null
 $objDir = Join-Path $scriptDir "obj\$Configuration"
 New-Item -ItemType Directory -Path $objDir -Force | Out-Null
+
+# Use timestamped filename to avoid lock issues
+$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$msiFileName = "HazinaOrchestrationSetup-$timestamp.msi"
+Write-Host "  Building MSI: $msiFileName" -ForegroundColor Yellow
 
 Push-Location $scriptDir
 
@@ -610,7 +615,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "  Linking (light.exe)..." -ForegroundColor Gray
-& $lightExe "obj\$Configuration\Product-Generated.wixobj" -ext WixUIExtension -ext WixUtilExtension -out "$msiOutputDir\HazinaOrchestrationSetup.msi" -sval 2>&1
+& $lightExe "obj\$Configuration\Product-Generated.wixobj" -ext WixUIExtension -ext WixUtilExtension -out "$msiOutputDir\$msiFileName" -sval 2>&1
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "  [FAILED] light.exe failed" -ForegroundColor Red
