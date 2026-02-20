@@ -51,7 +51,16 @@
                   Property="POWERSHELL_EXE"
                   ExeCommand="-ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetCredentials.ps1&quot; -InstallDir &quot;[INSTALLFOLDER]&quot; -Username &quot;[AUTH_USERNAME]&quot; -Password &quot;[AUTH_PASSWORD]&quot; -ShellCommand &quot;[SHELL_COMMAND]&quot; -WorkingDirectory &quot;[WORKING_DIRECTORY]&quot;"
                   Execute="immediate"
-                  Return="ignore" />
+                  Return="check" />
+
+    <!-- Custom action to set file permissions for regular users (deferred - runs with elevated privileges) -->
+    <Property Id="POWERSHELL_PERMS" Value="powershell.exe" />
+    <CustomAction Id="SetFilePermissions"
+                  Property="POWERSHELL_PERMS"
+                  ExeCommand="-ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetFilePermissions.ps1&quot; -InstallDir &quot;[INSTALLFOLDER]&quot;"
+                  Execute="deferred"
+                  Return="check"
+                  Impersonate="no" />
 
     <InstallExecuteSequence>
       <Custom Action="KillRunningProcess" Before="InstallValidate">1</Custom>
@@ -59,6 +68,8 @@
       <Custom Action="DeleteOldService" After="StopOldService">1</Custom>
       <!-- SetCredentials DISABLED for testing -->
       <!-- <Custom Action="SetCredentials" After="InstallFiles">NOT Installed</Custom> -->
+      <!-- Set file permissions so regular users can modify appsettings.json -->
+      <Custom Action="SetFilePermissions" After="InstallFiles">NOT Installed</Custom>
     </InstallExecuteSequence>
 
     <Feature Id="ProductFeature" Title="Hazina Agentic Orchestration" Level="1">
@@ -85,6 +96,7 @@
       <ComponentRef Id="SetupCmd" />
       <ComponentRef Id="SetupConfigExample" />
       <ComponentRef Id="SetCredentialsScript" />
+      <ComponentRef Id="SetFilePermissionsScript" />
       <ComponentRef Id="DataDirectory" />
       <ComponentRef Id="LogsDirectory" />
       <ComponentRef Id="SessionLogsDirectory" />
@@ -243,6 +255,10 @@
 
     <Component Id="SetCredentialsScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555504">
       <File Id="SetCredentialsPs1File" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\SetCredentials.ps1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="SetFilePermissionsScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555505">
+      <File Id="SetFilePermissionsPs1File" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\SetFilePermissions.ps1" KeyPath="yes" />
     </Component>
 
     <Component Id="Core_web_config" Directory="INSTALLFOLDER" Guid="F8DBBFD7-25F8-A085-C706-2AA5AA56D320">
