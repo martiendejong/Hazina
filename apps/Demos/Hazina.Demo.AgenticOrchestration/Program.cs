@@ -367,12 +367,19 @@ Console.WriteLine();
 app.MapFallbackToFile("index.html");
 
 // ═══════════════════════════════════════════════════════════════
-// START: Web host on background thread, WinForms tray on main thread
+// START: Web host (service mode) OR tray app (desktop mode)
 // ═══════════════════════════════════════════════════════════════
 
-// Start the ASP.NET Core web host in the background
-_ = Task.Run(async () =>
+// Detect if running as Windows Service (non-interactive) or desktop app (interactive)
+var isServiceMode = !Environment.UserInteractive;
+
+if (isServiceMode)
 {
+    // ═══════════════════════════════════════════════════════════════
+    // SERVICE MODE: Run as background service without UI
+    // ═══════════════════════════════════════════════════════════════
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Running in SERVICE MODE (no UI)");
+
     try
     {
         await app.RunAsync();
@@ -381,19 +388,44 @@ _ = Task.Run(async () =>
     {
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Web host error: {ex.Message}");
     }
-});
+    finally
+    {
+        logWriter.Flush();
+        logWriter.Dispose();
+    }
+}
+else
+{
+    // ═══════════════════════════════════════════════════════════════
+    // DESKTOP MODE: Run with system tray UI
+    // ═══════════════════════════════════════════════════════════════
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Running in DESKTOP MODE (with system tray)");
 
-// Give the web host a moment to start listening
-await Task.Delay(500);
+    // Start the ASP.NET Core web host in the background
+    _ = Task.Run(async () =>
+    {
+        try
+        {
+            await app.RunAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Web host error: {ex.Message}");
+        }
+    });
 
-Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Starting system tray application...");
+    // Give the web host a moment to start listening
+    await Task.Delay(500);
 
-// Run WinForms on the main thread (required for message pump)
-Application.EnableVisualStyles();
-Application.SetCompatibleTextRenderingDefault(false);
-Application.Run(new TrayApplicationContext(app));
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Starting system tray application...");
 
-// Cleanup after tray app exits
-Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Application shutting down...");
-logWriter.Flush();
-logWriter.Dispose();
+    // Run WinForms on the main thread (required for message pump)
+    Application.EnableVisualStyles();
+    Application.SetCompatibleTextRenderingDefault(false);
+    Application.Run(new TrayApplicationContext(app));
+
+    // Cleanup after tray app exits
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Application shutting down...");
+    logWriter.Flush();
+    logWriter.Dispose();
+}
