@@ -53,11 +53,16 @@
                   Execute="immediate"
                   Return="check" />
 
-    <!-- Custom action to set file permissions for regular users (deferred - runs with elevated privileges) -->
-    <Property Id="POWERSHELL_PERMS" Value="powershell.exe" />
+    <!-- Custom action to set file permissions for regular users (immediate - runs with elevated privileges inherited from MSI) -->
+    <!-- Step 1: Set CustomActionData with install folder path (immediate) -->
+    <CustomAction Id="SetFilePermissions_Cmd"
+                  Property="SetFilePermissions"
+                  Value="&quot;[INSTALLFOLDER]&quot;"
+                  Execute="immediate" />
+    <!-- Step 2: Execute PowerShell script (deferred with elevation) -->
     <CustomAction Id="SetFilePermissions"
-                  Property="POWERSHELL_PERMS"
-                  ExeCommand="-ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetFilePermissions.ps1&quot; -InstallDir &quot;[INSTALLFOLDER]&quot;"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="powershell.exe -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetFilePermissions.ps1&quot;"
                   Execute="deferred"
                   Return="check"
                   Impersonate="no" />
@@ -69,7 +74,8 @@
       <!-- SetCredentials DISABLED for testing -->
       <!-- <Custom Action="SetCredentials" After="InstallFiles">NOT Installed</Custom> -->
       <!-- Set file permissions so regular users can modify appsettings.json -->
-      <Custom Action="SetFilePermissions" After="InstallFiles">NOT Installed</Custom>
+      <Custom Action="SetFilePermissions_Cmd" Before="InstallFinalize">1</Custom>
+      <Custom Action="SetFilePermissions" After="SetFilePermissions_Cmd">1</Custom>
     </InstallExecuteSequence>
 
     <Feature Id="ProductFeature" Title="Hazina Agentic Orchestration" Level="1">

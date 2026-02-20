@@ -1,12 +1,19 @@
-param(
-    [string]$InstallDir
-)
+# Deferred custom action - read InstallDir from CustomActionData environment variable
+$InstallDir = $env:CustomActionData
+if ([string]::IsNullOrEmpty($InstallDir)) {
+    # Fallback: try to read from command line parameter
+    param([string]$InstallDirParam)
+    if (-not [string]::IsNullOrEmpty($InstallDirParam)) {
+        $InstallDir = $InstallDirParam
+    }
+}
 
 # Emergency logging - write BEFORE anything else
 $emergencyLog = "C:\Windows\Temp\SetFilePermissions-ENTRY-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
 try {
     "Script started at $(Get-Date)" | Out-File $emergencyLog -Encoding UTF8
-    "Parameters: InstallDir=$InstallDir" | Out-File $emergencyLog -Append -Encoding UTF8
+    "CustomActionData env: $env:CustomActionData" | Out-File $emergencyLog -Append -Encoding UTF8
+    "Resolved InstallDir: $InstallDir" | Out-File $emergencyLog -Append -Encoding UTF8
 } catch {
     # If even this fails, we have bigger problems
 }
