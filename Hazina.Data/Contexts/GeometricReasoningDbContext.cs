@@ -43,6 +43,7 @@ namespace Hazina.Data.Contexts
             ConfigureConcept(modelBuilder);
             ConfigureConceptConnection(modelBuilder);
             ConfigureLearningEvent(modelBuilder);
+            SeedData(modelBuilder);
         }
 
         private void ConfigureThoughtSpace(ModelBuilder modelBuilder)
@@ -158,6 +159,104 @@ namespace Hazina.Data.Contexts
                 entity.HasIndex(e => new { e.ConceptId, e.OccurredAt })
                     .HasDatabaseName("IX_LearningEvents_ConceptTime");
             });
+        }
+
+        private void SeedData(ModelBuilder modelBuilder)
+        {
+            // Seed example thought space (programming domain, 12D)
+            var thoughtSpaceId = "ts-example-programming";
+            modelBuilder.Entity<ThoughtSpace>().HasData(new ThoughtSpace
+            {
+                Id = thoughtSpaceId,
+                UserId = "demo-user",
+                Domain = "programming",
+                Dimensions = 12,
+                GlobalCurvature = 0.85,
+                LearningVelocity = 0.0,
+                TunnelingCapability = 0.5,
+                CreatedAt = new DateTime(2026, 2, 20, 4, 0, 0, DateTimeKind.Utc),
+                UpdatedAt = new DateTime(2026, 2, 20, 4, 0, 0, DateTimeKind.Utc)
+            });
+
+            // Seed 3 concepts with realistic curvature values
+            var conceptVariables = "concept-variables";
+            var conceptFunctions = "concept-functions";
+            var conceptAlgorithms = "concept-algorithms";
+
+            modelBuilder.Entity<Concept>().HasData(
+                new Concept
+                {
+                    Id = conceptVariables,
+                    ThoughtSpaceId = thoughtSpaceId,
+                    ConceptId = "variables",
+                    Name = "Variables and Data Types",
+                    Description = "Understanding variable declaration, assignment, and different data types",
+                    BaseConfusion = 0.5,
+                    MasteryLevel = 0.7,
+                    LocalCurvature = 0.15,
+                    PracticeCount = 10,
+                    PositionJson = "[0.2, 0.3, 0.1, 0.4, 0.5, 0.2, 0.3, 0.4, 0.1, 0.2, 0.3, 0.2]",
+                    LastPracticedAt = new DateTime(2026, 2, 19, 10, 0, 0, DateTimeKind.Utc),
+                    CreatedAt = new DateTime(2026, 2, 18, 10, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 2, 19, 10, 0, 0, DateTimeKind.Utc)
+                },
+                new Concept
+                {
+                    Id = conceptFunctions,
+                    ThoughtSpaceId = thoughtSpaceId,
+                    ConceptId = "functions",
+                    Name = "Functions and Methods",
+                    Description = "Understanding function definitions, parameters, return values, and scope",
+                    BaseConfusion = 1.2,
+                    MasteryLevel = 0.4,
+                    LocalCurvature = 0.72,
+                    PracticeCount = 5,
+                    PositionJson = "[0.4, 0.5, 0.3, 0.6, 0.7, 0.4, 0.5, 0.6, 0.3, 0.4, 0.5, 0.4]",
+                    LastPracticedAt = new DateTime(2026, 2, 18, 14, 0, 0, DateTimeKind.Utc),
+                    CreatedAt = new DateTime(2026, 2, 17, 10, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 2, 18, 14, 0, 0, DateTimeKind.Utc)
+                },
+                new Concept
+                {
+                    Id = conceptAlgorithms,
+                    ThoughtSpaceId = thoughtSpaceId,
+                    ConceptId = "algorithms",
+                    Name = "Algorithms and Problem Solving",
+                    Description = "Understanding algorithmic thinking, sorting, searching, and optimization",
+                    BaseConfusion = 2.5,
+                    MasteryLevel = 0.1,
+                    LocalCurvature = 2.25,
+                    PracticeCount = 2,
+                    PositionJson = "[0.7, 0.8, 0.6, 0.9, 1.0, 0.7, 0.8, 0.9, 0.6, 0.7, 0.8, 0.7]",
+                    LastPracticedAt = new DateTime(2026, 2, 17, 16, 0, 0, DateTimeKind.Utc),
+                    CreatedAt = new DateTime(2026, 2, 16, 10, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 2, 17, 16, 0, 0, DateTimeKind.Utc)
+                }
+            );
+
+            // Seed 2 prerequisite connections
+            modelBuilder.Entity<ConceptConnection>().HasData(
+                new ConceptConnection
+                {
+                    Id = "conn-var-to-func",
+                    FromConceptId = conceptVariables,
+                    ToConceptId = conceptFunctions,
+                    Type = ConnectionType.Prerequisite,
+                    Strength = 0.9,
+                    Reason = "Understanding variables is essential before learning functions",
+                    CreatedAt = new DateTime(2026, 2, 18, 10, 0, 0, DateTimeKind.Utc)
+                },
+                new ConceptConnection
+                {
+                    Id = "conn-func-to-algo",
+                    FromConceptId = conceptFunctions,
+                    ToConceptId = conceptAlgorithms,
+                    Type = ConnectionType.Prerequisite,
+                    Strength = 0.95,
+                    Reason = "Functions are the building blocks for implementing algorithms",
+                    CreatedAt = new DateTime(2026, 2, 17, 10, 0, 0, DateTimeKind.Utc)
+                }
+            );
         }
     }
 }

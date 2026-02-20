@@ -94,8 +94,8 @@ namespace Hazina.Core.Entities.Geometric
         public double[] Position
         {
             get => string.IsNullOrEmpty(PositionJson)
-                ? new double[0]
-                : JsonSerializer.Deserialize<double[]>(PositionJson);
+                ? Array.Empty<double>()
+                : JsonSerializer.Deserialize<double[]>(PositionJson) ?? Array.Empty<double>();
             set => PositionJson = JsonSerializer.Serialize(value);
         }
 
