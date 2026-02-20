@@ -66,11 +66,12 @@ namespace Hazina.Data.Contexts
                     .HasForeignKey(e => e.ThoughtSpaceId)
                     .OnDelete(DeleteBehavior.Cascade);
 
-                // One ThoughtSpace has many LearningEvents (cascade delete)
+                // One ThoughtSpace has many LearningEvents (NO ACTION to prevent cascade cycles)
+                // LearningEvents will be deleted via Concept cascade
                 entity.HasMany(e => e.LearningHistory)
                     .WithOne(e => e.ThoughtSpace)
                     .HasForeignKey(e => e.ThoughtSpaceId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.NoAction);
             });
         }
 

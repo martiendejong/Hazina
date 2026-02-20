@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Hazina.Data.Migrations
 {
     [DbContext(typeof(GeometricReasoningDbContext))]
-    [Migration("20260220034415_InitialGeometricSchema")]
-    partial class InitialGeometricSchema
+    [Migration("20260220034648_SeedGeometricData")]
+    partial class SeedGeometricData
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -89,6 +89,56 @@ namespace Hazina.Data.Migrations
                         .HasDatabaseName("IX_Concepts_ThoughtSpaceConceptId");
 
                     b.ToTable("Concepts");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "concept-variables",
+                            BaseConfusion = 0.5m,
+                            ConceptId = "variables",
+                            CreatedAt = new DateTime(2026, 2, 18, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Understanding variable declaration, assignment, and different data types",
+                            LastPracticedAt = new DateTime(2026, 2, 19, 10, 0, 0, 0, DateTimeKind.Utc),
+                            LocalCurvature = 0.15m,
+                            MasteryLevel = 0.7m,
+                            Name = "Variables and Data Types",
+                            PositionJson = "[0.2, 0.3, 0.1, 0.4, 0.5, 0.2, 0.3, 0.4, 0.1, 0.2, 0.3, 0.2]",
+                            PracticeCount = 10,
+                            ThoughtSpaceId = "ts-example-programming",
+                            UpdatedAt = new DateTime(2026, 2, 19, 10, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = "concept-functions",
+                            BaseConfusion = 1.2m,
+                            ConceptId = "functions",
+                            CreatedAt = new DateTime(2026, 2, 17, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Understanding function definitions, parameters, return values, and scope",
+                            LastPracticedAt = new DateTime(2026, 2, 18, 14, 0, 0, 0, DateTimeKind.Utc),
+                            LocalCurvature = 0.72m,
+                            MasteryLevel = 0.4m,
+                            Name = "Functions and Methods",
+                            PositionJson = "[0.4, 0.5, 0.3, 0.6, 0.7, 0.4, 0.5, 0.6, 0.3, 0.4, 0.5, 0.4]",
+                            PracticeCount = 5,
+                            ThoughtSpaceId = "ts-example-programming",
+                            UpdatedAt = new DateTime(2026, 2, 18, 14, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = "concept-algorithms",
+                            BaseConfusion = 2.5m,
+                            ConceptId = "algorithms",
+                            CreatedAt = new DateTime(2026, 2, 16, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Understanding algorithmic thinking, sorting, searching, and optimization",
+                            LastPracticedAt = new DateTime(2026, 2, 17, 16, 0, 0, 0, DateTimeKind.Utc),
+                            LocalCurvature = 2.25m,
+                            MasteryLevel = 0.1m,
+                            Name = "Algorithms and Problem Solving",
+                            PositionJson = "[0.7, 0.8, 0.6, 0.9, 1.0, 0.7, 0.8, 0.9, 0.6, 0.7, 0.8, 0.7]",
+                            PracticeCount = 2,
+                            ThoughtSpaceId = "ts-example-programming",
+                            UpdatedAt = new DateTime(2026, 2, 17, 16, 0, 0, 0, DateTimeKind.Utc)
+                        });
                 });
 
             modelBuilder.Entity("Hazina.Core.Entities.Geometric.ConceptConnection", b =>
@@ -134,6 +184,28 @@ namespace Hazina.Data.Migrations
                         .HasDatabaseName("IX_ConceptConnections_FromTo");
 
                     b.ToTable("ConceptConnections");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "conn-var-to-func",
+                            CreatedAt = new DateTime(2026, 2, 18, 10, 0, 0, 0, DateTimeKind.Utc),
+                            FromConceptId = "concept-variables",
+                            Reason = "Understanding variables is essential before learning functions",
+                            Strength = 0.9m,
+                            ToConceptId = "concept-functions",
+                            Type = 0
+                        },
+                        new
+                        {
+                            Id = "conn-func-to-algo",
+                            CreatedAt = new DateTime(2026, 2, 17, 10, 0, 0, 0, DateTimeKind.Utc),
+                            FromConceptId = "concept-functions",
+                            Reason = "Functions are the building blocks for implementing algorithms",
+                            Strength = 0.95m,
+                            ToConceptId = "concept-algorithms",
+                            Type = 0
+                        });
                 });
 
             modelBuilder.Entity("Hazina.Core.Entities.Geometric.LearningEvent", b =>
@@ -235,6 +307,20 @@ namespace Hazina.Data.Migrations
                         .HasDatabaseName("IX_ThoughtSpaces_UserDomain");
 
                     b.ToTable("ThoughtSpaces");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "ts-example-programming",
+                            CreatedAt = new DateTime(2026, 2, 20, 4, 0, 0, 0, DateTimeKind.Utc),
+                            Dimensions = 12,
+                            Domain = "programming",
+                            GlobalCurvature = 0.85m,
+                            LearningVelocity = 0m,
+                            TunnelingCapability = 0.5m,
+                            UpdatedAt = new DateTime(2026, 2, 20, 4, 0, 0, 0, DateTimeKind.Utc),
+                            UserId = "demo-user"
+                        });
                 });
 
             modelBuilder.Entity("Hazina.Core.Entities.Geometric.Concept", b =>
@@ -278,7 +364,7 @@ namespace Hazina.Data.Migrations
                     b.HasOne("Hazina.Core.Entities.Geometric.ThoughtSpace", "ThoughtSpace")
                         .WithMany("LearningHistory")
                         .HasForeignKey("ThoughtSpaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Concept");

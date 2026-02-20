@@ -361,7 +361,7 @@ namespace Hazina.Data.Migrations
                     b.HasOne("Hazina.Core.Entities.Geometric.ThoughtSpace", "ThoughtSpace")
                         .WithMany("LearningHistory")
                         .HasForeignKey("ThoughtSpaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Concept");

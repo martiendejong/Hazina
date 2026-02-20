@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Hazina.Data.Migrations
 {
     [DbContext(typeof(GeometricReasoningDbContext))]
-    [Migration("20260220034526_SeedGeometricData")]
-    partial class SeedGeometricData
+    [Migration("20260220034640_InitialGeometricSchema")]
+    partial class InitialGeometricSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -364,7 +364,7 @@ namespace Hazina.Data.Migrations
                     b.HasOne("Hazina.Core.Entities.Geometric.ThoughtSpace", "ThoughtSpace")
                         .WithMany("LearningHistory")
                         .HasForeignKey("ThoughtSpaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Concept");
