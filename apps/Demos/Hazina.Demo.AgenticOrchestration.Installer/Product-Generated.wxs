@@ -121,8 +121,9 @@
               Value="Configure network access and security (recommended)" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
 
-    <!-- Launch Setup.cmd via ShellExecute after install -->
-    <Property Id="WixShellExecTarget" Value="[#SetupCmdFile]" />
+    <!-- Launch Setup.ps1 directly (no pause, non-blocking) -->
+    <Property Id="WixShellExecTarget" Value="powershell.exe" />
+    <Property Id="WixShellExecParams" Value="-NoProfile -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]Setup.ps1&quot; -Mode interactive -SkipMsiInstall" />
     <CustomAction Id="LaunchSetup" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
 
     <!-- Complete custom UI sequence -->
