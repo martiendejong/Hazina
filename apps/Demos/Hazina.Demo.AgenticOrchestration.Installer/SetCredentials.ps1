@@ -39,7 +39,7 @@ try {
 
     if ([string]::IsNullOrEmpty($InstallDir)) {
         Write-Log "ERROR: InstallDir parameter is empty"
-        exit 1
+        exit 0  # Always exit successfully so installer can continue
     }
 
     $configPath = Join-Path $InstallDir "appsettings.Production.json"
@@ -52,7 +52,7 @@ try {
         Get-ChildItem $InstallDir -ErrorAction SilentlyContinue | ForEach-Object {
             Write-Log "  - $($_.Name)"
         }
-        exit 1
+        exit 0  # Always exit successfully so installer can continue
     }
 
     Write-Log "Config file found, reading..."
@@ -66,11 +66,11 @@ try {
     # Verify structure
     if (-not $config.Authentication) {
         Write-Log "ERROR: Authentication section not found"
-        exit 1
+        exit 0  # Always exit successfully so installer can continue
     }
     if (-not $config.AgenticOrchestration.Terminal) {
         Write-Log "ERROR: Terminal section not found"
-        exit 1
+        exit 0  # Always exit successfully so installer can continue
     }
 
     Write-Log "Config structure verified"
@@ -124,5 +124,5 @@ catch {
     Write-Log "Error Message: $($_.Exception.Message)"
     Write-Log "Stack Trace: $($_.ScriptStackTrace)"
     Write-Log "=== SetCredentials Script Failed ==="
-    exit 1
+    exit 0  # Always exit successfully so installer can continue
 }

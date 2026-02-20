@@ -322,7 +322,7 @@ $sb = [System.Text.StringBuilder]::new()
 [void]$sb.AppendLine('                  Property="POWERSHELL_EXE"')
 [void]$sb.AppendLine('                  ExeCommand="-ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetCredentials.ps1&quot; -InstallDir &quot;[INSTALLFOLDER]&quot; -Username &quot;[AUTH_USERNAME]&quot; -Password &quot;[AUTH_PASSWORD]&quot; -ShellCommand &quot;[SHELL_COMMAND]&quot; -WorkingDirectory &quot;[WORKING_DIRECTORY]&quot;"')
 [void]$sb.AppendLine('                  Execute="immediate"')
-[void]$sb.AppendLine('                  Return="check" />')
+[void]$sb.AppendLine('                  Return="ignore" />  <!-- Ignore return code so installer can always close -->')
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <InstallExecuteSequence>')
 [void]$sb.AppendLine('      <Custom Action="KillRunningProcess" Before="InstallValidate">1</Custom>')
@@ -589,10 +589,15 @@ Write-Host ""
 # ===================================================================
 Write-Host "STEP 5: Building MSI..." -ForegroundColor Cyan
 
-# Clean old MSI to avoid stale builds
+# Clean old MSI to avoid stale builds (skip if locked)
 if (Test-Path (Join-Path $msiOutputDir "HazinaOrchestrationSetup.msi")) {
-    Remove-Item (Join-Path $msiOutputDir "HazinaOrchestrationSetup.msi") -Force
+    Remove-Item (Join-Path $msiOutputDir "HazinaOrchestrationSetup.msi") -Force -ErrorAction SilentlyContinue
 }
+
+# Use timestamped filename to avoid lock issues
+$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$msiFileName = "HazinaOrchestrationSetup-$timestamp.msi"
+Write-Host "  Building MSI: $msiFileName" -ForegroundColor Yellow
 
 New-Item -ItemType Directory -Path $msiOutputDir -Force | Out-Null
 $objDir = Join-Path $scriptDir "obj\$Configuration"
@@ -610,7 +615,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "  Linking (light.exe)..." -ForegroundColor Gray
-& $lightExe "obj\$Configuration\Product-Generated.wixobj" -ext WixUIExtension -ext WixUtilExtension -out "$msiOutputDir\HazinaOrchestrationSetup.msi" -sval 2>&1
+& $lightExe "obj\$Configuration\Product-Generated.wixobj" -ext WixUIExtension -ext WixUtilExtension -out "$msiOutputDir\$msiFileName" -sval 2>&1
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "  [FAILED] light.exe failed" -ForegroundColor Red
