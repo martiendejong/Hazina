@@ -162,7 +162,7 @@ Write-Host ""
 # ===================================================================
 Write-Host "  Copying setup files to publish directory..." -ForegroundColor Gray
 
-$setupFiles = @("Setup.ps1", "Setup.cmd", "Setup-Config.example.json", "License.rtf", "SetCredentials.ps1")
+$setupFiles = @("Setup.ps1", "Setup.cmd", "Setup-Config.example.json", "License.rtf", "SetCredentials.ps1", "SetFilePermissions.ps1")
 foreach ($sf in $setupFiles) {
     $srcPath = Join-Path $scriptDir $sf
     if (Test-Path $srcPath) {
@@ -324,12 +324,27 @@ $sb = [System.Text.StringBuilder]::new()
 [void]$sb.AppendLine('                  Execute="immediate"')
 [void]$sb.AppendLine('                  Return="check" />')
 [void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <!-- Custom action to set file permissions for regular users (deferred - runs with elevated privileges) -->')
+[void]$sb.AppendLine('    <CustomAction Id="SetFilePermissions_Cmd"')
+[void]$sb.AppendLine('                  Property="SetFilePermissions"')
+[void]$sb.AppendLine('                  Value="-ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetFilePermissions.ps1&quot; -InstallDir &quot;[INSTALLFOLDER]&quot;"')
+[void]$sb.AppendLine('                  Execute="immediate" />')
+[void]$sb.AppendLine('    <CustomAction Id="SetFilePermissions"')
+[void]$sb.AppendLine('                  BinaryKey="WixCA"')
+[void]$sb.AppendLine('                  DllEntry="WixQuietExec"')
+[void]$sb.AppendLine('                  Execute="deferred"')
+[void]$sb.AppendLine('                  Return="check"')
+[void]$sb.AppendLine('                  Impersonate="no" />')
+[void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <InstallExecuteSequence>')
 [void]$sb.AppendLine('      <Custom Action="KillRunningProcess" Before="InstallValidate">1</Custom>')
 [void]$sb.AppendLine('      <Custom Action="StopOldService" After="KillRunningProcess">1</Custom>')
 [void]$sb.AppendLine('      <Custom Action="DeleteOldService" After="StopOldService">1</Custom>')
 [void]$sb.AppendLine('      <!-- SetCredentials DISABLED for testing -->')
 [void]$sb.AppendLine('      <!-- <Custom Action="SetCredentials" After="InstallFiles">NOT Installed</Custom> -->')
+[void]$sb.AppendLine('      <!-- Set file permissions so regular users can modify appsettings.json -->')
+[void]$sb.AppendLine('      <Custom Action="SetFilePermissions_Cmd" After="InstallFiles">NOT Installed</Custom>')
+[void]$sb.AppendLine('      <Custom Action="SetFilePermissions" After="SetFilePermissions_Cmd">NOT Installed</Custom>')
 [void]$sb.AppendLine('    </InstallExecuteSequence>')
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <Feature Id="ProductFeature" Title="Hazina Agentic Orchestration" Level="1">')
@@ -354,6 +369,7 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine('      <ComponentRef Id="SetupCmd" />')
 [void]$sb.AppendLine('      <ComponentRef Id="SetupConfigExample" />')
 [void]$sb.AppendLine('      <ComponentRef Id="SetCredentialsScript" />')
+[void]$sb.AppendLine('      <ComponentRef Id="SetFilePermissionsScript" />')
 [void]$sb.AppendLine('      <ComponentRef Id="DataDirectory" />')
 [void]$sb.AppendLine('      <ComponentRef Id="LogsDirectory" />')
 [void]$sb.AppendLine('      <ComponentRef Id="SessionLogsDirectory" />')
@@ -514,6 +530,10 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <Component Id="SetCredentialsScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555504">')
 [void]$sb.AppendLine("      <File Id=`"SetCredentialsPs1File`" Source=`"$pubEsc\SetCredentials.ps1`" KeyPath=`"yes`" />")
+[void]$sb.AppendLine('    </Component>')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <Component Id="SetFilePermissionsScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555505">')
+[void]$sb.AppendLine("      <File Id=`"SetFilePermissionsPs1File`" Source=`"$pubEsc\SetFilePermissions.ps1`" KeyPath=`"yes`" />")
 [void]$sb.AppendLine('    </Component>')
 
 # Optional core files
