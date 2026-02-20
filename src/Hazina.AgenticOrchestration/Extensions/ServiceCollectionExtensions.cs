@@ -86,6 +86,13 @@ public static class ServiceCollectionExtensions
                 opt.AgentSessionLogsPath = options.AgentSessionLogsPath;
                 opt.UploadsPath = options.UploadsPath;
                 opt.MaxUploadFileSizeMB = options.MaxUploadFileSizeMB;
+                // Overstory automation options
+                opt.MailDatabasePath = options.MailDatabasePath;
+                opt.AgentIdentitiesPath = options.AgentIdentitiesPath;
+                opt.PendingNudgesPath = options.PendingNudgesPath;
+                opt.MaxConcurrentAgents = options.MaxConcurrentAgents;
+                opt.BeaconDelayMs = options.BeaconDelayMs;
+                opt.HookDebounceMs = options.HookDebounceMs;
             });
 
         // Register core services
@@ -138,6 +145,29 @@ public static class ServiceCollectionExtensions
 
         // Register OrchestrationChatService for LLM-powered chat
         services.AddSingleton<OrchestrationChatService>();
+
+        // ═══════════════════════════════════════════════════════════════
+        // OVERSTORY AUTOMATION SERVICES (NEW)
+        // ═══════════════════════════════════════════════════════════════
+
+        // Register BeaconService for structured startup prompts
+        services.AddSingleton<IBeaconService, BeaconService>();
+
+        // Register MailService for inter-agent messaging
+        services.AddSingleton<IMailService>(sp =>
+            new MailService(
+                options.MailDatabasePath,
+                options.PendingNudgesPath,
+                sp.GetRequiredService<ILogger<MailService>>()));
+
+        // Register AgentIdentityService for persistent agent CVs
+        services.AddSingleton<IAgentIdentityService>(sp =>
+            new AgentIdentityService(
+                options.AgentIdentitiesPath,
+                sp.GetRequiredService<ILogger<AgentIdentityService>>()));
+
+        // Register HookConfigService for Claude Code hooks
+        services.AddSingleton<IHookConfigService, HookConfigService>();
 
         return services;
     }
@@ -287,4 +317,44 @@ public class AgenticOrchestrationOptions
     /// Default: 50
     /// </summary>
     public int MaxUploadFileSizeMB { get; set; } = 50;
+
+    // ═══════════════════════════════════════════════════════════════
+    // OVERSTORY AUTOMATION OPTIONS (NEW)
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Path to the mail database (SQLite)
+    /// Default: C:\scripts\_machine\mail.db
+    /// </summary>
+    public string MailDatabasePath { get; set; } = @"C:\scripts\_machine\mail.db";
+
+    /// <summary>
+    /// Path to agent identities directory
+    /// Default: C:\scripts\_machine\agents
+    /// </summary>
+    public string AgentIdentitiesPath { get; set; } = @"C:\scripts\_machine\agents";
+
+    /// <summary>
+    /// Path to pending nudges directory
+    /// Default: C:\scripts\_machine\pending-nudges
+    /// </summary>
+    public string PendingNudgesPath { get; set; } = @"C:\scripts\_machine\pending-nudges";
+
+    /// <summary>
+    /// Maximum concurrent agents (parallel agent limit)
+    /// Default: 10
+    /// </summary>
+    public int MaxConcurrentAgents { get; set; } = 10;
+
+    /// <summary>
+    /// Beacon initialization delay in milliseconds (Claude TUI startup time)
+    /// Default: 3000 (Overstory pattern)
+    /// </summary>
+    public int BeaconDelayMs { get; set; } = 3000;
+
+    /// <summary>
+    /// Hook debounce interval in milliseconds (mail check throttling)
+    /// Default: 5000 (Overstory pattern)
+    /// </summary>
+    public int HookDebounceMs { get; set; } = 5000;
 }
