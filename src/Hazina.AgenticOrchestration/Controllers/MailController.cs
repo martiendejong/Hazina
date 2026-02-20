@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using System.ComponentModel.DataAnnotations;
 using Hazina.AgenticOrchestration.Models;
 using Hazina.AgenticOrchestration.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Hazina.AgenticOrchestration.Controllers;
 
@@ -194,17 +195,36 @@ public class MailController : ControllerBase
 
 public class SendMailRequest
 {
+    [Required]
+    [MaxLength(100)]
     public required string From { get; set; }
+
+    [Required]
+    [MaxLength(100)]
     public required string To { get; set; }
+
+    [Required]
+    [MaxLength(500)]
     public required string Subject { get; set; }
+
+    [Required]
+    [MaxLength(10000)]
     public required string Body { get; set; }
+
     public MailMessageType Type { get; set; } = MailMessageType.Status;
     public MailPriority Priority { get; set; } = MailPriority.Normal;
+
+    [MaxLength(5000)]
     public string? Payload { get; set; }
 }
 
 public class ReplyRequest
 {
+    [Required]
+    [MaxLength(100)]
     public required string From { get; set; }
+
+    [Required]
+    [MaxLength(10000)]
     public required string Body { get; set; }
 }

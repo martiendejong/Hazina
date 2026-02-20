@@ -1,8 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using System.ComponentModel.DataAnnotations;
 using Hazina.AgenticOrchestration.Models;
 using Hazina.AgenticOrchestration.Services;
 using Hazina.AgenticOrchestration.Terminal;
+using Hazina.AgenticOrchestration.Validation;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Hazina.AgenticOrchestration.Controllers;
 
@@ -42,6 +44,27 @@ public class AgentController : ControllerBase
     {
         try
         {
+            // Validate inputs
+            if (!InputValidator.IsValidAgentName(request.AgentName))
+            {
+                return BadRequest(new { error = "Invalid agent name. Must match ^[a-zA-Z0-9_-]{1,50}$" });
+            }
+
+            if (!InputValidator.IsValidTaskId(request.TaskId))
+            {
+                return BadRequest(new { error = "Invalid task ID. Must match ^[a-zA-Z0-9_-]{1,200}$" });
+            }
+
+            // Validate path safety
+            if (!string.IsNullOrEmpty(request.WorktreePath))
+            {
+                const string allowedRoot = @"C:\Projects\worker-agents";
+                if (!InputValidator.IsPathSafe(request.WorktreePath, allowedRoot))
+                {
+                    return BadRequest(new { error = $"Worktree path must be within {allowedRoot}" });
+                }
+            }
+
             // 1. Load or create agent identity
             var identity = await _identityService.LoadIdentityAsync(request.AgentName);
             if (identity == null)
@@ -219,17 +242,41 @@ public class AgentController : ControllerBase
 
 public class SpawnAgentRequest
 {
+    [Required]
+    [RegularExpression(@"^[a-zA-Z0-9_-]{1,50}$", ErrorMessage = "AgentName must contain only alphanumeric, underscore, or hyphen characters (1-50 chars)")]
     public required string AgentName { get; set; }
+
+    [Required]
+    [MaxLength(100)]
     public required string Capability { get; set; }
+
+    [Required]
+    [RegularExpression(@"^[a-zA-Z0-9_-]{1,200}$")]
     public required string TaskId { get; set; }
+
+    [MaxLength(50)]
     public string? ParentAgent { get; set; }
+
+    [Range(0, 10)]
     public int Depth { get; set; }
+
+    [MaxLength(500)]
     public string? WorktreePath { get; set; }
+
+    [MaxLength(200)]
     public string? Command { get; set; }
+
     public string[]? Arguments { get; set; }
+
+    [MaxLength(500)]
     public string? WorkingDirectory { get; set; }
+
+    [MaxLength(1000)]
     public string? CustomStartupProtocol { get; set; }
+
     public List<string>? ExpertiseDomains { get; set; }
+
+    [Range(0, 30000)]
     public int HookDebounceMs { get; set; } = 5000;
 }
 
@@ -246,6 +293,10 @@ public class SpawnAgentResponse
 
 public class NudgeRequest
 {
+    [Required]
+    [MaxLength(1000)]
     public required string Message { get; set; }
+
+    [MaxLength(50)]
     public string? From { get; set; }
 }

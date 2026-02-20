@@ -1,6 +1,7 @@
+using System.ComponentModel.DataAnnotations;
+using Hazina.AgenticOrchestration.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Hazina.AgenticOrchestration.Services;
 
 namespace Hazina.AgenticOrchestration.Controllers;
 
@@ -104,18 +105,31 @@ public class HooksController : ControllerBase
 
 public class InstallHooksRequest
 {
+    [Required]
+    [MaxLength(500)]
     public required string WorktreePath { get; set; }
+
+    [Required]
+    [RegularExpression(@"^[a-zA-Z0-9_-]{1,50}$")]
     public required string AgentName { get; set; }
+
+    [Range(0, 30000)]
     public int DebounceMs { get; set; } = 5000;
 }
 
 public class UninstallHooksRequest
 {
+    [Required]
+    [MaxLength(500)]
     public required string WorktreePath { get; set; }
 }
 
 public class PreviewHooksRequest
 {
+    [Required]
+    [RegularExpression(@"^[a-zA-Z0-9_-]{1,50}$")]
     public required string AgentName { get; set; }
+
+    [Range(0, 30000)]
     public int DebounceMs { get; set; } = 5000;
 }

@@ -1,3 +1,4 @@
+using Hazina.AgenticOrchestration.Validation;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -27,6 +28,15 @@ public class HookConfigService : IHookConfigService
 
     public Task<string> GenerateHooksConfigAsync(string agentName, int debounceMs = 5000)
     {
+        // Validate agent name to prevent command injection
+        if (!InputValidator.IsValidAgentName(agentName))
+        {
+            throw new ArgumentException($"Invalid agent name: {agentName}. Must match ^[a-zA-Z0-9_-]{{1,50}}$");
+        }
+
+        // Escape agent name for shell safety (defense in depth)
+        var safeAgentName = InputValidator.EscapeShellArgument(agentName);
+
         var config = new
         {
             hooks = new
@@ -35,14 +45,14 @@ public class HookConfigService : IHookConfigService
                 {
                     new
                     {
-                        command = $"hazina-orchestration prime --agent {agentName}"
+                        command = $"hazina-orchestration prime --agent \"{safeAgentName}\""
                     }
                 },
                 UserPromptSubmit = new[]
                 {
                     new
                     {
-                        command = $"hazina-orchestration mail-check --agent {agentName} --inject --debounce {debounceMs}",
+                        command = $"hazina-orchestration mail-check --agent \"{safeAgentName}\" --inject --debounce {debounceMs}",
                         outputMode = "prepend"
                     }
                 }
@@ -61,6 +71,13 @@ public class HookConfigService : IHookConfigService
 
     public async Task InstallHooksAsync(string worktreePath, string agentName, int debounceMs = 5000)
     {
+        // Validate path safety (prevent path traversal)
+        const string allowedRoot = @"C:\Projects\worker-agents";
+        if (!InputValidator.IsPathSafe(worktreePath, allowedRoot))
+        {
+            throw new ArgumentException($"Worktree path must be within {allowedRoot}");
+        }
+
         var claudeDir = Path.Combine(worktreePath, ".claude");
         Directory.CreateDirectory(claudeDir);
 

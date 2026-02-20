@@ -1,5 +1,6 @@
 using Hazina.AgenticOrchestration.Models;
 using Hazina.AgenticOrchestration.Terminal;
+using Hazina.AgenticOrchestration.Validation;
 using Microsoft.Extensions.Logging;
 
 namespace Hazina.AgenticOrchestration.Services;
@@ -34,11 +35,30 @@ public class BeaconService : IBeaconService
 
     public string BuildBeacon(BeaconOptions options)
     {
+        // Validate inputs to prevent prompt injection
+        if (!InputValidator.IsValidAgentName(options.AgentName))
+        {
+            throw new ArgumentException($"Invalid agent name: {options.AgentName}");
+        }
+
+        if (!InputValidator.IsValidTaskId(options.TaskId))
+        {
+            throw new ArgumentException($"Invalid task ID: {options.TaskId}");
+        }
+
+        if (!string.IsNullOrEmpty(options.ParentAgent) && !InputValidator.IsValidAgentName(options.ParentAgent))
+        {
+            throw new ArgumentException($"Invalid parent agent name: {options.ParentAgent}");
+        }
+
         var timestamp = DateTime.UtcNow.ToString("O");
         var parent = options.ParentAgent ?? "none";
 
+        // Escape agent name for shell command (defense in depth)
+        var safeAgentName = InputValidator.EscapeShellArgument(options.AgentName);
+
         var protocol = options.CustomProtocol ??
-            $"read .claude/CLAUDE.md, run mulch prime, check mail (hazina-orchestration mail-check --agent {options.AgentName}), then begin task {options.TaskId}";
+            $"read .claude/CLAUDE.md, run mulch prime, check mail (hazina-orchestration mail-check --agent \"{safeAgentName}\"), then begin task {options.TaskId}";
 
         var parts = new List<string>
         {
