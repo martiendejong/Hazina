@@ -1,11 +1,10 @@
-# Deferred custom action - read InstallDir from CustomActionData environment variable
-$InstallDir = $env:CustomActionData
+# Deferred custom action - InstallDir passed as command-line parameter
+param([string]$InstallDirParam)
+
+$InstallDir = $InstallDirParam
 if ([string]::IsNullOrEmpty($InstallDir)) {
-    # Fallback: try to read from command line parameter
-    param([string]$InstallDirParam)
-    if (-not [string]::IsNullOrEmpty($InstallDirParam)) {
-        $InstallDir = $InstallDirParam
-    }
+    # Fallback: try CustomActionData environment variable
+    $InstallDir = $env:CustomActionData
 }
 
 # Emergency logging - write BEFORE anything else
