@@ -58,21 +58,39 @@ public class FacebookPublisher : ISocialPublisher
                 content = $"{content}\n\n{hashtags}";
             }
 
-            // Publish to Facebook
-            var formData = new Dictionary<string, string>
-            {
-                ["message"] = content,
-                ["access_token"] = accessToken
-            };
+            // Publish to Facebook — use /photos endpoint if image data is available
+            HttpResponseMessage response;
 
-            // Add link if media URL provided
-            if (request.MediaUrls.Any())
+            if (request.ImageData != null && request.ImageData.Length > 0)
             {
-                formData["link"] = request.MediaUrls.First();
+                // Upload photo with message using multipart form data
+                using var multipart = new MultipartFormDataContent();
+                multipart.Add(new StringContent(content), "message");
+                multipart.Add(new StringContent(accessToken), "access_token");
+
+                var imageContent = new ByteArrayContent(request.ImageData);
+                imageContent.Headers.ContentType = new MediaTypeHeaderValue(request.ImageContentType ?? "image/jpeg");
+                multipart.Add(imageContent, "source", request.ImageFileName ?? "image.jpg");
+
+                response = await _httpClient.PostAsync($"{ApiBaseUrl}/{userId}/photos", multipart, cancellationToken);
             }
+            else
+            {
+                var formData = new Dictionary<string, string>
+                {
+                    ["message"] = content,
+                    ["access_token"] = accessToken
+                };
 
-            var httpContent = new FormUrlEncodedContent(formData);
-            var response = await _httpClient.PostAsync($"{ApiBaseUrl}/{userId}/feed", httpContent, cancellationToken);
+                // Add link if media URL provided
+                if (request.MediaUrls.Any())
+                {
+                    formData["link"] = request.MediaUrls.First();
+                }
+
+                var httpContent = new FormUrlEncodedContent(formData);
+                response = await _httpClient.PostAsync($"{ApiBaseUrl}/{userId}/feed", httpContent, cancellationToken);
+            }
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
 
             if (!response.IsSuccessStatusCode)

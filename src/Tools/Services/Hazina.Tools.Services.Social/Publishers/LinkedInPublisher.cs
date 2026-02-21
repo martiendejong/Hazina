@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Retry;
@@ -10,7 +11,7 @@ namespace Hazina.Tools.Services.Social.Publishers;
 
 /// <summary>
 /// LinkedIn social media publisher implementation.
-/// Publishes content to LinkedIn using the UGC API.
+/// Publishes content to LinkedIn using the Community Management Posts API.
 /// Requires OAuth 2.0 access token with w_member_social scope.
 /// </summary>
 public class LinkedInPublisher : ISocialPublisher
@@ -19,7 +20,9 @@ public class LinkedInPublisher : ISocialPublisher
     private readonly ILogger<LinkedInPublisher> _logger;
     private readonly AsyncRetryPolicy<HttpResponseMessage> _retryPolicy;
 
-    private const string ApiBaseUrl = "https://api.linkedin.com/v2";
+    private const string RestApiBaseUrl = "https://api.linkedin.com/rest";
+    private const string V2ApiBaseUrl = "https://api.linkedin.com/v2";
+    private const string LinkedInApiVersion = "202506";
 
     public string ProviderId => "linkedin";
     public string DisplayName => "LinkedIn";
@@ -68,18 +71,70 @@ public class LinkedInPublisher : ISocialPublisher
                 };
             }
 
-            // Build UGC post payload
-            var ugcPost = BuildUgcPost(personUrn, request);
-            var json = JsonSerializer.Serialize(ugcPost, new JsonSerializerOptions
+            // Upload image if provided
+            string? imageUrn = null;
+            if (request.ImageData != null && request.ImageData.Length > 0)
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                imageUrn = await UploadImageAsync(accessToken, personUrn, request, cancellationToken);
+                if (imageUrn == null)
+                {
+                    _logger.LogWarning("[LinkedIn] Image upload failed, publishing text-only post");
+                }
+            }
+
+            // Build post content with hashtags
+            var commentary = request.Content;
+            if (request.Hashtags.Any())
+            {
+                var hashtags = string.Join(" ", request.Hashtags
+                    .Where(h => !h.Contains(':')) // Skip metadata tags like category:xxx
+                    .Select(h => h.StartsWith("#") ? h : $"#{h}"));
+                if (!string.IsNullOrEmpty(hashtags))
+                {
+                    commentary = $"{commentary}\n\n{hashtags}";
+                }
+            }
+
+            // Build the Posts API request body
+            var postBody = new LinkedInPostRequest
+            {
+                Author = personUrn,
+                Commentary = commentary,
+                Visibility = "PUBLIC",
+                Distribution = new LinkedInDistribution
+                {
+                    FeedDistribution = "MAIN_FEED"
+                },
+                LifecycleState = "PUBLISHED"
+            };
+
+            // Add image content if uploaded
+            if (!string.IsNullOrEmpty(imageUrn))
+            {
+                postBody.Content = new LinkedInPostContent
+                {
+                    Media = new LinkedInPostMedia
+                    {
+                        Id = imageUrn
+                    }
+                };
+            }
+
+            var json = JsonSerializer.Serialize(postBody, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             });
 
-            // Publish to LinkedIn with retry policy
+            _logger.LogInformation("[LinkedIn] Posting to REST API: {Json}", json);
+
+            // Publish to LinkedIn Posts API with retry policy
             var response = await _retryPolicy.ExecuteAsync(async () =>
             {
-                var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{ApiBaseUrl}/ugcPosts");
+                var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{RestApiBaseUrl}/posts");
                 httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                httpRequest.Headers.Add("LinkedIn-Version", LinkedInApiVersion);
+                httpRequest.Headers.Add("X-Restli-Protocol-Version", "2.0.0");
                 httpRequest.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 return await _httpClient.SendAsync(httpRequest, cancellationToken);
@@ -95,8 +150,8 @@ public class LinkedInPublisher : ISocialPublisher
                 return new PublishResult
                 {
                     Success = false,
-                    Error = $"LinkedIn API error: {response.StatusCode}",
-                    ErrorCode = GetErrorCode(response.StatusCode.ToString()),
+                    Error = $"LinkedIn API error: {response.StatusCode} - {responseBody}",
+                    ErrorCode = GetErrorCode(((int)response.StatusCode).ToString()),
                     Metadata = new Dictionary<string, string>
                     {
                         ["status_code"] = ((int)response.StatusCode).ToString(),
@@ -105,27 +160,41 @@ public class LinkedInPublisher : ISocialPublisher
                 };
             }
 
-            var publishResponse = JsonSerializer.Deserialize<LinkedInUgcPostResponse>(responseBody);
-            if (publishResponse?.id == null)
+            // The Posts API returns the post URN in the x-restli-id header
+            var postUrn = response.Headers.Contains("x-restli-id")
+                ? response.Headers.GetValues("x-restli-id").FirstOrDefault()
+                : null;
+
+            // Also try to get it from the response body
+            if (string.IsNullOrEmpty(postUrn) && !string.IsNullOrEmpty(responseBody))
             {
-                return new PublishResult
+                try
                 {
-                    Success = false,
-                    Error = "Invalid response from LinkedIn",
-                    ErrorCode = "invalid_response"
-                };
+                    var postResponse = JsonSerializer.Deserialize<LinkedInPostResponse>(responseBody);
+                    postUrn = postResponse?.id;
+                }
+                catch { /* ignore parse errors */ }
             }
 
-            // Extract share ID from URN (format: urn:li:share:123456789)
-            var shareId = ExtractShareId(publishResponse.id);
-            var postUrl = $"https://www.linkedin.com/feed/update/{publishResponse.id}";
+            if (string.IsNullOrEmpty(postUrn))
+            {
+                // 201 Created without an ID is still a success
+                _logger.LogWarning("[LinkedIn] Post created but no URN returned. Headers: {Headers}",
+                    string.Join(", ", response.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}")));
+                postUrn = "unknown";
+            }
 
-            _logger.LogInformation("[LinkedIn] Post published successfully: {ShareId}", shareId);
+            var shareId = ExtractShareId(postUrn);
+            var postUrl = postUrn.StartsWith("urn:")
+                ? $"https://www.linkedin.com/feed/update/{postUrn}"
+                : "https://www.linkedin.com/feed/";
+
+            _logger.LogInformation("[LinkedIn] Post published successfully: {PostUrn}", postUrn);
 
             return new PublishResult
             {
                 Success = true,
-                ExternalPostId = publishResponse.id,
+                ExternalPostId = postUrn,
                 Url = postUrl,
                 PublishedAt = DateTime.UtcNow,
                 Metadata = new Dictionary<string, string>
@@ -147,6 +216,81 @@ public class LinkedInPublisher : ISocialPublisher
         }
     }
 
+    /// <summary>
+    /// Uploads an image to LinkedIn and returns the image URN.
+    /// Uses the Images API: POST /rest/images?action=initializeUpload, then PUT binary.
+    /// </summary>
+    private async Task<string?> UploadImageAsync(
+        string accessToken,
+        string ownerUrn,
+        PublishPostRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Step 1: Initialize upload
+            var initBody = new
+            {
+                initializeUploadRequest = new
+                {
+                    owner = ownerUrn
+                }
+            };
+
+            var initJson = JsonSerializer.Serialize(initBody);
+            var initRequest = new HttpRequestMessage(HttpMethod.Post, $"{RestApiBaseUrl}/images?action=initializeUpload");
+            initRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            initRequest.Headers.Add("LinkedIn-Version", LinkedInApiVersion);
+            initRequest.Headers.Add("X-Restli-Protocol-Version", "2.0.0");
+            initRequest.Content = new StringContent(initJson, Encoding.UTF8, "application/json");
+
+            var initResponse = await _httpClient.SendAsync(initRequest, cancellationToken);
+            var initResponseBody = await initResponse.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!initResponse.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("[LinkedIn] Image upload init failed: {Status} - {Response}",
+                    initResponse.StatusCode, initResponseBody);
+                return null;
+            }
+
+            var initResult = JsonSerializer.Deserialize<LinkedInImageInitResponse>(initResponseBody);
+            var uploadUrl = initResult?.value?.uploadUrl;
+            var imageUrn = initResult?.value?.image;
+
+            if (string.IsNullOrEmpty(uploadUrl) || string.IsNullOrEmpty(imageUrn))
+            {
+                _logger.LogWarning("[LinkedIn] Image upload init returned no URL/URN: {Response}", initResponseBody);
+                return null;
+            }
+
+            // Step 2: Upload binary image
+            var uploadRequest = new HttpRequestMessage(HttpMethod.Put, uploadUrl);
+            uploadRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var imageContent = new ByteArrayContent(request.ImageData!);
+            imageContent.Headers.ContentType = new MediaTypeHeaderValue(request.ImageContentType ?? "image/jpeg");
+            uploadRequest.Content = imageContent;
+
+            var uploadResponse = await _httpClient.SendAsync(uploadRequest, cancellationToken);
+
+            if (!uploadResponse.IsSuccessStatusCode)
+            {
+                var uploadBody = await uploadResponse.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogWarning("[LinkedIn] Image binary upload failed: {Status} - {Response}",
+                    uploadResponse.StatusCode, uploadBody);
+                return null;
+            }
+
+            _logger.LogInformation("[LinkedIn] Image uploaded successfully: {ImageUrn}", imageUrn);
+            return imageUrn;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[LinkedIn] Error uploading image");
+            return null;
+        }
+    }
+
     public async Task<bool> DeletePostAsync(
         string accessToken,
         string externalPostId,
@@ -158,8 +302,11 @@ public class LinkedInPublisher : ISocialPublisher
 
             var response = await _retryPolicy.ExecuteAsync(async () =>
             {
-                var request = new HttpRequestMessage(HttpMethod.Delete, $"{ApiBaseUrl}/ugcPosts/{externalPostId}");
+                var request = new HttpRequestMessage(HttpMethod.Delete,
+                    $"{RestApiBaseUrl}/posts/{Uri.EscapeDataString(externalPostId)}");
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                request.Headers.Add("LinkedIn-Version", LinkedInApiVersion);
+                request.Headers.Add("X-Restli-Protocol-Version", "2.0.0");
 
                 return await _httpClient.SendAsync(request, cancellationToken);
             });
@@ -192,14 +339,14 @@ public class LinkedInPublisher : ISocialPublisher
         {
             _logger.LogInformation("[LinkedIn] Fetching metrics for post: {PostId}", externalPostId);
 
-            // LinkedIn Social Actions API for engagement metrics
-            var shareId = ExtractShareId(externalPostId);
-            var url = $"{ApiBaseUrl}/socialActions/{externalPostId}";
+            var url = $"{RestApiBaseUrl}/socialActions/{Uri.EscapeDataString(externalPostId)}";
 
             var response = await _retryPolicy.ExecuteAsync(async () =>
             {
                 var request = new HttpRequestMessage(HttpMethod.Get, url);
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                request.Headers.Add("LinkedIn-Version", LinkedInApiVersion);
+                request.Headers.Add("X-Restli-Protocol-Version", "2.0.0");
 
                 return await _httpClient.SendAsync(request, cancellationToken);
             });
@@ -254,7 +401,7 @@ public class LinkedInPublisher : ISocialPublisher
         {
             _logger.LogInformation("[LinkedIn] Validating access token");
 
-            var request = new HttpRequestMessage(HttpMethod.Get, $"{ApiBaseUrl}/userinfo");
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{V2ApiBaseUrl}/userinfo");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
             var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -282,7 +429,7 @@ public class LinkedInPublisher : ISocialPublisher
     {
         try
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, $"{ApiBaseUrl}/userinfo");
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{V2ApiBaseUrl}/userinfo");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
             var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -309,56 +456,8 @@ public class LinkedInPublisher : ISocialPublisher
         }
     }
 
-    private LinkedInUgcPost BuildUgcPost(string personUrn, PublishPostRequest request)
-    {
-        // Format content with hashtags
-        var content = request.Content;
-        if (request.Hashtags.Any())
-        {
-            var hashtags = string.Join(" ", request.Hashtags.Select(h => h.StartsWith("#") ? h : $"#{h}"));
-            content = $"{content}\n\n{hashtags}";
-        }
-
-        var ugcPost = new LinkedInUgcPost
-        {
-            Author = personUrn,
-            LifecycleState = "PUBLISHED",
-            SpecificContent = new LinkedInSpecificContent
-            {
-                ShareContent = new LinkedInShareContent
-                {
-                    ShareCommentary = new LinkedInText
-                    {
-                        Text = content
-                    },
-                    ShareMediaCategory = request.MediaUrls.Any() ? "IMAGE" : "NONE"
-                }
-            },
-            Visibility = new LinkedInVisibility
-            {
-                MemberNetworkVisibility = "PUBLIC"
-            }
-        };
-
-        // Add media if provided
-        if (request.MediaUrls.Any())
-        {
-            ugcPost.SpecificContent.ShareContent.Media = request.MediaUrls
-                .Take(9) // LinkedIn allows max 9 images
-                .Select(url => new LinkedInMedia
-                {
-                    Status = "READY",
-                    OriginalUrl = url
-                })
-                .ToList();
-        }
-
-        return ugcPost;
-    }
-
     private string ExtractShareId(string urn)
     {
-        // Extract ID from URN format: urn:li:share:123456789
         var parts = urn.Split(':');
         return parts.Length > 0 ? parts[^1] : urn;
     }
@@ -371,66 +470,72 @@ public class LinkedInPublisher : ISocialPublisher
             "403" => "insufficient_permissions",
             "429" => "rate_limit",
             "400" => "invalid_request",
+            "422" => "invalid_request",
             _ => "api_error"
         };
     }
 
-    // LinkedIn API request/response classes
-    private class LinkedInUgcPost
+    // LinkedIn Posts API request/response classes
+    private class LinkedInPostRequest
     {
+        [JsonPropertyName("author")]
         public string Author { get; set; } = "";
-        public string LifecycleState { get; set; } = "";
-        public LinkedInSpecificContent SpecificContent { get; set; } = new();
-        public LinkedInVisibility Visibility { get; set; } = new();
+
+        [JsonPropertyName("commentary")]
+        public string Commentary { get; set; } = "";
+
+        [JsonPropertyName("visibility")]
+        public string Visibility { get; set; } = "PUBLIC";
+
+        [JsonPropertyName("distribution")]
+        public LinkedInDistribution Distribution { get; set; } = new();
+
+        [JsonPropertyName("lifecycleState")]
+        public string LifecycleState { get; set; } = "PUBLISHED";
+
+        [JsonPropertyName("content")]
+        public LinkedInPostContent? Content { get; set; }
     }
 
-    private class LinkedInSpecificContent
+    private class LinkedInDistribution
     {
-        public LinkedInShareContent ShareContent { get; set; } = new();
+        [JsonPropertyName("feedDistribution")]
+        public string FeedDistribution { get; set; } = "MAIN_FEED";
 
-        // Custom property name for LinkedIn API
-        [System.Text.Json.Serialization.JsonPropertyName("com.linkedin.ugc.ShareContent")]
-        public LinkedInShareContent? ComLinkedInUgcShareContent
-        {
-            get => ShareContent;
-            set => ShareContent = value ?? new LinkedInShareContent();
-        }
+        [JsonPropertyName("targetEntities")]
+        public List<object> TargetEntities { get; set; } = new();
+
+        [JsonPropertyName("thirdPartyDistributionChannels")]
+        public List<object> ThirdPartyDistributionChannels { get; set; } = new();
     }
 
-    private class LinkedInShareContent
+    private class LinkedInPostContent
     {
-        public LinkedInText ShareCommentary { get; set; } = new();
-        public string ShareMediaCategory { get; set; } = "";
-        public List<LinkedInMedia>? Media { get; set; }
+        [JsonPropertyName("media")]
+        public LinkedInPostMedia? Media { get; set; }
     }
 
-    private class LinkedInText
+    private class LinkedInPostMedia
     {
-        public string Text { get; set; } = "";
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = "";
     }
 
-    private class LinkedInMedia
-    {
-        public string Status { get; set; } = "";
-        public string OriginalUrl { get; set; } = "";
-    }
-
-    private class LinkedInVisibility
-    {
-        public string MemberNetworkVisibility { get; set; } = "";
-
-        // Custom property name for LinkedIn API
-        [System.Text.Json.Serialization.JsonPropertyName("com.linkedin.ugc.MemberNetworkVisibility")]
-        public string? ComLinkedInUgcMemberNetworkVisibility
-        {
-            get => MemberNetworkVisibility;
-            set => MemberNetworkVisibility = value ?? "";
-        }
-    }
-
-    private class LinkedInUgcPostResponse
+    private class LinkedInPostResponse
     {
         public string? id { get; set; }
+    }
+
+    // Image upload response classes
+    private class LinkedInImageInitResponse
+    {
+        public LinkedInImageInitValue? value { get; set; }
+    }
+
+    private class LinkedInImageInitValue
+    {
+        public string? uploadUrl { get; set; }
+        public string? image { get; set; }
     }
 
     private class LinkedInUserInfo

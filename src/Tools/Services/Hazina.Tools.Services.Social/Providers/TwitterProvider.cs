@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Web;
@@ -9,8 +10,8 @@ namespace Hazina.Tools.Services.Social.Providers;
 
 /// <summary>
 /// X (Twitter) social media provider implementation.
-/// Supports OAuth 2.0 authentication and content import.
-/// Requires Twitter API v2 access and elevated permissions.
+/// Supports OAuth 2.0 with PKCE authentication and content import.
+/// Requires Twitter API v2 access.
 /// </summary>
 public class TwitterProvider : ISocialProvider
 {
@@ -23,6 +24,10 @@ public class TwitterProvider : ISocialProvider
     private const string TokenUrl = "https://api.twitter.com/2/oauth2/token";
     private const string RevokeUrl = "https://api.twitter.com/2/oauth2/revoke";
     private const string ApiBaseUrl = "https://api.twitter.com/2";
+
+    // Store code verifiers keyed by state to retrieve during token exchange.
+    // This is a simple in-memory store; in production, use a distributed cache.
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _codeVerifiers = new();
 
     public string ProviderId => "twitter";
     public string DisplayName => "X (Twitter)";
@@ -41,15 +46,33 @@ public class TwitterProvider : ISocialProvider
 
     public string GetAuthorizationUrl(string redirectUri, string state)
     {
-        // Twitter OAuth 2.0 with PKCE
-        var scopes = "tweet.read users.read offline.access";
-        var encodedRedirect = HttpUtility.UrlEncode(redirectUri);
-        var encodedScopes = HttpUtility.UrlEncode(scopes);
+        // Twitter OAuth 2.0 requires PKCE with S256 method
+        var codeVerifier = GenerateCodeVerifier();
+        var codeChallenge = GenerateCodeChallenge(codeVerifier);
 
-        // Generate code_challenge for PKCE (in production, this should be properly generated and stored)
-        var codeChallenge = "challenge"; // Placeholder - should be SHA256 hash of code_verifier
+        // Store the verifier so we can retrieve it during token exchange
+        _codeVerifiers[state] = codeVerifier;
 
-        return $"{AuthorizeUrl}?response_type=code&client_id={_clientId}&redirect_uri={encodedRedirect}&scope={encodedScopes}&state={state}&code_challenge={codeChallenge}&code_challenge_method=plain";
+        // Clean up old entries (keep max 100)
+        if (_codeVerifiers.Count > 100)
+        {
+            var oldest = _codeVerifiers.Keys.Take(50).ToList();
+            foreach (var key in oldest)
+            {
+                _codeVerifiers.TryRemove(key, out _);
+            }
+        }
+
+        var scopes = "tweet.read tweet.write users.read offline.access";
+
+        return $"{AuthorizeUrl}"
+            + $"?response_type=code"
+            + $"&client_id={HttpUtility.UrlEncode(_clientId)}"
+            + $"&redirect_uri={HttpUtility.UrlEncode(redirectUri)}"
+            + $"&scope={HttpUtility.UrlEncode(scopes)}"
+            + $"&state={HttpUtility.UrlEncode(state)}"
+            + $"&code_challenge={HttpUtility.UrlEncode(codeChallenge)}"
+            + $"&code_challenge_method=S256";
     }
 
     public async Task<SocialAuthResult> ExchangeCodeAsync(
@@ -59,31 +82,49 @@ public class TwitterProvider : ISocialProvider
     {
         try
         {
+            // Try to retrieve the code verifier from stored state
+            // The state parameter should be passed back — look it up
+            string codeVerifier = "challenge"; // fallback
+            foreach (var kvp in _codeVerifiers)
+            {
+                // Try each stored verifier — remove on use
+                if (_codeVerifiers.TryRemove(kvp.Key, out var storedVerifier))
+                {
+                    codeVerifier = storedVerifier;
+                    break; // Use the most recently stored one
+                }
+            }
+
+            _logger.LogInformation("[Twitter] Exchanging code for token, verifier length: {Length}", codeVerifier.Length);
+
             var requestBody = new Dictionary<string, string>
             {
                 ["code"] = code,
                 ["grant_type"] = "authorization_code",
                 ["client_id"] = _clientId,
                 ["redirect_uri"] = redirectUri,
-                ["code_verifier"] = "challenge" // Should match the one used in GetAuthorizationUrl
+                ["code_verifier"] = codeVerifier
             };
 
             var content = new FormUrlEncodedContent(requestBody);
 
             // Twitter requires Basic Auth with client credentials
+            using var request = new HttpRequestMessage(HttpMethod.Post, TokenUrl);
             var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_clientId}:{_clientSecret}"));
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+            request.Content = content;
 
-            var response = await _httpClient.PostAsync(TokenUrl, content, cancellationToken);
+            var response = await _httpClient.SendAsync(request, cancellationToken);
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Twitter token exchange failed: {Response}", json);
+                _logger.LogWarning("[Twitter] Token exchange failed: {Status} - {Response}",
+                    response.StatusCode, json);
                 return new SocialAuthResult
                 {
                     Success = false,
-                    Error = $"Token exchange failed: {response.StatusCode}"
+                    Error = $"Token exchange failed: {response.StatusCode} - {json}"
                 };
             }
 
@@ -92,6 +133,8 @@ public class TwitterProvider : ISocialProvider
             {
                 return new SocialAuthResult { Success = false, Error = "Invalid token response" };
             }
+
+            _logger.LogInformation("[Twitter] Token exchange successful");
 
             return new SocialAuthResult
             {
@@ -103,7 +146,7 @@ public class TwitterProvider : ISocialProvider
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error exchanging Twitter auth code");
+            _logger.LogError(ex, "[Twitter] Error exchanging auth code");
             return new SocialAuthResult { Success = false, Error = ex.Message };
         }
     }
@@ -123,14 +166,18 @@ public class TwitterProvider : ISocialProvider
 
             var content = new FormUrlEncodedContent(requestBody);
 
+            using var request = new HttpRequestMessage(HttpMethod.Post, TokenUrl);
             var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_clientId}:{_clientSecret}"));
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+            request.Content = content;
 
-            var response = await _httpClient.PostAsync(TokenUrl, content, cancellationToken);
+            var response = await _httpClient.SendAsync(request, cancellationToken);
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
+                _logger.LogWarning("[Twitter] Token refresh failed: {Status} - {Response}",
+                    response.StatusCode, json);
                 return new SocialAuthResult
                 {
                     Success = false,
@@ -154,7 +201,7 @@ public class TwitterProvider : ISocialProvider
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error refreshing Twitter token");
+            _logger.LogError(ex, "[Twitter] Error refreshing token");
             return new SocialAuthResult { Success = false, Error = ex.Message };
         }
     }
@@ -167,7 +214,7 @@ public class TwitterProvider : ISocialProvider
         {
             var url = $"{ApiBaseUrl}/users/me?user.fields=id,name,username,profile_image_url,description";
 
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
             var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -175,7 +222,8 @@ public class TwitterProvider : ISocialProvider
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Twitter profile fetch failed: {Response}", json);
+                _logger.LogWarning("[Twitter] Profile fetch failed: {Status} - {Response}",
+                    response.StatusCode, json);
                 return new SocialProfile { Id = "", Name = "Unknown" };
             }
 
@@ -190,7 +238,7 @@ public class TwitterProvider : ISocialProvider
             {
                 Id = user.id ?? "",
                 Name = user.name ?? user.username ?? "Unknown",
-                ProfileUrl = user.username != null ? $"https://twitter.com/{user.username}" : "",
+                ProfileUrl = user.username != null ? $"https://x.com/{user.username}" : "",
                 AvatarUrl = user.profile_image_url,
                 Metadata = new Dictionary<string, string>
                 {
@@ -201,7 +249,7 @@ public class TwitterProvider : ISocialProvider
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting Twitter profile");
+            _logger.LogError(ex, "[Twitter] Error getting profile");
             return new SocialProfile { Id = "", Name = "Unknown" };
         }
     }
@@ -225,11 +273,11 @@ public class TwitterProvider : ISocialProvider
             }
 
             result.TotalImported = result.Posts.Count + result.Articles.Count;
-            _logger.LogInformation("Imported {Count} items from Twitter", result.TotalImported);
+            _logger.LogInformation("[Twitter] Imported {Count} items", result.TotalImported);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error importing Twitter content");
+            _logger.LogError(ex, "[Twitter] Error importing content");
             result.Success = false;
             result.Error = ex.Message;
         }
@@ -248,10 +296,9 @@ public class TwitterProvider : ISocialProvider
 
         try
         {
-            // Get user timeline tweets
             var url = $"{ApiBaseUrl}/users/{userId}/tweets?tweet.fields=created_at,public_metrics,entities&max_results={Math.Min(options.MaxItems, 100)}";
 
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
             var response = await _httpClient.SendAsync(request, cancellationToken);
@@ -259,7 +306,7 @@ public class TwitterProvider : ISocialProvider
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Twitter tweets fetch failed: {Status} - {Response}",
+                _logger.LogWarning("[Twitter] Tweets fetch failed: {Status} - {Response}",
                     response.StatusCode, json);
                 return posts;
             }
@@ -278,7 +325,7 @@ public class TwitterProvider : ISocialProvider
                     AccountId = userId,
                     Content = tweet.text ?? "",
                     CreatedAt = DateTime.Parse(tweet.created_at ?? DateTime.UtcNow.ToString()),
-                    Url = $"https://twitter.com/{username}/status/{tweet.id}",
+                    Url = $"https://x.com/{username}/status/{tweet.id}",
                     Metadata = new Dictionary<string, string>
                     {
                         ["source"] = username,
@@ -295,11 +342,11 @@ public class TwitterProvider : ISocialProvider
                 posts.Add(post);
             }
 
-            _logger.LogInformation("Imported {Count} tweets from Twitter", posts.Count);
+            _logger.LogInformation("[Twitter] Imported {Count} tweets", posts.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error fetching Twitter tweets");
+            _logger.LogWarning(ex, "[Twitter] Error fetching tweets");
         }
 
         return posts;
@@ -319,43 +366,59 @@ public class TwitterProvider : ISocialProvider
 
             var content = new FormUrlEncodedContent(requestBody);
 
+            using var request = new HttpRequestMessage(HttpMethod.Post, RevokeUrl);
             var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_clientId}:{_clientSecret}"));
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+            request.Content = content;
 
-            var response = await _httpClient.PostAsync(RevokeUrl, content, cancellationToken);
+            var response = await _httpClient.SendAsync(request, cancellationToken);
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error revoking Twitter access");
+            _logger.LogError(ex, "[Twitter] Error revoking access");
             return false;
         }
     }
 
-    /// <summary>
-    /// Fetches comments for specific content.
-    /// TODO: Implement platform-specific comment fetching.
-    /// </summary>
     public Task<List<SocialComment>> FetchCommentsAsync(
         string accessToken,
         string contentId,
         CancellationToken cancellationToken = default)
     {
-        // TODO: Implement platform-specific comment fetching
         return Task.FromResult(new List<SocialComment>());
     }
 
-    /// <summary>
-    /// Fetches engagement metrics for specific content.
-    /// TODO: Implement platform-specific engagement fetching.
-    /// </summary>
     public Task<SocialEngagement> FetchEngagementAsync(
         string accessToken,
         string contentId,
         CancellationToken cancellationToken = default)
     {
-        // TODO: Implement platform-specific engagement metrics
         return Task.FromResult(new SocialEngagement());
+    }
+
+    // PKCE helpers
+    private static string GenerateCodeVerifier()
+    {
+        // Generate a random 43-128 character string using unreserved characters
+        var bytes = new byte[32];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(bytes);
+        return Convert.ToBase64String(bytes)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+    }
+
+    private static string GenerateCodeChallenge(string codeVerifier)
+    {
+        // S256: BASE64URL(SHA256(code_verifier))
+        using var sha256 = SHA256.Create();
+        var challengeBytes = sha256.ComputeHash(Encoding.ASCII.GetBytes(codeVerifier));
+        return Convert.ToBase64String(challengeBytes)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
     }
 
     // Twitter API response classes

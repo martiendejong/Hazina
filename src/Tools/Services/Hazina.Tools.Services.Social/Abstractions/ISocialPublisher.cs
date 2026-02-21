@@ -95,6 +95,22 @@ public class PublishPostRequest
     /// Internal post ID from our database (for logging/tracking).
     /// </summary>
     public string? InternalPostId { get; set; }
+
+    /// <summary>
+    /// Optional image binary data for platforms that require direct upload (e.g., Facebook).
+    /// Used when the image URL is local and not publicly accessible.
+    /// </summary>
+    public byte[]? ImageData { get; set; }
+
+    /// <summary>
+    /// MIME type of the image data (e.g., "image/png", "image/jpeg").
+    /// </summary>
+    public string? ImageContentType { get; set; }
+
+    /// <summary>
+    /// Original filename of the image.
+    /// </summary>
+    public string? ImageFileName { get; set; }
 }
 
 /// <summary>
