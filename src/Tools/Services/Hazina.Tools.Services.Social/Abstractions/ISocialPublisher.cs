@@ -95,6 +95,21 @@ public class PublishPostRequest
     /// Internal post ID from our database (for logging/tracking).
     /// </summary>
     public string? InternalPostId { get; set; }
+
+    /// <summary>
+    /// Raw image bytes for media upload (if available).
+    /// </summary>
+    public byte[]? ImageData { get; set; }
+
+    /// <summary>
+    /// Filename for the image (e.g., "image.jpg").
+    /// </summary>
+    public string? ImageFileName { get; set; }
+
+    /// <summary>
+    /// MIME type of the image (e.g., "image/jpeg").
+    /// </summary>
+    public string? ImageContentType { get; set; }
 }
 
 /// <summary>
