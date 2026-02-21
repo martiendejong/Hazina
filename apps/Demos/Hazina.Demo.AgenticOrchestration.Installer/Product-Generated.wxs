@@ -103,6 +103,7 @@
       <ComponentRef Id="SetupConfigExample" />
       <ComponentRef Id="SetCredentialsScript" />
       <ComponentRef Id="SetFilePermissionsScript" />
+      <ComponentRef Id="FixPermissionsCmd" />
       <ComponentRef Id="DataDirectory" />
       <ComponentRef Id="LogsDirectory" />
       <ComponentRef Id="SessionLogsDirectory" />
@@ -266,6 +267,10 @@
 
     <Component Id="SetFilePermissionsScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555505">
       <File Id="SetFilePermissionsPs1File" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\SetFilePermissions.ps1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="FixPermissionsCmd" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555506">
+      <File Id="FixPermissionsCmdFile" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\Fix-Permissions.cmd" KeyPath="yes" />
     </Component>
 
     <Component Id="Core_web_config" Directory="INSTALLFOLDER" Guid="F8DBBFD7-25F8-A085-C706-2AA5AA56D320">

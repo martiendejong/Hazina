@@ -162,7 +162,7 @@ Write-Host ""
 # ===================================================================
 Write-Host "  Copying setup files to publish directory..." -ForegroundColor Gray
 
-$setupFiles = @("Setup.ps1", "Setup.cmd", "Setup-Config.example.json", "License.rtf", "SetCredentials.ps1", "SetFilePermissions.ps1")
+$setupFiles = @("Setup.ps1", "Setup.cmd", "Setup-Config.example.json", "License.rtf", "SetCredentials.ps1", "SetFilePermissions.ps1", "Fix-Permissions.cmd")
 foreach ($sf in $setupFiles) {
     $srcPath = Join-Path $scriptDir $sf
     if (Test-Path $srcPath) {
@@ -372,6 +372,7 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine('      <ComponentRef Id="SetupConfigExample" />')
 [void]$sb.AppendLine('      <ComponentRef Id="SetCredentialsScript" />')
 [void]$sb.AppendLine('      <ComponentRef Id="SetFilePermissionsScript" />')
+[void]$sb.AppendLine('      <ComponentRef Id="FixPermissionsCmd" />')
 [void]$sb.AppendLine('      <ComponentRef Id="DataDirectory" />')
 [void]$sb.AppendLine('      <ComponentRef Id="LogsDirectory" />')
 [void]$sb.AppendLine('      <ComponentRef Id="SessionLogsDirectory" />')
@@ -537,6 +538,10 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <Component Id="SetFilePermissionsScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555505">')
 [void]$sb.AppendLine("      <File Id=`"SetFilePermissionsPs1File`" Source=`"$pubEsc\SetFilePermissions.ps1`" KeyPath=`"yes`" />")
+[void]$sb.AppendLine('    </Component>')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <Component Id="FixPermissionsCmd" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555506">')
+[void]$sb.AppendLine("      <File Id=`"FixPermissionsCmdFile`" Source=`"$pubEsc\Fix-Permissions.cmd`" KeyPath=`"yes`" />")
 [void]$sb.AppendLine('    </Component>')
 
 # Optional core files
