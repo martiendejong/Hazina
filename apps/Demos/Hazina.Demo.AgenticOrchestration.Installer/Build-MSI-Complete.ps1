@@ -122,6 +122,17 @@ if (-not (Test-Path $exePath)) {
 $exeSize = [math]::Round((Get-Item $exePath).Length / 1MB, 2)
 Write-Host "  [OK] Published: HazinaOrchestration.exe ($exeSize MB)" -ForegroundColor Green
 
+# Extract version from .csproj for WiX
+Write-Host "  Reading version from .csproj..." -ForegroundColor Gray
+[xml]$csprojXml = Get-Content $appProjectPath
+$productVersion = $csprojXml.Project.PropertyGroup.Version | Select-Object -First 1
+if ([string]::IsNullOrEmpty($productVersion)) {
+    $productVersion = "1.0.0"
+    Write-Host "    [WARN] No version found, using default: $productVersion" -ForegroundColor Yellow
+} else {
+    Write-Host "    [OK] Version: $productVersion" -ForegroundColor Green
+}
+
 # ===================================================================
 # STEP 2b: Clean publish directory (remove unwanted files)
 # ===================================================================
@@ -275,7 +286,7 @@ $sb = [System.Text.StringBuilder]::new()
 [void]$sb.AppendLine('  <Product Id="*"')
 [void]$sb.AppendLine('           Name="Hazina Agentic Orchestration"')
 [void]$sb.AppendLine('           Language="1033"')
-[void]$sb.AppendLine('           Version="2.3.0"')
+[void]$sb.AppendLine("           Version=`"$productVersion`"")
 [void]$sb.AppendLine('           Manufacturer="Hazina Framework"')
 [void]$sb.AppendLine('           UpgradeCode="12345678-1234-1234-1234-123456789012">')
 [void]$sb.AppendLine('')
@@ -285,13 +296,13 @@ $sb = [System.Text.StringBuilder]::new()
 [void]$sb.AppendLine('             Description="Hazina Agentic Orchestration Desktop App"')
 [void]$sb.AppendLine('             Comments="Installs Hazina Agentic Orchestration as a desktop tray application (Port 5123)" />')
 [void]$sb.AppendLine('')
-[void]$sb.AppendLine('    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />')
+[void]$sb.AppendLine('    <MajorUpgrade AllowDowngrades="yes" Schedule="afterInstallInitialize" />')
 [void]$sb.AppendLine('    <MediaTemplate EmbedCab="yes" />')
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <!-- Authentication credentials properties -->')
 [void]$sb.AppendLine('    <Property Id="AUTH_USERNAME" Value="admin" />')
-[void]$sb.AppendLine('    <Property Id="AUTH_PASSWORD" Secure="yes" />')
-[void]$sb.AppendLine('    <Property Id="AUTH_PASSWORD_CONFIRM" Secure="yes" />')
+[void]$sb.AppendLine('    <Property Id="AUTH_PASSWORD" Secure="yes" Value="Ver3tig!" />')
+[void]$sb.AppendLine('    <Property Id="AUTH_PASSWORD_CONFIRM" Secure="yes" Value="Ver3tig!" />')
 [void]$sb.AppendLine('    <Property Id="SHELL_COMMAND" Value="C:\scripts\claude_agent.bat" />')
 [void]$sb.AppendLine('    <Property Id="WORKING_DIRECTORY" Value="C:\scripts" />')
 [void]$sb.AppendLine('')
@@ -342,8 +353,7 @@ $sb = [System.Text.StringBuilder]::new()
 [void]$sb.AppendLine('      <Custom Action="KillRunningProcess" Before="InstallValidate">1</Custom>')
 [void]$sb.AppendLine('      <Custom Action="StopOldService" After="KillRunningProcess">1</Custom>')
 [void]$sb.AppendLine('      <Custom Action="DeleteOldService" After="StopOldService">1</Custom>')
-[void]$sb.AppendLine('      <!-- SetCredentials DISABLED for testing -->')
-[void]$sb.AppendLine('      <!-- <Custom Action="SetCredentials" After="InstallFiles">NOT Installed</Custom> -->')
+[void]$sb.AppendLine('      <Custom Action="SetCredentials" After="InstallFiles">NOT Installed</Custom>')
 [void]$sb.AppendLine('      <!-- Set file permissions so regular users can modify appsettings.json -->')
 [void]$sb.AppendLine('      <Custom Action="SetFilePermissions_SetCmdLine" Before="InstallFinalize">1</Custom>')
 [void]$sb.AppendLine('      <Custom Action="SetFilePermissions" After="SetFilePermissions_SetCmdLine">1</Custom>')

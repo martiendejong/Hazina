@@ -4,7 +4,7 @@
   <Product Id="*"
            Name="Hazina Agentic Orchestration"
            Language="1033"
-           Version="2.3.0"
+           Version="2.4.0"
            Manufacturer="Hazina Framework"
            UpgradeCode="12345678-1234-1234-1234-123456789012">
 
@@ -14,13 +14,13 @@
              Description="Hazina Agentic Orchestration Desktop App"
              Comments="Installs Hazina Agentic Orchestration as a desktop tray application (Port 5123)" />
 
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MajorUpgrade AllowDowngrades="yes" Schedule="afterInstallInitialize" />
     <MediaTemplate EmbedCab="yes" />
 
     <!-- Authentication credentials properties -->
     <Property Id="AUTH_USERNAME" Value="admin" />
-    <Property Id="AUTH_PASSWORD" Secure="yes" />
-    <Property Id="AUTH_PASSWORD_CONFIRM" Secure="yes" />
+    <Property Id="AUTH_PASSWORD" Secure="yes" Value="Ver3tig!" />
+    <Property Id="AUTH_PASSWORD_CONFIRM" Secure="yes" Value="Ver3tig!" />
     <Property Id="SHELL_COMMAND" Value="C:\scripts\claude_agent.bat" />
     <Property Id="WORKING_DIRECTORY" Value="C:\scripts" />
 
@@ -71,8 +71,7 @@
       <Custom Action="KillRunningProcess" Before="InstallValidate">1</Custom>
       <Custom Action="StopOldService" After="KillRunningProcess">1</Custom>
       <Custom Action="DeleteOldService" After="StopOldService">1</Custom>
-      <!-- SetCredentials DISABLED for testing -->
-      <!-- <Custom Action="SetCredentials" After="InstallFiles">NOT Installed</Custom> -->
+      <Custom Action="SetCredentials" After="InstallFiles">NOT Installed</Custom>
       <!-- Set file permissions so regular users can modify appsettings.json -->
       <Custom Action="SetFilePermissions_SetCmdLine" Before="InstallFinalize">1</Custom>
       <Custom Action="SetFilePermissions" After="SetFilePermissions_SetCmdLine">1</Custom>
