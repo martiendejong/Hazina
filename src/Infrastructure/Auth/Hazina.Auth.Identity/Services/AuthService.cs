@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Hazina.Auth.Core.DTOs;
 using Hazina.Auth.Core.Interfaces;
