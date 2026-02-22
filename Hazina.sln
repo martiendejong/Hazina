@@ -337,6 +337,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.App.AIImage", "apps\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.AI.CognitivePipeline", "src\Core\AI\Hazina.AI.CognitivePipeline\Hazina.AI.CognitivePipeline.csproj", "{34EBF056-D946-4701-892A-13A4BF8E8F8D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Services.Geometric", "Hazina.Services.Geometric\Hazina.Services.Geometric.csproj", "{4C38E500-707D-4B26-9D44-4F12941848AA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Data", "Hazina.Data\Hazina.Data.csproj", "{903F88BE-4241-4E21-AADA-B7055FB4CDB8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1883,6 +1887,30 @@ Global
 		{34EBF056-D946-4701-892A-13A4BF8E8F8D}.Release|x64.Build.0 = Release|Any CPU
 		{34EBF056-D946-4701-892A-13A4BF8E8F8D}.Release|x86.ActiveCfg = Release|Any CPU
 		{34EBF056-D946-4701-892A-13A4BF8E8F8D}.Release|x86.Build.0 = Release|Any CPU
+		{4C38E500-707D-4B26-9D44-4F12941848AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C38E500-707D-4B26-9D44-4F12941848AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C38E500-707D-4B26-9D44-4F12941848AA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4C38E500-707D-4B26-9D44-4F12941848AA}.Debug|x64.Build.0 = Debug|Any CPU
+		{4C38E500-707D-4B26-9D44-4F12941848AA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4C38E500-707D-4B26-9D44-4F12941848AA}.Debug|x86.Build.0 = Debug|Any CPU
+		{4C38E500-707D-4B26-9D44-4F12941848AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C38E500-707D-4B26-9D44-4F12941848AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C38E500-707D-4B26-9D44-4F12941848AA}.Release|x64.ActiveCfg = Release|Any CPU
+		{4C38E500-707D-4B26-9D44-4F12941848AA}.Release|x64.Build.0 = Release|Any CPU
+		{4C38E500-707D-4B26-9D44-4F12941848AA}.Release|x86.ActiveCfg = Release|Any CPU
+		{4C38E500-707D-4B26-9D44-4F12941848AA}.Release|x86.Build.0 = Release|Any CPU
+		{903F88BE-4241-4E21-AADA-B7055FB4CDB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{903F88BE-4241-4E21-AADA-B7055FB4CDB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{903F88BE-4241-4E21-AADA-B7055FB4CDB8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{903F88BE-4241-4E21-AADA-B7055FB4CDB8}.Debug|x64.Build.0 = Debug|Any CPU
+		{903F88BE-4241-4E21-AADA-B7055FB4CDB8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{903F88BE-4241-4E21-AADA-B7055FB4CDB8}.Debug|x86.Build.0 = Debug|Any CPU
+		{903F88BE-4241-4E21-AADA-B7055FB4CDB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{903F88BE-4241-4E21-AADA-B7055FB4CDB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{903F88BE-4241-4E21-AADA-B7055FB4CDB8}.Release|x64.ActiveCfg = Release|Any CPU
+		{903F88BE-4241-4E21-AADA-B7055FB4CDB8}.Release|x64.Build.0 = Release|Any CPU
+		{903F88BE-4241-4E21-AADA-B7055FB4CDB8}.Release|x86.ActiveCfg = Release|Any CPU
+		{903F88BE-4241-4E21-AADA-B7055FB4CDB8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
