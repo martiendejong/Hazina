@@ -1,0 +1,36 @@
+{
+  "name": "@hazina/ui-react",
+  "version": "0.1.0",
+  "description": "Reusable React UI components for Hazina ecosystem",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
+  },
+  "keywords": [
+    "react",
+    "ui-components",
+    "media-library",
+    "hazina"
+  ],
+  "author": "Hazina Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "lucide-react": "^0.index.511.0"
+  }
+}
