@@ -8,15 +8,18 @@ namespace Hazina.Agent.API.Services;
 public class AgentExecutionService : IAgentExecutionService
 {
     private readonly ISessionLogger _sessionLogger;
+    private readonly IStateSyncService _stateSyncService;
     private readonly ILogger<AgentExecutionService> _logger;
     private readonly OpenAI.OpenAIClient _openAiClient;
 
     public AgentExecutionService(
         ISessionLogger sessionLogger,
+        IStateSyncService stateSyncService,
         ILogger<AgentExecutionService> logger,
         OpenAI.OpenAIClient openAiClient)
     {
         _sessionLogger = sessionLogger;
+        _stateSyncService = stateSyncService;
         _logger = logger;
         _openAiClient = openAiClient;
     }
@@ -95,5 +98,37 @@ public class AgentExecutionService : IAgentExecutionService
             sessionId, sw.Elapsed.TotalSeconds);
 
         yield return completeEvent;
+
+        // Publish learning event (fire and forget)
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var identity = await _stateSyncService.GetIdentityAsync(ct);
+                var learningEvent = new LearningEvent
+                {
+                    EventId = Guid.NewGuid().ToString(),
+                    Timestamp = DateTime.UtcNow,
+                    AgentId = identity.AgentId,
+                    SessionId = sessionId,
+                    EventType = "insight",
+                    Data = new
+                    {
+                        Instruction = request.Instruction,
+                        Duration = completeData.Duration,
+                        Model = completeData.Model,
+                        ResultLength = finalContent.Length
+                    },
+                    Confidence = 0.7
+                };
+
+                await _stateSyncService.PublishLearningEventAsync(learningEvent, ct);
+                _logger.LogInformation("Published learning event for session {SessionId}", sessionId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to publish learning event for session {SessionId}", sessionId);
+            }
+        }, ct);
     }
 }

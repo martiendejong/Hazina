@@ -8,6 +8,9 @@ Distributed autonomous agent API with streaming responses and session logging.
 - **Session Logging**: Complete session history logged to `E:\data\hazina\sessions\{date}\{sessionId}\`
 - **OpenAI Integration**: Direct integration with OpenAI GPT-4o (default model)
 - **Multi-Provider Ready**: Architecture designed for easy addition of Claude, Gemini, etc.
+- **Distributed State Sync**: Git-based consciousness synchronization across 6 agent instances
+- **Learning Event Propagation**: JSONL event stream for inter-agent knowledge sharing
+- **Identity Management**: Core identity (shared) + instance state (local)
 
 ## API Endpoints
 
@@ -47,6 +50,62 @@ data: {"type":"complete","data":{"sessionId":"20260227-233000-abc123","finalResu
 ### GET /api/agent/health
 
 Health check endpoint.
+
+### GET /api/agent/identity
+
+Get agent identity (core + instance state).
+
+**Response:**
+```json
+{
+  "agentId": "jengo-desktop",
+  "machineName": "desktop",
+  "core": {
+    "name": "Jengo",
+    "values": ["Autonomy", "Learning", "Honesty", "Efficiency"],
+    "capabilities": ["Coding", "Analysis", "Documentation", "Learning"]
+  },
+  "instance": {
+    "currentProject": "distributed-agent-api",
+    "workingDirectory": "C:\\Projects\\worker-agents\\agent-006\\hazina",
+    "lastSync": "2026-02-27T23:45:00Z",
+    "sessionCount": 12
+  }
+}
+```
+
+### POST /api/agent/sync
+
+Sync state with other agent instances via git.
+
+**Response:**
+```json
+{
+  "status": "synced",
+  "timestamp": "2026-02-27T23:45:00Z"
+}
+```
+
+### POST /api/agent/learning
+
+Publish a learning event to the distributed consciousness.
+
+**Request:**
+```json
+{
+  "eventId": "evt-123",
+  "timestamp": "2026-02-27T23:45:00Z",
+  "agentId": "jengo-desktop",
+  "sessionId": "20260227-233000-abc123",
+  "eventType": "pattern",
+  "data": {
+    "patternId": "pattern-001",
+    "description": "When user says 'ga door', continue current task",
+    "confidence": 0.95
+  },
+  "confidence": 0.95
+}
+```
 
 ## Configuration
 
@@ -95,14 +154,19 @@ API will be available at:
 ## Architecture
 
 ```
-AgentController (SSE streaming)
+AgentController (SSE streaming + state sync)
     ├─ AgentExecutionService (core logic)
     │   ├─ OpenAIClient (GPT-4o)
-    │   └─ SessionLogger (E:\data\hazina\sessions\)
+    │   ├─ SessionLogger (E:\data\hazina\sessions\)
+    │   └─ StateSyncService (distributed consciousness)
+    ├─ StateSyncService (git-based sync)
+    │   ├─ Identity management (E:\jengo\consciousness\identity.json)
+    │   ├─ Event stream (E:\jengo\consciousness\events.jsonl)
+    │   └─ Git operations (pull/commit/push)
     └─ Models
-        ├─ AgentRequest
-        ├─ AgentEvent
-        └─ CompleteData
+        ├─ AgentRequest/AgentEvent/CompleteData
+        ├─ AgentIdentity (CoreIdentity + InstanceState)
+        └─ LearningEvent (pattern/skill/correction/insight)
 ```
 
 ## Status
@@ -113,7 +177,14 @@ AgentController (SSE streaming)
 - Session logging operational
 - OpenAI integration functional
 
-⏳ Week 2-5: Planned
+✅ Week 2 Complete:
+- Distributed state sync via git (E:\jengo repository)
+- Learning event propagation (JSONL append-only stream)
+- Identity management (core + instance)
+- Conflict resolution (ours strategy)
+- 3 new endpoints: /identity, /sync, /learning
+
+⏳ Week 3-5: Planned
 
 ---
 
