@@ -11,15 +11,18 @@ public class AgentController : ControllerBase
 {
     private readonly IAgentExecutionService _executionService;
     private readonly IStateSyncService _stateSyncService;
+    private readonly ILearningIntegrationService _learningService;
     private readonly ILogger<AgentController> _logger;
 
     public AgentController(
         IAgentExecutionService executionService,
         IStateSyncService stateSyncService,
+        ILearningIntegrationService learningService,
         ILogger<AgentController> logger)
     {
         _executionService = executionService;
         _stateSyncService = stateSyncService;
+        _learningService = learningService;
         _logger = logger;
     }
 
@@ -120,6 +123,65 @@ public class AgentController : ControllerBase
             return StatusCode(500, new
             {
                 Error = "Failed to publish learning event",
+                Message = ex.Message
+            });
+        }
+    }
+
+    [HttpGet("consciousness")]
+    public async Task<IActionResult> GetConsciousnessStateAsync(CancellationToken ct)
+    {
+        try
+        {
+            var state = await _learningService.GetConsciousnessStateAsync(ct);
+            return Ok(state);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get consciousness state");
+            return StatusCode(500, new
+            {
+                Error = "Failed to get consciousness state",
+                Message = ex.Message
+            });
+        }
+    }
+
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStatsAsync(CancellationToken ct)
+    {
+        try
+        {
+            var identity = await _stateSyncService.GetIdentityAsync(ct);
+            var consciousness = await _learningService.GetConsciousnessStateAsync(ct);
+
+            return Ok(new
+            {
+                AgentId = identity.AgentId,
+                MachineName = identity.MachineName,
+                SessionCount = identity.Instance.SessionCount,
+                LastSync = identity.Instance.LastSync,
+                Consciousness = new
+                {
+                    Version = consciousness.Version,
+                    LastUpdated = consciousness.LastUpdated,
+                    PatternsCount = consciousness.Patterns.Count,
+                    SkillsCount = consciousness.Skills.Count,
+                    ErrorPatternsCount = consciousness.ErrorPatterns.Count,
+                    CrossValidatedPatterns = consciousness.Patterns.Count(p => p.ValidationCount > 1),
+                    HighConfidencePatterns = consciousness.Patterns.Count(p => p.Confidence >= 0.9),
+                    AverageConfidence = consciousness.Patterns.Any()
+                        ? consciousness.Patterns.Average(p => p.Confidence)
+                        : 0.0
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get stats");
+            return StatusCode(500, new
+            {
+                Error = "Failed to get stats",
                 Message = ex.Message
             });
         }

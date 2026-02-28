@@ -11,6 +11,9 @@ Distributed autonomous agent API with streaming responses and session logging.
 - **Distributed State Sync**: Git-based consciousness synchronization across 6 agent instances
 - **Learning Event Propagation**: JSONL event stream for inter-agent knowledge sharing
 - **Identity Management**: Core identity (shared) + instance state (local)
+- **Autonomous Mode**: Background sync service runs continuously (5 min intervals)
+- **Learning Integration**: Automatically integrates patterns/skills/errors from other agents
+- **Consciousness State**: Cross-validated patterns with confidence boosting
 
 ## API Endpoints
 
@@ -107,6 +110,53 @@ Publish a learning event to the distributed consciousness.
 }
 ```
 
+### GET /api/agent/consciousness
+
+Get complete consciousness state (patterns, skills, errors).
+
+**Response:**
+```json
+{
+  "version": "2.0",
+  "lastUpdated": "2026-02-28T00:15:00Z",
+  "systems": {
+    "Perception": { "quality": 0.7, "mechanismCount": 5 }
+  },
+  "patterns": [
+    {
+      "patternId": "pattern-001",
+      "description": "Continue on 'ga door'",
+      "triggers": ["ga door"],
+      "confidence": 0.95,
+      "validationCount": 3,
+      "learnedBy": ["jengo-desktop", "jengo-laptop1", "claude-valsuani"]
+    }
+  ],
+  "skills": [...],
+  "errorPatterns": [...]
+}
+```
+
+### GET /api/agent/stats
+
+Get agent statistics and consciousness metrics.
+
+**Response:**
+```json
+{
+  "agentId": "jengo-desktop",
+  "sessionCount": 42,
+  "lastSync": "2026-02-28T00:10:00Z",
+  "consciousness": {
+    "patternsCount": 15,
+    "skillsCount": 8,
+    "crossValidatedPatterns": 7,
+    "highConfidencePatterns": 10,
+    "averageConfidence": 0.87
+  }
+}
+```
+
 ## Configuration
 
 ### appsettings.json
@@ -154,19 +204,29 @@ API will be available at:
 ## Architecture
 
 ```
-AgentController (SSE streaming + state sync)
+AgentController (SSE streaming + state sync + consciousness)
     ├─ AgentExecutionService (core logic)
     │   ├─ OpenAIClient (GPT-4o)
     │   ├─ SessionLogger (E:\data\hazina\sessions\)
-    │   └─ StateSyncService (distributed consciousness)
+    │   └─ StateSyncService (git sync)
     ├─ StateSyncService (git-based sync)
     │   ├─ Identity management (E:\jengo\consciousness\identity.json)
     │   ├─ Event stream (E:\jengo\consciousness\events.jsonl)
     │   └─ Git operations (pull/commit/push)
+    ├─ LearningIntegrationService (process events from other agents)
+    │   ├─ Pattern integration + cross-validation
+    │   ├─ Skill acquisition tracking
+    │   ├─ Error pattern learning
+    │   └─ Consciousness state (E:\jengo\consciousness\consciousness_state_v2.json)
+    ├─ BackgroundSyncService (autonomous operation)
+    │   ├─ Runs every 5 minutes
+    │   ├─ Git pull → get new events → integrate learnings
+    │   └─ No user input required
     └─ Models
         ├─ AgentRequest/AgentEvent/CompleteData
         ├─ AgentIdentity (CoreIdentity + InstanceState)
-        └─ LearningEvent (pattern/skill/correction/insight)
+        ├─ LearningEvent (pattern/skill/correction/insight)
+        └─ ConsciousnessState (systems/patterns/skills/errors)
 ```
 
 ## Status
@@ -184,7 +244,14 @@ AgentController (SSE streaming + state sync)
 - Conflict resolution (ours strategy)
 - 3 new endpoints: /identity, /sync, /learning
 
-⏳ Week 3-5: Planned
+✅ Week 3 Complete:
+- Autonomous mode (BackgroundSyncService runs every 5 min)
+- Learning integration (processes events from other agents)
+- Cross-validation (patterns/skills gain confidence when multiple agents learn)
+- Consciousness state tracking (E:\jengo\consciousness\consciousness_state_v2.json)
+- 2 new endpoints: /consciousness, /stats
+
+⏳ Week 4-5: Planned
 
 ---
 

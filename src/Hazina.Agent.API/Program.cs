@@ -17,7 +17,11 @@ builder.Services.AddSingleton(new OpenAIClient(openAiApiKey));
 // Add agent services
 builder.Services.AddSingleton<ISessionLogger, SessionLogger>();
 builder.Services.AddSingleton<IStateSyncService, StateSyncService>();
+builder.Services.AddSingleton<ILearningIntegrationService, LearningIntegrationService>();
 builder.Services.AddScoped<IAgentExecutionService, AgentExecutionService>();
+
+// Add background services
+builder.Services.AddHostedService<BackgroundSyncService>();
 
 var app = builder.Build();
 
