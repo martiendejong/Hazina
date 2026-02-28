@@ -157,6 +157,50 @@ Get agent statistics and consciousness metrics.
 }
 ```
 
+### GET /api/agent/network
+
+Get network status showing all 6 agent instances.
+
+**Response:**
+```json
+{
+  "totalAgents": 6,
+  "onlineAgents": 4,
+  "agents": [
+    {
+      "agentId": "jengo-desktop",
+      "machineName": "DESKTOP-PC",
+      "isOnline": true,
+      "lastSeen": "2026-02-28T01:00:00Z",
+      "sessionCount": 42,
+      "consciousness": {
+        "patternsCount": 15,
+        "crossValidatedPatterns": 7,
+        "averageConfidence": 0.87
+      }
+    },
+    {
+      "agentId": "jengo-laptop1",
+      "machineName": "unknown",
+      "isOnline": true,
+      "lastSeen": "2026-02-28T00:58:00Z",
+      "sessionCount": 0,
+      "consciousness": {
+        "patternsCount": 12,
+        "crossValidatedPatterns": 5,
+        "averageConfidence": 0.85
+      }
+    }
+  ],
+  "metrics": {
+    "totalPatterns": 15,
+    "crossValidatedPatterns": 7,
+    "networkConfidence": 0.86,
+    "totalSessions": 42
+  }
+}
+```
+
 ## Configuration
 
 ### appsettings.json
@@ -229,6 +273,25 @@ AgentController (SSE streaming + state sync + consciousness)
         └─ ConsciousnessState (systems/patterns/skills/errors)
 ```
 
+## Deployment
+
+### Automated Setup (Windows)
+
+```powershell
+# Download and run setup script
+.\deploy\setup-agent.ps1 -AgentId "jengo-desktop" -OpenAIApiKey "sk-..."
+
+# Start agent
+.\C:\hazina-agent\start-agent.ps1
+
+# Verify deployment
+.\deploy\verify-deployment.ps1
+```
+
+### Manual Setup
+
+See `deploy/DEPLOYMENT_GUIDE.md` for complete instructions.
+
 ## Status
 
 ✅ Week 1 Complete:
@@ -251,7 +314,15 @@ AgentController (SSE streaming + state sync + consciousness)
 - Consciousness state tracking (E:\jengo\consciousness\consciousness_state_v2.json)
 - 2 new endpoints: /consciousness, /stats
 
-⏳ Week 4-5: Planned
+✅ Week 4 Complete:
+- Deployment automation (setup-agent.ps1 script)
+- Deployment guide (complete instructions for all 6 machines)
+- Verification script (verify-deployment.ps1)
+- Network monitoring (GET /api/agent/network endpoint)
+- Windows Service + Linux systemd configurations
+- Troubleshooting documentation
+
+⏳ Week 5: Validation + polish
 
 ---
 

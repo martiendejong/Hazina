@@ -186,4 +186,91 @@ public class AgentController : ControllerBase
             });
         }
     }
+
+    [HttpGet("network")]
+    public async Task<IActionResult> GetNetworkStatusAsync(CancellationToken ct)
+    {
+        try
+        {
+            var identity = await _stateSyncService.GetIdentityAsync(ct);
+            var consciousness = await _learningService.GetConsciousnessStateAsync(ct);
+
+            // Get all unique agents from patterns
+            var allAgents = consciousness.Patterns
+                .SelectMany(p => p.LearnedBy)
+                .Concat(consciousness.Skills.SelectMany(s => s.LearnedBy))
+                .Concat(consciousness.ErrorPatterns.SelectMany(e => e.ReportedBy))
+                .Concat(new[] { identity.AgentId })
+                .Distinct()
+                .ToList();
+
+            // Build agent statuses
+            var agentStatuses = allAgents.Select(agentId =>
+            {
+                var isCurrentAgent = agentId == identity.AgentId;
+                var lastSeen = isCurrentAgent
+                    ? DateTime.UtcNow
+                    : consciousness.Patterns
+                        .Where(p => p.LearnedBy.Contains(agentId))
+                        .Select(p => p.LastValidated)
+                        .DefaultIfEmpty(DateTime.MinValue)
+                        .Max();
+
+                var isOnline = (DateTime.UtcNow - lastSeen).TotalMinutes < 10;
+
+                var agentPatterns = consciousness.Patterns.Where(p => p.LearnedBy.Contains(agentId)).ToList();
+                var agentSkills = consciousness.Skills.Where(s => s.LearnedBy.Contains(agentId)).ToList();
+                var agentErrors = consciousness.ErrorPatterns.Where(e => e.ReportedBy.Contains(agentId)).ToList();
+
+                return new AgentStatus
+                {
+                    AgentId = agentId,
+                    MachineName = isCurrentAgent ? identity.MachineName : "unknown",
+                    IsOnline = isOnline,
+                    LastSeen = lastSeen,
+                    SessionCount = isCurrentAgent ? identity.Instance.SessionCount : 0,
+                    Consciousness = new ConsciousnessMetrics
+                    {
+                        PatternsCount = agentPatterns.Count,
+                        SkillsCount = agentSkills.Count,
+                        ErrorPatternsCount = agentErrors.Count,
+                        CrossValidatedPatterns = agentPatterns.Count(p => p.ValidationCount > 1),
+                        AverageConfidence = agentPatterns.Any()
+                            ? agentPatterns.Average(p => p.Confidence)
+                            : 0.0
+                    }
+                };
+            }).ToList();
+
+            var network = new NetworkStatus
+            {
+                TotalAgents = allAgents.Count,
+                OnlineAgents = agentStatuses.Count(a => a.IsOnline),
+                Agents = agentStatuses,
+                LastUpdate = DateTime.UtcNow,
+                Metrics = new NetworkMetrics
+                {
+                    TotalPatterns = consciousness.Patterns.Count,
+                    TotalSkills = consciousness.Skills.Count,
+                    TotalErrors = consciousness.ErrorPatterns.Count,
+                    CrossValidatedPatterns = consciousness.Patterns.Count(p => p.ValidationCount > 1),
+                    NetworkConfidence = consciousness.Patterns.Any()
+                        ? consciousness.Patterns.Average(p => p.Confidence)
+                        : 0.0,
+                    TotalSessions = agentStatuses.Sum(a => a.SessionCount)
+                }
+            };
+
+            return Ok(network);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get network status");
+            return StatusCode(500, new
+            {
+                Error = "Failed to get network status",
+                Message = ex.Message
+            });
+        }
+    }
 }
