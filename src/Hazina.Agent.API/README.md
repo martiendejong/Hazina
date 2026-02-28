@@ -288,6 +288,38 @@ AgentController (SSE streaming + state sync + consciousness)
 .\deploy\verify-deployment.ps1
 ```
 
+### Automated Setup (Linux VPS)
+
+```bash
+# Download and run VPS deployment script
+chmod +x deploy/deploy-vps.sh
+export OPENAI_API_KEY="sk-..."
+./deploy/deploy-vps.sh
+
+# Or with inline API key
+OPENAI_API_KEY="sk-..." ./deploy/deploy-vps.sh
+```
+
+**What it does:**
+- Installs .NET 9.0 SDK (Ubuntu)
+- Sets up consciousness repository at `/opt/jengo`
+- Clones Hazina to `/opt/hazina-agent`
+- Builds Release configuration
+- Creates systemd service (auto-start on boot)
+- Verifies deployment and publishes test event
+
+**Post-deployment:**
+```bash
+# View logs
+sudo journalctl -u hazina-agent -f
+
+# Restart service
+sudo systemctl restart hazina-agent
+
+# Check status
+sudo systemctl status hazina-agent
+```
+
 ### Manual Setup
 
 See `deploy/DEPLOYMENT_GUIDE.md` for complete instructions.
