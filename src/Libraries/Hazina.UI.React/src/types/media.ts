@@ -46,6 +46,9 @@ export interface MediaLibraryConfig {
   contextType: 'project' | 'website' | 'custom'
   contextId: string | (() => string)
 
+  // Service adapter (required)
+  service: MediaServiceAdapter
+
   // API configuration
   apiUrl: string
   uploadEndpoint?: string
