@@ -4,7 +4,7 @@
   <Product Id="*"
            Name="Hazina Agentic Orchestration"
            Language="1033"
-           Version="2.3.0"
+           Version="2.4.0"
            Manufacturer="Hazina Framework"
            UpgradeCode="12345678-1234-1234-1234-123456789012">
 
@@ -16,13 +16,6 @@
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
-
-    <!-- Authentication credentials properties -->
-    <Property Id="AUTH_USERNAME" Value="admin" />
-    <Property Id="AUTH_PASSWORD" Secure="yes" />
-    <Property Id="AUTH_PASSWORD_CONFIRM" Secure="yes" />
-    <Property Id="SHELL_COMMAND" Value="C:\scripts\claude_agent.bat" />
-    <Property Id="WORKING_DIRECTORY" Value="C:\scripts" />
 
     <!-- Kill any running HazinaOrchestration.exe before install/upgrade -->
     <Property Id="TASKKILL" Value="taskkill.exe" />
@@ -45,20 +38,10 @@
                   Execute="immediate"
                   Return="ignore" />
 
-    <!-- Custom action to update credentials (immediate execution - properties work!) -->
-    <Property Id="POWERSHELL_EXE" Value="powershell.exe" />
-    <CustomAction Id="SetCredentials"
-                  Property="POWERSHELL_EXE"
-                  ExeCommand="-ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetCredentials.ps1&quot; -InstallDir &quot;[INSTALLFOLDER]&quot; -Username &quot;[AUTH_USERNAME]&quot; -Password &quot;[AUTH_PASSWORD]&quot; -ShellCommand &quot;[SHELL_COMMAND]&quot; -WorkingDirectory &quot;[WORKING_DIRECTORY]&quot;"
-                  Execute="immediate"
-                  Return="ignore" />  <!-- Ignore return code so installer can always close -->
-
     <InstallExecuteSequence>
       <Custom Action="KillRunningProcess" Before="InstallValidate">1</Custom>
       <Custom Action="StopOldService" After="KillRunningProcess">1</Custom>
       <Custom Action="DeleteOldService" After="StopOldService">1</Custom>
-      <!-- SetCredentials DISABLED for testing -->
-      <!-- <Custom Action="SetCredentials" After="InstallFiles">NOT Installed</Custom> -->
     </InstallExecuteSequence>
 
     <Feature Id="ProductFeature" Title="Hazina Agentic Orchestration" Level="1">
@@ -129,51 +112,19 @@
       <DialogRef Id="VerifyReadyDlg" />
       <DialogRef Id="ExitDialog" />
 
-      <!-- Our custom credentials dialog -->
-      <Dialog Id="CredentialsDlg" Width="370" Height="320" Title="[ProductName] - Configuration">
-        <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Set Login Credentials" />
-        <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="20" Transparent="yes" NoPrefix="yes" Text="Configure login credentials and terminal settings." />
-        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
-        <Control Id="BottomLine" Type="Line" X="0" Y="284" Width="370" Height="0" />
-        <Control Id="UsernameLabel" Type="Text" X="20" Y="60" Width="290" Height="15" NoPrefix="yes" Text="Username:" />
-        <Control Id="UsernameEdit" Type="Edit" X="20" Y="75" Width="320" Height="18" Property="AUTH_USERNAME" />
-        <Control Id="PasswordLabel" Type="Text" X="20" Y="100" Width="290" Height="15" NoPrefix="yes" Text="Password:" />
-        <Control Id="PasswordEdit" Type="Edit" X="20" Y="115" Width="320" Height="18" Property="AUTH_PASSWORD" Password="yes" />
-        <Control Id="ConfirmPasswordLabel" Type="Text" X="20" Y="140" Width="290" Height="15" NoPrefix="yes" Text="Confirm Password:" />
-        <Control Id="ConfirmPasswordEdit" Type="Edit" X="20" Y="155" Width="320" Height="18" Property="AUTH_PASSWORD_CONFIRM" Password="yes" />
-        <Control Id="ShellCommandLabel" Type="Text" X="20" Y="180" Width="290" Height="15" NoPrefix="yes" Text="Shell Command:" />
-        <Control Id="ShellCommandEdit" Type="Edit" X="20" Y="195" Width="320" Height="18" Property="SHELL_COMMAND" />
-        <Control Id="WorkingDirectoryLabel" Type="Text" X="20" Y="220" Width="290" Height="15" NoPrefix="yes" Text="Working Directory:" />
-        <Control Id="WorkingDirectoryEdit" Type="Edit" X="20" Y="235" Width="320" Height="18" Property="WORKING_DIRECTORY" />
-        <Control Id="ErrorText" Type="Text" X="20" Y="260" Width="330" Height="20" NoPrefix="yes" Text="Passwords do not match!" Hidden="yes">
-          <Condition Action="show">AUTH_PASSWORD &lt;&gt; AUTH_PASSWORD_CONFIRM AND AUTH_PASSWORD_CONFIRM &lt;&gt; ""</Condition>
-          <Condition Action="hide">AUTH_PASSWORD = AUTH_PASSWORD_CONFIRM OR AUTH_PASSWORD_CONFIRM = ""</Condition>
-        </Control>
-        <Control Id="Back" Type="PushButton" X="180" Y="293" Width="56" Height="17" Text="&amp;Back">
-          <Publish Event="NewDialog" Value="InstallDirDlg">1</Publish>
-        </Control>
-        <Control Id="Next" Type="PushButton" X="236" Y="293" Width="56" Height="17" Default="yes" Text="&amp;Next">
-          <Publish Event="NewDialog" Value="VerifyReadyDlg">AUTH_PASSWORD = AUTH_PASSWORD_CONFIRM</Publish>
-        </Control>
-        <Control Id="Cancel" Type="PushButton" X="304" Y="293" Width="56" Height="17" Cancel="yes" Text="Cancel">
-          <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
-        </Control>
-      </Dialog>
-
       <!-- COMPLETE navigation graph for fresh install -->
       <!-- Welcome -> License -->
       <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">NOT Installed</Publish>
       <!-- License -> InstallDir -->
       <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">LicenseAccepted = "1"</Publish>
       <Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
-      <!-- InstallDir -> Credentials (THE KEY CHANGE) -->
-      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="CredentialsDlg">1</Publish>
+      <!-- InstallDir -> VerifyReady (simplified - no credentials dialog) -->
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
       <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
       <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
       <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish>
-      <!-- NOTE: Credentials dialog navigation defined IN the dialog controls above -->
-      <!-- VerifyReady -> Back to Credentials -->
-      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="CredentialsDlg" Order="1">NOT Installed</Publish>
+      <!-- VerifyReady -> Back to InstallDir -->
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg" Order="1">NOT Installed</Publish>
       <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2">Installed AND NOT PATCH</Publish>
       <!-- Exit dialog: launch setup script -->
       <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchSetup">
