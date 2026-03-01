@@ -10,7 +10,6 @@
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>false</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
 
     <!-- Assembly info -->
     <AssemblyName>HazinaConfigTool</AssemblyName>
