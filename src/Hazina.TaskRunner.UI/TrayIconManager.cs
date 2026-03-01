@@ -152,8 +152,10 @@ public class TrayIconManager : IDisposable
 
     private void OnManageTasks(object? sender, EventArgs e)
     {
-        // TODO: Open TaskManagerWindow (Task 4)
-        ShowNotification("Coming Soon", "Task Manager window will be implemented in Task 4", ToolTipIcon.Info);
+        // Open TaskManagerWindow
+        var window = new TaskManagerWindow(_scheduler);
+        window.Show();
+        window.Activate();
     }
 
     private void OnPauseAll(object? sender, EventArgs e)

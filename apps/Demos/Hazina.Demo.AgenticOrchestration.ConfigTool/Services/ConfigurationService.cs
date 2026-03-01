@@ -1,19 +1,30 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Text.Json.Nodes;
 using Hazina.Demo.AgenticOrchestration.ConfigTool.Models;
 
 namespace Hazina.Demo.AgenticOrchestration.ConfigTool.Services;
 
+/// <summary>
+/// Non-destructive configuration service using JsonNode.
+/// Preserves ALL existing JSON properties - only modifies specified values.
+/// Unknown sections, comments-as-fields, and future properties are never lost.
+/// </summary>
 public class ConfigurationService
 {
-    private readonly JsonSerializerOptions _jsonOptions = new()
+    private static readonly JsonSerializerOptions ReadOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    private static readonly JsonSerializerOptions WriteOptions = new()
     {
         WriteIndented = true,
-        PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.Never,
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
+    /// <summary>
+    /// Read configuration as strongly-typed model (for validation and display).
+    /// </summary>
     public AppSettings ReadConfiguration(string configPath)
     {
         if (!File.Exists(configPath))
@@ -22,111 +33,184 @@ public class ConfigurationService
         }
 
         var json = File.ReadAllText(configPath);
-        var settings = JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions);
-
-        if (settings == null)
-        {
-            throw new InvalidOperationException("Failed to deserialize configuration");
-        }
-
-        return settings;
+        return JsonSerializer.Deserialize<AppSettings>(json, ReadOptions)
+            ?? throw new InvalidOperationException("Failed to deserialize configuration");
     }
 
-    public void WriteConfiguration(string configPath, AppSettings settings, bool createBackup = true)
+    /// <summary>
+    /// Read configuration as JsonNode (for non-destructive editing).
+    /// </summary>
+    public JsonNode ReadAsJsonNode(string configPath)
     {
-        // Create backup if file exists and backup is requested
+        if (!File.Exists(configPath))
+        {
+            throw new FileNotFoundException($"Configuration file not found: {configPath}");
+        }
+
+        var json = File.ReadAllText(configPath);
+        return JsonNode.Parse(json)
+            ?? throw new InvalidOperationException("Failed to parse JSON");
+    }
+
+    /// <summary>
+    /// Write JsonNode back to file with backup and atomic write.
+    /// </summary>
+    public void WriteJsonNode(string configPath, JsonNode root, bool createBackup = true)
+    {
         if (createBackup && File.Exists(configPath))
         {
             var backupPath = $"{configPath}.backup-{DateTime.Now:yyyyMMdd-HHmmss}";
             File.Copy(configPath, backupPath, true);
         }
 
-        // Write to temp file first (atomic operation)
         var tempPath = $"{configPath}.tmp";
-        var json = JsonSerializer.Serialize(settings, _jsonOptions);
+        var json = root.ToJsonString(WriteOptions);
         File.WriteAllText(tempPath, json);
-
-        // Replace original file
         File.Move(tempPath, configPath, true);
     }
 
-    public void UpdateAuthentication(AppSettings settings, string? username = null, string? password = null,
-        string? realm = null, bool? enabled = null)
+    /// <summary>
+    /// Set a value at a nested JSON path, creating intermediate objects as needed.
+    /// Path format: "Authentication.Username" or "Kestrel.Endpoints.Https.Url"
+    /// </summary>
+    public static void SetValue(JsonNode root, string path, JsonNode? value)
     {
-        if (username != null) settings.Authentication.Username = username;
-        if (password != null) settings.Authentication.Password = password;
-        if (realm != null) settings.Authentication.Realm = realm;
-        if (enabled.HasValue) settings.Authentication.Enabled = enabled.Value;
+        var parts = path.Split('.');
+        var current = root;
+
+        for (int i = 0; i < parts.Length - 1; i++)
+        {
+            if (current is JsonObject obj)
+            {
+                if (obj[parts[i]] == null)
+                {
+                    obj[parts[i]] = new JsonObject();
+                }
+                current = obj[parts[i]]!;
+            }
+            else
+            {
+                throw new InvalidOperationException($"Cannot navigate path '{path}': '{parts[i]}' is not an object");
+            }
+        }
+
+        if (current is JsonObject parentObj)
+        {
+            parentObj[parts[^1]] = value;
+        }
     }
 
-    public void UpdateKestrel(AppSettings settings, string protocol, int port, string? certPath = null, string? keyPath = null)
+    /// <summary>
+    /// Remove a key at a nested JSON path.
+    /// </summary>
+    public static bool RemoveKey(JsonNode root, string path)
     {
-        settings.Kestrel ??= new KestrelConfig();
-        settings.Kestrel.Endpoints.Clear();
+        var parts = path.Split('.');
+        var current = root;
+
+        for (int i = 0; i < parts.Length - 1; i++)
+        {
+            if (current is JsonObject obj && obj[parts[i]] != null)
+            {
+                current = obj[parts[i]]!;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        if (current is JsonObject parentObj)
+        {
+            return parentObj.Remove(parts[^1]);
+        }
+        return false;
+    }
+
+    // ================================================================
+    // HIGH-LEVEL UPDATE METHODS (non-destructive via JsonNode)
+    // ================================================================
+
+    public void UpdateAuthentication(JsonNode root, string? username = null, string? password = null,
+        string? realm = null, bool? enabled = null)
+    {
+        if (username != null) SetValue(root, "Authentication.Username", JsonValue.Create(username));
+        if (password != null) SetValue(root, "Authentication.Password", JsonValue.Create(password));
+        if (realm != null) SetValue(root, "Authentication.Realm", JsonValue.Create(realm));
+        if (enabled.HasValue) SetValue(root, "Authentication.Enabled", JsonValue.Create(enabled.Value));
+    }
+
+    public void UpdateKestrel(JsonNode root, string protocol, int port, string? certPath = null, string? keyPath = null)
+    {
+        if (protocol.Equals("https", StringComparison.OrdinalIgnoreCase) &&
+            (string.IsNullOrEmpty(certPath) || string.IsNullOrEmpty(keyPath)))
+        {
+            throw new ArgumentException("Certificate and key paths required for HTTPS");
+        }
 
         var url = $"{protocol}://*:{port}";
-        var endpoint = new EndpointConfig { Url = url };
+        var endpointKey = protocol.Equals("https", StringComparison.OrdinalIgnoreCase) ? "Https" : "Http";
+        var removeKey = protocol.Equals("https", StringComparison.OrdinalIgnoreCase) ? "Http" : "Https";
+
+        // Build endpoint object
+        var endpoint = new JsonObject { ["Url"] = url };
 
         if (protocol.Equals("https", StringComparison.OrdinalIgnoreCase))
         {
-            if (string.IsNullOrEmpty(certPath) || string.IsNullOrEmpty(keyPath))
+            endpoint["Certificate"] = new JsonObject
             {
-                throw new ArgumentException("Certificate and key paths required for HTTPS");
-            }
-
-            endpoint.Certificate = new CertificateConfig
-            {
-                Path = certPath,
-                KeyPath = keyPath
+                ["Path"] = certPath,
+                ["KeyPath"] = keyPath
             };
         }
 
-        var endpointKey = protocol.Equals("https", StringComparison.OrdinalIgnoreCase) ? "Https" : "Http";
-        settings.Kestrel.Endpoints[endpointKey] = endpoint;
+        // Set endpoint, removing the opposite protocol endpoint
+        SetValue(root, $"Kestrel.Endpoints.{endpointKey}", endpoint);
+        RemoveKey(root, $"Kestrel.Endpoints.{removeKey}");
     }
 
-    public void UpdatePaths(AppSettings settings, string? databasePath = null, string? logsPath = null,
+    public void UpdatePaths(JsonNode root, string? databasePath = null, string? logsPath = null,
         string? uploadsPath = null)
     {
-        if (databasePath != null) settings.AgenticOrchestration.DatabasePath = databasePath;
-        if (logsPath != null) settings.AgenticOrchestration.LogsPath = logsPath;
-        if (uploadsPath != null) settings.AgenticOrchestration.Uploads.Path = uploadsPath;
+        if (databasePath != null) SetValue(root, "AgenticOrchestration.DatabasePath", JsonValue.Create(databasePath));
+        if (logsPath != null) SetValue(root, "AgenticOrchestration.LogsPath", JsonValue.Create(logsPath));
+        if (uploadsPath != null) SetValue(root, "AgenticOrchestration.Uploads.Path", JsonValue.Create(uploadsPath));
     }
 
-    public void UpdateTerminal(AppSettings settings, string? command = null, string? workingDir = null,
+    public void UpdateTerminal(JsonNode root, string? command = null, string? workingDir = null,
         int? columns = null, int? rows = null, int? maxSessions = null, int? timeout = null)
     {
-        if (command != null) settings.AgenticOrchestration.Terminal.DefaultCommand = command;
-        if (workingDir != null) settings.AgenticOrchestration.Terminal.DefaultWorkingDirectory = workingDir;
-        if (columns.HasValue) settings.AgenticOrchestration.Terminal.DefaultColumns = columns.Value;
-        if (rows.HasValue) settings.AgenticOrchestration.Terminal.DefaultRows = rows.Value;
-        if (maxSessions.HasValue) settings.AgenticOrchestration.Terminal.MaxConcurrentSessions = maxSessions.Value;
-        if (timeout.HasValue) settings.AgenticOrchestration.Terminal.SessionTimeoutMinutes = timeout.Value;
+        if (command != null) SetValue(root, "AgenticOrchestration.Terminal.DefaultCommand", JsonValue.Create(command));
+        if (workingDir != null) SetValue(root, "AgenticOrchestration.Terminal.DefaultWorkingDirectory", JsonValue.Create(workingDir));
+        if (columns.HasValue) SetValue(root, "AgenticOrchestration.Terminal.DefaultColumns", JsonValue.Create(columns.Value));
+        if (rows.HasValue) SetValue(root, "AgenticOrchestration.Terminal.DefaultRows", JsonValue.Create(rows.Value));
+        if (maxSessions.HasValue) SetValue(root, "AgenticOrchestration.Terminal.MaxConcurrentSessions", JsonValue.Create(maxSessions.Value));
+        if (timeout.HasValue) SetValue(root, "AgenticOrchestration.Terminal.SessionTimeoutMinutes", JsonValue.Create(timeout.Value));
     }
 
-    public void UpdateOpenAI(AppSettings settings, string? apiKey = null, string? model = null,
+    public void UpdateOpenAI(JsonNode root, string? apiKey = null, string? model = null,
         string? embeddingModel = null, string? imageModel = null, string? ttsModel = null, bool clearApiKey = false)
     {
         if (clearApiKey)
         {
-            settings.OpenAI.ApiKey = "";
+            SetValue(root, "OpenAI.ApiKey", JsonValue.Create(""));
             return;
         }
 
-        if (apiKey != null) settings.OpenAI.ApiKey = apiKey;
-        if (model != null) settings.OpenAI.Model = model;
-        if (embeddingModel != null) settings.OpenAI.EmbeddingModel = embeddingModel;
-        if (imageModel != null) settings.OpenAI.ImageModel = imageModel;
-        if (ttsModel != null) settings.OpenAI.TtsModel = ttsModel;
+        if (apiKey != null) SetValue(root, "OpenAI.ApiKey", JsonValue.Create(apiKey));
+        if (model != null) SetValue(root, "OpenAI.Model", JsonValue.Create(model));
+        if (embeddingModel != null) SetValue(root, "OpenAI.EmbeddingModel", JsonValue.Create(embeddingModel));
+        if (imageModel != null) SetValue(root, "OpenAI.ImageModel", JsonValue.Create(imageModel));
+        if (ttsModel != null) SetValue(root, "OpenAI.TtsModel", JsonValue.Create(ttsModel));
     }
 
     public string MaskSensitiveValue(string value, int visibleChars = 3)
     {
-        if (string.IsNullOrEmpty(value)) return "";
+        if (string.IsNullOrEmpty(value)) return "(not set)";
         if (value.Length <= visibleChars * 2) return new string('*', value.Length);
 
-        var prefix = value.Substring(0, visibleChars);
-        var suffix = value.Substring(value.Length - visibleChars);
+        var prefix = value[..visibleChars];
+        var suffix = value[^visibleChars..];
         var maskedLength = value.Length - (visibleChars * 2);
         return $"{prefix}{"".PadLeft(maskedLength, '*')}{suffix}";
     }

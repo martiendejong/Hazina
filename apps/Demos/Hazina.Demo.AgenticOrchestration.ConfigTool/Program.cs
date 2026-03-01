@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Text.Json.Nodes;
 using Hazina.Demo.AgenticOrchestration.ConfigTool.Services;
 
 namespace Hazina.Demo.AgenticOrchestration.ConfigTool;
@@ -160,19 +161,19 @@ class Program
         try
         {
             var configService = new ConfigurationService();
-            var settings = configService.ReadConfiguration(configPath);
+            var root = configService.ReadAsJsonNode(configPath);
 
             if (verbose && !silent)
             {
                 Console.WriteLine($"Updating authentication in: {configPath}");
             }
 
-            configService.UpdateAuthentication(settings, username, password, realm, enabled);
-            configService.WriteConfiguration(configPath, settings, !noBackup);
+            configService.UpdateAuthentication(root, username, password, realm, enabled);
+            configService.WriteJsonNode(configPath, root, !noBackup);
 
             if (!silent)
             {
-                Console.WriteLine("✓ Authentication configured successfully");
+                Console.WriteLine("Authentication configured successfully");
             }
 
             return 0;
@@ -194,19 +195,19 @@ class Program
         try
         {
             var configService = new ConfigurationService();
-            var settings = configService.ReadConfiguration(configPath);
+            var root = configService.ReadAsJsonNode(configPath);
 
             if (verbose && !silent)
             {
                 Console.WriteLine($"Updating Kestrel configuration in: {configPath}");
             }
 
-            configService.UpdateKestrel(settings, protocol, port, cert, key);
-            configService.WriteConfiguration(configPath, settings, !noBackup);
+            configService.UpdateKestrel(root, protocol, port, cert, key);
+            configService.WriteJsonNode(configPath, root, !noBackup);
 
             if (!silent)
             {
-                Console.WriteLine($"✓ Kestrel configured: {protocol.ToUpper()}://*:{port}");
+                Console.WriteLine($"Kestrel configured: {protocol.ToUpper()}://*:{port}");
             }
 
             return 0;
@@ -228,19 +229,19 @@ class Program
         try
         {
             var configService = new ConfigurationService();
-            var settings = configService.ReadConfiguration(configPath);
+            var root = configService.ReadAsJsonNode(configPath);
 
             if (verbose && !silent)
             {
                 Console.WriteLine($"Updating file paths in: {configPath}");
             }
 
-            configService.UpdatePaths(settings, database, logs, uploads);
-            configService.WriteConfiguration(configPath, settings, !noBackup);
+            configService.UpdatePaths(root, database, logs, uploads);
+            configService.WriteJsonNode(configPath, root, !noBackup);
 
             if (!silent)
             {
-                Console.WriteLine("✓ Paths configured successfully");
+                Console.WriteLine("Paths configured successfully");
             }
 
             return 0;
@@ -262,19 +263,19 @@ class Program
         try
         {
             var configService = new ConfigurationService();
-            var settings = configService.ReadConfiguration(configPath);
+            var root = configService.ReadAsJsonNode(configPath);
 
             if (verbose && !silent)
             {
                 Console.WriteLine($"Updating terminal settings in: {configPath}");
             }
 
-            configService.UpdateTerminal(settings, command, workdir, columns, rows);
-            configService.WriteConfiguration(configPath, settings, !noBackup);
+            configService.UpdateTerminal(root, command, workdir, columns, rows);
+            configService.WriteJsonNode(configPath, root, !noBackup);
 
             if (!silent)
             {
-                Console.WriteLine("✓ Terminal configured successfully");
+                Console.WriteLine("Terminal configured successfully");
             }
 
             return 0;
@@ -296,25 +297,25 @@ class Program
         try
         {
             var configService = new ConfigurationService();
-            var settings = configService.ReadConfiguration(configPath);
+            var root = configService.ReadAsJsonNode(configPath);
 
             if (verbose && !silent)
             {
                 Console.WriteLine($"Updating OpenAI settings in: {configPath}");
             }
 
-            configService.UpdateOpenAI(settings, apikey, model, clearApiKey: clearApikey);
-            configService.WriteConfiguration(configPath, settings, !noBackup);
+            configService.UpdateOpenAI(root, apikey, model, clearApiKey: clearApikey);
+            configService.WriteJsonNode(configPath, root, !noBackup);
 
             if (!silent)
             {
                 if (clearApikey)
                 {
-                    Console.WriteLine("✓ OpenAI API key cleared");
+                    Console.WriteLine("OpenAI API key cleared");
                 }
                 else
                 {
-                    Console.WriteLine("✓ OpenAI configured successfully");
+                    Console.WriteLine("OpenAI configured successfully");
                 }
             }
 
