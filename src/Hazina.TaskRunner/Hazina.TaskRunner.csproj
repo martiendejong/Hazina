@@ -15,4 +15,8 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Cronos" Version="0.11.1" />
+  </ItemGroup>
+
 </Project>
