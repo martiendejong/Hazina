@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Authors>Martien de Jong</Authors>
+    <Company>Hazina Framework</Company>
+    <Product>Hazina Task Runner</Product>
+    <Description>Silent PowerShell script execution engine with cron-style scheduling for background tasks</Description>
+    <PackageProjectUrl>https://github.com/martiendejong/hazina</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/martiendejong/hazina</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Management.Automation" Version="7.4.1" />
+  </ItemGroup>
+
+</Project>
