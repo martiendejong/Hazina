@@ -26,11 +26,6 @@ public class ExecutionOptions
     public string? WorkingDirectory { get; set; }
 
     /// <summary>
-    /// Use isolated runspace (clean state) or persistent runspace (faster) (default: true = isolated)
-    /// </summary>
-    public bool IsolatedRunspace { get; set; } = true;
-
-    /// <summary>
     /// Parameters to pass to the PowerShell script
     /// </summary>
     public Dictionary<string, object>? Parameters { get; set; }

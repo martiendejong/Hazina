@@ -15,8 +15,4 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Management.Automation" Version="7.4.1" />
-  </ItemGroup>
-
 </Project>

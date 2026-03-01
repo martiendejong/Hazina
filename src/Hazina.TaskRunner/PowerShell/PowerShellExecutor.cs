@@ -1,19 +1,23 @@
 using System.Diagnostics;
-using System.Management.Automation;
-using System.Management.Automation.Runspaces;
 using System.Text;
 using System.Text.Json;
 
 namespace Hazina.TaskRunner.PowerShell;
 
 /// <summary>
-/// Executes PowerShell scripts in-process without spawning visible console windows
+/// Executes PowerShell scripts silently without spawning visible console windows
+/// Uses Process.Start with hidden window for maximum compatibility
 /// </summary>
 public class PowerShellExecutor : IDisposable
 {
-    private Runspace? _persistentRunspace;
-    private readonly object _runspaceLock = new();
     private bool _disposed;
+    private readonly string _powerShellPath;
+
+    public PowerShellExecutor()
+    {
+        // Use PowerShell.exe (Windows PowerShell 5.1) - always available on Windows
+        _powerShellPath = "powershell.exe";
+    }
 
     /// <summary>
     /// Execute a PowerShell script file
@@ -46,129 +50,99 @@ public class PowerShellExecutor : IDisposable
                 return result;
             }
 
-            // Read script content
-            var scriptContent = File.ReadAllText(scriptPath);
+            // Build PowerShell command
+            var arguments = new StringBuilder();
+            arguments.Append("-ExecutionPolicy Bypass ");
+            arguments.Append("-NoProfile ");
+            arguments.Append("-NonInteractive ");
+            arguments.Append($"-File \"{scriptPath}\" ");
 
-            // Get or create runspace
-            Runspace runspace;
-            if (options.IsolatedRunspace)
+            // Add parameters
+            if (options.Parameters != null)
             {
-                runspace = RunspaceFactory.CreateRunspace();
-                runspace.Open();
+                foreach (var param in options.Parameters)
+                {
+                    var value = param.Value?.ToString() ?? string.Empty;
+                    arguments.Append($"-{param.Key} \"{value}\" ");
+                }
+            }
+
+            // Create process start info
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = _powerShellPath,
+                Arguments = arguments.ToString(),
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = options.Silent,  // CRITICAL: No popup window
+                WindowStyle = options.Silent ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal,
+                WorkingDirectory = options.WorkingDirectory ?? Path.GetDirectoryName(scriptPath) ?? Environment.CurrentDirectory
+            };
+
+            using var process = new Process { StartInfo = startInfo };
+
+            var outputBuilder = new StringBuilder();
+            var errorBuilder = new StringBuilder();
+
+            // Capture output and errors
+            process.OutputDataReceived += (sender, e) =>
+            {
+                if (e.Data != null)
+                {
+                    outputBuilder.AppendLine(e.Data);
+                }
+            };
+
+            process.ErrorDataReceived += (sender, e) =>
+            {
+                if (e.Data != null)
+                {
+                    errorBuilder.AppendLine(e.Data);
+                }
+            };
+
+            // Start process
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
+            // Wait for completion with timeout
+            bool completed = process.WaitForExit((int)options.Timeout.TotalMilliseconds);
+
+            if (!completed)
+            {
+                // Timeout occurred
+                try
+                {
+                    process.Kill();
+                }
+                catch
+                {
+                    // Process may have already exited
+                }
+
+                result.TimedOut = true;
+                result.Success = false;
+                result.Errors.Add($"Script execution timed out after {options.Timeout.TotalSeconds} seconds");
+                result.ExitCode = -1;
             }
             else
             {
-                lock (_runspaceLock)
-                {
-                    if (_persistentRunspace == null || _persistentRunspace.RunspaceStateInfo.State != RunspaceState.Opened)
-                    {
-                        _persistentRunspace = RunspaceFactory.CreateRunspace();
-                        _persistentRunspace.Open();
-                    }
-                    runspace = _persistentRunspace;
-                }
-            }
+                // Wait for async output to complete
+                process.WaitForExit();
 
-            try
-            {
-                using var powerShell = System.Management.Automation.PowerShell.Create();
-                powerShell.Runspace = runspace;
+                result.Output = outputBuilder.ToString();
+                result.ExitCode = process.ExitCode;
 
-                // Set working directory if specified
-                if (!string.IsNullOrEmpty(options.WorkingDirectory))
+                var errorOutput = errorBuilder.ToString();
+                if (!string.IsNullOrWhiteSpace(errorOutput))
                 {
-                    powerShell.AddScript($"Set-Location '{options.WorkingDirectory}'");
-                    powerShell.Invoke();
-                    powerShell.Commands.Clear();
+                    result.Errors.AddRange(errorOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries));
                 }
 
-                // Add script
-                powerShell.AddScript(scriptContent);
-
-                // Add parameters if provided
-                if (options.Parameters != null)
-                {
-                    foreach (var param in options.Parameters)
-                    {
-                        powerShell.AddParameter(param.Key, param.Value);
-                    }
-                }
-
-                // Execute with timeout
-                var asyncResult = powerShell.BeginInvoke();
-                var completed = asyncResult.AsyncWaitHandle.WaitOne(options.Timeout);
-
-                if (!completed)
-                {
-                    // Timeout occurred
-                    powerShell.Stop();
-                    result.TimedOut = true;
-                    result.Success = false;
-                    result.Errors.Add($"Script execution timed out after {options.Timeout.TotalSeconds} seconds");
-                    result.ExitCode = -1;
-                }
-                else
-                {
-                    // Get results
-                    var output = powerShell.EndInvoke(asyncResult);
-
-                    // Collect output
-                    var outputBuilder = new StringBuilder();
-                    foreach (var item in output)
-                    {
-                        outputBuilder.AppendLine(item?.ToString() ?? string.Empty);
-                    }
-                    result.Output = outputBuilder.ToString();
-
-                    // Collect errors
-                    if (powerShell.Streams.Error.Count > 0)
-                    {
-                        foreach (var error in powerShell.Streams.Error)
-                        {
-                            result.Errors.Add(error.ToString());
-                        }
-                        result.Success = false;
-                        result.ExitCode = 1;
-                    }
-                    else
-                    {
-                        result.Success = true;
-                        result.ExitCode = 0;
-                    }
-
-                    // Collect warnings
-                    foreach (var warning in powerShell.Streams.Warning)
-                    {
-                        result.Warnings.Add(warning.Message);
-                    }
-
-                    // Collect verbose output (add to main output)
-                    foreach (var verbose in powerShell.Streams.Verbose)
-                    {
-                        result.Output += $"VERBOSE: {verbose.Message}\n";
-                    }
-
-                    // Collect debug output (add to main output)
-                    foreach (var debug in powerShell.Streams.Debug)
-                    {
-                        result.Output += $"DEBUG: {debug.Message}\n";
-                    }
-
-                    // Collect information output (add to main output)
-                    foreach (var info in powerShell.Streams.Information)
-                    {
-                        result.Output += $"{info.MessageData}\n";
-                    }
-                }
-            }
-            finally
-            {
-                // Dispose isolated runspace
-                if (options.IsolatedRunspace && runspace != null)
-                {
-                    runspace.Close();
-                    runspace.Dispose();
-                }
+                // Success if exit code is 0 and no errors
+                result.Success = result.ExitCode == 0 && result.Errors.Count == 0;
             }
         }
         catch (Exception ex)
@@ -204,80 +178,38 @@ public class PowerShellExecutor : IDisposable
     {
         options ??= new ExecutionOptions();
 
-        var result = new ExecutionResult
-        {
-            ScriptPath = "[inline command]",
-            StartTime = DateTime.UtcNow
-        };
-
-        var stopwatch = Stopwatch.StartNew();
+        // Create temporary script file
+        var tempFile = Path.GetTempFileName();
+        var scriptFile = Path.ChangeExtension(tempFile, ".ps1");
 
         try
         {
-            using var runspace = RunspaceFactory.CreateRunspace();
-            runspace.Open();
+            File.WriteAllText(scriptFile, command);
 
-            using var powerShell = System.Management.Automation.PowerShell.Create();
-            powerShell.Runspace = runspace;
-            powerShell.AddScript(command);
+            var result = ExecuteScript(scriptFile, options);
+            result.ScriptPath = "[inline command]";
 
-            var asyncResult = powerShell.BeginInvoke();
-            var completed = asyncResult.AsyncWaitHandle.WaitOne(options.Timeout);
-
-            if (!completed)
-            {
-                powerShell.Stop();
-                result.TimedOut = true;
-                result.Success = false;
-                result.Errors.Add($"Command execution timed out after {options.Timeout.TotalSeconds} seconds");
-                result.ExitCode = -1;
-            }
-            else
-            {
-                var output = powerShell.EndInvoke(asyncResult);
-                var outputBuilder = new StringBuilder();
-                foreach (var item in output)
-                {
-                    outputBuilder.AppendLine(item?.ToString() ?? string.Empty);
-                }
-                result.Output = outputBuilder.ToString();
-
-                if (powerShell.Streams.Error.Count > 0)
-                {
-                    foreach (var error in powerShell.Streams.Error)
-                    {
-                        result.Errors.Add(error.ToString());
-                    }
-                    result.Success = false;
-                    result.ExitCode = 1;
-                }
-                else
-                {
-                    result.Success = true;
-                    result.ExitCode = 0;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            result.Success = false;
-            result.Errors.Add($"Exception: {ex.Message}");
-            result.ExceptionDetails = ex.ToString();
-            result.ExitCode = 1;
+            return result;
         }
         finally
         {
-            stopwatch.Stop();
-            result.Duration = stopwatch.Elapsed;
-            result.EndTime = DateTime.UtcNow;
-
-            if (options.LogExecution)
+            // Cleanup temp file
+            try
             {
-                LogExecutionToFile(result, options.LogFilePath);
+                if (File.Exists(scriptFile))
+                {
+                    File.Delete(scriptFile);
+                }
+                if (File.Exists(tempFile))
+                {
+                    File.Delete(tempFile);
+                }
+            }
+            catch
+            {
+                // Ignore cleanup errors
             }
         }
-
-        return result;
     }
 
     /// <summary>
@@ -321,17 +253,6 @@ public class PowerShellExecutor : IDisposable
     public void Dispose()
     {
         if (_disposed) return;
-
-        lock (_runspaceLock)
-        {
-            if (_persistentRunspace != null)
-            {
-                _persistentRunspace.Close();
-                _persistentRunspace.Dispose();
-                _persistentRunspace = null;
-            }
-        }
-
         _disposed = true;
         GC.SuppressFinalize(this);
     }
