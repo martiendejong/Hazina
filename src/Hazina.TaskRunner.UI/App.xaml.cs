@@ -19,24 +19,50 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
+        // Parse command-line arguments
+        bool minimized = false;
+        string? customConfigPath = null;
+
+        for (int i = 0; i < e.Args.Length; i++)
+        {
+            switch (e.Args[i].ToLower())
+            {
+                case "--minimized":
+                case "-m":
+                    minimized = true;
+                    break;
+                case "--config":
+                case "-c":
+                    if (i + 1 < e.Args.Length)
+                    {
+                        customConfigPath = e.Args[++i];
+                    }
+                    break;
+            }
+        }
+
         // Enforce single instance
         _singleInstance = new SingleInstanceManager("Hazina.TaskRunner.UI.Mutex");
 
         if (!_singleInstance.IsFirstInstance)
         {
-            MessageBox.Show(
-                "Hazina Task Runner is already running. Check the system tray.",
-                "Already Running",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            // If started minimized, just exit silently
+            if (!minimized)
+            {
+                MessageBox.Show(
+                    "Hazina Task Runner is already running. Check the system tray.",
+                    "Already Running",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
 
             Shutdown();
             return;
         }
 
-        // Initialize scheduler with default config path
-        var configPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        // Initialize scheduler with config path
+        var configPath = customConfigPath ?? Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             "Hazina",
             "TaskRunner",
             "tasks.json");
@@ -46,11 +72,14 @@ public partial class App : System.Windows.Application
         // Initialize tray icon
         _trayIcon = new TrayIconManager(_scheduler);
 
-        // Show startup notification
-        _trayIcon.ShowNotification(
-            "Hazina Task Runner",
-            "Task Runner started. Right-click tray icon for options.",
-            WinForms.ToolTipIcon.Info);
+        // Show startup notification (only if not minimized)
+        if (!minimized)
+        {
+            _trayIcon.ShowNotification(
+                "Hazina Task Runner",
+                "Task Runner started. Right-click tray icon for options.",
+                WinForms.ToolTipIcon.Info);
+        }
 
         // Hide main window (we only need tray icon)
         MainWindow = new Window

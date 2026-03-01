@@ -367,12 +367,21 @@ Create a dedicated configuration tool (HazinaConfigTool.exe) that can be called 
 
 ---
 
-## Next Steps
+## Completed Changes (2026-03-01)
 
-1. ✅ **Task #1 COMPLETE** - Analysis documented
-2. ⏭️ **Task #2** - Design HazinaConfigTool architecture
-3. ⏭️ **Task #3** - Implement HazinaConfigTool.exe
-4. ⏭️ **Task #4** - Simplify MSI installer (remove LaunchSetup)
-5. ⏭️ **Task #5** - Update Setup.ps1 to use HazinaConfigTool
-6. ⏭️ **Task #6** - Test end-to-end workflow
-7. ⏭️ **Task #7** - Update documentation
+1. ✅ **Task #1** - Analysis documented (this file)
+2. ✅ **Task #2** - Designed HazinaConfigTool CLI architecture (CONFIGTOOL_DESIGN.md)
+3. ✅ **Task #3** - Created HazinaConfigTool.exe (System.CommandLine, JsonNode-based, 1.07 MB)
+4. ✅ **Task #4** - Simplified MSI: replaced LaunchSetup (Setup.cmd) with LaunchApp (HazinaOrchestration.exe)
+5. ✅ **Task #5** - Updated Setup.ps1 to use HazinaConfigTool for non-destructive config
+6. ⏭️ **Task #6** - Test end-to-end workflow (requires MSI rebuild)
+7. ✅ **Task #7** - Documentation updated
+8. ✅ **Task #8** - Fixed ConfigurationService to use JsonNode (prevents data loss)
+
+### Key Changes Made
+
+- **Build-MSI-Complete.ps1**: Builds HazinaConfigTool, includes it in MSI, replaced `LaunchSetup` with `LaunchApp`
+- **Setup.cmd**: Removed `pause` command that blocked indefinitely
+- **Setup.ps1**: Phase 6 now uses HazinaConfigTool.exe for non-destructive config (with legacy fallback)
+- **ConfigTool**: Created at `Hazina.Demo.AgenticOrchestration.ConfigTool/` with 7 commands
+- **MSI exit dialog**: Now says "Launch Hazina Orchestration" instead of "Configure network access"

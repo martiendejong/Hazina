@@ -176,6 +176,43 @@ foreach ($sf in $setupFiles) {
 Write-Host ""
 
 # ===================================================================
+# STEP 2d: Build and copy HazinaConfigTool
+# ===================================================================
+Write-Host "  Building HazinaConfigTool..." -ForegroundColor Gray
+
+$configToolDir = Join-Path (Split-Path -Parent $scriptDir) "Hazina.Demo.AgenticOrchestration.ConfigTool"
+$configToolProject = Join-Path $configToolDir "Hazina.Demo.AgenticOrchestration.ConfigTool.csproj"
+
+if (Test-Path $configToolProject) {
+    $configToolPublishDir = Join-Path $configToolDir "bin\$Configuration\net9.0\$Platform\publish"
+
+    $ctPublishArgs = @(
+        "publish"
+        $configToolProject
+        "--configuration", $Configuration
+        "--runtime", $Platform
+        "--self-contained", "false"
+        "/p:PublishSingleFile=true"
+        "--output", $configToolPublishDir
+    )
+
+    & dotnet @ctPublishArgs 2>&1 | Out-Null
+
+    $configToolExe = Join-Path $configToolPublishDir "HazinaConfigTool.exe"
+    if (Test-Path $configToolExe) {
+        Copy-Item $configToolExe -Destination $publishDir -Force
+        $ctSize = [math]::Round((Get-Item $configToolExe).Length / 1MB, 2)
+        Write-Host "    [OK] HazinaConfigTool.exe ($ctSize MB)" -ForegroundColor Green
+    } else {
+        Write-Host "    [WARN] HazinaConfigTool.exe not found after publish" -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "    [WARN] ConfigTool project not found: $configToolProject" -ForegroundColor Yellow
+}
+
+Write-Host ""
+
+# ===================================================================
 # STEP 3: Inventory all published files
 # ===================================================================
 Write-Host "STEP 3: Inventorying published files..." -ForegroundColor Cyan
@@ -337,6 +374,7 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine('      <ComponentRef Id="SetupCmd" />')
 [void]$sb.AppendLine('      <ComponentRef Id="SetupConfigExample" />')
 [void]$sb.AppendLine('      <ComponentRef Id="SetCredentialsScript" />')
+[void]$sb.AppendLine('      <ComponentRef Id="ConfigTool" />')
 [void]$sb.AppendLine('      <ComponentRef Id="DataDirectory" />')
 [void]$sb.AppendLine('      <ComponentRef Id="LogsDirectory" />')
 [void]$sb.AppendLine('      <ComponentRef Id="SessionLogsDirectory" />')
@@ -352,12 +390,12 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <!-- Exit dialog checkbox (checked by default) -->')
 [void]$sb.AppendLine('    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"')
-[void]$sb.AppendLine('              Value="Configure network access and security (recommended)" />')
+[void]$sb.AppendLine('              Value="Launch Hazina Orchestration" />')
 [void]$sb.AppendLine('    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />')
 [void]$sb.AppendLine('')
-[void]$sb.AppendLine('    <!-- Launch Setup.cmd via ShellExecute after install -->')
-[void]$sb.AppendLine('    <Property Id="WixShellExecTarget" Value="[#SetupCmdFile]" />')
-[void]$sb.AppendLine('    <CustomAction Id="LaunchSetup" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />')
+[void]$sb.AppendLine('    <!-- Launch HazinaOrchestration.exe via ShellExecute after install -->')
+[void]$sb.AppendLine('    <Property Id="WixShellExecTarget" Value="[#HazinaOrchestrationExe]" />')
+[void]$sb.AppendLine('    <CustomAction Id="LaunchApp" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />')
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <!-- Complete custom UI sequence -->')
 [void]$sb.AppendLine('    <UI>')
@@ -395,8 +433,8 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine('      <!-- VerifyReady -> Back to InstallDir -->')
 [void]$sb.AppendLine('      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg" Order="1">NOT Installed</Publish>')
 [void]$sb.AppendLine('      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2">Installed AND NOT PATCH</Publish>')
-[void]$sb.AppendLine('      <!-- Exit dialog: launch setup script -->')
-[void]$sb.AppendLine('      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchSetup">')
+[void]$sb.AppendLine('      <!-- Exit dialog: launch application -->')
+[void]$sb.AppendLine('      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApp">')
 [void]$sb.AppendLine('        WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed')
 [void]$sb.AppendLine('      </Publish>')
 [void]$sb.AppendLine('    </UI>')
@@ -465,6 +503,10 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <Component Id="SetCredentialsScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555504">')
 [void]$sb.AppendLine("      <File Id=`"SetCredentialsPs1File`" Source=`"$pubEsc\SetCredentials.ps1`" KeyPath=`"yes`" />")
+[void]$sb.AppendLine('    </Component>')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <Component Id="ConfigTool" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555505">')
+[void]$sb.AppendLine("      <File Id=`"ConfigToolExe`" Source=`"$pubEsc\HazinaConfigTool.exe`" KeyPath=`"yes`" />")
 [void]$sb.AppendLine('    </Component>')
 
 # Optional core files
@@ -602,11 +644,13 @@ Write-Host "    - Installs to: C:\Program Files\Hazina Orchestration\" -Foregrou
 Write-Host "    - Creates Start Menu shortcut" -ForegroundColor Gray
 Write-Host "    - Includes React SPA + $assetCounter asset files" -ForegroundColor Gray
 Write-Host "    - Shows license agreement during install" -ForegroundColor Gray
-Write-Host "    - Finish dialog offers to run Setup.ps1 (Tailscale/HTTPS config)" -ForegroundColor Gray
+Write-Host "    - Includes HazinaConfigTool.exe for CLI configuration" -ForegroundColor Gray
+Write-Host "    - Finish dialog offers to launch the application" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  After install:" -ForegroundColor Cyan
-Write-Host "    Finish dialog checkbox launches Setup.ps1 for Tailscale/HTTPS setup" -ForegroundColor Gray
+Write-Host "    Finish dialog checkbox launches HazinaOrchestration.exe" -ForegroundColor Gray
 Write-Host "    Or launch from Start Menu / run HazinaOrchestration.exe" -ForegroundColor Gray
+Write-Host "    Use HazinaConfigTool.exe for advanced configuration" -ForegroundColor Gray
 Write-Host "    System tray icon with context menu (dashboard, swagger, exit)" -ForegroundColor Gray
 Write-Host "    Toggle 'Start with Windows' from tray menu" -ForegroundColor Gray
 Write-Host "    Web UI:  https://localhost:5123" -ForegroundColor Gray
