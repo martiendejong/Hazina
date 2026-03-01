@@ -71,12 +71,18 @@
                      KeyPath="yes" />
     </Component>
 
-    <!-- Configuration files component -->
+    <!-- Configuration files component - Multiple task sets -->
     <Component Id="ConfigFiles" Directory="TaskRunnerDataFolder" Guid="C3D4E5F6-A7B8-4C5D-9E1F-3A4B5C6D7E8F">
-      <File Id="DefaultConfigJson"
-            Source="DefaultConfig\tasks.json"
-            Name="tasks.json"
+      <File Id="OrchestrationConfig"
+            Source="DefaultConfig\orchestration.json"
+            Name="orchestration.json"
             KeyPath="yes" />
+      <File Id="MaintenanceConfig"
+            Source="DefaultConfig\maintenance.json"
+            Name="maintenance.json" />
+      <File Id="MonitoringConfig"
+            Source="DefaultConfig\monitoring.json"
+            Name="monitoring.json" />
     </Component>
 
     <!-- Auto-start component (optional) -->

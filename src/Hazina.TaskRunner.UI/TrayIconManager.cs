@@ -81,31 +81,78 @@ public class TrayIconManager : IDisposable
     }
 
     /// <summary>
-    /// Build the context menu with recent tasks
+    /// Build the context menu with task sets and tasks
     /// </summary>
     private void BuildContextMenu()
     {
         var contextMenu = new ContextMenuStrip();
+        var taskSets = _scheduler.GetAllTaskSets();
 
-        // Quick run section for recent tasks
-        var tasks = _scheduler.GetAllTasks()
-            .Where(t => t.Enabled)
-            .OrderByDescending(t => t.LastRun ?? DateTime.MinValue)
-            .Take(5)
-            .ToList();
-
-        if (tasks.Any())
+        // Build hierarchical menu for each task set
+        foreach (var taskSet in taskSets)
         {
-            foreach (var task in tasks)
+            // Create submenu for this task set
+            var taskSetMenu = new ToolStripMenuItem(taskSet.Name)
             {
-                var menuItem = new ToolStripMenuItem($"▶ {task.Name}")
+                Tag = taskSet.Id
+            };
+
+            // Add checkmark if enabled
+            taskSetMenu.Checked = taskSet.Enabled;
+
+            // Add enable/disable toggle
+            var toggleItem = new ToolStripMenuItem(taskSet.Enabled ? "✓ Enabled" : "✗ Disabled")
+            {
+                Tag = taskSet.Id
+            };
+            toggleItem.Click += OnToggleTaskSet;
+            taskSetMenu.DropDownItems.Add(toggleItem);
+
+            // Show task count
+            var countItem = new ToolStripMenuItem($"({taskSet.Tasks.Count} tasks)")
+            {
+                Enabled = false
+            };
+            taskSetMenu.DropDownItems.Add(countItem);
+
+            // Add separator before task list
+            if (taskSet.Tasks.Any())
+            {
+                taskSetMenu.DropDownItems.Add(new ToolStripSeparator());
+
+                // Add individual tasks (recent 5)
+                var recentTasks = taskSet.Tasks
+                    .Where(t => t.Enabled)
+                    .OrderByDescending(t => t.LastRun ?? DateTime.MinValue)
+                    .Take(5)
+                    .ToList();
+
+                foreach (var task in recentTasks)
                 {
-                    Tag = task.Id
-                };
-                menuItem.Click += OnQuickRunTask;
-                contextMenu.Items.Add(menuItem);
+                    var taskItem = new ToolStripMenuItem($"▶ {task.Name}")
+                    {
+                        Tag = task.Id
+                    };
+                    taskItem.Click += OnQuickRunTask;
+                    taskSetMenu.DropDownItems.Add(taskItem);
+                }
+
+                if (recentTasks.Count < taskSet.Tasks.Count)
+                {
+                    var moreItem = new ToolStripMenuItem($"... {taskSet.Tasks.Count - recentTasks.Count} more")
+                    {
+                        Enabled = false
+                    };
+                    taskSetMenu.DropDownItems.Add(moreItem);
+                }
             }
 
+            contextMenu.Items.Add(taskSetMenu);
+        }
+
+        // Add separator before standard items
+        if (taskSets.Any())
+        {
             contextMenu.Items.Add(new ToolStripSeparator());
         }
 
@@ -115,9 +162,55 @@ public class TrayIconManager : IDisposable
         contextMenu.Items.Add("Pause All", null, OnPauseAll);
         contextMenu.Items.Add("Resume All", null, OnResumeAll);
         contextMenu.Items.Add(new ToolStripSeparator());
+        contextMenu.Items.Add("Reload Configuration", null, OnReloadConfig);
+        contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add("Exit", null, OnExit);
 
         _notifyIcon.ContextMenuStrip = contextMenu;
+    }
+
+    /// <summary>
+    /// Toggle a task set enabled/disabled
+    /// </summary>
+    private void OnToggleTaskSet(object? sender, EventArgs e)
+    {
+        if (sender is ToolStripMenuItem menuItem && menuItem.Tag is string taskSetId)
+        {
+            var taskSet = _scheduler.GetTaskSet(taskSetId);
+            if (taskSet != null)
+            {
+                if (taskSet.Enabled)
+                {
+                    _scheduler.DisableTaskSet(taskSetId);
+                    ShowNotification("Task Set Disabled", $"{taskSet.Name} paused", ToolTipIcon.Warning);
+                }
+                else
+                {
+                    _scheduler.EnableTaskSet(taskSetId);
+                    ShowNotification("Task Set Enabled", $"{taskSet.Name} resumed", ToolTipIcon.Info);
+                }
+
+                // Refresh menu to show updated state
+                RefreshContextMenu();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Reload configuration from disk
+    /// </summary>
+    private void OnReloadConfig(object? sender, EventArgs e)
+    {
+        try
+        {
+            _scheduler.ReloadTaskSets();
+            RefreshContextMenu();
+            ShowNotification("Configuration Reloaded", "Task sets updated from disk", ToolTipIcon.Info);
+        }
+        catch (Exception ex)
+        {
+            ShowNotification("Reload Failed", ex.Message, ToolTipIcon.Error);
+        }
     }
 
     /// <summary>

@@ -60,12 +60,13 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        // Initialize scheduler with config path
+        // Initialize scheduler with config directory (supports bundled task sets)
+        // If customConfigPath is a .json file, TaskScheduler will use legacy mode
+        // Otherwise it will scan the directory for all .json task set files
         var configPath = customConfigPath ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             "Hazina",
-            "TaskRunner",
-            "tasks.json");
+            "TaskRunner");
 
         _scheduler = new Hazina.TaskRunner.Scheduling.TaskScheduler(configPath);
 
