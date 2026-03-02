@@ -46,10 +46,12 @@
             Source="$(var.UIBinPath)Hazina.TaskRunner.UI.exe"
             KeyPath="yes" />
 
-      <!-- Dependencies -->
+      <!-- Application Dependencies -->
       <File Source="$(var.UIBinPath)Hazina.TaskRunner.dll" />
       <File Source="$(var.UIBinPath)Hazina.TaskRunner.UI.dll" />
       <File Source="$(var.UIBinPath)Cronos.dll" />
+      <File Source="$(var.UIBinPath)Hazina.TaskRunner.UI.deps.json" />
+      <File Source="$(var.UIBinPath)Hazina.TaskRunner.UI.runtimeconfig.json" />
     </Component>
 
     <!-- Start Menu shortcut component (per-user) -->

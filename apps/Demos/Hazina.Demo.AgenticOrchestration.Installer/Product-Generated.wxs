@@ -68,6 +68,7 @@
       <ComponentRef Id="SetupCmd" />
       <ComponentRef Id="SetupConfigExample" />
       <ComponentRef Id="SetCredentialsScript" />
+      <ComponentRef Id="ConfigTool" />
       <ComponentRef Id="DataDirectory" />
       <ComponentRef Id="LogsDirectory" />
       <ComponentRef Id="SessionLogsDirectory" />
@@ -83,12 +84,12 @@
 
     <!-- Exit dialog checkbox (checked by default) -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
-              Value="Configure network access and security (recommended)" />
+              Value="Launch Hazina Orchestration" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
 
-    <!-- Launch Setup.cmd via ShellExecute after install -->
-    <Property Id="WixShellExecTarget" Value="[#SetupCmdFile]" />
-    <CustomAction Id="LaunchSetup" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+    <!-- Launch HazinaOrchestration.exe via ShellExecute after install -->
+    <Property Id="WixShellExecTarget" Value="[#HazinaOrchestrationExe]" />
+    <CustomAction Id="LaunchApp" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
 
     <!-- Complete custom UI sequence -->
     <UI>
@@ -126,8 +127,8 @@
       <!-- VerifyReady -> Back to InstallDir -->
       <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg" Order="1">NOT Installed</Publish>
       <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2">Installed AND NOT PATCH</Publish>
-      <!-- Exit dialog: launch setup script -->
-      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchSetup">
+      <!-- Exit dialog: launch application -->
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApp">
         WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed
       </Publish>
     </UI>
@@ -194,6 +195,10 @@
 
     <Component Id="SetCredentialsScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555504">
       <File Id="SetCredentialsPs1File" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\SetCredentials.ps1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="ConfigTool" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555505">
+      <File Id="ConfigToolExe" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\HazinaConfigTool.exe" KeyPath="yes" />
     </Component>
 
     <Component Id="Core_web_config" Directory="INSTALLFOLDER" Guid="F8DBBFD7-25F8-A085-C706-2AA5AA56D320">
