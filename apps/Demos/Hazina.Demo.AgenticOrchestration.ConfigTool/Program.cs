@@ -1,13 +1,32 @@
 using System.CommandLine;
+using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
+using Hazina.Demo.AgenticOrchestration.ConfigTool.Forms;
 using Hazina.Demo.AgenticOrchestration.ConfigTool.Services;
 
 namespace Hazina.Demo.AgenticOrchestration.ConfigTool;
 
 class Program
 {
+    [DllImport("kernel32.dll")]
+    private static extern bool AttachConsole(int dwProcessId);
+
+    [STAThread]
     static async Task<int> Main(string[] args)
     {
+        // No arguments = launch GUI
+        if (args.Length == 0)
+        {
+            var configPath = FindConfigPath();
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new MainForm(configPath));
+            return 0;
+        }
+
+        // CLI mode: attach to parent console for output
+        AttachConsole(-1);
+
         var rootCommand = new RootCommand("Hazina Configuration Tool - Configure Hazina Agentic Orchestration");
 
         // Global options
@@ -70,11 +89,20 @@ class Program
         setKestrelCommand.AddOption(certOption);
         setKestrelCommand.AddOption(keyOption);
 
-        setKestrelCommand.SetHandler(async (configPath, protocol, port, host, cert, key, verbose, silent, noBackup) =>
+        setKestrelCommand.SetHandler((ctx) =>
         {
-            var exitCode = HandleSetKestrel(configPath, protocol, port, host, cert, key, verbose, silent, noBackup);
+            var exitCode = HandleSetKestrel(
+                ctx.ParseResult.GetValueForOption(configOption)!,
+                ctx.ParseResult.GetValueForOption(protocolOption)!,
+                ctx.ParseResult.GetValueForOption(portOption),
+                ctx.ParseResult.GetValueForOption(hostOption),
+                ctx.ParseResult.GetValueForOption(certOption),
+                ctx.ParseResult.GetValueForOption(keyOption),
+                ctx.ParseResult.GetValueForOption(verboseOption),
+                ctx.ParseResult.GetValueForOption(silentOption),
+                ctx.ParseResult.GetValueForOption(noBackupOption));
             Environment.ExitCode = exitCode;
-        }, configOption, protocolOption, portOption, hostOption, certOption, keyOption, verboseOption, silentOption, noBackupOption);
+        });
 
         // set-paths command
         var setPathsCommand = new Command("set-paths", "Configure file paths (database, logs, uploads)");
@@ -492,5 +520,22 @@ class Program
             }
             return ex is FileNotFoundException ? 2 : 3;
         }
+    }
+
+    /// <summary>
+    /// Find appsettings.json next to the executable.
+    /// </summary>
+    static string FindConfigPath()
+    {
+        var exeDir = AppContext.BaseDirectory;
+        var configPath = Path.Combine(exeDir, "appsettings.json");
+        if (File.Exists(configPath))
+            return configPath;
+
+        // Fallback: current directory
+        if (File.Exists("appsettings.json"))
+            return Path.GetFullPath("appsettings.json");
+
+        return configPath; // Return default path even if not found (form will show error)
     }
 }

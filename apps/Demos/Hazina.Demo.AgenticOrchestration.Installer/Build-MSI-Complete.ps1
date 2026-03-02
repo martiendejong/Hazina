@@ -184,7 +184,7 @@ $configToolDir = Join-Path (Split-Path -Parent $scriptDir) "Hazina.Demo.AgenticO
 $configToolProject = Join-Path $configToolDir "Hazina.Demo.AgenticOrchestration.ConfigTool.csproj"
 
 if (Test-Path $configToolProject) {
-    $configToolPublishDir = Join-Path $configToolDir "bin\$Configuration\net9.0\$Platform\publish"
+    $configToolPublishDir = Join-Path $configToolDir "bin\$Configuration\net9.0-windows\$Platform\publish"
 
     $ctPublishArgs = @(
         "publish"
