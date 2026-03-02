@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
-     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
 
   <?define UIBinPath = "..\src\Hazina.TaskRunner.UI\bin\Release\net8.0-windows\win-x64\publish\" ?>
 
@@ -78,13 +79,24 @@
       <File Id="OrchestrationConfig"
             Source="DefaultConfig\orchestration.json"
             Name="orchestration.json"
-            KeyPath="yes" />
+            KeyPath="yes">
+        <util:PermissionEx User="Users" GenericAll="yes" />
+      </File>
       <File Id="MaintenanceConfig"
             Source="DefaultConfig\maintenance.json"
-            Name="maintenance.json" />
+            Name="maintenance.json">
+        <util:PermissionEx User="Users" GenericAll="yes" />
+      </File>
       <File Id="MonitoringConfig"
             Source="DefaultConfig\monitoring.json"
-            Name="monitoring.json" />
+            Name="monitoring.json">
+        <util:PermissionEx User="Users" GenericAll="yes" />
+      </File>
+
+      <!-- Ensure folder has proper permissions -->
+      <CreateFolder>
+        <util:PermissionEx User="Users" GenericAll="yes" />
+      </CreateFolder>
     </Component>
 
     <!-- Auto-start component (optional) -->
