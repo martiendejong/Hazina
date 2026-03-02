@@ -157,7 +157,7 @@ jobs:
 
     steps:
     - name: Download test results
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: test-results
         path: TestResults
