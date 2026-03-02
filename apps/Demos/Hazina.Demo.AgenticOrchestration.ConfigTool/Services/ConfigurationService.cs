@@ -140,22 +140,19 @@ public class ConfigurationService
         if (enabled.HasValue) SetValue(root, "Authentication.Enabled", JsonValue.Create(enabled.Value));
     }
 
-    public void UpdateKestrel(JsonNode root, string protocol, int port, string? certPath = null, string? keyPath = null)
+    public void UpdateKestrel(JsonNode root, string protocol, int port, string? host = null, string? certPath = null, string? keyPath = null)
     {
-        if (protocol.Equals("https", StringComparison.OrdinalIgnoreCase) &&
-            (string.IsNullOrEmpty(certPath) || string.IsNullOrEmpty(keyPath)))
-        {
-            throw new ArgumentException("Certificate and key paths required for HTTPS");
-        }
+        var bindHost = host ?? "localhost";
+        var url = $"{protocol}://{bindHost}:{port}";
 
-        var url = $"{protocol}://*:{port}";
-        var endpointKey = protocol.Equals("https", StringComparison.OrdinalIgnoreCase) ? "Https" : "Http";
-        var removeKey = protocol.Equals("https", StringComparison.OrdinalIgnoreCase) ? "Http" : "Https";
+        // Use "Default" endpoint key for simple configs, named keys for cert-based
+        var hasCert = !string.IsNullOrEmpty(certPath) && !string.IsNullOrEmpty(keyPath);
+        var endpointKey = hasCert ? (protocol.Equals("https", StringComparison.OrdinalIgnoreCase) ? "Https" : "Http") : "Default";
 
         // Build endpoint object
         var endpoint = new JsonObject { ["Url"] = url };
 
-        if (protocol.Equals("https", StringComparison.OrdinalIgnoreCase))
+        if (hasCert)
         {
             endpoint["Certificate"] = new JsonObject
             {
@@ -164,9 +161,8 @@ public class ConfigurationService
             };
         }
 
-        // Set endpoint, removing the opposite protocol endpoint
-        SetValue(root, $"Kestrel.Endpoints.{endpointKey}", endpoint);
-        RemoveKey(root, $"Kestrel.Endpoints.{removeKey}");
+        // Clear all existing endpoints and set the new one
+        SetValue(root, "Kestrel.Endpoints", new JsonObject { [endpointKey] = endpoint });
     }
 
     public void UpdatePaths(JsonNode root, string? databasePath = null, string? logsPath = null,

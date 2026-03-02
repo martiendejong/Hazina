@@ -4,18 +4,31 @@
   <Product Id="*"
            Name="Hazina Agentic Orchestration"
            Language="1033"
-           Version="2.4.0"
+           Version="2.7.1"
            Manufacturer="Hazina Framework"
            UpgradeCode="12345678-1234-1234-1234-123456789012">
 
     <Package InstallerVersion="500"
              Compressed="yes"
              InstallScope="perMachine"
+             Platform="x64"
              Description="Hazina Agentic Orchestration Desktop App"
              Comments="Installs Hazina Agentic Orchestration as a desktop tray application (Port 5123)" />
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
+
+    <!-- User-configurable properties (set via CredentialsDlg or command line) -->
+    <Property Id="AUTH_USERNAME" Value="admin" Secure="yes" />
+    <Property Id="AUTH_PASSWORD" Secure="yes" Hidden="yes" />
+    <Property Id="AUTH_PASSWORD_CONFIRM" Secure="yes" Hidden="yes" />
+    <Property Id="HOST_NAME" Value="localhost" Secure="yes" />
+    <Property Id="HOST_PORT" Value="5123" Secure="yes" />
+    <Property Id="USE_SSL" Value="1" Secure="yes" />
+    <Property Id="TERMINAL_COMMAND" Value="C:\scripts\claude_agent.bat" Secure="yes" />
+    <Property Id="TERMINAL_WORKDIR" Value="C:\scripts" Secure="yes" />
+    <Property Id="OPENAI_APIKEY" Secure="yes" Hidden="yes" />
+    <Property Id="INSTALL_TAILSCALE" Secure="yes" />
 
     <!-- Kill any running HazinaOrchestration.exe before install/upgrade -->
     <Property Id="TASKKILL" Value="taskkill.exe" />
@@ -38,17 +51,62 @@
                   Execute="immediate"
                   Return="ignore" />
 
+    <!-- ConfigTool custom actions: write all user settings to appsettings.json -->
+
+    <!-- 1. Auth: WixSilentExec (password not logged in MSI log) -->
+    <CustomAction Id="ConfigureAuthArgs" Property="ConfigureAuth"
+                  Value="&quot;[INSTALLFOLDER]HazinaConfigTool.exe&quot; set-auth --username &quot;[AUTH_USERNAME]&quot; --password &quot;[AUTH_PASSWORD]&quot; --config &quot;[INSTALLFOLDER]appsettings.json&quot; --silent --no-backup" />
+    <CustomAction Id="ConfigureAuth" BinaryKey="WixCA" DllEntry="WixSilentExec"
+                  Execute="deferred" Impersonate="no" Return="ignore" />
+
+    <!-- 2. Kestrel: two conditional args (https or http based on SSL checkbox) -->
+    <CustomAction Id="ConfigureKestrelHttpsArgs" Property="ConfigureKestrel"
+                  Value="&quot;[INSTALLFOLDER]HazinaConfigTool.exe&quot; set-kestrel --protocol https --host [HOST_NAME] --port [HOST_PORT] --config &quot;[INSTALLFOLDER]appsettings.json&quot; --silent --no-backup" />
+    <CustomAction Id="ConfigureKestrelHttpArgs" Property="ConfigureKestrel"
+                  Value="&quot;[INSTALLFOLDER]HazinaConfigTool.exe&quot; set-kestrel --protocol http --host [HOST_NAME] --port [HOST_PORT] --config &quot;[INSTALLFOLDER]appsettings.json&quot; --silent --no-backup" />
+    <CustomAction Id="ConfigureKestrel" BinaryKey="WixCA" DllEntry="WixQuietExec"
+                  Execute="deferred" Impersonate="no" Return="ignore" />
+
+    <!-- 3. Terminal: WixQuietExec (no sensitive data) -->
+    <CustomAction Id="ConfigureTerminalArgs" Property="ConfigureTerminal"
+                  Value="&quot;[INSTALLFOLDER]HazinaConfigTool.exe&quot; set-terminal --command &quot;[TERMINAL_COMMAND]&quot; --workdir &quot;[TERMINAL_WORKDIR]&quot; --config &quot;[INSTALLFOLDER]appsettings.json&quot; --silent --no-backup" />
+    <CustomAction Id="ConfigureTerminal" BinaryKey="WixCA" DllEntry="WixQuietExec"
+                  Execute="deferred" Impersonate="no" Return="ignore" />
+
+    <!-- 4. OpenAI: WixSilentExec (API key is sensitive) -->
+    <CustomAction Id="ConfigureOpenAIArgs" Property="ConfigureOpenAI"
+                  Value="&quot;[INSTALLFOLDER]HazinaConfigTool.exe&quot; set-openai --apikey &quot;[OPENAI_APIKEY]&quot; --config &quot;[INSTALLFOLDER]appsettings.json&quot; --silent --no-backup" />
+    <CustomAction Id="ConfigureOpenAI" BinaryKey="WixCA" DllEntry="WixSilentExec"
+                  Execute="deferred" Impersonate="no" Return="ignore" />
+
+    <!-- 5. Tailscale: install via winget (conditional, Return=ignore) -->
+    <CustomAction Id="InstallTailscaleArgs" Property="InstallTailscale"
+                  Value="winget install --id Tailscale.Tailscale --silent --accept-package-agreements --accept-source-agreements" />
+    <CustomAction Id="InstallTailscale" BinaryKey="WixCA" DllEntry="WixQuietExec"
+                  Execute="deferred" Impersonate="no" Return="ignore" />
+
     <InstallExecuteSequence>
       <Custom Action="KillRunningProcess" Before="InstallValidate">1</Custom>
       <Custom Action="StopOldService" After="KillRunningProcess">1</Custom>
       <Custom Action="DeleteOldService" After="StopOldService">1</Custom>
+      <!-- After files installed: configure appsettings.json -->
+      <Custom Action="ConfigureAuthArgs" After="InstallFiles">NOT REMOVE="ALL"</Custom>
+      <Custom Action="ConfigureAuth" After="ConfigureAuthArgs">NOT REMOVE="ALL"</Custom>
+      <Custom Action="ConfigureKestrelHttpsArgs" After="ConfigureAuth">USE_SSL = "1" AND NOT REMOVE="ALL"</Custom>
+      <Custom Action="ConfigureKestrelHttpArgs" After="ConfigureKestrelHttpsArgs">NOT USE_SSL = "1" AND NOT REMOVE="ALL"</Custom>
+      <Custom Action="ConfigureKestrel" After="ConfigureKestrelHttpArgs">NOT REMOVE="ALL"</Custom>
+      <Custom Action="ConfigureTerminalArgs" After="ConfigureKestrel">NOT REMOVE="ALL"</Custom>
+      <Custom Action="ConfigureTerminal" After="ConfigureTerminalArgs">NOT REMOVE="ALL"</Custom>
+      <Custom Action="ConfigureOpenAIArgs" After="ConfigureTerminal">OPENAI_APIKEY AND NOT REMOVE="ALL"</Custom>
+      <Custom Action="ConfigureOpenAI" After="ConfigureOpenAIArgs">OPENAI_APIKEY AND NOT REMOVE="ALL"</Custom>
+      <Custom Action="InstallTailscaleArgs" After="ConfigureOpenAI">INSTALL_TAILSCALE AND NOT REMOVE="ALL"</Custom>
+      <Custom Action="InstallTailscale" After="InstallTailscaleArgs">INSTALL_TAILSCALE AND NOT REMOVE="ALL"</Custom>
     </InstallExecuteSequence>
 
     <Feature Id="ProductFeature" Title="Hazina Agentic Orchestration" Level="1">
       <ComponentRef Id="MainExecutable" />
       <ComponentRef Id="StartMenuShortcut" />
       <ComponentRef Id="AppSettingsConfig" />
-      <ComponentRef Id="ProductionConfig" />
       <ComponentRef Id="Core_web_config" />
       <ComponentRef Id="Core_entities_yaml" />
       <ComponentRef Id="Core_HazinaOrchestration_staticwebassets_endpoints_json" />
@@ -110,6 +168,7 @@
       <DialogRef Id="WelcomeDlg" />
       <DialogRef Id="LicenseAgreementDlg" />
       <DialogRef Id="InstallDirDlg" />
+      <DialogRef Id="CredentialsDlg" />
       <DialogRef Id="VerifyReadyDlg" />
       <DialogRef Id="ExitDialog" />
 
@@ -119,18 +178,20 @@
       <!-- License -> InstallDir -->
       <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">LicenseAccepted = "1"</Publish>
       <Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
-      <!-- InstallDir -> VerifyReady (simplified - no credentials dialog) -->
-      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+      <!-- InstallDir -> Credentials -->
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="CredentialsDlg">1</Publish>
       <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
       <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
       <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish>
-      <!-- VerifyReady -> Back to InstallDir -->
-      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg" Order="1">NOT Installed</Publish>
+      <!-- Credentials -> VerifyReady -->
+      <Publish Dialog="CredentialsDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+      <Publish Dialog="CredentialsDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg">1</Publish>
+      <!-- VerifyReady -> Back to Credentials -->
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="CredentialsDlg" Order="1">NOT Installed</Publish>
       <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2">Installed AND NOT PATCH</Publish>
-      <!-- Exit dialog: launch application -->
-      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApp">
-        WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed
-      </Publish>
+      <!-- Exit dialog: launch application (optional) then close -->
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApp">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1</Publish>
+      <Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
     </UI>
 
   </Product>
@@ -176,10 +237,6 @@
       <File Id="AppSettingsJson" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\appsettings.json" KeyPath="yes" />
     </Component>
 
-    <Component Id="ProductionConfig" Directory="INSTALLFOLDER" Guid="33333333-3333-3333-3333-333333333333">
-      <File Id="AppSettingsProductionJson" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\appsettings.Production.json" KeyPath="yes" />
-    </Component>
-
     <!-- Setup files (for post-install Tailscale/HTTPS configuration) -->
     <Component Id="SetupScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555501">
       <File Id="SetupPs1File" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\Setup.ps1" KeyPath="yes" />
@@ -197,7 +254,7 @@
       <File Id="SetCredentialsPs1File" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\SetCredentials.ps1" KeyPath="yes" />
     </Component>
 
-    <Component Id="ConfigTool" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555505">
+    <Component Id="ConfigTool" Directory="INSTALLFOLDER" Guid="66666666-6666-6666-6666-666666666601">
       <File Id="ConfigToolExe" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\HazinaConfigTool.exe" KeyPath="yes" />
     </Component>
 

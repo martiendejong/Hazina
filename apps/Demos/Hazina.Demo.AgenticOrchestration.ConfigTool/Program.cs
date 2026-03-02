@@ -57,22 +57,24 @@ class Program
         }, configOption, usernameOption, passwordOption, realmOption, enabledOption, verboseOption, silentOption, noBackupOption);
 
         // set-kestrel command
-        var setKestrelCommand = new Command("set-kestrel", "Configure web server (protocol, port, certificates)");
+        var setKestrelCommand = new Command("set-kestrel", "Configure web server (protocol, port, host, certificates)");
         var protocolOption = new Option<string>("--protocol", "HTTP or HTTPS") { IsRequired = true };
         var portOption = new Option<int>("--port", () => 5123, "Port number");
-        var certOption = new Option<string?>("--cert", "TLS certificate path (required for HTTPS)");
-        var keyOption = new Option<string?>("--key", "TLS private key path (required for HTTPS)");
+        var hostOption = new Option<string?>("--host", "Hostname or IP to bind to (default: localhost)");
+        var certOption = new Option<string?>("--cert", "TLS certificate path (for HTTPS with custom cert)");
+        var keyOption = new Option<string?>("--key", "TLS private key path (for HTTPS with custom cert)");
 
         setKestrelCommand.AddOption(protocolOption);
         setKestrelCommand.AddOption(portOption);
+        setKestrelCommand.AddOption(hostOption);
         setKestrelCommand.AddOption(certOption);
         setKestrelCommand.AddOption(keyOption);
 
-        setKestrelCommand.SetHandler(async (configPath, protocol, port, cert, key, verbose, silent, noBackup) =>
+        setKestrelCommand.SetHandler(async (configPath, protocol, port, host, cert, key, verbose, silent, noBackup) =>
         {
-            var exitCode = HandleSetKestrel(configPath, protocol, port, cert, key, verbose, silent, noBackup);
+            var exitCode = HandleSetKestrel(configPath, protocol, port, host, cert, key, verbose, silent, noBackup);
             Environment.ExitCode = exitCode;
-        }, configOption, protocolOption, portOption, certOption, keyOption, verboseOption, silentOption, noBackupOption);
+        }, configOption, protocolOption, portOption, hostOption, certOption, keyOption, verboseOption, silentOption, noBackupOption);
 
         // set-paths command
         var setPathsCommand = new Command("set-paths", "Configure file paths (database, logs, uploads)");
@@ -189,7 +191,7 @@ class Program
         }
     }
 
-    static int HandleSetKestrel(string configPath, string protocol, int port, string? cert, string? key,
+    static int HandleSetKestrel(string configPath, string protocol, int port, string? host, string? cert, string? key,
         bool verbose, bool silent, bool noBackup)
     {
         try
@@ -202,12 +204,12 @@ class Program
                 Console.WriteLine($"Updating Kestrel configuration in: {configPath}");
             }
 
-            configService.UpdateKestrel(root, protocol, port, cert, key);
+            configService.UpdateKestrel(root, protocol, port, host, cert, key);
             configService.WriteJsonNode(configPath, root, !noBackup);
 
             if (!silent)
             {
-                Console.WriteLine($"Kestrel configured: {protocol.ToUpper()}://*:{port}");
+                Console.WriteLine($"Kestrel configured: {protocol.ToUpper()}://{host ?? "localhost"}:{port}");
             }
 
             return 0;
