@@ -10,12 +10,34 @@ public class TaskSchedulerTests : IDisposable
 {
     private readonly string _testConfigPath;
     private readonly string _testScriptsDir;
+    private const string TestTaskSetId = "test-task-set";
 
     public TaskSchedulerTests()
     {
-        _testConfigPath = Path.Combine(Path.GetTempPath(), $"scheduler-test-{Guid.NewGuid()}.json");
+        _testConfigPath = Path.Combine(Path.GetTempPath(), $"scheduler-test-{Guid.NewGuid()}");
         _testScriptsDir = Path.Combine(Path.GetTempPath(), "SchedulerTestScripts");
         Directory.CreateDirectory(_testScriptsDir);
+        Directory.CreateDirectory(_testConfigPath);
+    }
+
+    /// <summary>
+    /// Helper to create and save a test TaskSet
+    /// </summary>
+    private void CreateTestTaskSet(TaskScheduler scheduler)
+    {
+        var taskSetConfig = new TaskSetConfiguration(_testConfigPath);
+        var taskSet = new TaskSet
+        {
+            Id = TestTaskSetId,
+            Name = "Test Task Set",
+            Description = "Task set for unit tests",
+            Enabled = true
+        };
+        taskSetConfig.SaveTaskSet(taskSet);
+        // Reload to pick up the new task set
+        var loadMethod = typeof(TaskScheduler).GetMethod("LoadTaskSets",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        loadMethod?.Invoke(scheduler, null);
     }
 
     [Fact]
@@ -23,6 +45,7 @@ public class TaskSchedulerTests : IDisposable
     {
         // Arrange
         using var scheduler = new TaskScheduler(_testConfigPath);
+        CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
             Id = "test-task",
@@ -32,7 +55,7 @@ public class TaskSchedulerTests : IDisposable
         };
 
         // Act
-        scheduler.AddTask(task);
+        scheduler.AddTask(TestTaskSetId, task);
         var retrieved = scheduler.GetTask("test-task");
 
         // Assert
@@ -47,6 +70,7 @@ public class TaskSchedulerTests : IDisposable
     {
         // Arrange
         using var scheduler = new TaskScheduler(_testConfigPath);
+        CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
             Id = "test-task",
@@ -54,12 +78,12 @@ public class TaskSchedulerTests : IDisposable
             ScriptPath = Path.Combine(_testScriptsDir, "test.ps1"),
             CronExpression = "0 0 * * *"
         };
-        scheduler.AddTask(task);
+        scheduler.AddTask(TestTaskSetId, task);
 
         // Act
         task.Name = "Updated Name";
         task.CronExpression = "0 6 * * *";  // Changed to 6am
-        scheduler.UpdateTask(task);
+        scheduler.UpdateTask(TestTaskSetId, task);
         var retrieved = scheduler.GetTask("test-task");
 
         // Assert
@@ -73,6 +97,7 @@ public class TaskSchedulerTests : IDisposable
     {
         // Arrange
         using var scheduler = new TaskScheduler(_testConfigPath);
+        CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
             Id = "test-task",
@@ -80,7 +105,7 @@ public class TaskSchedulerTests : IDisposable
             ScriptPath = Path.Combine(_testScriptsDir, "test.ps1"),
             CronExpression = "0 0 * * *"
         };
-        scheduler.AddTask(task);
+        scheduler.AddTask(TestTaskSetId, task);
 
         // Act
         var removed = scheduler.RemoveTask("test-task");
@@ -96,9 +121,10 @@ public class TaskSchedulerTests : IDisposable
     {
         // Arrange
         using var scheduler = new TaskScheduler(_testConfigPath);
-        scheduler.AddTask(new ScheduledTask { Id = "task1", Name = "Task 1", ScriptPath = "test.ps1", CronExpression = "0 0 * * *" });
-        scheduler.AddTask(new ScheduledTask { Id = "task2", Name = "Task 2", ScriptPath = "test.ps1", CronExpression = "0 6 * * *" });
-        scheduler.AddTask(new ScheduledTask { Id = "task3", Name = "Task 3", ScriptPath = "test.ps1", CronExpression = "0 12 * * *" });
+        CreateTestTaskSet(scheduler);
+        scheduler.AddTask(TestTaskSetId, new ScheduledTask { Id = "task1", Name = "Task 1", ScriptPath = "test.ps1", CronExpression = "0 0 * * *" });
+        scheduler.AddTask(TestTaskSetId, new ScheduledTask { Id = "task2", Name = "Task 2", ScriptPath = "test.ps1", CronExpression = "0 6 * * *" });
+        scheduler.AddTask(TestTaskSetId, new ScheduledTask { Id = "task3", Name = "Task 3", ScriptPath = "test.ps1", CronExpression = "0 12 * * *" });
 
         // Act
         var tasks = scheduler.GetAllTasks();
@@ -115,6 +141,7 @@ public class TaskSchedulerTests : IDisposable
     {
         // Arrange
         using var scheduler = new TaskScheduler(_testConfigPath);
+        CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
             Id = "test-task",
@@ -123,7 +150,7 @@ public class TaskSchedulerTests : IDisposable
             CronExpression = "0 0 * * *",
             Enabled = false
         };
-        scheduler.AddTask(task);
+        scheduler.AddTask(TestTaskSetId, task);
 
         // Act
         scheduler.EnableTask("test-task");
@@ -140,6 +167,7 @@ public class TaskSchedulerTests : IDisposable
     {
         // Arrange
         using var scheduler = new TaskScheduler(_testConfigPath);
+        CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
             Id = "test-task",
@@ -148,7 +176,7 @@ public class TaskSchedulerTests : IDisposable
             CronExpression = "0 0 * * *",
             Enabled = true
         };
-        scheduler.AddTask(task);
+        scheduler.AddTask(TestTaskSetId, task);
 
         // Act
         scheduler.DisableTask("test-task");
@@ -168,6 +196,7 @@ public class TaskSchedulerTests : IDisposable
         File.WriteAllText(scriptPath, $"'Executed' | Out-File '{outputPath}'");
 
         using var scheduler = new TaskScheduler(_testConfigPath);
+        CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
             Id = "test-task",
@@ -175,7 +204,7 @@ public class TaskSchedulerTests : IDisposable
             ScriptPath = scriptPath,
             CronExpression = "0 0 * * *"
         };
-        scheduler.AddTask(task);
+        scheduler.AddTask(TestTaskSetId, task);
 
         // Act
         scheduler.RunTaskNow("test-task");
@@ -197,6 +226,7 @@ public class TaskSchedulerTests : IDisposable
     {
         // Arrange
         using var scheduler = new TaskScheduler(_testConfigPath);
+        CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
             Id = "test-task",
@@ -206,7 +236,7 @@ public class TaskSchedulerTests : IDisposable
         };
 
         // Act
-        scheduler.AddTask(task);
+        scheduler.AddTask(TestTaskSetId, task);
         var retrieved = scheduler.GetTask("test-task");
 
         // Assert
@@ -226,6 +256,7 @@ public class TaskSchedulerTests : IDisposable
     {
         // Arrange
         using var scheduler = new TaskScheduler(_testConfigPath);
+        CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
             Id = "test-task",
@@ -235,7 +266,7 @@ public class TaskSchedulerTests : IDisposable
         };
 
         // Act
-        scheduler.AddTask(task);
+        scheduler.AddTask(TestTaskSetId, task);
         var retrieved = scheduler.GetTask("test-task");
 
         // Assert
@@ -252,9 +283,24 @@ public class TaskSchedulerTests : IDisposable
         // Cleanup test files
         try
         {
-            if (File.Exists(_testConfigPath))
+            if (Directory.Exists(_testConfigPath))
             {
-                File.Delete(_testConfigPath);
+                Thread.Sleep(100);  // Brief wait for file handles to release
+
+                int attempts = 0;
+                while (attempts < 3 && Directory.Exists(_testConfigPath))
+                {
+                    try
+                    {
+                        Directory.Delete(_testConfigPath, recursive: true);
+                        break;
+                    }
+                    catch (IOException)
+                    {
+                        attempts++;
+                        Thread.Sleep(200 * attempts);
+                    }
+                }
             }
 
             if (Directory.Exists(_testScriptsDir))
