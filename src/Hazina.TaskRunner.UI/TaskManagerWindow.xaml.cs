@@ -19,9 +19,6 @@ public partial class TaskManagerWindow : Window
         _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
         InitializeComponent();
 
-        // Add converter as resource
-        Resources.Add("NullToBoolConverter", new NullToBoolConverter());
-
         LoadTasks();
     }
 

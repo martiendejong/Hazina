@@ -8,6 +8,9 @@
         Title="Hazina Task Manager" Height="600" Width="900"
         WindowStartupLocation="CenterScreen"
         MinWidth="700" MinHeight="400">
+    <Window.Resources>
+        <local:NullToBoolConverter x:Key="NullToBoolConverter"/>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
