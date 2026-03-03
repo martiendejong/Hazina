@@ -11,6 +11,8 @@
     <ProjectReference Include="..\..\Foundation\Hazina.Tools.Core\Hazina.Tools.Core.csproj" />
     <ProjectReference Include="..\..\Foundation\Hazina.Tools.Data\Hazina.Tools.Data.csproj" />
     <ProjectReference Include="..\Hazina.Tools.Services.FileOps\Hazina.Tools.Services.FileOps.csproj" />
+    <ProjectReference Include="..\..\..\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\..\Core\LLMs.Providers\Hazina.LLMs.SemanticKernel\Hazina.LLMs.SemanticKernel.csproj" />
   </ItemGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

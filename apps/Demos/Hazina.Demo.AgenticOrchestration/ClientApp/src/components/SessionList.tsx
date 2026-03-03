@@ -75,7 +75,7 @@ export function SessionList({
                   <span className="session-command" title={session.title ? `Command: ${session.command}` : undefined}>
                     {session.title || session.command}
                   </span>
-                  <span className="session-id">{session.sessionId.slice(0, 8)}...</span>
+                  <span className="session-id" title={session.sessionId}>{session.sessionId}</span>
                 </div>
                 <div className="session-meta">
                   <span className={`status ${session.isRunning ? (session.waitingForInput ? 'waiting' : 'running') : 'stopped'}`}>
@@ -118,7 +118,7 @@ export function SessionList({
                   <span className="session-command external-badge">
                     {instance.worktreeSeat || instance.agentId.slice(0, 16)}
                   </span>
-                  <span className="session-id">{instance.agentId.slice(0, 8)}...</span>
+                  <span className="session-id" title={instance.agentId}>{instance.agentId}</span>
                 </div>
                 <div className="session-meta">
                   <span className="status external">External</span>

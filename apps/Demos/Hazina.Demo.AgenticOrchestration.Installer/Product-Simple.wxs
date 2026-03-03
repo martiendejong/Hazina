@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <?define ProductName = "Hazina Agentic Orchestration" ?>
+  <?define ProductVersion = "1.0.0" ?>
+  <?define Manufacturer = "Hazina Framework" ?>
+  <?define UpgradeCode = "12345678-1234-1234-1234-123456789012" ?>
+
+  <Product Id="*"
+           Name="$(var.ProductName)"
+           Language="1033"
+           Version="$(var.ProductVersion)"
+           Manufacturer="$(var.Manufacturer)"
+           UpgradeCode="$(var.UpgradeCode)">
+
+    <Package InstallerVersion="500"
+             Compressed="yes"
+             InstallScope="perMachine"
+             Description="$(var.ProductName) Installer"
+             Comments="Installs Hazina Agentic Orchestration as a Windows Service (Port 5123)" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Feature: Main Application -->
+    <Feature Id="ProductFeature" Title="Hazina Agentic Orchestration" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="WwwRootComponents" />
+      <ComponentGroupRef Id="WwwRootAssetsComponents" />
+      <ComponentGroupRef Id="DataDirComponents" />
+    </Feature>
+
+    <!-- Simple UI -->
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+  </Product>
+
+  <!-- Directory Structure -->
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="Hazina Orchestration">
+          <Directory Id="WWWROOT" Name="wwwroot">
+            <Directory Id="WWWROOT_ASSETS" Name="assets" />
+          </Directory>
+          <Directory Id="DATADIR" Name="data" />
+          <Directory Id="LOGSDIR" Name="logs">
+            <Directory Id="LOGS_SESSIONS" Name="agent-sessions" />
+          </Directory>
+        </Directory>
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <!-- Main Application Files -->
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <!-- Main executable + config + service registration -->
+      <Component Id="MainExecutable" Guid="11111111-1111-1111-1111-111111111111">
+        <File Id="HazinaOrchestrationExe"
+              Source="$(var.PublishDir)\HazinaOrchestration.exe"
+              KeyPath="yes" />
+
+        <!-- Windows Service registration -->
+        <ServiceInstall Id="ServiceInstaller"
+                        Type="ownProcess"
+                        Name="HazinaOrchestration"
+                        DisplayName="Hazina Agentic Orchestration"
+                        Description="Web-based orchestration interface for managing Claude Code CLI instances (Port 5123)"
+                        Start="auto"
+                        Account="LocalSystem"
+                        ErrorControl="normal"
+                        Interactive="no" />
+
+        <ServiceControl Id="StartService"
+                        Start="install"
+                        Stop="both"
+                        Remove="uninstall"
+                        Name="HazinaOrchestration"
+                        Wait="yes" />
+      </Component>
+
+      <!-- Configuration files (separate component so they can be preserved on upgrade) -->
+      <Component Id="ConfigFiles" Guid="22222222-2222-2222-2222-222222222222">
+        <File Id="AppSettingsJson"
+              Source="$(var.PublishDir)\appsettings.json"
+              KeyPath="yes" />
+      </Component>
+
+      <Component Id="ProductionConfig" Guid="33333333-3333-3333-3333-333333333333">
+        <File Id="AppSettingsProductionJson"
+              Source="$(var.PublishDir)\appsettings.Production.json"
+              KeyPath="yes" />
+      </Component>
+
+      <!-- Static web assets endpoint config (needed by ASP.NET) -->
+      <Component Id="StaticWebAssets" Guid="44444444-4444-4444-4444-444444444444">
+        <File Id="StaticWebAssetsJson"
+              Source="$(var.PublishDir)\HazinaOrchestration.staticwebassets.endpoints.json"
+              KeyPath="yes" />
+      </Component>
+
+      <!-- web.config for IIS reverse proxy (optional) -->
+      <Component Id="WebConfig" Guid="55555555-5555-5555-5555-555555555555">
+        <File Id="WebConfigFile"
+              Source="$(var.PublishDir)\web.config"
+              KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- wwwroot files (React SPA) -->
+  <Fragment>
+    <ComponentGroup Id="WwwRootComponents" Directory="WWWROOT">
+      <Component Id="IndexHtml" Guid="AAAA1111-1111-1111-1111-111111111111">
+        <File Id="IndexHtmlFile"
+              Source="$(var.PublishDir)\wwwroot\index.html"
+              KeyPath="yes" />
+      </Component>
+      <Component Id="ViteSvg" Guid="AAAA2222-2222-2222-2222-222222222222">
+        <File Id="ViteSvgFile"
+              Source="$(var.PublishDir)\wwwroot\vite.svg"
+              KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- wwwroot/assets files (JS + CSS bundles) -->
+  <Fragment>
+    <ComponentGroup Id="WwwRootAssetsComponents" Directory="WWWROOT_ASSETS">
+      <Component Id="AssetsJsBundle" Guid="BBBB1111-1111-1111-1111-111111111111">
+        <File Id="AssetsJsFile"
+              Source="$(var.PublishDir)\wwwroot\assets\index-BOvKJzgs.js"
+              KeyPath="yes" />
+      </Component>
+      <Component Id="AssetsCssBundle" Guid="BBBB2222-2222-2222-2222-222222222222">
+        <File Id="AssetsCssFile"
+              Source="$(var.PublishDir)\wwwroot\assets\index-jxsYKLC3.css"
+              KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- Data and Logs directories (created empty) -->
+  <Fragment>
+    <ComponentGroup Id="DataDirComponents">
+      <Component Id="DataDirectory" Directory="DATADIR" Guid="CCCC1111-1111-1111-1111-111111111111">
+        <CreateFolder />
+      </Component>
+      <Component Id="LogsDirectory" Directory="LOGSDIR" Guid="CCCC2222-2222-2222-2222-222222222222">
+        <CreateFolder />
+      </Component>
+      <Component Id="SessionLogsDirectory" Directory="LOGS_SESSIONS" Guid="CCCC3333-3333-3333-3333-333333333333">
+        <CreateFolder />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+</Wix>

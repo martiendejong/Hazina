@@ -21,6 +21,115 @@
             color: #c9d1d9;
             min-height: 100vh;
             display: flex;
+        }
+
+        .app-container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #161b22;
+            border-right: 1px solid #30363d;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid #30363d;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #8b949e;
+            text-transform: uppercase;
+        }
+
+        .session-list {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .session-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .session-list::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+
+        .session-list::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+
+        .session-list::-webkit-scrollbar-thumb:hover {
+            background: #8b949e;
+        }
+
+        .session-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #30363d;
+            cursor: pointer;
+            transition: background 0.2s;
+            height: 80px;
+            min-height: 80px;
+            max-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        .session-item:hover {
+            background: #21262d;
+        }
+
+        .session-item.active {
+            background: #21262d;
+            border-left: 3px solid #58a6ff;
+        }
+
+        .session-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #c9d1d9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .session-meta {
+            font-size: 0.75rem;
+            color: #8b949e;
+            margin-top: 0.25rem;
+        }
+
+        .session-status {
+            display: inline-block;
+            padding: 0.125rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.625rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .session-status.running {
+            background: #238636;
+            color: #fff;
+        }
+
+        .session-status.exited {
+            background: #8b949e;
+            color: #fff;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
             flex-direction: column;
         }
 
@@ -201,9 +310,113 @@
             display: flex;
             gap: 2rem;
         }
+
+        /* Mobile Back Button */
+        .mobile-back {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1000;
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .mobile-back:hover {
+            background: #30363d;
+        }
+
+        /* Mobile Responsive Layout */
+        @media (max-width: 768px) {
+            .app-container {
+                position: relative;
+            }
+
+            .sidebar {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100vh;
+                z-index: 100;
+                border-right: none;
+            }
+
+            .main-content {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100vh;
+                z-index: 10;
+                display: none;
+            }
+
+            /* When session is active, hide sidebar and show terminal */
+            .app-container.session-active .sidebar {
+                display: none;
+            }
+
+            .app-container.session-active .main-content {
+                display: flex;
+            }
+
+            .app-container.session-active .mobile-back {
+                display: block;
+            }
+
+            /* Adjust header for mobile */
+            header {
+                padding: 1rem;
+            }
+
+            header h1 {
+                font-size: 1.25rem;
+            }
+
+            .controls {
+                flex-wrap: wrap;
+                gap: 0.25rem;
+            }
+
+            button {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.75rem;
+            }
+
+            .toolbar {
+                padding: 0.5rem;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            .toolbar label {
+                display: none;
+            }
+
+            .toolbar input, .toolbar select {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+            }
+        }
     </style>
 </head>
 <body>
+    <div class="app-container">
+        <button class="mobile-back" id="btn-back">← Sessions</button>
+        <div class="sidebar">
+            <div class="sidebar-header">Active Sessions</div>
+            <div class="session-list" id="session-list">
+                <!-- Sessions will be dynamically added here -->
+            </div>
+        </div>
+        <div class="main-content">
     <header>
         <h1><span>Claude</span> Terminal</h1>
         <div class="controls">
@@ -293,6 +506,37 @@
 
                 // Handle resize
                 window.addEventListener('resize', () => this.fitAddon.fit());
+
+                // Handle paste events - read clipboard and send to terminal
+                document.addEventListener('paste', async (e) => {
+                    const terminalElement = container.querySelector('.xterm');
+                    if (!terminalElement) return;
+
+                    // Always prevent default browser paste to avoid duplication
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Give terminal focus if it doesn't have it
+                    const textarea = terminalElement.querySelector('textarea');
+                    if (textarea && document.activeElement !== textarea) {
+                        textarea.focus();
+                    }
+
+                    // Read clipboard and send to terminal
+                    try {
+                        const text = await navigator.clipboard.readText();
+                        if (text && this.currentSessionId && this.isConnected) {
+                            // Send via connection
+                            const encoder = new TextEncoder();
+                            const bytes = Array.from(encoder.encode(text));
+                            this.connection.invoke('SendInput', this.currentSessionId, bytes)
+                                .catch(err => console.error('Failed to send paste:', err));
+                        }
+                    } catch (err) {
+                        console.error('Failed to read clipboard:', err);
+                        // Clipboard read failed - may need user permission
+                    }
+                });
 
                 // Create SignalR connection
                 this.connection = new signalR.HubConnectionBuilder()
@@ -649,6 +893,146 @@
 
         // Initialize voice control after terminal is ready
         const voiceControl = new VoiceControl(client);
+
+        // Session List Management
+        class SessionListManager {
+            constructor(client) {
+                this.client = client;
+                this.sessions = new Map();
+                this.listElement = document.getElementById('session-list');
+                this.setupAutoRefresh();
+            }
+
+            setupAutoRefresh() {
+                // Refresh session list every 2 seconds
+                setInterval(() => this.refreshSessions(), 2000);
+                // Initial load
+                this.refreshSessions();
+            }
+
+            async refreshSessions() {
+                if (!this.client.isConnected) return;
+
+                try {
+                    const sessions = await this.client.connection.invoke('GetSessions');
+                    this.updateSessionList(sessions);
+                } catch (err) {
+                    console.error('Failed to get sessions:', err);
+                }
+            }
+
+            updateSessionList(sessions) {
+                // Remove sessions that no longer exist
+                const sessionIds = new Set(sessions.map(s => s.sessionId));
+                for (const [id, element] of this.sessions.entries()) {
+                    if (!sessionIds.has(id)) {
+                        element.remove();
+                        this.sessions.delete(id);
+                    }
+                }
+
+                // Add or update sessions
+                sessions.forEach(session => {
+                    let element = this.sessions.get(session.sessionId);
+                    if (!element) {
+                        element = this.createSessionElement(session);
+                        this.listElement.appendChild(element);
+                        this.sessions.set(session.sessionId, element);
+                    } else {
+                        this.updateSessionElement(element, session);
+                    }
+
+                    // Mark active session
+                    if (session.sessionId === this.client.currentSessionId) {
+                        element.classList.add('active');
+                    } else {
+                        element.classList.remove('active');
+                    }
+                });
+            }
+
+            createSessionElement(session) {
+                const element = document.createElement('div');
+                element.className = 'session-item';
+                element.dataset.sessionId = session.sessionId;
+
+                element.addEventListener('click', () => {
+                    this.switchToSession(session.sessionId);
+                });
+
+                this.updateSessionElement(element, session);
+                return element;
+            }
+
+            updateSessionElement(element, session) {
+                const status = session.isRunning ? 'running' : 'exited';
+                const statusClass = session.isRunning ? 'running' : 'exited';
+
+                // Truncate command if too long
+                const command = session.command.length > 30
+                    ? session.command.substring(0, 27) + '...'
+                    : session.command;
+
+                element.innerHTML = `
+                    <div class="session-title">${command}</div>
+                    <div class="session-meta">
+                        <span class="session-status ${statusClass}">${status}</span>
+                        <span style="margin-left: 0.5rem;">${session.sessionId.substring(0, 8)}</span>
+                    </div>
+                    <div class="session-meta" style="font-size: 0.625rem;">
+                        ${new Date(session.startedAt).toLocaleTimeString()}
+                    </div>
+                `;
+            }
+
+            async switchToSession(sessionId) {
+                try {
+                    const success = await this.client.connection.invoke('JoinSession', sessionId);
+                    if (success) {
+                        this.client.currentSessionId = sessionId;
+                        this.client.terminal.clear();
+                        this.client.terminal.writeln(`\x1b[32m✓ Switched to session ${sessionId}\x1b[0m\r\n`);
+                        document.getElementById('session-id').textContent = sessionId;
+                        this.refreshSessions(); // Update active indicator
+
+                        // Mobile: Show terminal, hide session list
+                        document.querySelector('.app-container').classList.add('session-active');
+                    }
+                } catch (err) {
+                    console.error('Failed to switch session:', err);
+                    this.client.terminal.writeln(`\x1b[31m✗ Failed to switch to session ${sessionId}\x1b[0m`);
+                }
+            }
+
+            removeSession(sessionId) {
+                const element = this.sessions.get(sessionId);
+                if (element) {
+                    element.remove();
+                    this.sessions.delete(sessionId);
+                }
+            }
+        }
+
+        // Initialize session list manager
+        const sessionListManager = new SessionListManager(client);
+
+        // Modify terminate button to remove from list
+        const originalTerminate = client.terminate.bind(client);
+        client.terminate = async function() {
+            const sessionId = this.currentSessionId;
+            await originalTerminate();
+            if (sessionId) {
+                // Remove from list immediately
+                sessionListManager.removeSession(sessionId);
+            }
+        };
+
+        // Mobile back button handler
+        document.getElementById('btn-back').addEventListener('click', () => {
+            document.querySelector('.app-container').classList.remove('session-active');
+        });
     </script>
+        </div>
+    </div>
 </body>
 </html>

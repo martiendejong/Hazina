@@ -1,0 +1,87 @@
+# Docker Compose for Hazina Terminal Orchestrator
+# Development and production configurations
+
+version: '3.8'
+
+services:
+  # ============================================================================
+  # Terminal Orchestrator API + Frontend
+  # ============================================================================
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hazina-orchestrator
+    ports:
+      - "5000:5000"
+    environment:
+      # Authentication (override in production!)
+      - Authentication__Enabled=true
+      - Authentication__Username=admin
+      - Authentication__Password=changeme
+
+      # Terminal configuration
+      - AgenticOrchestration__Terminal__DefaultCommand=/usr/bin/bash
+      - AgenticOrchestration__Terminal__DefaultColumns=120
+      - AgenticOrchestration__Terminal__DefaultRows=30
+      - AgenticOrchestration__Terminal__MaxConcurrentSessions=10
+
+      # OpenAI configuration (provide via secrets in production)
+      - OpenAI__ApiKey=${OPENAI_API_KEY:-}
+      - OpenAI__Model=gpt-4o-mini
+
+      # Session logging
+      - AgenticOrchestration__SessionLogging__Enabled=true
+
+    volumes:
+      # Persist database and logs
+      - orchestrator-data:/app/data
+      - orchestrator-logs:/app/logs
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    networks:
+      - hazina-network
+
+# ============================================================================
+# Optional: Redis for distributed SignalR (multi-instance deployment)
+# ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: hazina-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - hazina-network
+    # Uncomment to enable Redis backplane in orchestrator
+    # environment:
+    #   - SignalR__UseRedis=true
+    #   - SignalR__RedisConnection=redis:6379
+
+# ============================================================================
+# Volumes for data persistence
+# ============================================================================
+volumes:
+  orchestrator-data:
+    driver: local
+  orchestrator-logs:
+    driver: local
+  redis-data:
+    driver: local
+
+# ============================================================================
+# Network
+# ============================================================================
+networks:
+  hazina-network:
+    driver: bridge

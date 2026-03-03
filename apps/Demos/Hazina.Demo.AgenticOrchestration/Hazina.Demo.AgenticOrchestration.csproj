@@ -1,17 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Hazina.Demo.AgenticOrchestration</RootNamespace>
     <SpaRoot>ClientApp\</SpaRoot>
     <SpaProxyServerUrl>http://localhost:5173</SpaProxyServerUrl>
+    <ApplicationIcon>app.ico</ApplicationIcon>
 
     <!-- Assembly info for published executables -->
     <AssemblyName>HazinaOrchestration</AssemblyName>
     <Product>Hazina Agentic Orchestration</Product>
-    <Description>Web-based orchestration interface for managing Claude Code CLI instances</Description>
+    <Description>Desktop tray application for managing Claude Code CLI instances</Description>
     <Version>1.0.0</Version>
 
     <!-- Publishing defaults -->
@@ -37,6 +41,11 @@
     <!-- ASP.NET Core -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Tray icon embedded resource -->
+    <EmbeddedResource Include="app.ico" LogicalName="Hazina.Demo.AgenticOrchestration.app.ico" />
   </ItemGroup>
 
   <ItemGroup>

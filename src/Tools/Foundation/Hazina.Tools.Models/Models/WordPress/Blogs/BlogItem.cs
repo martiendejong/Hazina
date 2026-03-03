@@ -14,6 +14,9 @@ namespace HazinaStore.Models
         public DateTime? PublishedDateTime { get; set; }
         public string WordpressPostId { get; set; }
         public int WordpressCategoryId { get; set; }
+        public string WordpressUrl { get; set; }
+        public string WordpressAccountId { get; set; }
+        public DateTime? WordpressSyncedAt { get; set; }
     }
 }
 

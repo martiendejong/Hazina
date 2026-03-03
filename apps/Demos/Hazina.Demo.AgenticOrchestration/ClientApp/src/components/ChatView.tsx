@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import * as signalR from '@microsoft/signalr'
 import { authFetch } from '../auth'
 import { useVoiceControl } from '../hooks/useVoiceControl'
-import type { ChatMessage, ToolCall } from '../types'
+import type { ChatMessage } from '../types'
 
 interface ChatViewProps {
   onClose: () => void
@@ -11,8 +12,9 @@ export function ChatView({ onClose }: ChatViewProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [sessionId] = useState(() => `chat-${Date.now()}`)
   const [error, setError] = useState<string | null>(null)
+  const [connection, setConnection] = useState<signalR.HubConnection | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -36,9 +38,76 @@ export function ChatView({ onClose }: ChatViewProps) {
     inputRef.current?.focus()
   }, [])
 
+  // SignalR connection setup
+  useEffect(() => {
+    const baseUrl = window.location.origin
+    const hubUrl = `${baseUrl}/hubs/agentic`
+
+    const newConnection = new signalR.HubConnectionBuilder()
+      .withUrl(hubUrl)
+      .withAutomaticReconnect()
+      .build()
+
+    // Handle chat chunk events
+    newConnection.on('ChatChunk', (data: { sessionId: string, chunk: string, timestamp: string }) => {
+      if (data.sessionId === sessionId) {
+        setMessages(prev => {
+          const lastMessage = prev[prev.length - 1]
+          if (lastMessage && lastMessage.role === 'assistant' && lastMessage.isStreaming) {
+            return [
+              ...prev.slice(0, -1),
+              { ...lastMessage, content: lastMessage.content + data.chunk }
+            ]
+          }
+          return prev
+        })
+      }
+    })
+
+    // Handle chat complete events
+    newConnection.on('ChatComplete', (data: { sessionId: string, message: string, tokensUsed: number, timestamp: string }) => {
+      if (data.sessionId === sessionId) {
+        setMessages(prev => {
+          const lastMessage = prev[prev.length - 1]
+          if (lastMessage && lastMessage.role === 'assistant' && lastMessage.isStreaming) {
+            return [
+              ...prev.slice(0, -1),
+              { ...lastMessage, content: data.message, isStreaming: false }
+            ]
+          }
+          return prev
+        })
+        setIsLoading(false)
+      }
+    })
+
+    // Start connection
+    newConnection.start()
+      .then(() => {
+        console.log('SignalR connected to chat hub')
+        // Join the chat session group
+        return newConnection.invoke('JoinChatSession', sessionId)
+      })
+      .then(() => {
+        console.log(`Joined chat session group: chat-${sessionId}`)
+      })
+      .catch(err => {
+        console.error('SignalR connection error:', err)
+        setError('Failed to connect to chat service')
+      })
+
+    setConnection(newConnection)
+
+    // Cleanup
+    return () => {
+      newConnection.invoke('LeaveChatSession', sessionId).catch(console.error)
+      newConnection.stop()
+    }
+  }, [sessionId])
+
   const sendMessage = async () => {
     const trimmedInput = input.trim()
-    if (!trimmedInput || isLoading) return
+    if (!trimmedInput || isLoading || !connection) return
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
@@ -53,109 +122,49 @@ export function ChatView({ onClose }: ChatViewProps) {
     setError(null)
 
     // Add placeholder for assistant message
-    const assistantMessageId = crypto.randomUUID()
-    setMessages(prev => [...prev, {
-      id: assistantMessageId,
+    const assistantMessage: ChatMessage = {
+      id: crypto.randomUUID(),
       role: 'assistant',
       content: '',
       timestamp: new Date().toISOString(),
       isStreaming: true
-    }])
+    }
+    setMessages(prev => [...prev, assistantMessage])
 
     try {
-      const response = await authFetch('/api/chat/messages', {
+      const response = await authFetch(`/api/chat/${sessionId}/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: trimmedInput,
-          conversationId
+          message: trimmedInput
         })
       })
 
       if (!response.ok) {
-        throw new Error(`Chat request failed: ${response.statusText}`)
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Chat request failed: ${response.statusText}`)
       }
 
-      // Handle streaming response
-      const reader = response.body?.getReader()
-      if (!reader) {
-        throw new Error('No response body')
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.errorMessage || 'Chat request failed')
       }
 
-      const decoder = new TextDecoder()
-      let fullContent = ''
-      let toolCalls: ToolCall[] = []
-      let newConversationId = conversationId
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n')
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6)
-            if (data === '[DONE]') continue
-
-            try {
-              const parsed = JSON.parse(data)
-
-              if (parsed.conversationId) {
-                newConversationId = parsed.conversationId
-              }
-
-              if (parsed.type === 'content') {
-                fullContent += parsed.content
-                setMessages(prev => prev.map(m =>
-                  m.id === assistantMessageId
-                    ? { ...m, content: fullContent, isStreaming: true }
-                    : m
-                ))
-              } else if (parsed.type === 'tool_call') {
-                toolCalls = [...toolCalls, parsed.toolCall]
-                setMessages(prev => prev.map(m =>
-                  m.id === assistantMessageId
-                    ? { ...m, toolCalls, isStreaming: true }
-                    : m
-                ))
-              } else if (parsed.type === 'tool_result') {
-                const updatedToolCalls = toolCalls.map(tc =>
-                  tc.id === parsed.toolCallId
-                    ? { ...tc, result: parsed.result }
-                    : tc
-                )
-                toolCalls = updatedToolCalls
-                setMessages(prev => prev.map(m =>
-                  m.id === assistantMessageId
-                    ? { ...m, toolCalls: updatedToolCalls, isStreaming: true }
-                    : m
-                ))
-              }
-            } catch {
-              // Skip malformed JSON
-            }
-          }
-        }
-      }
-
-      // Mark message as complete
-      setMessages(prev => prev.map(m =>
-        m.id === assistantMessageId
-          ? { ...m, isStreaming: false }
-          : m
-      ))
-
-      if (newConversationId) {
-        setConversationId(newConversationId)
+      // SignalR will handle the streaming response via ChatChunk/ChatComplete events
+      // If response arrives before SignalR events, update message directly
+      if (result.message) {
+        setMessages(prev => prev.map(m =>
+          m.id === assistantMessage.id
+            ? { ...m, content: result.message, isStreaming: false }
+            : m
+        ))
+        setIsLoading(false)
       }
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send message')
       // Remove the placeholder assistant message
-      setMessages(prev => prev.filter(m => m.id !== assistantMessageId))
-    } finally {
+      setMessages(prev => prev.filter(m => m.id !== assistantMessage.id))
       setIsLoading(false)
     }
   }
@@ -167,29 +176,16 @@ export function ChatView({ onClose }: ChatViewProps) {
     }
   }
 
-  const clearChat = () => {
-    setMessages([])
-    setConversationId(null)
-    setError(null)
-  }
-
-  const formatToolCall = (toolCall: ToolCall) => {
-    const args = JSON.stringify(toolCall.arguments, null, 2)
-    return (
-      <div className="tool-call" key={toolCall.id}>
-        <div className="tool-call-header">
-          <span className="tool-icon">🔧</span>
-          <span className="tool-name">{toolCall.name}</span>
-        </div>
-        <pre className="tool-args">{args}</pre>
-        {toolCall.result && (
-          <div className="tool-result">
-            <span className="tool-result-label">Result:</span>
-            <pre>{toolCall.result}</pre>
-          </div>
-        )}
-      </div>
-    )
+  const clearChat = async () => {
+    try {
+      await authFetch(`/api/chat/${sessionId}`, {
+        method: 'DELETE'
+      })
+      setMessages([])
+      setError(null)
+    } catch (err) {
+      console.error('Failed to clear chat:', err)
+    }
   }
 
   return (
@@ -223,17 +219,17 @@ export function ChatView({ onClose }: ChatViewProps) {
             <h3>Welcome to Hazina Agent</h3>
             <p>I can help you manage terminal sessions. Try asking:</p>
             <ul className="welcome-suggestions">
-              <li onClick={() => setInput("What sessions are currently running?")}>
-                "What sessions are currently running?"
+              <li onClick={() => setInput("How many sessions are running?")}>
+                "How many sessions are running?"
               </li>
-              <li onClick={() => setInput("Start a new Claude agent to work on ClickUp tasks")}>
-                "Start a new Claude agent to work on ClickUp tasks"
+              <li onClick={() => setInput("Show me all sessions")}>
+                "Show me all sessions"
               </li>
-              <li onClick={() => setInput("Send Ctrl+C to the first session")}>
-                "Send Ctrl+C to the first session"
+              <li onClick={() => setInput("What's the system status?")}>
+                "What's the system status?"
               </li>
-              <li onClick={() => setInput("Terminate all stopped sessions")}>
-                "Terminate all stopped sessions"
+              <li onClick={() => setInput("Find sessions related to claude")}>
+                "Find sessions related to claude"
               </li>
             </ul>
           </div>
@@ -245,14 +241,9 @@ export function ChatView({ onClose }: ChatViewProps) {
               {message.role === 'user' ? '👤' : '🤖'}
             </div>
             <div className="message-content">
-              {message.toolCalls && message.toolCalls.length > 0 && (
-                <div className="tool-calls">
-                  {message.toolCalls.map(formatToolCall)}
-                </div>
-              )}
               <div className="message-text">
-                {message.content}
-                {message.isStreaming && <span className="cursor-blink">▊</span>}
+                {message.content || (message.isStreaming ? 'Thinking...' : '')}
+                {message.isStreaming && message.content && <span className="cursor-blink">▊</span>}
               </div>
               <div className="message-time">
                 {new Date(message.timestamp).toLocaleTimeString()}
@@ -292,7 +283,7 @@ export function ChatView({ onClose }: ChatViewProps) {
         <button
           className="btn-send"
           onClick={sendMessage}
-          disabled={!input.trim() || isLoading}
+          disabled={!input.trim() || isLoading || !connection}
         >
           {isLoading ? (
             <span className="loading-spinner">⏳</span>

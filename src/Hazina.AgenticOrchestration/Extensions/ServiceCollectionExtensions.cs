@@ -1,6 +1,7 @@
 using Hazina.AgenticOrchestration.Data;
 using Hazina.AgenticOrchestration.Hubs;
 using Hazina.AgenticOrchestration.Services;
+using Hazina.AgenticOrchestration.Services.Chat;
 using Hazina.AgenticOrchestration.Terminal;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
@@ -83,6 +84,8 @@ public static class ServiceCollectionExtensions
                 opt.DefaultArguments = options.DefaultArguments;
                 opt.EnableSessionLogging = options.EnableSessionLogging;
                 opt.AgentSessionLogsPath = options.AgentSessionLogsPath;
+                opt.UploadsPath = options.UploadsPath;
+                opt.MaxUploadFileSizeMB = options.MaxUploadFileSizeMB;
             });
 
         // Register core services
@@ -132,6 +135,9 @@ public static class ServiceCollectionExtensions
 
         // Register Prompt Template Service for predefined prompts
         services.AddSingleton<IPromptTemplateService, PromptTemplateService>();
+
+        // Register OrchestrationChatService for LLM-powered chat
+        services.AddSingleton<OrchestrationChatService>();
 
         return services;
     }
@@ -269,4 +275,16 @@ public class AgenticOrchestrationOptions
     /// Default: C:\scripts\logs\agent-sessions
     /// </summary>
     public string AgentSessionLogsPath { get; set; } = @"C:\scripts\logs\agent-sessions";
+
+    /// <summary>
+    /// Path for uploaded files.
+    /// Default: uploads (relative to app directory)
+    /// </summary>
+    public string? UploadsPath { get; set; }
+
+    /// <summary>
+    /// Maximum upload file size in megabytes.
+    /// Default: 50
+    /// </summary>
+    public int MaxUploadFileSizeMB { get; set; } = 50;
 }

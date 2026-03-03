@@ -1,4 +1,6 @@
 using System.Data.SQLite;
+using System.Reflection;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Hazina.AgenticOrchestration.Terminal;
@@ -858,6 +860,116 @@ public class TerminalController : ControllerBase
             TotalCount = terminalSessions.Count + externalInstances.Count
         });
     }
+
+    /// <summary>
+    /// Get application version
+    /// </summary>
+    [HttpGet("version")]
+    public ActionResult GetVersion()
+    {
+        var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+        var version = assembly.GetName().Version?.ToString() ?? "0.0.0";
+        var informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+
+        return Ok(new
+        {
+            version = informationalVersion ?? version,
+            assemblyVersion = version
+        });
+    }
+
+    /// <summary>
+    /// Upload a file to the server
+    /// </summary>
+    [HttpPost("upload")]
+    [RequestSizeLimit(100_000_000)] // 100MB hard limit
+    public async Task<ActionResult> UploadFile(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { error = "No file provided" });
+        }
+
+        var uploadsPath = _options.UploadsPath;
+        if (string.IsNullOrEmpty(uploadsPath))
+        {
+            return StatusCode(500, new { error = "Uploads not configured" });
+        }
+
+        var maxSizeBytes = (long)_options.MaxUploadFileSizeMB * 1024 * 1024;
+        if (file.Length > maxSizeBytes)
+        {
+            return BadRequest(new { error = $"File too large. Maximum size: {_options.MaxUploadFileSizeMB}MB" });
+        }
+
+        try
+        {
+            Directory.CreateDirectory(uploadsPath);
+
+            var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            var guid = Guid.NewGuid().ToString("N")[..8];
+            var safeFileName = Path.GetFileName(file.FileName); // Strip path components
+            var uniqueName = $"{timestamp}_{guid}_{safeFileName}";
+            var filePath = Path.Combine(uploadsPath, uniqueName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            _logger.LogInformation("File uploaded: {FileName} ({Size} bytes) -> {Path}",
+                safeFileName, file.Length, filePath);
+
+            return Ok(new UploadResponseDto
+            {
+                FileName = uniqueName,
+                OriginalName = safeFileName,
+                Size = file.Length
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to upload file {FileName}", file.FileName);
+            return StatusCode(500, new { error = "Failed to upload file" });
+        }
+    }
+
+    /// <summary>
+    /// List uploaded files
+    /// </summary>
+    [HttpGet("uploads")]
+    public ActionResult GetUploadedFiles()
+    {
+        var uploadsPath = _options.UploadsPath;
+        if (string.IsNullOrEmpty(uploadsPath) || !Directory.Exists(uploadsPath))
+        {
+            return Ok(new { files = Array.Empty<object>(), totalCount = 0 });
+        }
+
+        try
+        {
+            var files = Directory.GetFiles(uploadsPath)
+                .Select(path =>
+                {
+                    var fileInfo = new FileInfo(path);
+                    return new UploadedFileDto
+                    {
+                        FileName = fileInfo.Name,
+                        Size = fileInfo.Length,
+                        UploadedAt = fileInfo.CreationTime
+                    };
+                })
+                .OrderByDescending(f => f.UploadedAt)
+                .ToList();
+
+            return Ok(new { files, totalCount = files.Count });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to list uploaded files");
+            return StatusCode(500, new { error = "Failed to list files" });
+        }
+    }
 }
 
 public class CreateTerminalSessionRequest
@@ -1009,4 +1121,18 @@ public class SessionLogResponse
     public string SessionId { get; set; } = "";
     public string Content { get; set; } = "";
     public long TotalBytes { get; set; }
+}
+
+public class UploadResponseDto
+{
+    public string FileName { get; set; } = "";
+    public string OriginalName { get; set; } = "";
+    public long Size { get; set; }
+}
+
+public class UploadedFileDto
+{
+    public string FileName { get; set; } = "";
+    public long Size { get; set; }
+    public DateTime UploadedAt { get; set; }
 }

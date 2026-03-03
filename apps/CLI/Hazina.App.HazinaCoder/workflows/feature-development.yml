@@ -1,0 +1,117 @@
+# Feature Development Workflow
+# Enforces the 7-step process that was documented but not enforced
+# Prevents disasters like the 869c1w3d4 incident
+
+name: "Feature Development"
+description: "Complete workflow for implementing a ClickUp task with PR creation"
+
+variables:
+  clickup_api_key: "${CLICKUP_API_KEY}"
+  github_token: "${GITHUB_TOKEN}"
+  working_directory: "C:\\scripts"
+
+steps:
+  - name: "Read ClickUp Task Requirements"
+    type: read_clickup_task
+    required: true
+    parameters:
+      task_id: "${TASK_ID}"
+    validation:
+      require_output: true
+      error_message: "Failed to fetch ClickUp task - check task ID and API key"
+    timeout_seconds: 30
+
+  - name: "Investigate Codebase"
+    type: investigate_codebase
+    required: true
+    prerequisites:
+      - "Read ClickUp Task Requirements"
+    parameters:
+      search_patterns:
+        - "*.cs"
+        - "*.tsx"
+        - "*.ts"
+    validation:
+      require_output: true
+      condition: "file_count > 0"
+      error_message: "No relevant files found in codebase"
+    timeout_seconds: 60
+
+  - name: "Allocate Worktree"
+    type: allocate_worktree
+    required: true
+    prerequisites:
+      - "Investigate Codebase"
+    parameters:
+      repo: "${REPO}"
+      branch_name: "agent-${AGENT_SEAT}-${TASK_ID}"
+    validation:
+      file_exists: "${WORKTREE_PATH}"
+      error_message: "Worktree not created at expected location"
+    rollback_on_failure: true
+    rollback_step: "release_worktree"
+    timeout_seconds: 120
+
+  - name: "Implement Changes"
+    type: implement_changes
+    required: true
+    prerequisites:
+      - "Allocate Worktree"
+    parameters:
+      requirements: "${Read ClickUp Task Requirements.output}"
+      relevant_files: "${Investigate Codebase.output.relevantFiles}"
+    validation:
+      condition: "changes_made == true"
+      error_message: "No code changes made - only placeholder comments added"
+    timeout_seconds: 1800  # 30 minutes for implementation
+
+  - name: "Merge Develop Branch"
+    type: merge_develop
+    required: true
+    prerequisites:
+      - "Implement Changes"
+    parameters:
+      worktree_path: "${WORKTREE_PATH}"
+    validation:
+      condition: "exit_code == 0"
+      error_message: "Merge conflicts detected - manual resolution required"
+    timeout_seconds: 60
+
+  - name: "Build and Test"
+    type: build_test
+    required: true
+    prerequisites:
+      - "Merge Develop Branch"
+    parameters:
+      worktree_path: "${WORKTREE_PATH}"
+      configuration: "Release"
+    validation:
+      condition: "exit_code == 0"
+      error_message: "Build or tests failed - fix before creating PR"
+    timeout_seconds: 600  # 10 minutes for build + tests
+
+  - name: "Create Pull Request"
+    type: create_pr
+    required: true
+    prerequisites:
+      - "Build and Test"
+    parameters:
+      base: "develop"
+      head: "agent-${AGENT_SEAT}-${TASK_ID}"
+      title: "feat: ${Read ClickUp Task Requirements.output.title}"
+      body: "Fixes ClickUp Task ${TASK_ID}\n\n${Read ClickUp Task Requirements.output.description}"
+    validation:
+      require_output: true
+      error_message: "PR creation failed"
+    timeout_seconds: 30
+
+  - name: "Update ClickUp with PR Link"
+    type: update_clickup
+    required: false  # Nice to have, not critical
+    prerequisites:
+      - "Create Pull Request"
+    parameters:
+      task_id: "${TASK_ID}"
+      pr_url: "${Create Pull Request.output.prUrl}"
+      status: "ready for review"
+    timeout_seconds: 30

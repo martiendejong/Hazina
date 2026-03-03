@@ -199,6 +199,9 @@ public class TerminalSession : ITerminalSession
         startInfo.Environment["COLUMNS"] = _config.Columns.ToString();
         startInfo.Environment["LINES"] = _config.Rows.ToString();
 
+        // Pass session ID to child process for log file naming consistency
+        startInfo.Environment["ORCHESTRATION_SESSION_ID"] = SessionId;
+
         // Add custom environment variables
         foreach (var (key, value) in _config.Environment)
         {

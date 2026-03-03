@@ -33,6 +33,30 @@ public class SqliteSocialAccountStore : ISocialAccountStore
         return connection;
     }
 
+    private async Task TryAddColumnAsync(SqliteConnection connection, string tableName, string columnName, string columnDefinition, CancellationToken cancellationToken)
+    {
+        // Check if column already exists
+        var checkSql = $"SELECT COUNT(*) FROM pragma_table_info('{tableName}') WHERE name = @columnName;";
+        using var checkCmd = connection.CreateCommand();
+        checkCmd.CommandText = checkSql;
+        checkCmd.Parameters.AddWithValue("@columnName", columnName);
+
+        var exists = Convert.ToInt32(await checkCmd.ExecuteScalarAsync(cancellationToken)) > 0;
+
+        if (exists)
+        {
+            _logger.LogTrace("Migration: Column {ColumnName} already exists in {TableName}, skipping", columnName, tableName);
+            return;
+        }
+
+        // Column doesn't exist, add it
+        var sql = $"ALTER TABLE {tableName} ADD COLUMN {columnName} {columnDefinition};";
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = sql;
+        await cmd.ExecuteNonQueryAsync(cancellationToken);
+        _logger.LogDebug("Migration: Added column {ColumnName} to {TableName}", columnName, tableName);
+    }
+
     private async Task EnsureSchemaAsync(SqliteConnection connection, CancellationToken cancellationToken)
     {
         var sql = @"
@@ -68,36 +92,12 @@ public class SqliteSocialAccountStore : ISocialAccountStore
         command.CommandText = sql;
         await command.ExecuteNonQueryAsync(cancellationToken);
 
-        // Migration: Add new columns to existing tables (safe for both new and existing databases)
-        var migrationSql = @"
-            -- Add auth_type column (default: OAuth = 1)
-            ALTER TABLE connected_accounts ADD COLUMN auth_type INTEGER DEFAULT 1;
-
-            -- Add permissions column (default: ImportPosts | ImportImages = 9)
-            ALTER TABLE connected_accounts ADD COLUMN permissions INTEGER DEFAULT 9;
-
-            -- Add provider_category column (default: social-network)
-            ALTER TABLE connected_accounts ADD COLUMN provider_category TEXT DEFAULT 'social-network';
-
-            -- Add base_url column (nullable)
-            ALTER TABLE connected_accounts ADD COLUMN base_url TEXT;
-
-            -- Add credentials column (default: empty JSON object)
-            ALTER TABLE connected_accounts ADD COLUMN credentials TEXT DEFAULT '{}';
-        ";
-
-        try
-        {
-            using var migrationCmd = connection.CreateCommand();
-            migrationCmd.CommandText = migrationSql;
-            await migrationCmd.ExecuteNonQueryAsync(cancellationToken);
-            _logger.LogDebug("Migration: Added new columns to connected_accounts table");
-        }
-        catch (SqliteException ex) when (ex.Message.Contains("duplicate column name"))
-        {
-            // Columns already exist - this is expected for databases that have already been migrated
-            _logger.LogDebug("Migration: Columns already exist, skipping");
-        }
+        // Migration: Add new columns to existing tables if they don't already exist
+        await TryAddColumnAsync(connection, "connected_accounts", "auth_type", "INTEGER DEFAULT 1", cancellationToken);
+        await TryAddColumnAsync(connection, "connected_accounts", "permissions", "INTEGER DEFAULT 9", cancellationToken);
+        await TryAddColumnAsync(connection, "connected_accounts", "provider_category", "TEXT DEFAULT 'social-network'", cancellationToken);
+        await TryAddColumnAsync(connection, "connected_accounts", "base_url", "TEXT", cancellationToken);
+        await TryAddColumnAsync(connection, "connected_accounts", "credentials", "TEXT DEFAULT '{}'", cancellationToken);
     }
 
     public async Task SaveAccountAsync(

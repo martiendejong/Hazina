@@ -16,7 +16,7 @@ namespace Hazina.Tools.Models
 
     public class ContentHooksFinal : Serializer<ContentHooksFinal>
     {
-        public List<ContentHookFinal> ContentHooks { get; set; } = new();
+        public List<ContentHookFinal> ContentHooks { get; set; } = new List<ContentHookFinal>();
     }
 }
 
