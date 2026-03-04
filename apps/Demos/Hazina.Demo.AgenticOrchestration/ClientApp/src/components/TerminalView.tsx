@@ -55,9 +55,10 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
       if (!sanitized) return
 
-      // Send the text as input with a newline to execute
+      // Send the text as input with a carriage return to execute
+      // ConPTY expects \r (carriage return) for Enter, not \n (line feed)
       const encoder = new TextEncoder()
-      const bytes = Array.from(encoder.encode(sanitized + '\n'))
+      const bytes = Array.from(encoder.encode(sanitized + '\r'))
       connection.current.invoke('SendInput', sessionId, bytes)
         .catch(err => console.error('SendInput (voice) failed:', err))
 
@@ -73,7 +74,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const handleSendMobileInput = useCallback(() => {
     if (connection.current?.state === signalR.HubConnectionState.Connected && mobileInput.trim()) {
       const encoder = new TextEncoder()
-      const bytes = Array.from(encoder.encode(mobileInput + '\n'))
+      // ConPTY expects \r (carriage return) for Enter, not \n (line feed)
+      const bytes = Array.from(encoder.encode(mobileInput + '\r'))
       connection.current.invoke('SendInput', sessionId, bytes)
         .catch(err => console.error('SendInput (mobile) failed:', err))
       setMobileInput('')
@@ -750,7 +752,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         // IMPORTANT: Also send the context to Claude so it understands the conversation history
         // We send it as input with a clear instruction that this is restored context
         try {
-          const contextInstruction = `This is a RESTORED SESSION. The conversation history above should be understood as prior context. Please briefly acknowledge that you understand this context and are ready to continue helping with the same task.\n`
+          const contextInstruction = `This is a RESTORED SESSION. The conversation history above should be understood as prior context. Please briefly acknowledge that you understand this context and are ready to continue helping with the same task.\r`
 
           const encoder = new TextEncoder()
           const bytes = Array.from(encoder.encode(contextInstruction))
