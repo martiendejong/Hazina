@@ -10,6 +10,12 @@ export interface TerminalSession {
   exitCode?: number
 }
 
+/** User-defined properties for a session (persisted in localStorage) */
+export interface SessionProperties {
+  customName?: string
+  cardColor?: string
+}
+
 export interface ExternalClaudeInstance {
   agentId: string
   sessionId?: string
