@@ -15,6 +15,9 @@ public static class ServiceCollectionExtensions
         // Register HTTP client factory if not already registered
         services.AddHttpClient();
 
+        // Register usage tracker as singleton (persistent across requests)
+        services.AddSingleton<UsageTracker>();
+
         // Register OpenCode service
         services.AddSingleton<IOpenCodeService, OpenCodeService>();
 
