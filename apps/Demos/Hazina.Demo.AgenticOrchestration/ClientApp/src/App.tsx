@@ -393,8 +393,10 @@ function App() {
                     externalInstances={externalInstances}
                     selectedSession={activeSessionId}
                     loading={loading}
+                    sessionProperties={sessionProperties}
                     onSelect={handleSelectSession}
                     onTerminate={handleTerminateSession}
+                    onEditProperties={handleEditProperties}
                   />
                 }
                 right={
@@ -406,6 +408,7 @@ function App() {
                       onTitleChanged={handleTitleChanged}
                       pendingRestore={pendingRestore?.sessionId === activeSessionId ? pendingRestore : undefined}
                       onRestoreComplete={handleRestoreComplete}
+                      onEditProperties={handleEditProperties}
                     />
                   ) : (
                     <div className="no-session">
