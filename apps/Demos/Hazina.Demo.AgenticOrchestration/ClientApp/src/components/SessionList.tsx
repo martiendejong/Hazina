@@ -83,8 +83,7 @@ export function SessionList({
                   className={`session-item ${selectedSession === session.sessionId ? 'selected' : ''} ${session.isRunning ? (session.waitingForInput ? 'waiting' : 'running') : 'stopped'}`}
                   onClick={() => onSelect(session.sessionId)}
                   style={cardColor ? {
-                    borderLeftColor: cardColor,
-                    borderLeftWidth: '3px'
+                    background: `color-mix(in srgb, ${cardColor} 50%, #21262d)`,
                   } : undefined}
                 >
                   <div className="session-info">
