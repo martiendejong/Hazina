@@ -1,12 +1,14 @@
-import type { TerminalSession, ExternalClaudeInstance } from '../types'
+import type { TerminalSession, ExternalClaudeInstance, SessionProperties } from '../types'
 
 interface SessionListProps {
   sessions: TerminalSession[]
   externalInstances: ExternalClaudeInstance[]
   selectedSession: string | null
   loading: boolean
+  sessionProperties: Record<string, SessionProperties>
   onSelect: (sessionId: string) => void
   onTerminate: (sessionId: string) => void
+  onEditProperties: (sessionId: string) => void
 }
 
 export function SessionList({
@@ -14,8 +16,10 @@ export function SessionList({
   externalInstances,
   selectedSession,
   loading,
+  sessionProperties,
   onSelect,
-  onTerminate
+  onTerminate,
+  onEditProperties
 }: SessionListProps) {
   if (loading) {
     return (
@@ -43,6 +47,11 @@ export function SessionList({
     return `${diffHour}h ago`
   }
 
+  const getDisplayName = (session: TerminalSession) => {
+    const props = sessionProperties[session.sessionId]
+    return props?.customName || session.title || session.command
+  }
+
   const totalCount = sessions.length + externalInstances.length
 
   if (totalCount === 0) {
@@ -65,38 +74,61 @@ export function SessionList({
             <span className="icon">🖥️</span> Terminal Sessions
           </h3>
           <ul>
-            {sessions.map(session => (
-              <li
-                key={session.sessionId}
-                className={`session-item ${selectedSession === session.sessionId ? 'selected' : ''} ${session.isRunning ? (session.waitingForInput ? 'waiting' : 'running') : 'stopped'}`}
-                onClick={() => onSelect(session.sessionId)}
-              >
-                <div className="session-info">
-                  <span className="session-command" title={session.title ? `Command: ${session.command}` : undefined}>
-                    {session.title || session.command}
-                  </span>
-                  <span className="session-id" title={session.sessionId}>{session.sessionId}</span>
-                </div>
-                <div className="session-meta">
-                  <span className={`status ${session.isRunning ? (session.waitingForInput ? 'waiting' : 'running') : 'stopped'}`}>
-                    {session.isRunning
-                      ? (session.waitingForInput ? 'Question' : 'Running')
-                      : `Exited (${session.exitCode})`}
-                  </span>
-                  <span className="start-time">{formatTime(session.startedAt)}</span>
-                </div>
-                <button
-                  className="btn-terminate"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onTerminate(session.sessionId)
-                  }}
-                  title="Terminate session"
+            {sessions.map(session => {
+              const props = sessionProperties[session.sessionId]
+              const cardColor = props?.cardColor
+              return (
+                <li
+                  key={session.sessionId}
+                  className={`session-item ${selectedSession === session.sessionId ? 'selected' : ''} ${session.isRunning ? (session.waitingForInput ? 'waiting' : 'running') : 'stopped'}`}
+                  onClick={() => onSelect(session.sessionId)}
+                  style={cardColor ? {
+                    background: `color-mix(in srgb, ${cardColor} 50%, #21262d)`,
+                  } : undefined}
                 >
-                  ×
-                </button>
-              </li>
-            ))}
+                  <div className="session-info">
+                    <span className="session-command" title={session.title ? `Command: ${session.command}` : undefined}>
+                      {getDisplayName(session)}
+                    </span>
+                    <span className="session-id" title={session.sessionId}>{session.sessionId}</span>
+                  </div>
+                  <div className="session-meta">
+                    <span className={`status ${session.isRunning ? (session.waitingForInput ? 'waiting' : 'running') : 'stopped'}`}>
+                      {session.isRunning
+                        ? (session.waitingForInput ? 'Question' : 'Running')
+                        : `Exited (${session.exitCode})`}
+                    </span>
+                    <span className="start-time">{formatTime(session.startedAt)}</span>
+                  </div>
+                  <div className="session-item-actions">
+                    <button
+                      className="btn-session-menu"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onEditProperties(session.sessionId)
+                      }}
+                      title="Session properties"
+                    >
+                      <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
+                        <circle cx="8" cy="2.5" r="1.5" />
+                        <circle cx="8" cy="8" r="1.5" />
+                        <circle cx="8" cy="13.5" r="1.5" />
+                      </svg>
+                    </button>
+                    <button
+                      className="btn-terminate"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onTerminate(session.sessionId)
+                      }}
+                      title="Terminate session"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
           </ul>
         </>
       )}
