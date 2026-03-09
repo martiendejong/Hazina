@@ -25,8 +25,9 @@ public sealed class TrayApplicationContext : ApplicationContext
                    ?? webApp.Urls.FirstOrDefault()
                    ?? "https://localhost:5123";
 
-        // Normalize 0.0.0.0 to localhost for browser URLs
-        _baseUrl = _baseUrl.Replace("://0.0.0.0:", "://localhost:");
+        // Normalize 0.0.0.0 and [::] to localhost for browser URLs
+        _baseUrl = _baseUrl.Replace("://0.0.0.0:", "://localhost:")
+                           .Replace("://[::]:", "://localhost:");
 
         // Load icon from embedded resource, fall back to system icon
         var icon = LoadEmbeddedIcon() ?? SystemIcons.Application;
