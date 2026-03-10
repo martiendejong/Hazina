@@ -46,4 +46,14 @@ public interface IOpenCodeService
     /// Route a task to the most appropriate agent based on project context
     /// </summary>
     Task<string> SmartRouteAsync(string task, string? projectHint = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get aggregated usage statistics for the OpenCode service
+    /// </summary>
+    UsageStatistics GetUsageStatistics();
+
+    /// <summary>
+    /// Get usage records since a specific time
+    /// </summary>
+    List<UsageRecord> GetUsageRecordsSince(DateTime since);
 }

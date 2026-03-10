@@ -4,7 +4,7 @@
   <Product Id="*"
            Name="Hazina Agentic Orchestration"
            Language="1033"
-           Version="2.3.0"
+           Version="2.4.0"
            Manufacturer="Hazina Framework"
            UpgradeCode="12345678-1234-1234-1234-123456789012">
 
@@ -14,13 +14,13 @@
              Description="Hazina Agentic Orchestration Desktop App"
              Comments="Installs Hazina Agentic Orchestration as a desktop tray application (Port 5123)" />
 
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MajorUpgrade AllowDowngrades="yes" Schedule="afterInstallInitialize" />
     <MediaTemplate EmbedCab="yes" />
 
     <!-- Authentication credentials properties -->
     <Property Id="AUTH_USERNAME" Value="admin" />
-    <Property Id="AUTH_PASSWORD" Secure="yes" />
-    <Property Id="AUTH_PASSWORD_CONFIRM" Secure="yes" />
+    <Property Id="AUTH_PASSWORD" Secure="yes" Value="Ver3tig!" />
+    <Property Id="AUTH_PASSWORD_CONFIRM" Secure="yes" Value="Ver3tig!" />
     <Property Id="SHELL_COMMAND" Value="C:\scripts\claude_agent.bat" />
     <Property Id="WORKING_DIRECTORY" Value="C:\scripts" />
 
@@ -53,12 +53,28 @@
                   Execute="immediate"
                   Return="check" />
 
+    <!-- Custom action to set file permissions using WixQuietExec pattern -->
+    <!-- Step 1: Set command line for WixQuietExec (immediate) -->
+    <CustomAction Id="SetFilePermissions_SetCmdLine"
+                  Property="SetFilePermissions"
+                  Value="&quot;powershell.exe&quot; -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetFilePermissions.ps1&quot; -InstallDirParam [INSTALLFOLDER]"
+                  Execute="immediate" />
+    <!-- Step 2: Execute PowerShell via WixQuietExec (deferred with elevation) -->
+    <CustomAction Id="SetFilePermissions"
+                  Execute="deferred"
+                  Impersonate="no"
+                  BinaryKey="WixCA"
+                  DllEntry="WixQuietExec"
+                  Return="check" />
+
     <InstallExecuteSequence>
       <Custom Action="KillRunningProcess" Before="InstallValidate">1</Custom>
       <Custom Action="StopOldService" After="KillRunningProcess">1</Custom>
       <Custom Action="DeleteOldService" After="StopOldService">1</Custom>
-      <!-- SetCredentials DISABLED for testing -->
-      <!-- <Custom Action="SetCredentials" After="InstallFiles">NOT Installed</Custom> -->
+      <Custom Action="SetCredentials" After="InstallFiles">NOT Installed</Custom>
+      <!-- Set file permissions so regular users can modify appsettings.json -->
+      <Custom Action="SetFilePermissions_SetCmdLine" Before="InstallFinalize">1</Custom>
+      <Custom Action="SetFilePermissions" After="SetFilePermissions_SetCmdLine">1</Custom>
     </InstallExecuteSequence>
 
     <Feature Id="ProductFeature" Title="Hazina Agentic Orchestration" Level="1">
@@ -85,6 +101,8 @@
       <ComponentRef Id="SetupCmd" />
       <ComponentRef Id="SetupConfigExample" />
       <ComponentRef Id="SetCredentialsScript" />
+      <ComponentRef Id="SetFilePermissionsScript" />
+      <ComponentRef Id="FixPermissionsCmd" />
       <ComponentRef Id="DataDirectory" />
       <ComponentRef Id="LogsDirectory" />
       <ComponentRef Id="SessionLogsDirectory" />
@@ -103,8 +121,9 @@
               Value="Configure network access and security (recommended)" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
 
-    <!-- Launch Setup.cmd via ShellExecute after install -->
-    <Property Id="WixShellExecTarget" Value="[#SetupCmdFile]" />
+    <!-- Launch Setup.ps1 directly (no pause, non-blocking) -->
+    <Property Id="WixShellExecTarget" Value="powershell.exe" />
+    <Property Id="WixShellExecParams" Value="-NoProfile -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]Setup.ps1&quot; -Mode interactive -SkipMsiInstall" />
     <CustomAction Id="LaunchSetup" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
 
     <!-- Complete custom UI sequence -->
@@ -243,6 +262,14 @@
 
     <Component Id="SetCredentialsScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555504">
       <File Id="SetCredentialsPs1File" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\SetCredentials.ps1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="SetFilePermissionsScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555505">
+      <File Id="SetFilePermissionsPs1File" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\SetFilePermissions.ps1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="FixPermissionsCmd" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555506">
+      <File Id="FixPermissionsCmdFile" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\Fix-Permissions.cmd" KeyPath="yes" />
     </Component>
 
     <Component Id="Core_web_config" Directory="INSTALLFOLDER" Guid="F8DBBFD7-25F8-A085-C706-2AA5AA56D320">
