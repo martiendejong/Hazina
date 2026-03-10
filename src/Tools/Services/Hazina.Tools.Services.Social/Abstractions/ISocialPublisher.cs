@@ -97,17 +97,17 @@ public class PublishPostRequest
     public string? InternalPostId { get; set; }
 
     /// <summary>
-    /// Raw image bytes for media upload (if available).
+    /// Binary image data for direct upload (used when MediaUrls contains local file references).
     /// </summary>
     public byte[]? ImageData { get; set; }
 
     /// <summary>
-    /// Filename for the image (e.g., "image.jpg").
+    /// Original filename of the image being uploaded.
     /// </summary>
     public string? ImageFileName { get; set; }
 
     /// <summary>
-    /// MIME type of the image (e.g., "image/jpeg").
+    /// MIME content type of the image (e.g., "image/jpeg", "image/png").
     /// </summary>
     public string? ImageContentType { get; set; }
 }

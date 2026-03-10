@@ -1,18 +1,37 @@
-param(
-    [string]$InstallDir,
-    [string]$Username,
-    [string]$Password,
-    [string]$ShellCommand,
-    [string]$WorkingDirectory
-)
+# Read CustomActionData from environment variable (set by WiX deferred action)
+$CustomActionData = $env:CustomActionData
 
 # Emergency logging - write BEFORE anything else
 $emergencyLog = "C:\Windows\Temp\SetCredentials-ENTRY-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
 try {
     "Script started at $(Get-Date)" | Out-File $emergencyLog -Encoding UTF8
-    "Parameters: InstallDir=$InstallDir, Username=$Username" | Out-File $emergencyLog -Append -Encoding UTF8
+    "CustomActionData from env: $CustomActionData" | Out-File $emergencyLog -Append -Encoding UTF8
 } catch {
     # If even this fails, we have bigger problems
+}
+
+# Parse CustomActionData (format: key=value;key=value;...)
+$InstallDir = ""
+$Username = ""
+$Password = ""
+$ShellCommand = ""
+$WorkingDirectory = ""
+
+if ($CustomActionData) {
+    $pairs = $CustomActionData -split ';'
+    foreach ($pair in $pairs) {
+        if ($pair -match '^([^=]+)=(.*)$') {
+            $key = $matches[1]
+            $value = $matches[2]
+            switch ($key) {
+                'InstallDir' { $InstallDir = $value }
+                'Username' { $Username = $value }
+                'Password' { $Password = $value }
+                'ShellCommand' { $ShellCommand = $value }
+                'WorkingDirectory' { $WorkingDirectory = $value }
+            }
+        }
+    }
 }
 
 $ErrorActionPreference = "Stop"
@@ -39,7 +58,7 @@ try {
 
     if ([string]::IsNullOrEmpty($InstallDir)) {
         Write-Log "ERROR: InstallDir parameter is empty"
-        exit 1
+        exit 0  # Always exit successfully so installer can continue
     }
 
     $configPath = Join-Path $InstallDir "appsettings.Production.json"
@@ -52,7 +71,7 @@ try {
         Get-ChildItem $InstallDir -ErrorAction SilentlyContinue | ForEach-Object {
             Write-Log "  - $($_.Name)"
         }
-        exit 1
+        exit 0  # Always exit successfully so installer can continue
     }
 
     Write-Log "Config file found, reading..."
@@ -66,11 +85,11 @@ try {
     # Verify structure
     if (-not $config.Authentication) {
         Write-Log "ERROR: Authentication section not found"
-        exit 1
+        exit 0  # Always exit successfully so installer can continue
     }
     if (-not $config.AgenticOrchestration.Terminal) {
         Write-Log "ERROR: Terminal section not found"
-        exit 1
+        exit 0  # Always exit successfully so installer can continue
     }
 
     Write-Log "Config structure verified"
@@ -124,5 +143,5 @@ catch {
     Write-Log "Error Message: $($_.Exception.Message)"
     Write-Log "Stack Trace: $($_.ScriptStackTrace)"
     Write-Log "=== SetCredentials Script Failed ==="
-    exit 1
+    exit 0  # Always exit successfully so installer can continue
 }

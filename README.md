@@ -322,6 +322,28 @@ All contributions to Hazina must meet the complete Definition of Done before bei
 
 ---
 
+## Registry & Quick Reference
+
+**Complete Package & Service Listings:**
+
+- **[📦 Package Registry](PACKAGES_REGISTRY.md)** — All 114 packages with descriptions, dependencies, and use cases
+- **[⚙️ Services Registry](SERVICES_REGISTRY.md)** — All 36 service interfaces with implementations and methods
+- **[🔧 Solution Guide](SOLUTIONS.md)** — Which solution file to use for your work
+
+**Quick Find:**
+```bash
+# Find a package
+grep -i "keyword" PACKAGES_REGISTRY.md
+
+# Find a service
+grep -i "IMyService" SERVICES_REGISTRY.md
+
+# List all packages in a category
+grep "## AI Core" PACKAGES_REGISTRY.md -A 50
+```
+
+---
+
 ## Documentation
 
 Hazina provides comprehensive documentation to help you get started and master the framework.

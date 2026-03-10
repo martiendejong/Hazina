@@ -40,7 +40,7 @@ public class LinkedInProvider : ISocialProvider
 
     public string GetAuthorizationUrl(string redirectUri, string state)
     {
-        var scopes = "openid profile email w_member_social r_liteprofile";
+        var scopes = "openid profile email w_member_social";
         var encodedRedirect = HttpUtility.UrlEncode(redirectUri);
         var encodedScopes = HttpUtility.UrlEncode(scopes);
 

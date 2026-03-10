@@ -1,0 +1,44 @@
+{
+  "id": "maintenance",
+  "name": "System Maintenance",
+  "description": "Automated system cleanup, backups, and health checks",
+  "enabled": true,
+  "color": "#50C878",
+  "icon": "wrench",
+  "tasks": [
+    {
+      "id": "cleanup-temp-files",
+      "name": "Cleanup Temp Files",
+      "scriptPath": "C:\\scripts\\maintenance\\cleanup-temp.ps1",
+      "cronExpression": "0 2 * * *",
+      "enabled": true,
+      "runElevated": false,
+      "timeoutSeconds": 600,
+      "workingDirectory": "C:\\scripts\\maintenance"
+    },
+    {
+      "id": "backup-critical-files",
+      "name": "Backup Critical Files",
+      "scriptPath": "C:\\scripts\\maintenance\\backup-files.ps1",
+      "cronExpression": "0 3 * * 0",
+      "enabled": true,
+      "runElevated": false,
+      "timeoutSeconds": 1800,
+      "workingDirectory": "C:\\scripts\\maintenance",
+      "parameters": {
+        "BackupLocation": "E:\\Backups",
+        "RetentionDays": 30
+      }
+    },
+    {
+      "id": "update-dependencies",
+      "name": "Update Dependencies",
+      "scriptPath": "C:\\scripts\\maintenance\\update-deps.ps1",
+      "cronExpression": "0 4 * * 1",
+      "enabled": false,
+      "runElevated": false,
+      "timeoutSeconds": 900,
+      "workingDirectory": "C:\\scripts\\maintenance"
+    }
+  ]
+}
