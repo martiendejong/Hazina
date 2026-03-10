@@ -38,7 +38,7 @@ public class LinkedInProvider : ISocialProvider
 
     public string GetAuthorizationUrl(string redirectUri, string state)
     {
-        var scopes = "openid profile email w_member_social r_liteprofile";
+        var scopes = "openid profile email w_member_social";
         var encodedRedirect = HttpUtility.UrlEncode(redirectUri);
         var encodedScopes = HttpUtility.UrlEncode(scopes);
 
@@ -175,7 +175,7 @@ public class LinkedInProvider : ISocialProvider
             {
                 ["given_name"] = profile.given_name ?? "",
                 ["family_name"] = profile.family_name ?? "",
-                ["locale"] = profile.locale ?? ""
+                ["locale"] = profile.locale?.ToString() ?? ""
             }
         };
     }
@@ -444,7 +444,7 @@ public class LinkedInProvider : ISocialProvider
         public string? family_name { get; set; }
         public string? picture { get; set; }
         public string? email { get; set; }
-        public string? locale { get; set; }
+        public System.Text.Json.JsonElement? locale { get; set; }
     }
 
     private class LinkedInSharesResponse
