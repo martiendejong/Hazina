@@ -117,7 +117,11 @@
       <ComponentRef Id="WwwRoot_vite_svg_br" />
       <ComponentRef Id="WwwRoot_vite_svg_gz" />
       <ComponentRef Id="AssetFile_index_CCNS6Xxb_css" />
-      <ComponentRef Id="AssetFile_index_Dpke0FrM_js" />
+      <ComponentRef Id="AssetFile_index_CCNS6Xxb_css_br" />
+      <ComponentRef Id="AssetFile_index_CCNS6Xxb_css_gz" />
+      <ComponentRef Id="AssetFile_index_CXv1Mvak_js" />
+      <ComponentRef Id="AssetFile_index_CXv1Mvak_js_br" />
+      <ComponentRef Id="AssetFile_index_CXv1Mvak_js_gz" />
       <ComponentRef Id="SetupScript" />
       <ComponentRef Id="SetupCmd" />
       <ComponentRef Id="SetupConfigExample" />
@@ -297,8 +301,20 @@
     <Component Id="AssetFile_index_CCNS6Xxb_css" Directory="WWWROOT_ASSETS" Guid="634283ED-AD22-C0F6-9308-3B11A5B12238">
       <File Id="AF_index_CCNS6Xxb_css" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-CCNS6Xxb.css" KeyPath="yes" />
     </Component>
-    <Component Id="AssetFile_index_Dpke0FrM_js" Directory="WWWROOT_ASSETS" Guid="FF67C691-62EA-08B3-7B2F-26799C871647">
-      <File Id="AF_index_Dpke0FrM_js" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-Dpke0FrM.js" KeyPath="yes" />
+    <Component Id="AssetFile_index_CCNS6Xxb_css_br" Directory="WWWROOT_ASSETS" Guid="08149E5B-538E-30E0-49BA-1D1D5DAD20AE">
+      <File Id="AF_index_CCNS6Xxb_css_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-CCNS6Xxb.css.br" KeyPath="yes" />
+    </Component>
+    <Component Id="AssetFile_index_CCNS6Xxb_css_gz" Directory="WWWROOT_ASSETS" Guid="494C4A51-8C0E-E9AB-F940-6B155512251E">
+      <File Id="AF_index_CCNS6Xxb_css_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-CCNS6Xxb.css.gz" KeyPath="yes" />
+    </Component>
+    <Component Id="AssetFile_index_CXv1Mvak_js" Directory="WWWROOT_ASSETS" Guid="8B63FA41-07DC-C019-B70C-2CF325CD501A">
+      <File Id="AF_index_CXv1Mvak_js" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-CXv1Mvak.js" KeyPath="yes" />
+    </Component>
+    <Component Id="AssetFile_index_CXv1Mvak_js_br" Directory="WWWROOT_ASSETS" Guid="0C6FAC2D-8583-27EF-E301-DC2ED339A022">
+      <File Id="AF_index_CXv1Mvak_js_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-CXv1Mvak.js.br" KeyPath="yes" />
+    </Component>
+    <Component Id="AssetFile_index_CXv1Mvak_js_gz" Directory="WWWROOT_ASSETS" Guid="A3F8D0B3-4CB8-E9D5-7DFB-F4646A56AB0D">
+      <File Id="AF_index_CXv1Mvak_js_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-CXv1Mvak.js.gz" KeyPath="yes" />
     </Component>
   </Fragment>
 
