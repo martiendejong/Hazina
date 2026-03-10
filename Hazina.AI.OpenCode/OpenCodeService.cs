@@ -14,6 +14,7 @@ public class OpenCodeService : IOpenCodeService
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<OpenCodeService> _logger;
+    private readonly UsageTracker _usageTracker;
 
     private static readonly Dictionary<string, AgentInfo> _agents = new()
     {
@@ -43,10 +44,11 @@ public class OpenCodeService : IOpenCodeService
         }
     };
 
-    public OpenCodeService(IHttpClientFactory httpClientFactory, ILogger<OpenCodeService> logger)
+    public OpenCodeService(IHttpClientFactory httpClientFactory, ILogger<OpenCodeService> logger, UsageTracker usageTracker)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
+        _usageTracker = usageTracker;
     }
 
     public Task<string> ExecuteInSaasContextAsync(string task, CancellationToken cancellationToken = default)
@@ -73,12 +75,15 @@ public class OpenCodeService : IOpenCodeService
 
         _logger.LogInformation("Executing task on agent {AgentName}: {Task}", agentName, request.Message);
 
-        var client = _httpClientFactory.CreateClient();
-        client.BaseAddress = new Uri(agent.BaseUrl);
-        client.Timeout = TimeSpan.FromMinutes(5);
+        var startTime = DateTime.UtcNow;
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         try
         {
+            var client = _httpClientFactory.CreateClient();
+            client.BaseAddress = new Uri(agent.BaseUrl);
+            client.Timeout = TimeSpan.FromMinutes(5);
+
             var response = await client.PostAsJsonAsync("/api/chat", request, cancellationToken);
             response.EnsureSuccessStatusCode();
 
@@ -87,14 +92,54 @@ public class OpenCodeService : IOpenCodeService
             if (result?.Error != null)
             {
                 _logger.LogError("OpenCode error from {AgentName}: {Error}", agentName, result.Error);
+
+                // Log failed usage
+                _usageTracker.LogUsage(new UsageRecord
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Timestamp = startTime,
+                    AgentName = agentName,
+                    Task = request.Message,
+                    OperationType = "Execute",
+                    Success = false,
+                    ErrorMessage = result.Error,
+                    DurationMs = stopwatch.ElapsedMilliseconds
+                });
+
                 throw new Exception($"OpenCode error: {result.Error}");
             }
+
+            // Log successful usage
+            _usageTracker.LogUsage(new UsageRecord
+            {
+                Id = Guid.NewGuid().ToString(),
+                Timestamp = startTime,
+                AgentName = agentName,
+                Task = request.Message,
+                OperationType = "Execute",
+                Success = true,
+                DurationMs = stopwatch.ElapsedMilliseconds
+            });
 
             return result?.Content ?? string.Empty;
         }
         catch (HttpRequestException ex)
         {
             _logger.LogError(ex, "Failed to connect to agent {AgentName} at {BaseUrl}", agentName, agent.BaseUrl);
+
+            // Log failed usage
+            _usageTracker.LogUsage(new UsageRecord
+            {
+                Id = Guid.NewGuid().ToString(),
+                Timestamp = startTime,
+                AgentName = agentName,
+                Task = request.Message,
+                OperationType = "Execute",
+                Success = false,
+                ErrorMessage = $"Connection failed: {ex.Message}",
+                DurationMs = stopwatch.ElapsedMilliseconds
+            });
+
             throw new Exception($"Failed to connect to agent {agentName}. Ensure OpenCode orchestration is running.", ex);
         }
     }
@@ -111,6 +156,11 @@ public class OpenCodeService : IOpenCodeService
 
         _logger.LogInformation("Streaming from agent {AgentName}: {Task}", agentName, request.Message);
 
+        var startTime = DateTime.UtcNow;
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var success = false;
+        string? errorMessage = null;
+
         var client = _httpClientFactory.CreateClient();
         client.BaseAddress = new Uri(agent.BaseUrl);
         client.Timeout = Timeout.InfiniteTimeSpan;
@@ -121,8 +171,28 @@ public class OpenCodeService : IOpenCodeService
         };
         httpRequest.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("text/event-stream"));
 
-        var response = await client.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            response.EnsureSuccessStatusCode();
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"Connection failed: {ex.Message}";
+            _usageTracker.LogUsage(new UsageRecord
+            {
+                Id = Guid.NewGuid().ToString(),
+                Timestamp = startTime,
+                AgentName = agentName,
+                Task = request.Message,
+                OperationType = "Stream",
+                Success = false,
+                ErrorMessage = errorMessage,
+                DurationMs = stopwatch.ElapsedMilliseconds
+            });
+            throw;
+        }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var reader = new StreamReader(stream);
@@ -135,22 +205,33 @@ public class OpenCodeService : IOpenCodeService
             if (line.StartsWith("data: "))
             {
                 var data = line.Substring(6);
-                if (data == "[DONE]") break;
-
-                try
+                if (data == "[DONE]")
                 {
-                    var chunk = JsonSerializer.Deserialize<OpenCodeResponse>(data);
-                    if (chunk?.Content != null)
-                    {
-                        yield return chunk.Content;
-                    }
+                    success = true;
+                    break;
                 }
-                catch (JsonException ex)
+
+                // No try-catch around yield - cannot catch in iterator method
+                var chunk = JsonSerializer.Deserialize<OpenCodeResponse>(data);
+                if (chunk?.Content != null)
                 {
-                    _logger.LogWarning(ex, "Failed to parse SSE chunk: {Data}", data);
+                    yield return chunk.Content;
                 }
             }
         }
+
+        // Log usage after streaming completes
+        _usageTracker.LogUsage(new UsageRecord
+        {
+            Id = Guid.NewGuid().ToString(),
+            Timestamp = startTime,
+            AgentName = agentName,
+            Task = request.Message,
+            OperationType = "Stream",
+            Success = success,
+            ErrorMessage = errorMessage,
+            DurationMs = stopwatch.ElapsedMilliseconds
+        });
     }
 
     public async Task<List<AgentInfo>> GetAgentStatusAsync(CancellationToken cancellationToken = default)
@@ -212,12 +293,61 @@ public class OpenCodeService : IOpenCodeService
 
     public async Task<string> SmartRouteAsync(string task, string? projectHint = null, CancellationToken cancellationToken = default)
     {
-        // Smart routing logic based on project hint or task content
-        var agentName = DetermineAgent(task, projectHint);
+        var startTime = DateTime.UtcNow;
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-        _logger.LogInformation("Smart routing task to {AgentName} based on hint: {ProjectHint}", agentName, projectHint);
+        try
+        {
+            // Smart routing logic based on project hint or task content
+            var agentName = DetermineAgent(task, projectHint);
 
-        return await ExecuteAsync(agentName, new OpenCodeRequest { Message = task }, cancellationToken);
+            _logger.LogInformation("Smart routing task to {AgentName} based on hint: {ProjectHint}", agentName, projectHint);
+
+            var result = await ExecuteAsync(agentName, new OpenCodeRequest { Message = task }, cancellationToken);
+
+            // Log successful smart route (ExecuteAsync also logs, but this tracks the routing decision)
+            _usageTracker.LogUsage(new UsageRecord
+            {
+                Id = Guid.NewGuid().ToString(),
+                Timestamp = startTime,
+                AgentName = agentName,
+                Task = task,
+                OperationType = "SmartRoute",
+                Success = true,
+                DurationMs = stopwatch.ElapsedMilliseconds,
+                ProjectHint = projectHint
+            });
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            // Log failed smart route
+            _usageTracker.LogUsage(new UsageRecord
+            {
+                Id = Guid.NewGuid().ToString(),
+                Timestamp = startTime,
+                AgentName = "unknown",
+                Task = task,
+                OperationType = "SmartRoute",
+                Success = false,
+                ErrorMessage = ex.Message,
+                DurationMs = stopwatch.ElapsedMilliseconds,
+                ProjectHint = projectHint
+            });
+
+            throw;
+        }
+    }
+
+    public UsageStatistics GetUsageStatistics()
+    {
+        return _usageTracker.GetStatistics();
+    }
+
+    public List<UsageRecord> GetUsageRecordsSince(DateTime since)
+    {
+        return _usageTracker.GetRecordsSince(since);
     }
 
     private static string DetermineAgent(string task, string? projectHint)

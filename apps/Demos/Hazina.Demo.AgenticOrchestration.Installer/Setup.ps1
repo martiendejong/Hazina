@@ -324,7 +324,8 @@ function Find-HazinaInstallDir {
 function Write-AppSettings {
     <#
     .SYNOPSIS
-        Generate appsettings.json + stripped appsettings.Production.json.
+        Configure appsettings.json using HazinaConfigTool (non-destructive).
+        Falls back to direct JSON write if ConfigTool not available.
     #>
     param(
         [string]$TargetDir,
@@ -340,127 +341,110 @@ function Write-AppSettings {
         [string]$LogPath
     )
 
-    # Build Kestrel endpoint config
-    $endpoint = @{
-        Url = "${Protocol}://*:${Port}"
-    }
-    if ($Protocol -eq "https" -and $CertFile) {
-        $endpoint.Certificate = @{
-            Path    = $CertFile
-            KeyPath = $KeyFile
-        }
-    }
-
-    # Resolve defaults for relative paths
+    # Resolve defaults
     if (-not $DbPath)    { $DbPath = "data\agent-activity.db" }
     if (-not $LogPath)    { $LogPath = "logs" }
     if (-not $TermCmd)    { $TermCmd = "claude" }
     if (-not $AuthUser)   { $AuthUser = "admin" }
     if (-not $AuthPass)   { $AuthPass = "changeme" }
 
-    $endpointKey = if ($Protocol -eq "https") { "Https" } else { "Http" }
+    $configFile = Join-Path $TargetDir "appsettings.json"
+    $configTool = Join-Path $TargetDir "HazinaConfigTool.exe"
 
-    $appSettings = @{
-        Logging = @{
-            LogLevel = @{
-                Default = "Information"
-                "Microsoft.AspNetCore" = "Warning"
-            }
-        }
-        AllowedHosts = "*"
-        Kestrel = @{
-            Endpoints = @{
-                $endpointKey = $endpoint
-            }
-        }
-        Authentication = @{
-            Enabled  = $true
-            Username = $AuthUser
-            Password = $AuthPass
-            Realm    = "Hazina Agentic Orchestration"
-        }
-        AgenticOrchestration = @{
-            DatabasePath     = $DbPath
-            LogsPath         = $LogPath
-            EntitiesYamlPath = "entities.yaml"
-            SignalR = @{
-                Enabled = $true
-                HubPath = "/hubs/agentic"
-            }
-            Polling = @{
-                InstanceHeartbeatTimeoutSeconds = 60
-                InteractionExpiryMinutes        = 60
-            }
-            Features = @{
-                EnableTaskQueue              = $true
-                EnableOutputStreaming         = $true
-                EnableRealtimeNotifications  = $true
-            }
-            Terminal = @{
-                DefaultCommand          = $TermCmd
-                DefaultWorkingDirectory = $TermWorkDir
-                DefaultArguments        = @()
-                DefaultColumns          = 120
-                DefaultRows             = 30
-                MaxConcurrentSessions   = 10
-                SessionTimeoutMinutes   = 60
-            }
-            SessionLogging = @{
-                Enabled  = $true
-                BasePath = if ($LogPath) { "$LogPath\agent-sessions" } else { "logs\agent-sessions" }
-            }
-        }
-        Swagger = @{
-            Enabled     = $true
-            Title       = "Hazina Agentic Orchestration API"
-            Description = "Web API for managing Claude Code CLI instances via Hazina declarative framework"
-            Version     = "v1"
-        }
-        OpenAI = @{
-            ApiKey         = "YOUR_OPENAI_API_KEY_HERE"
-            Model          = "gpt-4o-mini"
-            EmbeddingModel = "text-embedding-3-small"
-            ImageModel     = "dall-e-3"
-            TtsModel       = "gpt-4o-mini-tts"
-        }
-    } | ConvertTo-Json -Depth 10
+    if (Test-Path $configTool) {
+        Write-Host "  Using HazinaConfigTool for non-destructive configuration..." -ForegroundColor Gray
 
-    $appSettingsPath = Join-Path $TargetDir "appsettings.json"
-    Set-Content -Path $appSettingsPath -Value $appSettings -Encoding UTF8
-    Write-Host "  [OK] appsettings.json written" -ForegroundColor Green
+        # Configure authentication
+        & $configTool set-auth --username $AuthUser --password $AuthPass --config $configFile --silent --no-backup
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  [OK] Authentication configured" -ForegroundColor Green
+        } else {
+            Write-Host "  [WARN] Authentication configuration failed (exit: $LASTEXITCODE)" -ForegroundColor Yellow
+        }
 
-    # Stripped Production config (no Kestrel/Auth/Terminal overrides)
+        # Configure Kestrel
+        $kestrelArgs = @("set-kestrel", "--protocol", $Protocol, "--port", $Port, "--config", $configFile, "--silent", "--no-backup")
+        if ($Protocol -eq "https" -and $CertFile) {
+            $kestrelArgs += @("--cert", $CertFile, "--key", $KeyFile)
+        }
+        & $configTool @kestrelArgs
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  [OK] Kestrel configured (${Protocol}://*:${Port})" -ForegroundColor Green
+        } else {
+            Write-Host "  [WARN] Kestrel configuration failed (exit: $LASTEXITCODE)" -ForegroundColor Yellow
+        }
+
+        # Configure paths
+        & $configTool set-paths --database $DbPath --logs $LogPath --config $configFile --silent --no-backup
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  [OK] Paths configured" -ForegroundColor Green
+        } else {
+            Write-Host "  [WARN] Paths configuration failed (exit: $LASTEXITCODE)" -ForegroundColor Yellow
+        }
+
+        # Configure terminal
+        $termArgs = @("set-terminal", "--command", $TermCmd, "--config", $configFile, "--silent", "--no-backup")
+        if ($TermWorkDir) {
+            $termArgs += @("--workdir", $TermWorkDir)
+        }
+        & $configTool @termArgs
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  [OK] Terminal configured" -ForegroundColor Green
+        } else {
+            Write-Host "  [WARN] Terminal configuration failed (exit: $LASTEXITCODE)" -ForegroundColor Yellow
+        }
+
+        # Validate final configuration
+        & $configTool validate --config $configFile --silent
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  [OK] Configuration validated" -ForegroundColor Green
+        } else {
+            Write-Host "  [WARN] Configuration has validation warnings (exit: $LASTEXITCODE)" -ForegroundColor Yellow
+        }
+
+        Write-Host "  [OK] appsettings.json updated (all existing settings preserved)" -ForegroundColor Green
+    } else {
+        Write-Host "  [WARN] HazinaConfigTool.exe not found, using legacy JSON generation" -ForegroundColor Yellow
+
+        # Legacy fallback: generate appsettings.json from scratch
+        $endpointKey = if ($Protocol -eq "https") { "Https" } else { "Http" }
+        $endpoint = @{ Url = "${Protocol}://*:${Port}" }
+        if ($Protocol -eq "https" -and $CertFile) {
+            $endpoint.Certificate = @{ Path = $CertFile; KeyPath = $KeyFile }
+        }
+
+        $appSettings = @{
+            Logging = @{ LogLevel = @{ Default = "Information"; "Microsoft.AspNetCore" = "Warning" } }
+            AllowedHosts = "*"
+            Kestrel = @{ Endpoints = @{ $endpointKey = $endpoint } }
+            Authentication = @{ Enabled = $true; Username = $AuthUser; Password = $AuthPass; Realm = "Hazina Agentic Orchestration" }
+            AgenticOrchestration = @{
+                DatabasePath = $DbPath; LogsPath = $LogPath; EntitiesYamlPath = "entities.yaml"
+                SignalR = @{ Enabled = $true; HubPath = "/hubs/agentic" }
+                Polling = @{ InstanceHeartbeatTimeoutSeconds = 60; InteractionExpiryMinutes = 60 }
+                Features = @{ EnableTaskQueue = $true; EnableOutputStreaming = $true; EnableRealtimeNotifications = $true }
+                Terminal = @{ DefaultCommand = $TermCmd; DefaultWorkingDirectory = $TermWorkDir; DefaultArguments = @(); DefaultColumns = 120; DefaultRows = 30; MaxConcurrentSessions = 10; SessionTimeoutMinutes = 60 }
+                SessionLogging = @{ Enabled = $true; BasePath = if ($LogPath) { "$LogPath\agent-sessions" } else { "logs\agent-sessions" } }
+            }
+            Swagger = @{ Enabled = $true; Title = "Hazina Agentic Orchestration API"; Description = "Web API for managing Claude Code CLI instances via Hazina declarative framework"; Version = "v1" }
+            OpenAI = @{ ApiKey = "YOUR_OPENAI_API_KEY_HERE"; Model = "gpt-4o-mini"; EmbeddingModel = "text-embedding-3-small"; ImageModel = "dall-e-3"; TtsModel = "gpt-4o-mini-tts" }
+        } | ConvertTo-Json -Depth 10
+
+        Set-Content -Path $configFile -Value $appSettings -Encoding UTF8
+        Write-Host "  [OK] appsettings.json written (legacy mode)" -ForegroundColor Green
+    }
+
+    # Production config (baseline, rarely changes - always recreated)
     $productionSettings = @{
-        Logging = @{
-            LogLevel = @{
-                Default = "Information"
-                "Microsoft.AspNetCore" = "Warning"
-            }
-            EventLog = @{
-                LogLevel = @{
-                    Default = "Information"
-                }
-            }
-        }
+        Logging = @{ LogLevel = @{ Default = "Information"; "Microsoft.AspNetCore" = "Warning" }; EventLog = @{ LogLevel = @{ Default = "Information" } } }
         AllowedHosts = "*"
-        Swagger = @{
-            Enabled     = $true
-            Title       = "Hazina Agentic Orchestration API"
-            Description = "Web API for managing Claude Code CLI instances via Hazina declarative framework"
-            Version     = "v1"
-        }
-        OpenAI = @{
-            ApiKey         = ""
-            Model          = "gpt-4o-mini"
-            EmbeddingModel = "text-embedding-3-small"
-            ImageModel     = "dall-e-3"
-            TtsModel       = "gpt-4o-mini-tts"
-        }
+        Swagger = @{ Enabled = $true; Title = "Hazina Agentic Orchestration API"; Description = "Web API for managing Claude Code CLI instances via Hazina declarative framework"; Version = "v1" }
+        OpenAI = @{ ApiKey = ""; Model = "gpt-4o-mini"; EmbeddingModel = "text-embedding-3-small"; ImageModel = "dall-e-3"; TtsModel = "gpt-4o-mini-tts" }
     } | ConvertTo-Json -Depth 10
 
     $productionPath = Join-Path $TargetDir "appsettings.Production.json"
     Set-Content -Path $productionPath -Value $productionSettings -Encoding UTF8
-    Write-Host "  [OK] appsettings.Production.json written (stripped)" -ForegroundColor Green
+    Write-Host "  [OK] appsettings.Production.json written" -ForegroundColor Green
 }
 
 function Test-TailscaleFunnel {
