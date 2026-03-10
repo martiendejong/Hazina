@@ -319,38 +319,6 @@ namespace Hazina.Services.Geometric
             thoughtSpace.LearningVelocity = _curvatureService.CalculateLearningVelocity(recentEvents);
             await _repository.UpdateThoughtSpaceAsync(thoughtSpace);
         }
-
-        /// <summary>
-        /// Gets a thought space by ID with optional related data.
-        /// </summary>
-        /// <param name="thoughtSpaceId">Thought space ID.</param>
-        /// <param name="includeRelated">Include concepts and learning events.</param>
-        /// <returns>Thought space or null if not found.</returns>
-        public async Task<ThoughtSpace?> GetThoughtSpaceAsync(string thoughtSpaceId, bool includeRelated = false)
-        {
-            return await _repository.GetThoughtSpaceAsync(thoughtSpaceId, includeRelated);
-        }
-
-        /// <summary>
-        /// Gets all thought spaces for a user.
-        /// </summary>
-        /// <param name="userId">User identifier.</param>
-        /// <returns>List of thought spaces.</returns>
-        public async Task<List<ThoughtSpace>> GetUserThoughtSpacesAsync(string userId)
-        {
-            return await _repository.GetUserThoughtSpacesAsync(userId);
-        }
-
-        /// <summary>
-        /// Gets a concept by ID with optional related data.
-        /// </summary>
-        /// <param name="conceptId">Concept ID.</param>
-        /// <param name="includeRelated">Include learning events and connections.</param>
-        /// <returns>Concept or null if not found.</returns>
-        public async Task<Concept?> GetConceptAsync(string conceptId, bool includeRelated = false)
-        {
-            return await _repository.GetConceptAsync(conceptId, includeRelated);
-        }
     }
 
     /// <summary>
