@@ -61,7 +61,7 @@ jobs:
           --logger "trx;LogFileName=test-results.trx"
 
     - name: Upload test results
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: test-results
@@ -79,7 +79,7 @@ jobs:
         name: codecov-hazina
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       if: success()
       with:
         name: build-artifacts
@@ -157,7 +157,7 @@ jobs:
 
     steps:
     - name: Download test results
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: test-results
         path: TestResults

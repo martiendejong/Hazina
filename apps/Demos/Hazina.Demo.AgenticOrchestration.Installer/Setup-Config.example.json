@@ -1,0 +1,22 @@
+{
+    "mode": "tailscale",
+    "port": 5123,
+    "enableFunnel": false,
+    "installDir": null,
+    "auth": {
+        "username": "admin",
+        "password": "changeme"
+    },
+    "terminal": {
+        "command": "claude",
+        "workingDirectory": null
+    },
+    "paths": {
+        "database": "data\\agent-activity.db",
+        "logs": "logs"
+    },
+    "certificate": {
+        "certPath": null,
+        "keyPath": null
+    }
+}

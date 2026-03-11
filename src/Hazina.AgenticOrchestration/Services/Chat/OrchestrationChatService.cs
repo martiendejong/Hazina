@@ -252,15 +252,4 @@ Guidelines:
             }
         }
     }
-
-    /// <summary>
-    /// Response from chat service
-    /// </summary>
-    public class ChatResponse
-    {
-        public bool Success { get; set; }
-        public string? ResponseMessage { get; set; }
-        public string? ErrorMessage { get; set; }
-        public int TotalTokensUsed { get; set; }
-    }
 }

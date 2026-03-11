@@ -10,6 +10,12 @@ export interface TerminalSession {
   exitCode?: number
 }
 
+/** User-defined properties for a session (persisted in localStorage) */
+export interface SessionProperties {
+  customName?: string
+  cardColor?: string
+}
+
 export interface ExternalClaudeInstance {
   agentId: string
   sessionId?: string
@@ -106,4 +112,24 @@ export interface SessionLogResponse {
 export interface PendingRestore {
   sessionId: string
   content: string
+}
+
+// Version info from /api/terminal/version
+export interface VersionInfo {
+  version: string
+  assemblyVersion: string
+}
+
+// Upload response from /api/terminal/upload
+export interface UploadResponse {
+  fileName: string
+  originalName: string
+  size: number
+}
+
+// Uploaded file from /api/terminal/uploads
+export interface UploadedFile {
+  fileName: string
+  size: number
+  uploadedAt: string
 }

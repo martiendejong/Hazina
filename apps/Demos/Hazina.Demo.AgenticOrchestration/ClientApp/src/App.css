@@ -21,6 +21,13 @@
   color: #58a6ff;
 }
 
+.version-badge {
+  font-size: 0.75rem;
+  color: #8b949e;
+  font-weight: 400;
+  margin-left: 0.5rem;
+}
+
 .header-actions {
   display: flex;
   gap: 0.5rem;
@@ -170,7 +177,8 @@ button:hover {
 
 .session-info {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 0.125rem;
   margin-bottom: 0.25rem;
 }
 
@@ -180,9 +188,11 @@ button:hover {
 }
 
 .session-id {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #8b949e;
   font-family: monospace;
+  word-break: break-all;
+  line-height: 1.3;
 }
 
 .session-meta {
@@ -215,10 +225,22 @@ button:hover {
   color: #8b949e;
 }
 
-.session-item .btn-terminate {
+.session-item-actions {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.session-item:hover .session-item-actions {
+  opacity: 1;
+}
+
+.session-item .btn-terminate,
+.session-item .btn-session-menu {
   width: 24px;
   height: 24px;
   padding: 0;
@@ -227,16 +249,22 @@ button:hover {
   background: transparent;
   border: none;
   color: #8b949e;
-  opacity: 0;
-  transition: opacity 0.2s;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
 }
 
-.session-item:hover .btn-terminate {
-  opacity: 1;
+.session-item .btn-session-menu:hover {
+  color: #58a6ff;
+  background: rgba(88, 166, 255, 0.1);
 }
 
 .session-item .btn-terminate:hover {
   color: #f85149;
+  background: rgba(248, 81, 73, 0.1);
 }
 
 /* Terminal Section (outer container in App.tsx) */
@@ -282,8 +310,9 @@ button:hover {
 
 .session-label {
   font-family: monospace;
-  font-size: 0.875rem;
-  color: #8b949e;
+  font-size: 0.9375rem;
+  color: #c9d1d9;
+  user-select: all;
 }
 
 .connection-status {
@@ -312,18 +341,31 @@ button:hover {
   font-size: 0.75rem;
 }
 
-.btn-interrupt {
-  background: #9e6a03;
-  border-color: #9e6a03;
-}
-
-.btn-interrupt:hover {
-  background: #bb8009;
-}
-
 .btn-close {
   background: transparent;
   border-color: #30363d;
+}
+
+.btn-edit-props {
+  background: transparent;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 4px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-edit-props:hover {
+  background: #21262d;
+  border-color: #58a6ff;
+  color: #58a6ff;
+}
+
+.btn-edit-props svg {
+  flex-shrink: 0;
 }
 
 /* Voice Control Button */
@@ -536,6 +578,96 @@ button:hover {
   height: 16px;
 }
 
+/* Upload button (paperclip) */
+.btn-upload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  color: #8b949e;
+  cursor: pointer;
+  flex-shrink: 0;
+  min-height: 44px;
+  min-width: 44px;
+  transition: all 0.2s;
+}
+
+.btn-upload:hover {
+  background: #30363d;
+  color: #c9d1d9;
+  border-color: #8b949e;
+}
+
+.btn-upload svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Special keys toggle button (mobile only) */
+.btn-special-keys {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  color: #c9d1d9;
+  cursor: pointer;
+  flex-shrink: 0;
+  min-height: 44px;
+  min-width: 44px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.btn-special-keys:hover,
+.btn-special-keys.active {
+  background: #30363d;
+  border-color: #58a6ff;
+  color: #58a6ff;
+}
+
+/* Special keys panel */
+.special-keys-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.5rem;
+  background: #161b22;
+  border-top: 1px solid #30363d;
+}
+
+.special-keys-row {
+  display: flex;
+  gap: 0.375rem;
+  justify-content: center;
+}
+
+.special-keys-panel button {
+  flex: 1;
+  padding: 0.625rem 0.5rem;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #c9d1d9;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: 40px;
+}
+
+.special-keys-panel button:hover,
+.special-keys-panel button:active {
+  background: #30363d;
+  border-color: #8b949e;
+}
+
 /* Mobile: Stack input and button or make more compact */
 @media (max-width: 768px) {
   .terminal-input-container {
@@ -678,34 +810,12 @@ button:hover {
     overflow: hidden;
   }
 
-  /* Session list fills screen on mobile when no session selected */
-  .sidebar {
+  /* Mobile: session list takes full screen */
+  .session-list {
     width: 100%;
     flex: 1;
-    max-height: none;
-    border-right: none;
-    border-bottom: none;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;  /* Smooth scroll on iOS */
-  }
-
-  /* Hide sidebar when a session is active on mobile */
-  .sidebar.session-active {
-    display: none;
-  }
-
-  /* Hide terminal section when no session (show only sidebar) */
-  .terminal-section:not(.has-session) {
-    display: none;
-  }
-
-  /* Terminal fills available space on mobile when session is active */
-  .terminal-section.has-session {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;  /* Critical: allows flex container to shrink */
-    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Mobile toolbar layout */
@@ -723,7 +833,10 @@ button:hover {
   }
 
   .terminal-info .session-label {
-    display: none; /* Hide session ID on mobile - save space */
+    font-size: 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .terminal-actions {
@@ -1624,5 +1737,45 @@ button:hover {
 
   .pagination {
     flex-wrap: wrap;
+  }
+}
+
+/* Drag and Drop Styles */
+.drag-handle {
+  cursor: grab;
+  padding: 0.25rem;
+  margin-right: 0.5rem;
+  color: #6e7681;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.drag-handle:hover {
+  color: #8b949e;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.session-item {
+  display: flex;
+  align-items: center;
+}
+
+.saving-indicator {
+  font-size: 0.75rem;
+  color: #58a6ff;
+  font-weight: normal;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
   }
 }
