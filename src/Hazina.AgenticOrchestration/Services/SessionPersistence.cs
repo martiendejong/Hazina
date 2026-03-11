@@ -29,6 +29,7 @@ public class SessionMetadata
     public string WorkingDirectory { get; set; } = string.Empty;
     public TerminalDimensions Dimensions { get; set; } = new();
     public SessionState State { get; set; }
+    public int DisplayOrder { get; set; }
 }
 
 public class TerminalDimensions

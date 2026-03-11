@@ -282,4 +282,5 @@ public class ConversationMetadata
     public string SessionId { get; set; } = string.Empty;
     public DateTime LastModified { get; set; }
     public long SizeBytes { get; set; }
+    public int DisplayOrder { get; set; }
 }
