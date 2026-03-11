@@ -1,0 +1,74 @@
+id: ui.approval-panel
+type: control
+category: approval
+description: User approval interface for risky operations
+
+schema:
+  type: object
+  required:
+    - taskId
+    - action
+    - riskLevel
+  properties:
+    taskId:
+      type: string
+      description: Unique identifier for task requiring approval
+    action:
+      type: string
+      description: Human-readable description of action requiring approval
+    riskLevel:
+      type: string
+      enum:
+        - read
+        - write
+        - execute
+        - admin
+      description: Risk classification
+    details:
+      type: object
+      description: Additional context about the action
+      properties:
+        affectedResources:
+          type: array
+          description: List of resources that will be affected
+          items:
+            type: string
+        reversible:
+          type: boolean
+          description: Whether this action can be undone
+        estimatedDuration:
+          type: string
+          description: How long execution will take
+    approvalState:
+      type: string
+      enum:
+        - pending
+        - approved
+        - denied
+      description: Current approval state
+    approvedBy:
+      type: string
+      description: User ID who approved/denied
+    approvalTimestamp:
+      type: string
+      format: date-time
+      description: When approval decision was made
+
+validation:
+  rules:
+    - name: admin-must-be-approved
+      condition: riskLevel == 'admin'
+      requires: approvalState != 'pending'
+      message: Admin actions cannot remain in pending state
+    - name: execute-requires-decision
+      condition: riskLevel == 'execute'
+      requires: approvalState != 'pending'
+      message: Execute actions require user decision
+
+security:
+  requiresApproval: false
+  allowedOperations:
+    - view
+    - approve
+    - deny
+  riskLevel: read
