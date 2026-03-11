@@ -16,7 +16,7 @@
     <AssemblyName>HazinaOrchestration</AssemblyName>
     <Product>Hazina Agentic Orchestration</Product>
     <Description>Desktop tray application for managing Claude Code CLI instances</Description>
-    <Version>1.0.0</Version>
+    <Version>2.4.0</Version>
 
     <!-- Publishing defaults -->
     <PublishSingleFile>true</PublishSingleFile>
@@ -55,6 +55,10 @@
     </None>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="appsettings.Production.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
   </ItemGroup>
 

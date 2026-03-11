@@ -225,10 +225,22 @@ button:hover {
   color: #8b949e;
 }
 
-.session-item .btn-terminate {
+.session-item-actions {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.session-item:hover .session-item-actions {
+  opacity: 1;
+}
+
+.session-item .btn-terminate,
+.session-item .btn-session-menu {
   width: 24px;
   height: 24px;
   padding: 0;
@@ -237,16 +249,22 @@ button:hover {
   background: transparent;
   border: none;
   color: #8b949e;
-  opacity: 0;
-  transition: opacity 0.2s;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
 }
 
-.session-item:hover .btn-terminate {
-  opacity: 1;
+.session-item .btn-session-menu:hover {
+  color: #58a6ff;
+  background: rgba(88, 166, 255, 0.1);
 }
 
 .session-item .btn-terminate:hover {
   color: #f85149;
+  background: rgba(248, 81, 73, 0.1);
 }
 
 /* Terminal Section (outer container in App.tsx) */
@@ -326,6 +344,28 @@ button:hover {
 .btn-close {
   background: transparent;
   border-color: #30363d;
+}
+
+.btn-edit-props {
+  background: transparent;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 4px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-edit-props:hover {
+  background: #21262d;
+  border-color: #58a6ff;
+  color: #58a6ff;
+}
+
+.btn-edit-props svg {
+  flex-shrink: 0;
 }
 
 /* Voice Control Button */
@@ -1697,5 +1737,45 @@ button:hover {
 
   .pagination {
     flex-wrap: wrap;
+  }
+}
+
+/* Drag and Drop Styles */
+.drag-handle {
+  cursor: grab;
+  padding: 0.25rem;
+  margin-right: 0.5rem;
+  color: #6e7681;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.drag-handle:hover {
+  color: #8b949e;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.session-item {
+  display: flex;
+  align-items: center;
+}
+
+.saving-indicator {
+  font-size: 0.75rem;
+  color: #58a6ff;
+  font-weight: normal;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
   }
 }

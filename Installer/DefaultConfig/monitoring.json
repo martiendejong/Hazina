@@ -1,0 +1,50 @@
+{
+  "id": "monitoring",
+  "name": "System Monitoring",
+  "description": "Health checks and performance monitoring",
+  "enabled": true,
+  "color": "#FF6B6B",
+  "icon": "chart",
+  "tasks": [
+    {
+      "id": "disk-space-check",
+      "name": "Check Disk Space",
+      "scriptPath": "C:\\scripts\\monitoring\\check-disk-space.ps1",
+      "cronExpression": "0 * * * *",
+      "enabled": true,
+      "runElevated": false,
+      "timeoutSeconds": 60,
+      "workingDirectory": "C:\\scripts\\monitoring",
+      "parameters": {
+        "WarningThreshold": 20,
+        "CriticalThreshold": 10
+      }
+    },
+    {
+      "id": "service-health-check",
+      "name": "Service Health Check",
+      "scriptPath": "C:\\scripts\\monitoring\\check-services.ps1",
+      "cronExpression": "*/10 * * * *",
+      "enabled": true,
+      "runElevated": false,
+      "timeoutSeconds": 120,
+      "workingDirectory": "C:\\scripts\\monitoring",
+      "parameters": {
+        "Services": [
+          "HazinaOrchestrator",
+          "DataDrivenAI"
+        ]
+      }
+    },
+    {
+      "id": "log-system-metrics",
+      "name": "Log System Metrics",
+      "scriptPath": "C:\\scripts\\monitoring\\log-metrics.ps1",
+      "cronExpression": "*/5 * * * *",
+      "enabled": true,
+      "runElevated": false,
+      "timeoutSeconds": 60,
+      "workingDirectory": "C:\\scripts\\monitoring"
+    }
+  ]
+}

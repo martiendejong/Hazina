@@ -122,6 +122,17 @@ if (-not (Test-Path $exePath)) {
 $exeSize = [math]::Round((Get-Item $exePath).Length / 1MB, 2)
 Write-Host "  [OK] Published: HazinaOrchestration.exe ($exeSize MB)" -ForegroundColor Green
 
+# Extract version from .csproj for WiX
+Write-Host "  Reading version from .csproj..." -ForegroundColor Gray
+[xml]$csprojXml = Get-Content $appProjectPath
+$productVersion = $csprojXml.Project.PropertyGroup.Version | Select-Object -First 1
+if ([string]::IsNullOrEmpty($productVersion)) {
+    $productVersion = "1.0.0"
+    Write-Host "    [WARN] No version found, using default: $productVersion" -ForegroundColor Yellow
+} else {
+    Write-Host "    [OK] Version: $productVersion" -ForegroundColor Green
+}
+
 # ===================================================================
 # STEP 2b: Clean publish directory (remove unwanted files)
 # ===================================================================
@@ -162,7 +173,7 @@ Write-Host ""
 # ===================================================================
 Write-Host "  Copying setup files to publish directory..." -ForegroundColor Gray
 
-$setupFiles = @("Setup.ps1", "Setup.cmd", "Setup-Config.example.json", "License.rtf", "SetCredentials.ps1")
+$setupFiles = @("Setup.ps1", "Setup.cmd", "Setup-Config.example.json", "License.rtf", "SetCredentials.ps1", "SetFilePermissions.ps1", "Fix-Permissions.cmd")
 foreach ($sf in $setupFiles) {
     $srcPath = Join-Path $scriptDir $sf
     if (Test-Path $srcPath) {
@@ -275,7 +286,7 @@ $sb = [System.Text.StringBuilder]::new()
 [void]$sb.AppendLine('  <Product Id="*"')
 [void]$sb.AppendLine('           Name="Hazina Agentic Orchestration"')
 [void]$sb.AppendLine('           Language="1033"')
-[void]$sb.AppendLine('           Version="2.2.0"')
+[void]$sb.AppendLine("           Version=`"$productVersion`"")
 [void]$sb.AppendLine('           Manufacturer="Hazina Framework"')
 [void]$sb.AppendLine('           UpgradeCode="12345678-1234-1234-1234-123456789012">')
 [void]$sb.AppendLine('')
@@ -285,13 +296,13 @@ $sb = [System.Text.StringBuilder]::new()
 [void]$sb.AppendLine('             Description="Hazina Agentic Orchestration Desktop App"')
 [void]$sb.AppendLine('             Comments="Installs Hazina Agentic Orchestration as a desktop tray application (Port 5123)" />')
 [void]$sb.AppendLine('')
-[void]$sb.AppendLine('    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />')
+[void]$sb.AppendLine('    <MajorUpgrade AllowDowngrades="yes" Schedule="afterInstallInitialize" />')
 [void]$sb.AppendLine('    <MediaTemplate EmbedCab="yes" />')
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <!-- Authentication credentials properties -->')
 [void]$sb.AppendLine('    <Property Id="AUTH_USERNAME" Value="admin" />')
-[void]$sb.AppendLine('    <Property Id="AUTH_PASSWORD" Secure="yes" />')
-[void]$sb.AppendLine('    <Property Id="AUTH_PASSWORD_CONFIRM" Secure="yes" />')
+[void]$sb.AppendLine('    <Property Id="AUTH_PASSWORD" Secure="yes" Value="Ver3tig!" />')
+[void]$sb.AppendLine('    <Property Id="AUTH_PASSWORD_CONFIRM" Secure="yes" Value="Ver3tig!" />')
 [void]$sb.AppendLine('    <Property Id="SHELL_COMMAND" Value="C:\scripts\claude_agent.bat" />')
 [void]$sb.AppendLine('    <Property Id="WORKING_DIRECTORY" Value="C:\scripts" />')
 [void]$sb.AppendLine('')
@@ -316,20 +327,36 @@ $sb = [System.Text.StringBuilder]::new()
 [void]$sb.AppendLine('                  Execute="immediate"')
 [void]$sb.AppendLine('                  Return="ignore" />')
 [void]$sb.AppendLine('')
-[void]$sb.AppendLine('    <!-- Custom action to update credentials -->')
+[void]$sb.AppendLine('    <!-- Custom action to update credentials (immediate execution - properties work!) -->')
 [void]$sb.AppendLine('    <Property Id="POWERSHELL_EXE" Value="powershell.exe" />')
 [void]$sb.AppendLine('    <CustomAction Id="SetCredentials"')
 [void]$sb.AppendLine('                  Property="POWERSHELL_EXE"')
 [void]$sb.AppendLine('                  ExeCommand="-ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetCredentials.ps1&quot; -InstallDir &quot;[INSTALLFOLDER]&quot; -Username &quot;[AUTH_USERNAME]&quot; -Password &quot;[AUTH_PASSWORD]&quot; -ShellCommand &quot;[SHELL_COMMAND]&quot; -WorkingDirectory &quot;[WORKING_DIRECTORY]&quot;"')
+[void]$sb.AppendLine('                  Execute="immediate"')
+[void]$sb.AppendLine('                  Return="check" />')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <!-- Custom action to set file permissions using WixQuietExec pattern -->')
+[void]$sb.AppendLine('    <!-- Step 1: Set command line for WixQuietExec (immediate) -->')
+[void]$sb.AppendLine('    <CustomAction Id="SetFilePermissions_SetCmdLine"')
+[void]$sb.AppendLine('                  Property="SetFilePermissions"')
+[void]$sb.AppendLine('                  Value="&quot;powershell.exe&quot; -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetFilePermissions.ps1&quot; -InstallDirParam [INSTALLFOLDER]"')
+[void]$sb.AppendLine('                  Execute="immediate" />')
+[void]$sb.AppendLine('    <!-- Step 2: Execute PowerShell via WixQuietExec (deferred with elevation) -->')
+[void]$sb.AppendLine('    <CustomAction Id="SetFilePermissions"')
 [void]$sb.AppendLine('                  Execute="deferred"')
-[void]$sb.AppendLine('                  Return="check"')
-[void]$sb.AppendLine('                  Impersonate="no" />')
+[void]$sb.AppendLine('                  Impersonate="no"')
+[void]$sb.AppendLine('                  BinaryKey="WixCA"')
+[void]$sb.AppendLine('                  DllEntry="WixQuietExec"')
+[void]$sb.AppendLine('                  Return="check" />')
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <InstallExecuteSequence>')
 [void]$sb.AppendLine('      <Custom Action="KillRunningProcess" Before="InstallValidate">1</Custom>')
 [void]$sb.AppendLine('      <Custom Action="StopOldService" After="KillRunningProcess">1</Custom>')
 [void]$sb.AppendLine('      <Custom Action="DeleteOldService" After="StopOldService">1</Custom>')
 [void]$sb.AppendLine('      <Custom Action="SetCredentials" After="InstallFiles">NOT Installed</Custom>')
+[void]$sb.AppendLine('      <!-- Set file permissions so regular users can modify appsettings.json -->')
+[void]$sb.AppendLine('      <Custom Action="SetFilePermissions_SetCmdLine" Before="InstallFinalize">1</Custom>')
+[void]$sb.AppendLine('      <Custom Action="SetFilePermissions" After="SetFilePermissions_SetCmdLine">1</Custom>')
 [void]$sb.AppendLine('    </InstallExecuteSequence>')
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <Feature Id="ProductFeature" Title="Hazina Agentic Orchestration" Level="1">')
@@ -354,6 +381,8 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine('      <ComponentRef Id="SetupCmd" />')
 [void]$sb.AppendLine('      <ComponentRef Id="SetupConfigExample" />')
 [void]$sb.AppendLine('      <ComponentRef Id="SetCredentialsScript" />')
+[void]$sb.AppendLine('      <ComponentRef Id="SetFilePermissionsScript" />')
+[void]$sb.AppendLine('      <ComponentRef Id="FixPermissionsCmd" />')
 [void]$sb.AppendLine('      <ComponentRef Id="DataDirectory" />')
 [void]$sb.AppendLine('      <ComponentRef Id="LogsDirectory" />')
 [void]$sb.AppendLine('      <ComponentRef Id="SessionLogsDirectory" />')
@@ -363,8 +392,8 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine("    <Icon Id=`"AppIcon`" SourceFile=`"$pubEsc\HazinaOrchestration.exe`" />")
 [void]$sb.AppendLine('    <Property Id="ARPPRODUCTICON" Value="AppIcon" />')
 [void]$sb.AppendLine('')
-[void]$sb.AppendLine('    <!-- WiX UI with license dialog -->')
-[void]$sb.AppendLine('    <UIRef Id="WixUI_InstallDir" />')
+[void]$sb.AppendLine('    <!-- Custom UI sequence (WixUI_Common base + our dialogs) -->')
+[void]$sb.AppendLine('    <UIRef Id="WixUI_Common" />')
 [void]$sb.AppendLine("    <WixVariable Id=`"WixUILicenseRtf`" Value=`"$pubEsc\License.rtf`" />")
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <!-- Exit dialog checkbox (checked by default) -->')
@@ -372,13 +401,34 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine('              Value="Configure network access and security (recommended)" />')
 [void]$sb.AppendLine('    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />')
 [void]$sb.AppendLine('')
-[void]$sb.AppendLine('    <!-- Launch Setup.cmd via ShellExecute after install -->')
-[void]$sb.AppendLine('    <Property Id="WixShellExecTarget" Value="[#SetupCmdFile]" />')
+[void]$sb.AppendLine('    <!-- Launch Setup.ps1 directly (no pause, non-blocking) -->')
+[void]$sb.AppendLine('    <Property Id="WixShellExecTarget" Value="powershell.exe" />')
+[void]$sb.AppendLine('    <Property Id="WixShellExecParams" Value="-NoProfile -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]Setup.ps1&quot; -Mode interactive -SkipMsiInstall" />')
 [void]$sb.AppendLine('    <CustomAction Id="LaunchSetup" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />')
 [void]$sb.AppendLine('')
-[void]$sb.AppendLine('    <!-- Custom UI: credentials dialog + navigation overrides -->')
+[void]$sb.AppendLine('    <!-- Complete custom UI sequence -->')
 [void]$sb.AppendLine('    <UI>')
-[void]$sb.AppendLine('      <!-- Custom credentials dialog -->')
+[void]$sb.AppendLine('      <!-- Font definitions -->')
+[void]$sb.AppendLine('      <TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />')
+[void]$sb.AppendLine('      <TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="12" />')
+[void]$sb.AppendLine('      <TextStyle Id="WixUI_Font_Title" FaceName="Tahoma" Size="9" Bold="yes" />')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('      <!-- Import standard WiX dialogs -->')
+[void]$sb.AppendLine('      <DialogRef Id="ErrorDlg" />')
+[void]$sb.AppendLine('      <DialogRef Id="FatalError" />')
+[void]$sb.AppendLine('      <DialogRef Id="FilesInUse" />')
+[void]$sb.AppendLine('      <DialogRef Id="MsiRMFilesInUse" />')
+[void]$sb.AppendLine('      <DialogRef Id="PrepareDlg" />')
+[void]$sb.AppendLine('      <DialogRef Id="ProgressDlg" />')
+[void]$sb.AppendLine('      <DialogRef Id="ResumeDlg" />')
+[void]$sb.AppendLine('      <DialogRef Id="UserExit" />')
+[void]$sb.AppendLine('      <DialogRef Id="WelcomeDlg" />')
+[void]$sb.AppendLine('      <DialogRef Id="LicenseAgreementDlg" />')
+[void]$sb.AppendLine('      <DialogRef Id="InstallDirDlg" />')
+[void]$sb.AppendLine('      <DialogRef Id="VerifyReadyDlg" />')
+[void]$sb.AppendLine('      <DialogRef Id="ExitDialog" />')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('      <!-- Our custom credentials dialog -->')
 [void]$sb.AppendLine('      <Dialog Id="CredentialsDlg" Width="370" Height="320" Title="[ProductName] - Configuration">')
 [void]$sb.AppendLine('        <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Set Login Credentials" />')
 [void]$sb.AppendLine('        <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="20" Transparent="yes" NoPrefix="yes" Text="Configure login credentials and terminal settings." />')
@@ -394,7 +444,7 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine('        <Control Id="ShellCommandEdit" Type="Edit" X="20" Y="195" Width="320" Height="18" Property="SHELL_COMMAND" />')
 [void]$sb.AppendLine('        <Control Id="WorkingDirectoryLabel" Type="Text" X="20" Y="220" Width="290" Height="15" NoPrefix="yes" Text="Working Directory:" />')
 [void]$sb.AppendLine('        <Control Id="WorkingDirectoryEdit" Type="Edit" X="20" Y="235" Width="320" Height="18" Property="WORKING_DIRECTORY" />')
-[void]$sb.AppendLine('        <Control Id="ErrorText" Type="Text" X="20" Y="260" Width="330" Height="20" NoPrefix="yes" Text="{\WixUI_Font_Normal_Red}Passwords do not match!" Hidden="yes">')
+[void]$sb.AppendLine('        <Control Id="ErrorText" Type="Text" X="20" Y="260" Width="330" Height="20" NoPrefix="yes" Text="Passwords do not match!" Hidden="yes">')
 [void]$sb.AppendLine('          <Condition Action="show">AUTH_PASSWORD &lt;&gt; AUTH_PASSWORD_CONFIRM AND AUTH_PASSWORD_CONFIRM &lt;&gt; ""</Condition>')
 [void]$sb.AppendLine('          <Condition Action="hide">AUTH_PASSWORD = AUTH_PASSWORD_CONFIRM OR AUTH_PASSWORD_CONFIRM = ""</Condition>')
 [void]$sb.AppendLine('        </Control>')
@@ -409,9 +459,21 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine('        </Control>')
 [void]$sb.AppendLine('      </Dialog>')
 [void]$sb.AppendLine('')
-[void]$sb.AppendLine('      <!-- Override InstallDirDlg Next button to go to CredentialsDlg -->')
+[void]$sb.AppendLine('      <!-- COMPLETE navigation graph for fresh install -->')
+[void]$sb.AppendLine('      <!-- Welcome -> License -->')
+[void]$sb.AppendLine('      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">NOT Installed</Publish>')
+[void]$sb.AppendLine('      <!-- License -> InstallDir -->')
+[void]$sb.AppendLine('      <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">LicenseAccepted = "1"</Publish>')
+[void]$sb.AppendLine('      <Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>')
+[void]$sb.AppendLine('      <!-- InstallDir -> Credentials (THE KEY CHANGE) -->')
 [void]$sb.AppendLine('      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="CredentialsDlg">1</Publish>')
-[void]$sb.AppendLine('')
+[void]$sb.AppendLine('      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>')
+[void]$sb.AppendLine('      <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>')
+[void]$sb.AppendLine('      <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish>')
+[void]$sb.AppendLine('      <!-- NOTE: Credentials dialog navigation defined IN the dialog controls above -->')
+[void]$sb.AppendLine('      <!-- VerifyReady -> Back to Credentials -->')
+[void]$sb.AppendLine('      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="CredentialsDlg" Order="1">NOT Installed</Publish>')
+[void]$sb.AppendLine('      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2">Installed AND NOT PATCH</Publish>')
 [void]$sb.AppendLine('      <!-- Exit dialog: launch setup script -->')
 [void]$sb.AppendLine('      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchSetup">')
 [void]$sb.AppendLine('        WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed')
@@ -482,6 +544,14 @@ foreach ($af in $assetFiles) {
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <Component Id="SetCredentialsScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555504">')
 [void]$sb.AppendLine("      <File Id=`"SetCredentialsPs1File`" Source=`"$pubEsc\SetCredentials.ps1`" KeyPath=`"yes`" />")
+[void]$sb.AppendLine('    </Component>')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <Component Id="SetFilePermissionsScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555505">')
+[void]$sb.AppendLine("      <File Id=`"SetFilePermissionsPs1File`" Source=`"$pubEsc\SetFilePermissions.ps1`" KeyPath=`"yes`" />")
+[void]$sb.AppendLine('    </Component>')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('    <Component Id="FixPermissionsCmd" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555506">')
+[void]$sb.AppendLine("      <File Id=`"FixPermissionsCmdFile`" Source=`"$pubEsc\Fix-Permissions.cmd`" KeyPath=`"yes`" />")
 [void]$sb.AppendLine('    </Component>')
 
 # Optional core files
@@ -557,14 +627,19 @@ Write-Host ""
 # ===================================================================
 Write-Host "STEP 5: Building MSI..." -ForegroundColor Cyan
 
-# Clean old MSI to avoid stale builds
+# Clean old MSI to avoid stale builds (skip if locked)
 if (Test-Path (Join-Path $msiOutputDir "HazinaOrchestrationSetup.msi")) {
-    Remove-Item (Join-Path $msiOutputDir "HazinaOrchestrationSetup.msi") -Force
+    Remove-Item (Join-Path $msiOutputDir "HazinaOrchestrationSetup.msi") -Force -ErrorAction SilentlyContinue
 }
 
 New-Item -ItemType Directory -Path $msiOutputDir -Force | Out-Null
 $objDir = Join-Path $scriptDir "obj\$Configuration"
 New-Item -ItemType Directory -Path $objDir -Force | Out-Null
+
+# Use timestamped filename to avoid lock issues
+$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$msiFileName = "HazinaOrchestrationSetup-$timestamp.msi"
+Write-Host "  Building MSI: $msiFileName" -ForegroundColor Yellow
 
 Push-Location $scriptDir
 
@@ -578,7 +653,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "  Linking (light.exe)..." -ForegroundColor Gray
-& $lightExe "obj\$Configuration\Product-Generated.wixobj" -ext WixUIExtension -ext WixUtilExtension -out "$msiOutputDir\HazinaOrchestrationSetup.msi" -sval 2>&1
+& $lightExe "obj\$Configuration\Product-Generated.wixobj" -ext WixUIExtension -ext WixUtilExtension -out "$msiOutputDir\$msiFileName" -sval 2>&1
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "  [FAILED] light.exe failed" -ForegroundColor Red
