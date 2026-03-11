@@ -262,7 +262,7 @@ jobs:
           chmod +x ./release-artifacts/install.sh
 
       - name: Create release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: Terminal Orchestration Tool v${{ steps.version.outputs.version }}
           tag_name: v${{ steps.version.outputs.version }}
