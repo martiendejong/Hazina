@@ -1,18 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Hazina.Demo.AgenticOrchestration</RootNamespace>
     <SpaRoot>ClientApp\</SpaRoot>
     <SpaProxyServerUrl>http://localhost:5173</SpaProxyServerUrl>
+    <ApplicationIcon>app.ico</ApplicationIcon>
 
     <!-- Assembly info for published executables -->
     <AssemblyName>HazinaOrchestration</AssemblyName>
     <Product>Hazina Agentic Orchestration</Product>
-    <Description>Web-based orchestration interface for managing Claude Code CLI instances</Description>
-    <Version>1.0.0</Version>
+    <Description>Desktop tray application for managing Claude Code CLI instances</Description>
+    <Version>2.4.0</Version>
 
     <!-- Publishing defaults -->
     <PublishSingleFile>true</PublishSingleFile>
@@ -40,12 +44,21 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Tray icon embedded resource -->
+    <EmbeddedResource Include="app.ico" LogicalName="Hazina.Demo.AgenticOrchestration.app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Copy entities.yaml to output -->
     <None Update="entities.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="appsettings.Production.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
   </ItemGroup>
 

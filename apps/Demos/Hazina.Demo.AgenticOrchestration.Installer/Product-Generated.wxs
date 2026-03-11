@@ -1,0 +1,347 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <Product Id="*"
+           Name="Hazina Agentic Orchestration"
+           Language="1033"
+           Version="2.4.0"
+           Manufacturer="Hazina Framework"
+           UpgradeCode="12345678-1234-1234-1234-123456789012">
+
+    <Package InstallerVersion="500"
+             Compressed="yes"
+             InstallScope="perMachine"
+             Description="Hazina Agentic Orchestration Desktop App"
+             Comments="Installs Hazina Agentic Orchestration as a desktop tray application (Port 5123)" />
+
+    <MajorUpgrade AllowDowngrades="yes" Schedule="afterInstallInitialize" />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Authentication credentials properties -->
+    <Property Id="AUTH_USERNAME" Value="admin" />
+    <Property Id="AUTH_PASSWORD" Secure="yes" Value="Ver3tig!" />
+    <Property Id="AUTH_PASSWORD_CONFIRM" Secure="yes" Value="Ver3tig!" />
+    <Property Id="SHELL_COMMAND" Value="C:\scripts\claude_agent.bat" />
+    <Property Id="WORKING_DIRECTORY" Value="C:\scripts" />
+
+    <!-- Kill any running HazinaOrchestration.exe before install/upgrade -->
+    <Property Id="TASKKILL" Value="taskkill.exe" />
+    <CustomAction Id="KillRunningProcess"
+                  Property="TASKKILL"
+                  ExeCommand="/F /IM HazinaOrchestration.exe"
+                  Execute="immediate"
+                  Return="ignore" />
+
+    <!-- Remove old Windows Service if it exists (migration from v1) -->
+    <Property Id="SC_EXE" Value="sc.exe" />
+    <CustomAction Id="StopOldService"
+                  Property="SC_EXE"
+                  ExeCommand="stop HazinaOrchestration"
+                  Execute="immediate"
+                  Return="ignore" />
+    <CustomAction Id="DeleteOldService"
+                  Property="SC_EXE"
+                  ExeCommand="delete HazinaOrchestration"
+                  Execute="immediate"
+                  Return="ignore" />
+
+    <!-- Custom action to update credentials (immediate execution - properties work!) -->
+    <Property Id="POWERSHELL_EXE" Value="powershell.exe" />
+    <CustomAction Id="SetCredentials"
+                  Property="POWERSHELL_EXE"
+                  ExeCommand="-ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetCredentials.ps1&quot; -InstallDir &quot;[INSTALLFOLDER]&quot; -Username &quot;[AUTH_USERNAME]&quot; -Password &quot;[AUTH_PASSWORD]&quot; -ShellCommand &quot;[SHELL_COMMAND]&quot; -WorkingDirectory &quot;[WORKING_DIRECTORY]&quot;"
+                  Execute="immediate"
+                  Return="check" />
+
+    <!-- Custom action to set file permissions using WixQuietExec pattern -->
+    <!-- Step 1: Set command line for WixQuietExec (immediate) -->
+    <CustomAction Id="SetFilePermissions_SetCmdLine"
+                  Property="SetFilePermissions"
+                  Value="&quot;powershell.exe&quot; -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetFilePermissions.ps1&quot; -InstallDirParam [INSTALLFOLDER]"
+                  Execute="immediate" />
+    <!-- Step 2: Execute PowerShell via WixQuietExec (deferred with elevation) -->
+    <CustomAction Id="SetFilePermissions"
+                  Execute="deferred"
+                  Impersonate="no"
+                  BinaryKey="WixCA"
+                  DllEntry="WixQuietExec"
+                  Return="check" />
+
+    <InstallExecuteSequence>
+      <Custom Action="KillRunningProcess" Before="InstallValidate">1</Custom>
+      <Custom Action="StopOldService" After="KillRunningProcess">1</Custom>
+      <Custom Action="DeleteOldService" After="StopOldService">1</Custom>
+      <Custom Action="SetCredentials" After="InstallFiles">NOT Installed</Custom>
+      <!-- Set file permissions so regular users can modify appsettings.json -->
+      <Custom Action="SetFilePermissions_SetCmdLine" Before="InstallFinalize">1</Custom>
+      <Custom Action="SetFilePermissions" After="SetFilePermissions_SetCmdLine">1</Custom>
+    </InstallExecuteSequence>
+
+    <Feature Id="ProductFeature" Title="Hazina Agentic Orchestration" Level="1">
+      <ComponentRef Id="MainExecutable" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="AppSettingsConfig" />
+      <ComponentRef Id="ProductionConfig" />
+      <ComponentRef Id="Core_web_config" />
+      <ComponentRef Id="Core_entities_yaml" />
+      <ComponentRef Id="Core_HazinaOrchestration_staticwebassets_endpoints_json" />
+      <ComponentRef Id="IndexHtml" />
+      <ComponentRef Id="WwwRoot_index_html_br" />
+      <ComponentRef Id="WwwRoot_index_html_gz" />
+      <ComponentRef Id="WwwRoot_vite_svg" />
+      <ComponentRef Id="WwwRoot_vite_svg_br" />
+      <ComponentRef Id="WwwRoot_vite_svg_gz" />
+      <ComponentRef Id="AssetFile_index_B24UAhMd_css" />
+      <ComponentRef Id="AssetFile_index_B24UAhMd_css_br" />
+      <ComponentRef Id="AssetFile_index_B24UAhMd_css_gz" />
+      <ComponentRef Id="AssetFile_index_CFANkm62_js" />
+      <ComponentRef Id="AssetFile_index_CFANkm62_js_br" />
+      <ComponentRef Id="AssetFile_index_CFANkm62_js_gz" />
+      <ComponentRef Id="SetupScript" />
+      <ComponentRef Id="SetupCmd" />
+      <ComponentRef Id="SetupConfigExample" />
+      <ComponentRef Id="SetCredentialsScript" />
+      <ComponentRef Id="SetFilePermissionsScript" />
+      <ComponentRef Id="FixPermissionsCmd" />
+      <ComponentRef Id="DataDirectory" />
+      <ComponentRef Id="LogsDirectory" />
+      <ComponentRef Id="SessionLogsDirectory" />
+    </Feature>
+
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    <Icon Id="AppIcon" SourceFile="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\HazinaOrchestration.exe" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+
+    <!-- Custom UI sequence (WixUI_Common base + our dialogs) -->
+    <UIRef Id="WixUI_Common" />
+    <WixVariable Id="WixUILicenseRtf" Value="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\License.rtf" />
+
+    <!-- Exit dialog checkbox (checked by default) -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT"
+              Value="Configure network access and security (recommended)" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+
+    <!-- Launch Setup.ps1 directly (no pause, non-blocking) -->
+    <Property Id="WixShellExecTarget" Value="powershell.exe" />
+    <Property Id="WixShellExecParams" Value="-NoProfile -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]Setup.ps1&quot; -Mode interactive -SkipMsiInstall" />
+    <CustomAction Id="LaunchSetup" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
+
+    <!-- Complete custom UI sequence -->
+    <UI>
+      <!-- Font definitions -->
+      <TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
+      <TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="12" />
+      <TextStyle Id="WixUI_Font_Title" FaceName="Tahoma" Size="9" Bold="yes" />
+
+      <!-- Import standard WiX dialogs -->
+      <DialogRef Id="ErrorDlg" />
+      <DialogRef Id="FatalError" />
+      <DialogRef Id="FilesInUse" />
+      <DialogRef Id="MsiRMFilesInUse" />
+      <DialogRef Id="PrepareDlg" />
+      <DialogRef Id="ProgressDlg" />
+      <DialogRef Id="ResumeDlg" />
+      <DialogRef Id="UserExit" />
+      <DialogRef Id="WelcomeDlg" />
+      <DialogRef Id="LicenseAgreementDlg" />
+      <DialogRef Id="InstallDirDlg" />
+      <DialogRef Id="VerifyReadyDlg" />
+      <DialogRef Id="ExitDialog" />
+
+      <!-- Our custom credentials dialog -->
+      <Dialog Id="CredentialsDlg" Width="370" Height="320" Title="[ProductName] - Configuration">
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Set Login Credentials" />
+        <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="20" Transparent="yes" NoPrefix="yes" Text="Configure login credentials and terminal settings." />
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="BottomLine" Type="Line" X="0" Y="284" Width="370" Height="0" />
+        <Control Id="UsernameLabel" Type="Text" X="20" Y="60" Width="290" Height="15" NoPrefix="yes" Text="Username:" />
+        <Control Id="UsernameEdit" Type="Edit" X="20" Y="75" Width="320" Height="18" Property="AUTH_USERNAME" />
+        <Control Id="PasswordLabel" Type="Text" X="20" Y="100" Width="290" Height="15" NoPrefix="yes" Text="Password:" />
+        <Control Id="PasswordEdit" Type="Edit" X="20" Y="115" Width="320" Height="18" Property="AUTH_PASSWORD" Password="yes" />
+        <Control Id="ConfirmPasswordLabel" Type="Text" X="20" Y="140" Width="290" Height="15" NoPrefix="yes" Text="Confirm Password:" />
+        <Control Id="ConfirmPasswordEdit" Type="Edit" X="20" Y="155" Width="320" Height="18" Property="AUTH_PASSWORD_CONFIRM" Password="yes" />
+        <Control Id="ShellCommandLabel" Type="Text" X="20" Y="180" Width="290" Height="15" NoPrefix="yes" Text="Shell Command:" />
+        <Control Id="ShellCommandEdit" Type="Edit" X="20" Y="195" Width="320" Height="18" Property="SHELL_COMMAND" />
+        <Control Id="WorkingDirectoryLabel" Type="Text" X="20" Y="220" Width="290" Height="15" NoPrefix="yes" Text="Working Directory:" />
+        <Control Id="WorkingDirectoryEdit" Type="Edit" X="20" Y="235" Width="320" Height="18" Property="WORKING_DIRECTORY" />
+        <Control Id="ErrorText" Type="Text" X="20" Y="260" Width="330" Height="20" NoPrefix="yes" Text="Passwords do not match!" Hidden="yes">
+          <Condition Action="show">AUTH_PASSWORD &lt;&gt; AUTH_PASSWORD_CONFIRM AND AUTH_PASSWORD_CONFIRM &lt;&gt; ""</Condition>
+          <Condition Action="hide">AUTH_PASSWORD = AUTH_PASSWORD_CONFIRM OR AUTH_PASSWORD_CONFIRM = ""</Condition>
+        </Control>
+        <Control Id="Back" Type="PushButton" X="180" Y="293" Width="56" Height="17" Text="&amp;Back">
+          <Publish Event="NewDialog" Value="InstallDirDlg">1</Publish>
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="293" Width="56" Height="17" Default="yes" Text="&amp;Next">
+          <Publish Event="NewDialog" Value="VerifyReadyDlg">AUTH_PASSWORD = AUTH_PASSWORD_CONFIRM</Publish>
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="293" Width="56" Height="17" Cancel="yes" Text="Cancel">
+          <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
+        </Control>
+      </Dialog>
+
+      <!-- COMPLETE navigation graph for fresh install -->
+      <!-- Welcome -> License -->
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg">NOT Installed</Publish>
+      <!-- License -> InstallDir -->
+      <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg">LicenseAccepted = "1"</Publish>
+      <Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg">1</Publish>
+      <!-- InstallDir -> Credentials (THE KEY CHANGE) -->
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="CredentialsDlg">1</Publish>
+      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
+      <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1">1</Publish>
+      <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2">1</Publish>
+      <!-- NOTE: Credentials dialog navigation defined IN the dialog controls above -->
+      <!-- VerifyReady -> Back to Credentials -->
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="CredentialsDlg" Order="1">NOT Installed</Publish>
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2">Installed AND NOT PATCH</Publish>
+      <!-- Exit dialog: launch setup script -->
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchSetup">
+        WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed
+      </Publish>
+    </UI>
+
+  </Product>
+
+  <!-- Directory Structure -->
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="Hazina Orchestration">
+          <Directory Id="WWWROOT" Name="wwwroot">
+            <Directory Id="WWWROOT_ASSETS" Name="assets" />
+          </Directory>
+          <Directory Id="DATADIR" Name="data" />
+          <Directory Id="LOGSDIR" Name="logs">
+            <Directory Id="LOGS_SESSIONS" Name="agent-sessions" />
+          </Directory>
+        </Directory>
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Hazina Orchestration" />
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <Component Id="MainExecutable" Directory="INSTALLFOLDER" Guid="11111111-1111-1111-1111-111111111111">
+      <File Id="HazinaOrchestrationExe" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\HazinaOrchestration.exe" KeyPath="yes" />
+    </Component>
+
+    <!-- Start Menu shortcut -->
+    <Component Id="StartMenuShortcut" Directory="ApplicationProgramsFolder" Guid="44444444-4444-4444-4444-444444444444">
+      <Shortcut Id="ApplicationStartMenuShortcut"
+                Name="Hazina Orchestration"
+                Description="Hazina Agentic Orchestration Desktop App"
+                Target="[INSTALLFOLDER]HazinaOrchestration.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="AppIcon" />
+      <RemoveFolder Id="CleanUpShortcutFolder" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\Hazina\Orchestration" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="AppSettingsConfig" Directory="INSTALLFOLDER" Guid="22222222-2222-2222-2222-222222222222">
+      <File Id="AppSettingsJson" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\appsettings.json" KeyPath="yes" />
+    </Component>
+
+    <Component Id="ProductionConfig" Directory="INSTALLFOLDER" Guid="33333333-3333-3333-3333-333333333333">
+      <File Id="AppSettingsProductionJson" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\appsettings.Production.json" KeyPath="yes" />
+    </Component>
+
+    <!-- Setup files (for post-install Tailscale/HTTPS configuration) -->
+    <Component Id="SetupScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555501">
+      <File Id="SetupPs1File" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\Setup.ps1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="SetupCmd" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555502">
+      <File Id="SetupCmdFile" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\Setup.cmd" KeyPath="yes" />
+    </Component>
+
+    <Component Id="SetupConfigExample" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555503">
+      <File Id="SetupConfigExampleFile" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\Setup-Config.example.json" KeyPath="yes" />
+    </Component>
+
+    <Component Id="SetCredentialsScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555504">
+      <File Id="SetCredentialsPs1File" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\SetCredentials.ps1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="SetFilePermissionsScript" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555505">
+      <File Id="SetFilePermissionsPs1File" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\SetFilePermissions.ps1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="FixPermissionsCmd" Directory="INSTALLFOLDER" Guid="55555555-5555-5555-5555-555555555506">
+      <File Id="FixPermissionsCmdFile" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\Fix-Permissions.cmd" KeyPath="yes" />
+    </Component>
+
+    <Component Id="Core_web_config" Directory="INSTALLFOLDER" Guid="F8DBBFD7-25F8-A085-C706-2AA5AA56D320">
+      <File Id="CF_web_config" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\web.config" KeyPath="yes" />
+    </Component>
+
+    <Component Id="Core_entities_yaml" Directory="INSTALLFOLDER" Guid="A91409EB-FC1D-E2C4-A552-BAC0540002F6">
+      <File Id="CF_entities_yaml" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\entities.yaml" KeyPath="yes" />
+    </Component>
+
+    <Component Id="Core_HazinaOrchestration_staticwebassets_endpoints_json" Directory="INSTALLFOLDER" Guid="F05A4A25-474E-8107-7D8E-BF3CA37B474F">
+      <File Id="CF_HazinaOrchestration_staticwebassets_endpoints_json" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\HazinaOrchestration.staticwebassets.endpoints.json" KeyPath="yes" />
+    </Component>
+  </Fragment>
+
+  <Fragment>
+    <Component Id="IndexHtml" Directory="WWWROOT" Guid="AAAA1111-1111-1111-1111-111111111111">
+      <File Id="IndexHtmlFile" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\index.html" KeyPath="yes" />
+    </Component>
+
+    <Component Id="WwwRoot_index_html_br" Directory="WWWROOT" Guid="3AE0F71E-A1C8-CA52-F146-CE28BAFFF211">
+      <File Id="WR_index_html_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\index.html.br" KeyPath="yes" />
+    </Component>
+
+    <Component Id="WwwRoot_index_html_gz" Directory="WWWROOT" Guid="61B7DE27-7194-A21E-99A5-D05EA614CEF6">
+      <File Id="WR_index_html_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\index.html.gz" KeyPath="yes" />
+    </Component>
+
+    <Component Id="WwwRoot_vite_svg" Directory="WWWROOT" Guid="1E66F9CB-08C8-AEF0-356E-28F728CA00C4">
+      <File Id="WR_vite_svg" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\vite.svg" KeyPath="yes" />
+    </Component>
+
+    <Component Id="WwwRoot_vite_svg_br" Directory="WWWROOT" Guid="57128E00-EEA4-DA00-252C-522BD7860935">
+      <File Id="WR_vite_svg_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\vite.svg.br" KeyPath="yes" />
+    </Component>
+
+    <Component Id="WwwRoot_vite_svg_gz" Directory="WWWROOT" Guid="BF5410A3-D947-AAE8-1A1A-4C8B61AD6E5D">
+      <File Id="WR_vite_svg_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\vite.svg.gz" KeyPath="yes" />
+    </Component>
+  </Fragment>
+
+  <Fragment>
+    <Component Id="AssetFile_index_B24UAhMd_css" Directory="WWWROOT_ASSETS" Guid="288EFAED-C073-E760-CC98-7AE0B7AC6A67">
+      <File Id="AF_index_B24UAhMd_css" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-B24UAhMd.css" KeyPath="yes" />
+    </Component>
+    <Component Id="AssetFile_index_B24UAhMd_css_br" Directory="WWWROOT_ASSETS" Guid="D196D190-AC71-7BA2-BEC3-9BCA0839FCCD">
+      <File Id="AF_index_B24UAhMd_css_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-B24UAhMd.css.br" KeyPath="yes" />
+    </Component>
+    <Component Id="AssetFile_index_B24UAhMd_css_gz" Directory="WWWROOT_ASSETS" Guid="C57CB18E-9981-757C-9D02-2F5F50DD0075">
+      <File Id="AF_index_B24UAhMd_css_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-B24UAhMd.css.gz" KeyPath="yes" />
+    </Component>
+    <Component Id="AssetFile_index_CFANkm62_js" Directory="WWWROOT_ASSETS" Guid="08EAADFD-59D2-F1BA-D177-AE8F9C2E270D">
+      <File Id="AF_index_CFANkm62_js" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-CFANkm62.js" KeyPath="yes" />
+    </Component>
+    <Component Id="AssetFile_index_CFANkm62_js_br" Directory="WWWROOT_ASSETS" Guid="7E7F359A-8B02-76C0-5410-145B4731CFC3">
+      <File Id="AF_index_CFANkm62_js_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-CFANkm62.js.br" KeyPath="yes" />
+    </Component>
+    <Component Id="AssetFile_index_CFANkm62_js_gz" Directory="WWWROOT_ASSETS" Guid="2281EFA0-3F40-9769-841E-1C37CDFF2264">
+      <File Id="AF_index_CFANkm62_js_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-CFANkm62.js.gz" KeyPath="yes" />
+    </Component>
+  </Fragment>
+
+  <Fragment>
+    <Component Id="DataDirectory" Directory="DATADIR" Guid="CCCC1111-1111-1111-1111-111111111111">
+      <CreateFolder />
+    </Component>
+    <Component Id="LogsDirectory" Directory="LOGSDIR" Guid="CCCC2222-2222-2222-2222-222222222222">
+      <CreateFolder />
+    </Component>
+    <Component Id="SessionLogsDirectory" Directory="LOGS_SESSIONS" Guid="CCCC3333-3333-3333-3333-333333333333">
+      <CreateFolder />
+    </Component>
+  </Fragment>
+
+</Wix>

@@ -18,6 +18,8 @@ namespace Hazina.Tools.Models.Social
         [JsonPropertyName("FullPicture")]
         public string FullPicture { get; set; }
 
+        public string PictureUrl { get; set; }
+
         public int Shares { get; set; }
 
         [JsonConverter(typeof(FlexibleCommentsConverter))]

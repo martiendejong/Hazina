@@ -1,10 +1,27 @@
+using System.Diagnostics;
 using Hazina.AgenticOrchestration.Extensions;
 using Hazina.AgenticOrchestration.Services;
+using Hazina.Demo.AgenticOrchestration;
 using Hazina.Demo.AgenticOrchestration.Authentication;
 using Hazina.LLMs;
 using Hazina.LLMs.OpenAI;
 using Microsoft.OpenApi.Models;
 
+// ═══════════════════════════════════════════════════════════════
+// REDIRECT CONSOLE OUTPUT TO LOG FILE (WinExe has no console)
+// ═══════════════════════════════════════════════════════════════
+var logDir = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+    "HazinaOrchestration", "logs");
+Directory.CreateDirectory(logDir);
+var logFile = Path.Combine(logDir, $"orchestration-{DateTime.Now:yyyy-MM-dd}.log");
+var logWriter = new StreamWriter(logFile, append: true) { AutoFlush = true };
+Console.SetOut(logWriter);
+Console.SetError(logWriter);
+
+// ═══════════════════════════════════════════════════════════════
+// BUILD WEB APPLICATION
+// ═══════════════════════════════════════════════════════════════
 var builder = WebApplication.CreateBuilder(args);
 
 // Load secrets file (not committed to git)
@@ -16,6 +33,17 @@ builder.Configuration.AddJsonFile("appsettings.Secrets.json", optional: true, re
 var config = builder.Configuration.GetSection("AgenticOrchestration");
 var dbPath = config["DatabasePath"] ?? @"C:\scripts\_machine\agent-activity.db";
 var logsPath = config["LogsPath"] ?? @"C:\scripts\logs";
+
+// Ensure data directories exist (important for fresh installations)
+try
+{
+    Directory.CreateDirectory(Path.GetDirectoryName(dbPath) ?? "data");
+    Directory.CreateDirectory(logsPath);
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Warning: Could not create directories: {ex.Message}");
+}
 
 // Terminal configuration
 var terminalConfig = config.GetSection("Terminal");
@@ -32,6 +60,19 @@ var sessionLoggingConfig = config.GetSection("SessionLogging");
 var sessionLoggingEnabled = !bool.TryParse(sessionLoggingConfig["Enabled"], out var logEnabled) || logEnabled; // Default: true
 var sessionLogsBasePath = sessionLoggingConfig["BasePath"] ?? @"C:\scripts\logs\agent-sessions";
 
+// Ensure session logs directory exists
+try { Directory.CreateDirectory(sessionLogsBasePath); }
+catch (Exception ex) { Console.WriteLine($"Warning: Could not create session logs directory: {ex.Message}"); }
+
+// Uploads configuration
+var uploadsConfig = config.GetSection("Uploads");
+var uploadsPath = uploadsConfig["Path"] ?? "uploads";
+var maxUploadFileSizeMB = int.TryParse(uploadsConfig["MaxFileSizeMB"], out var uploadSize) ? uploadSize : 50;
+
+// Ensure uploads directory exists
+try { Directory.CreateDirectory(uploadsPath); }
+catch (Exception ex) { Console.WriteLine($"Warning: Could not create uploads directory: {ex.Message}"); }
+
 // Authentication configuration
 var authConfig = builder.Configuration.GetSection("Authentication");
 var authEnabled = bool.TryParse(authConfig["Enabled"], out var enabled) && enabled;
@@ -39,20 +80,20 @@ var authUsername = authConfig["Username"] ?? "admin";
 var authPassword = authConfig["Password"] ?? "changeme";
 var authRealm = authConfig["Realm"] ?? "Hazina Agentic Orchestration";
 
-Console.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
-Console.WriteLine("║     HAZINA AGENTIC ORCHESTRATION - Demo Application              ║");
-Console.WriteLine("╠══════════════════════════════════════════════════════════════════╣");
-Console.WriteLine($"║  Database: {dbPath,-50} ║");
-Console.WriteLine($"║  Logs: {logsPath,-54} ║");
-Console.WriteLine($"║  Terminal Command: {defaultCommand,-42} ║");
-Console.WriteLine($"║  Working Directory: {defaultWorkingDirectory ?? "(current)",-41} ║");
-Console.WriteLine($"║  Session Logging: {(sessionLoggingEnabled ? "ENABLED" : "DISABLED"),-43} ║");
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ╔══════════════════════════════════════════════════════════════════╗");
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ║     HAZINA AGENTIC ORCHESTRATION - Desktop Tray App              ║");
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ╠══════════════════════════════════════════════════════════════════╣");
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ║  Database: {dbPath,-50} ║");
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ║  Logs: {logsPath,-54} ║");
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ║  Terminal Command: {defaultCommand,-42} ║");
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ║  Working Directory: {defaultWorkingDirectory ?? "(current)",-41} ║");
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ║  Session Logging: {(sessionLoggingEnabled ? "ENABLED" : "DISABLED"),-43} ║");
 if (sessionLoggingEnabled)
 {
-    Console.WriteLine($"║  Session Logs: {sessionLogsBasePath,-46} ║");
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ║  Session Logs: {sessionLogsBasePath,-46} ║");
 }
-Console.WriteLine($"║  Authentication: {(authEnabled ? $"ENABLED (user: {authUsername})" : "DISABLED"),-44} ║");
-Console.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ║  Authentication: {(authEnabled ? $"ENABLED (user: {authUsername})" : "DISABLED"),-44} ║");
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ╚══════════════════════════════════════════════════════════════════╝");
 
 // ═══════════════════════════════════════════════════════════════
 // SERVICE REGISTRATION - Hazina Declarative Style
@@ -76,13 +117,30 @@ builder.Services.AddHazinaAgenticOrchestration(options =>
     // Session logging
     options.EnableSessionLogging = sessionLoggingEnabled;
     options.AgentSessionLogsPath = sessionLogsBasePath;
+    // Uploads
+    options.UploadsPath = uploadsPath;
+    options.MaxUploadFileSizeMB = maxUploadFileSizeMB;
 });
-Console.WriteLine("✅ Hazina Agentic Orchestration services registered (declarative)");
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Hazina Agentic Orchestration services registered (declarative)");
 
-// OpenAI LLM Client for Chat Agent
-var openAIConfig = OpenAIConfig.FromConfiguration(builder.Configuration);
-builder.Services.AddSingleton<ILLMClient>(new OpenAIClientWrapper(openAIConfig));
-Console.WriteLine($"✅ OpenAI LLM Client registered (model: {openAIConfig.Model})");
+// OpenAI LLM Client for Chat Agent (optional - won't crash if API key is missing)
+try
+{
+    var openAIConfig = OpenAIConfig.FromConfiguration(builder.Configuration);
+    if (!string.IsNullOrWhiteSpace(openAIConfig.ApiKey) && openAIConfig.ApiKey != "YOUR_OPENAI_API_KEY_HERE")
+    {
+        builder.Services.AddSingleton<ILLMClient>(new OpenAIClientWrapper(openAIConfig));
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] OpenAI LLM Client registered (model: {openAIConfig.Model})");
+    }
+    else
+    {
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] OpenAI LLM Client skipped (no API key configured)");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] OpenAI LLM Client skipped: {ex.Message}");
+}
 
 // Authentication
 builder.Services.AddAuthentication(BasicAuthenticationExtensions.SchemeName)
@@ -95,12 +153,18 @@ builder.Services.AddAuthentication(BasicAuthenticationExtensions.SchemeName)
     });
 
 builder.Services.AddAuthorization();
-Console.WriteLine($"✅ Basic Authentication configured (enabled: {authEnabled})");
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Basic Authentication configured (enabled: {authEnabled})");
 
 // ASP.NET Core Services
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(Hazina.AgenticOrchestration.Controllers.TerminalController).Assembly);
 builder.Services.AddEndpointsApiExplorer();
+
+// Configure max upload size for multipart form data
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = (long)maxUploadFileSizeMB * 1024 * 1024;
+});
 
 // Swagger
 builder.Services.AddSwaggerGen(c =>
@@ -169,16 +233,13 @@ var app = builder.Build();
 // MIDDLEWARE PIPELINE
 // ═══════════════════════════════════════════════════════════════
 
-// Swagger UI
-if (app.Environment.IsDevelopment())
+// Swagger UI - always enabled (desktop app always needs it)
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Hazina Agentic Orchestration v1");
-        c.RoutePrefix = "swagger";
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Hazina Agentic Orchestration v1");
+    c.RoutePrefix = "swagger";
+});
 
 app.UseCors();
 app.UseRouting();
@@ -199,7 +260,6 @@ app.UseStaticFiles();
 app.MapControllers().RequireAuthorization();
 
 // Map SignalR Hubs (declarative one-liner)
-// Note: SignalR hub authorization is handled via [Authorize] attribute on hub classes
 app.MapHazinaAgenticHubs();
 
 // ═══════════════════════════════════════════════════════════════
@@ -211,11 +271,11 @@ app.MapGet("/health", () => Results.Ok(new
 {
     Status = "healthy",
     Service = "Hazina Agentic Orchestration",
+    Mode = "Desktop Tray App",
     Timestamp = DateTime.UtcNow
 }))
 .WithName("HealthCheck")
 .WithOpenApi();
-
 
 // API root - list available endpoints (requires auth)
 app.MapGet("/api", () => Results.Ok(new
@@ -293,36 +353,79 @@ app.MapGet("/api/interactions/count", async (IInteractionService interactionServ
 .RequireAuthorization();
 
 // ═══════════════════════════════════════════════════════════════
-// STARTUP MESSAGE
+// STARTUP LOG
 // ═══════════════════════════════════════════════════════════════
 
 Console.WriteLine();
-Console.WriteLine("╔══════════════════════════════════════════════════════════════════╗");
-Console.WriteLine("║                    🚀 SERVER STARTED                             ║");
-Console.WriteLine("╠══════════════════════════════════════════════════════════════════╣");
-Console.WriteLine("║  Listening on: (see URLs below from Kestrel)                     ║");
-Console.WriteLine("║  Swagger UI:   /swagger                                          ║");
-Console.WriteLine("║  React UI:     /                                                 ║");
-Console.WriteLine("╠══════════════════════════════════════════════════════════════════╣");
-Console.WriteLine("║  SignalR Hubs:                                                   ║");
-Console.WriteLine("║    /hubs/agentic   (Instance management)                         ║");
-Console.WriteLine("║    /hubs/terminal  (Real-time terminal)                          ║");
-Console.WriteLine("╠══════════════════════════════════════════════════════════════════╣");
-Console.WriteLine("║  Terminal API:                                                   ║");
-Console.WriteLine("║    POST   /api/terminal/sessions      - Create session           ║");
-Console.WriteLine("║    GET    /api/terminal/sessions      - List sessions            ║");
-Console.WriteLine("║    DELETE /api/terminal/sessions/{id} - Terminate session        ║");
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] SERVER STARTED - Desktop Tray App");
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Swagger: /swagger | React UI: / | SignalR: /hubs/agentic, /hubs/terminal");
 if (authEnabled)
-{
-    Console.WriteLine("╠══════════════════════════════════════════════════════════════════╣");
-    Console.WriteLine("║  🔐 AUTHENTICATION REQUIRED                                      ║");
-    Console.WriteLine($"║     Username: {authUsername,-51} ║");
-    Console.WriteLine("║     Password: (configured in appsettings.json)                   ║");
-}
-Console.WriteLine("╚══════════════════════════════════════════════════════════════════╝");
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Authentication: ENABLED (user: {authUsername})");
 Console.WriteLine();
 
 // SPA fallback - serve index.html for client-side routing
 app.MapFallbackToFile("index.html");
 
-app.Run();
+// ═══════════════════════════════════════════════════════════════
+// START: Web host (service mode) OR tray app (desktop mode)
+// ═══════════════════════════════════════════════════════════════
+
+// Detect if running as Windows Service (non-interactive) or desktop app (interactive)
+var isServiceMode = !Environment.UserInteractive;
+
+if (isServiceMode)
+{
+    // ═══════════════════════════════════════════════════════════════
+    // SERVICE MODE: Run as background service without UI
+    // ═══════════════════════════════════════════════════════════════
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Running in SERVICE MODE (no UI)");
+
+    try
+    {
+        await app.RunAsync();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Web host error: {ex.Message}");
+    }
+    finally
+    {
+        logWriter.Flush();
+        logWriter.Dispose();
+    }
+}
+else
+{
+    // ═══════════════════════════════════════════════════════════════
+    // DESKTOP MODE: Run with system tray UI
+    // ═══════════════════════════════════════════════════════════════
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Running in DESKTOP MODE (with system tray)");
+
+    // Start the ASP.NET Core web host in the background
+    _ = Task.Run(async () =>
+    {
+        try
+        {
+            await app.RunAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Web host error: {ex.Message}");
+        }
+    });
+
+    // Give the web host a moment to start listening
+    await Task.Delay(500);
+
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Starting system tray application...");
+
+    // Run WinForms on the main thread (required for message pump)
+    Application.EnableVisualStyles();
+    Application.SetCompatibleTextRenderingDefault(false);
+    Application.Run(new TrayApplicationContext(app));
+
+    // Cleanup after tray app exits
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Application shutting down...");
+    logWriter.Flush();
+    logWriter.Dispose();
+}

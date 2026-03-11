@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+  <Package Name="Minimal Test"
+           Manufacturer="Test"
+           Version="1.0.0.0"
+           UpgradeCode="B1B2C3D4-E5F6-4A5B-9C8D-1E2F3A4B5C6D">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="MinimalTest" />
+    </StandardDirectory>
+
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="TestComponent" Guid="C2C3D4E5-F6A7-4B5C-8D9E-2F3A4B5C6D7E">
+        <File Source="License.rtf" />
+      </Component>
+    </ComponentGroup>
+
+    <Feature Id="ProductFeature" Title="Minimal Test" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+
+  </Package>
+</Wix>
