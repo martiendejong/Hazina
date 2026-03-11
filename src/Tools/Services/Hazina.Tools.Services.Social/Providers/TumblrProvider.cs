@@ -52,6 +52,9 @@ public class TumblrProvider : ISocialProvider
     {
         try
         {
+            _logger.LogInformation("Tumblr token exchange starting. RedirectUri: {RedirectUri}, ClientId: {ClientId}", 
+                redirectUri, _clientId?.Substring(0, Math.Min(10, _clientId?.Length ?? 0)) + "...");
+
             var content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
                 ["grant_type"] = "authorization_code",
@@ -66,11 +69,12 @@ public class TumblrProvider : ISocialProvider
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Tumblr token exchange failed: {Response}", json);
+                _logger.LogWarning("Tumblr token exchange failed. Status: {StatusCode}, RedirectUri: {RedirectUri}, Response: {Response}", 
+                    response.StatusCode, redirectUri, json);
                 return new SocialAuthResult
                 {
                     Success = false,
-                    Error = $"Token exchange failed: {response.StatusCode}"
+                    Error = $"Token exchange failed: {response.StatusCode} - {json}"
                 };
             }
 
