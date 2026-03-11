@@ -64,6 +64,15 @@ var sessionLogsBasePath = sessionLoggingConfig["BasePath"] ?? @"C:\scripts\logs\
 try { Directory.CreateDirectory(sessionLogsBasePath); }
 catch (Exception ex) { Console.WriteLine($"Warning: Could not create session logs directory: {ex.Message}"); }
 
+// Uploads configuration
+var uploadsConfig = config.GetSection("Uploads");
+var uploadsPath = uploadsConfig["Path"] ?? "uploads";
+var maxUploadFileSizeMB = int.TryParse(uploadsConfig["MaxFileSizeMB"], out var uploadSize) ? uploadSize : 50;
+
+// Ensure uploads directory exists
+try { Directory.CreateDirectory(uploadsPath); }
+catch (Exception ex) { Console.WriteLine($"Warning: Could not create uploads directory: {ex.Message}"); }
+
 // Authentication configuration
 var authConfig = builder.Configuration.GetSection("Authentication");
 var authEnabled = bool.TryParse(authConfig["Enabled"], out var enabled) && enabled;
@@ -108,6 +117,9 @@ builder.Services.AddHazinaAgenticOrchestration(options =>
     // Session logging
     options.EnableSessionLogging = sessionLoggingEnabled;
     options.AgentSessionLogsPath = sessionLogsBasePath;
+    // Uploads
+    options.UploadsPath = uploadsPath;
+    options.MaxUploadFileSizeMB = maxUploadFileSizeMB;
 });
 Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Hazina Agentic Orchestration services registered (declarative)");
 
@@ -147,6 +159,12 @@ Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Basic Authentication configured (e
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(Hazina.AgenticOrchestration.Controllers.TerminalController).Assembly);
 builder.Services.AddEndpointsApiExplorer();
+
+// Configure max upload size for multipart form data
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = (long)maxUploadFileSizeMB * 1024 * 1024;
+});
 
 // Swagger
 builder.Services.AddSwaggerGen(c =>
@@ -349,12 +367,19 @@ Console.WriteLine();
 app.MapFallbackToFile("index.html");
 
 // ═══════════════════════════════════════════════════════════════
-// START: Web host on background thread, WinForms tray on main thread
+// START: Web host (service mode) OR tray app (desktop mode)
 // ═══════════════════════════════════════════════════════════════
 
-// Start the ASP.NET Core web host in the background
-_ = Task.Run(async () =>
+// Detect if running as Windows Service (non-interactive) or desktop app (interactive)
+var isServiceMode = !Environment.UserInteractive;
+
+if (isServiceMode)
 {
+    // ═══════════════════════════════════════════════════════════════
+    // SERVICE MODE: Run as background service without UI
+    // ═══════════════════════════════════════════════════════════════
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Running in SERVICE MODE (no UI)");
+
     try
     {
         await app.RunAsync();
@@ -363,19 +388,44 @@ _ = Task.Run(async () =>
     {
         Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Web host error: {ex.Message}");
     }
-});
+    finally
+    {
+        logWriter.Flush();
+        logWriter.Dispose();
+    }
+}
+else
+{
+    // ═══════════════════════════════════════════════════════════════
+    // DESKTOP MODE: Run with system tray UI
+    // ═══════════════════════════════════════════════════════════════
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Running in DESKTOP MODE (with system tray)");
 
-// Give the web host a moment to start listening
-await Task.Delay(500);
+    // Start the ASP.NET Core web host in the background
+    _ = Task.Run(async () =>
+    {
+        try
+        {
+            await app.RunAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Web host error: {ex.Message}");
+        }
+    });
 
-Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Starting system tray application...");
+    // Give the web host a moment to start listening
+    await Task.Delay(500);
 
-// Run WinForms on the main thread (required for message pump)
-Application.EnableVisualStyles();
-Application.SetCompatibleTextRenderingDefault(false);
-Application.Run(new TrayApplicationContext(app));
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Starting system tray application...");
 
-// Cleanup after tray app exits
-Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Application shutting down...");
-logWriter.Flush();
-logWriter.Dispose();
+    // Run WinForms on the main thread (required for message pump)
+    Application.EnableVisualStyles();
+    Application.SetCompatibleTextRenderingDefault(false);
+    Application.Run(new TrayApplicationContext(app));
+
+    // Cleanup after tray app exits
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Application shutting down...");
+    logWriter.Flush();
+    logWriter.Dispose();
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { SessionList } from './components/SessionList'
 import { TerminalView } from './components/TerminalView'
 import { ChatView } from './components/ChatView'
@@ -6,9 +6,25 @@ import { ArchiveView } from './components/ArchiveView'
 import { Login } from './components/Login'
 import { SplitPane } from './components/SplitPane'
 import { CommandPalette, useCommandPalette } from './components/CommandPalette'
+import { SessionPropertiesDialog } from './components/SessionPropertiesDialog'
 import { authFetch, hasCredentials, clearCredentials } from './auth'
-import type { TerminalSession, ExternalClaudeInstance, AllSessions, TerminalConfig, PendingRestore } from './types'
+import type { TerminalSession, ExternalClaudeInstance, AllSessions, TerminalConfig, PendingRestore, SessionProperties } from './types'
 import './App.css'
+
+const SESSION_PROPS_KEY = 'hazina-session-properties'
+
+function loadSessionProperties(): Record<string, SessionProperties> {
+  try {
+    const stored = localStorage.getItem(SESSION_PROPS_KEY)
+    return stored ? JSON.parse(stored) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveSessionProperties(props: Record<string, SessionProperties>) {
+  localStorage.setItem(SESSION_PROPS_KEY, JSON.stringify(props))
+}
 
 type ViewMode = 'sessions' | 'chat' | 'archive'
 
@@ -25,6 +41,9 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('sessions')
   const [pendingRestore, setPendingRestore] = useState<PendingRestore | null>(null)
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const [version, setVersion] = useState<string | null>(null)
+  const [sessionProperties, setSessionProperties] = useState<Record<string, SessionProperties>>(loadSessionProperties)
+  const [propsDialogSession, setPropsDialogSession] = useState<string | null>(null)
 
   // Command palette keyboard shortcut (Cmd+K / Ctrl+K)
   useCommandPalette(() => setCommandPaletteOpen(prev => !prev))
@@ -82,8 +101,12 @@ function App() {
   useEffect(() => {
     if (!isAuthenticated) return
 
-    // Fetch config once on mount
+    // Fetch config and version once on mount
     fetchConfig()
+    authFetch('/api/terminal/version')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.version) setVersion(data.version) })
+      .catch(() => {})
     // Fetch sessions initially - no auto-refresh
     fetchSessions()
 
@@ -211,6 +234,23 @@ function App() {
     ))
   }
 
+  const handleSaveSessionProperties = useCallback((sessionId: string, props: SessionProperties) => {
+    setSessionProperties(prev => {
+      const updated = { ...prev }
+      if (!props.customName && !props.cardColor) {
+        delete updated[sessionId]
+      } else {
+        updated[sessionId] = props
+      }
+      saveSessionProperties(updated)
+      return updated
+    })
+  }, [])
+
+  const handleEditProperties = useCallback((sessionId: string) => {
+    setPropsDialogSession(sessionId)
+  }, [])
+
   // Handle restoring a session from archive
   const handleRestoreSession = async (archivedSessionId: string) => {
     try {
@@ -279,7 +319,7 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Claude Terminal Orchestration</h1>
+        <h1>Claude Terminal Orchestration{version && <span className="version-badge">v{version}</span>}</h1>
         <div className="header-actions">
           <button
             className={`btn-nav ${viewMode === 'sessions' ? 'active' : ''}`}
@@ -330,6 +370,7 @@ function App() {
                   onTitleChanged={handleTitleChanged}
                   pendingRestore={pendingRestore?.sessionId === activeSessionId ? pendingRestore : undefined}
                   onRestoreComplete={handleRestoreComplete}
+                  onEditProperties={handleEditProperties}
                 />
               ) : (
                 <SessionList
@@ -337,8 +378,10 @@ function App() {
                   externalInstances={externalInstances}
                   selectedSession={activeSessionId}
                   loading={loading}
+                  sessionProperties={sessionProperties}
                   onSelect={handleSelectSession}
                   onTerminate={handleTerminateSession}
+                  onEditProperties={handleEditProperties}
                 />
               )
             ) : (
@@ -350,8 +393,10 @@ function App() {
                     externalInstances={externalInstances}
                     selectedSession={activeSessionId}
                     loading={loading}
+                    sessionProperties={sessionProperties}
                     onSelect={handleSelectSession}
                     onTerminate={handleTerminateSession}
+                    onEditProperties={handleEditProperties}
                   />
                 }
                 right={
@@ -363,6 +408,7 @@ function App() {
                       onTitleChanged={handleTitleChanged}
                       pendingRestore={pendingRestore?.sessionId === activeSessionId ? pendingRestore : undefined}
                       onRestoreComplete={handleRestoreComplete}
+                      onEditProperties={handleEditProperties}
                     />
                   ) : (
                     <div className="no-session">
@@ -388,6 +434,20 @@ function App() {
               isOpen={commandPaletteOpen}
               onClose={() => setCommandPaletteOpen(false)}
             />
+
+            {propsDialogSession && (() => {
+              const session = sessions.find(s => s.sessionId === propsDialogSession)
+              return session ? (
+                <SessionPropertiesDialog
+                  isOpen={true}
+                  sessionId={session.sessionId}
+                  currentTitle={session.title || session.command}
+                  properties={sessionProperties[session.sessionId] || {}}
+                  onSave={handleSaveSessionProperties}
+                  onClose={() => setPropsDialogSession(null)}
+                />
+              ) : null
+            })()}
           </>
         )}
 

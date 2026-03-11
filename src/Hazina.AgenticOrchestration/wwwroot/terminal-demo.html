@@ -507,16 +507,34 @@
                 // Handle resize
                 window.addEventListener('resize', () => this.fitAddon.fit());
 
-                // Disable browser's native paste handling - xterm.js handles paste internally
-                document.addEventListener('paste', (e) => {
-                    // Only prevent if terminal is focused/active
-                    const activeElement = document.activeElement;
+                // Handle paste events - read clipboard and send to terminal
+                document.addEventListener('paste', async (e) => {
                     const terminalElement = container.querySelector('.xterm');
-                    if (terminalElement && terminalElement.contains(activeElement)) {
-                        // Prevent browser's default paste (which may show permission dialog)
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // xterm.js will handle paste through its own onData mechanism
+                    if (!terminalElement) return;
+
+                    // Always prevent default browser paste to avoid duplication
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Give terminal focus if it doesn't have it
+                    const textarea = terminalElement.querySelector('textarea');
+                    if (textarea && document.activeElement !== textarea) {
+                        textarea.focus();
+                    }
+
+                    // Read clipboard and send to terminal
+                    try {
+                        const text = await navigator.clipboard.readText();
+                        if (text && this.currentSessionId && this.isConnected) {
+                            // Send via connection
+                            const encoder = new TextEncoder();
+                            const bytes = Array.from(encoder.encode(text));
+                            this.connection.invoke('SendInput', this.currentSessionId, bytes)
+                                .catch(err => console.error('Failed to send paste:', err));
+                        }
+                    } catch (err) {
+                        console.error('Failed to read clipboard:', err);
+                        // Clipboard read failed - may need user permission
                     }
                 });
 
