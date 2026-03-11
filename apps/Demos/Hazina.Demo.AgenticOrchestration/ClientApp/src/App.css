@@ -1739,3 +1739,43 @@ button:hover {
     flex-wrap: wrap;
   }
 }
+
+/* Drag and Drop Styles */
+.drag-handle {
+  cursor: grab;
+  padding: 0.25rem;
+  margin-right: 0.5rem;
+  color: #6e7681;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.drag-handle:hover {
+  color: #8b949e;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.session-item {
+  display: flex;
+  align-items: center;
+}
+
+.saving-indicator {
+  font-size: 0.75rem;
+  color: #58a6ff;
+  font-weight: normal;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}

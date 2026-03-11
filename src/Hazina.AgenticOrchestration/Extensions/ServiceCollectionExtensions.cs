@@ -177,6 +177,9 @@ public static class ServiceCollectionExtensions
         // Register HookConfigService for Claude Code hooks
         services.AddSingleton<IHookConfigService, HookConfigService>();
 
+        // Register SessionOrderingService for session display ordering
+        services.AddSingleton<ISessionOrderingService, SessionOrderingService>();
+
         return services;
     }
 

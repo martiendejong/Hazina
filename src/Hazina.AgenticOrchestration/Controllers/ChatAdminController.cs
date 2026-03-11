@@ -1,3 +1,4 @@
+using Hazina.AgenticOrchestration.Services;
 using Hazina.AgenticOrchestration.Services.Chat;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -13,15 +14,18 @@ public class ChatAdminController : ControllerBase
 {
     private readonly EnterpriseOrchestrationChatService _chatService;
     private readonly ConversationRepository _repository;
+    private readonly ISessionOrderingService _orderingService;
     private readonly ILogger<ChatAdminController> _logger;
 
     public ChatAdminController(
         EnterpriseOrchestrationChatService chatService,
         ConversationRepository repository,
+        ISessionOrderingService orderingService,
         ILogger<ChatAdminController> logger)
     {
         _chatService = chatService;
         _repository = repository;
+        _orderingService = orderingService;
         _logger = logger;
     }
 
@@ -316,6 +320,64 @@ public class ChatAdminController : ControllerBase
             return StatusCode(500, new { error = "Failed to get configuration" });
         }
     }
+
+    /// <summary>
+    /// Update session display ordering
+    /// </summary>
+    [HttpPut("sessions/reorder")]
+    public async Task<IActionResult> ReorderSessions(
+        [FromBody] ReorderRequest request,
+        CancellationToken ct)
+    {
+        try
+        {
+            if (request.Sessions == null || request.Sessions.Count == 0)
+            {
+                return BadRequest(new { error = "Sessions array is required" });
+            }
+
+            // Build ordering dictionary from request
+            var ordering = new Dictionary<string, int>();
+            foreach (var session in request.Sessions)
+            {
+                ordering[session.SessionId] = session.Order;
+            }
+
+            await _orderingService.SaveOrderingAsync(ordering);
+
+            return Ok(new
+            {
+                success = true,
+                message = $"Updated ordering for {ordering.Count} sessions"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to reorder sessions");
+            return StatusCode(500, new { error = "Failed to reorder sessions" });
+        }
+    }
+
+    /// <summary>
+    /// Get session ordering
+    /// </summary>
+    [HttpGet("sessions/ordering")]
+    public async Task<IActionResult> GetSessionOrdering(CancellationToken ct)
+    {
+        try
+        {
+            var ordering = await _orderingService.GetOrderingAsync();
+            return Ok(new
+            {
+                ordering
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get session ordering");
+            return StatusCode(500, new { error = "Failed to get session ordering" });
+        }
+    }
 }
 
 public class ExportRequest
@@ -326,4 +388,15 @@ public class ExportRequest
 public class CleanupRequest
 {
     public int? OlderThanDays { get; set; }
+}
+
+public class ReorderRequest
+{
+    public List<SessionOrder> Sessions { get; set; } = new();
+}
+
+public class SessionOrder
+{
+    public string SessionId { get; set; } = string.Empty;
+    public int Order { get; set; }
 }
