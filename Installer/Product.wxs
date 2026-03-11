@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <?define UIBinPath = "..\src\Hazina.TaskRunner.UI\bin\Release\net8.0-windows\win-x64\publish\" ?>
+
+  <Package Name="Hazina Task Runner"
+           Manufacturer="Hazina Framework"
+           Version="1.0.0.0"
+           UpgradeCode="A1B2C3D4-E5F6-4A5B-9C8D-1E2F3A4B5C6D"
+           Language="1033"
+           Compressed="yes"
+           InstallerVersion="500">
+
+    <SummaryInformation Description="Hazina Task Runner - Silent PowerShell Script Scheduler"
+                        Manufacturer="Hazina Framework"
+                        Keywords="Installer,PowerShell,Scheduler,Task Runner" />
+
+    <!-- Major upgrade configuration -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed."
+                  AllowSameVersionUpgrades="yes" />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Directory structure -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="HazinaFolder" Name="Hazina">
+        <Directory Id="INSTALLFOLDER" Name="TaskRunner" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="Hazina Task Runner" />
+    </StandardDirectory>
+
+    <!-- Configuration directory (user data) -->
+    <StandardDirectory Id="CommonAppDataFolder">
+      <Directory Id="HazinaDataFolder" Name="Hazina">
+        <Directory Id="TaskRunnerDataFolder" Name="TaskRunner" />
+      </Directory>
+    </StandardDirectory>
+
+    <!-- Main application component -->
+    <Component Id="MainExecutable" Directory="INSTALLFOLDER" Guid="B2C3D4E5-F6A7-4B5C-8D9E-2F3A4B5C6D7E">
+      <File Id="TaskRunnerExe"
+            Source="$(var.UIBinPath)Hazina.TaskRunner.UI.exe"
+            KeyPath="yes" />
+
+      <!-- Application Dependencies -->
+      <File Source="$(var.UIBinPath)Hazina.TaskRunner.dll" />
+      <File Source="$(var.UIBinPath)Hazina.TaskRunner.UI.dll" />
+      <File Source="$(var.UIBinPath)Cronos.dll" />
+      <File Source="$(var.UIBinPath)Hazina.TaskRunner.UI.deps.json" />
+      <File Source="$(var.UIBinPath)Hazina.TaskRunner.UI.runtimeconfig.json" />
+    </Component>
+
+    <!-- Start Menu shortcut component (per-user) -->
+    <Component Id="StartMenuShortcuts" Directory="ApplicationProgramsFolder" Guid="E3D4E5F6-A7B8-4C5D-9E1F-3A4B5C6D7E8A">
+      <Shortcut Id="StartMenuShortcut"
+                Name="Hazina Task Runner"
+                Target="[INSTALLFOLDER]Hazina.TaskRunner.UI.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Description="Silent PowerShell Script Scheduler"
+                Icon="AppIcon.exe"
+                IconIndex="0" />
+      <RemoveFolder Id="RemoveApplicationProgramsFolder"
+                    On="uninstall" />
+      <RegistryValue Root="HKCU"
+                     Key="Software\Hazina\TaskRunner"
+                     Name="Installed"
+                     Type="integer"
+                     Value="1"
+                     KeyPath="yes" />
+    </Component>
+
+    <!-- Configuration files component - Multiple task sets -->
+    <Component Id="ConfigFiles" Directory="TaskRunnerDataFolder" Guid="C3D4E5F6-A7B8-4C5D-9E1F-3A4B5C6D7E8F">
+      <File Id="OrchestrationConfig"
+            Source="DefaultConfig\orchestration.json"
+            Name="orchestration.json"
+            KeyPath="yes">
+        <util:PermissionEx User="Users" GenericAll="yes" />
+      </File>
+      <File Id="MaintenanceConfig"
+            Source="DefaultConfig\maintenance.json"
+            Name="maintenance.json">
+        <util:PermissionEx User="Users" GenericAll="yes" />
+      </File>
+      <File Id="MonitoringConfig"
+            Source="DefaultConfig\monitoring.json"
+            Name="monitoring.json">
+        <util:PermissionEx User="Users" GenericAll="yes" />
+      </File>
+
+      <!-- Ensure folder has proper permissions -->
+      <CreateFolder>
+        <util:PermissionEx User="Users" GenericAll="yes" />
+      </CreateFolder>
+    </Component>
+
+    <!-- Auto-start component (optional) -->
+    <Component Id="AutoStart" Directory="INSTALLFOLDER" Guid="D4E5F6A7-B8C9-4D5E-1F2A-4B5C6D7E8F9A" Condition="INSTALLAUTOSTART">
+      <RegistryValue Root="HKCU"
+                     Key="Software\Microsoft\Windows\CurrentVersion\Run"
+                     Name="HazinaTaskRunner"
+                     Value="&quot;[INSTALLFOLDER]Hazina.TaskRunner.UI.exe&quot; --minimized"
+                     Type="string"
+                     KeyPath="yes" />
+    </Component>
+
+    <!-- Features -->
+    <Feature Id="MainApplication"
+             Title="Hazina Task Runner"
+             Description="Core application files"
+             Level="1"
+             ConfigurableDirectory="INSTALLFOLDER"
+             AllowAdvertise="no">
+      <ComponentRef Id="MainExecutable" />
+      <ComponentRef Id="StartMenuShortcuts" />
+      <ComponentRef Id="ConfigFiles" />
+    </Feature>
+
+    <Feature Id="AutoStartFeature"
+             Title="Start with Windows"
+             Description="Automatically start Task Runner when Windows boots"
+             Level="1">
+      <ComponentRef Id="AutoStart" />
+    </Feature>
+
+    <!-- Properties -->
+    <Property Id="INSTALLAUTOSTART" Value="1" />
+    <Property Id="MIGRATETASKS" Value="1" />
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+
+    <!-- Icon for Add/Remove Programs -->
+    <Icon Id="AppIcon.exe" SourceFile="$(var.UIBinPath)Hazina.TaskRunner.UI.exe" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.exe" />
+
+    <!-- Add/Remove Programs information -->
+    <Property Id="ARPHELPLINK" Value="https://github.com/martiendejong/hazina" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/martiendejong/hazina" />
+
+    <!-- Custom actions -->
+    <SetProperty Id="MigrateTasksAction"
+                 Before="MigrateTasksAction"
+                 Sequence="execute"
+                 Value="&quot;powershell.exe&quot; -ExecutionPolicy Bypass -NoProfile -File &quot;C:\scripts\tools\migrate-scheduled-tasks.ps1&quot; -OutputPath &quot;[TaskRunnerDataFolder]tasks.json&quot;" />
+
+    <CustomAction Id="MigrateTasksAction"
+                  BinaryRef="Wix4UtilCA_X64"
+                  DllEntry="WixQuietExec64"
+                  Execute="deferred"
+                  Return="check"
+                  Impersonate="yes" />
+
+    <!-- UI Sequence -->
+    <!--<UI>
+      <ui:WixUI Id="WixUI_InstallDir" />
+
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Condition="1" />
+    </UI>-->
+
+    <InstallExecuteSequence>
+      <!-- Run migration after files are installed, if user selected it -->
+      <Custom Action="MigrateTasksAction" After="InstallFiles" Condition="MIGRATETASKS AND NOT Installed" />
+    </InstallExecuteSequence>
+
+    <!-- License -->
+    <!--<WixVariable Id="WixUILicenseRtf" Value="License.rtf" />-->
+
+  </Package>
+</Wix>

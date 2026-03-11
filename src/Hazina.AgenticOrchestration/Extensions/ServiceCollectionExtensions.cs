@@ -143,7 +143,15 @@ public static class ServiceCollectionExtensions
         // Register Prompt Template Service for predefined prompts
         services.AddSingleton<IPromptTemplateService, PromptTemplateService>();
 
-        // Register OrchestrationChatService for LLM-powered chat
+        // Register Chat Services for LLM-powered chat (Enterprise Edition)
+        services.AddSingleton<ConversationRepository>(sp =>
+            new ConversationRepository(
+                options.ChatConversationsPath,
+                sp.GetRequiredService<ILogger<ConversationRepository>>()));
+
+        services.AddSingleton<EnterpriseOrchestrationChatService>();
+
+        // Legacy service for backward compatibility
         services.AddSingleton<OrchestrationChatService>();
 
         // ═══════════════════════════════════════════════════════════════
@@ -168,6 +176,9 @@ public static class ServiceCollectionExtensions
 
         // Register HookConfigService for Claude Code hooks
         services.AddSingleton<IHookConfigService, HookConfigService>();
+
+        // Register SessionOrderingService for session display ordering
+        services.AddSingleton<ISessionOrderingService, SessionOrderingService>();
 
         return services;
     }
@@ -357,4 +368,14 @@ public class AgenticOrchestrationOptions
     /// Default: 5000 (Overstory pattern)
     /// </summary>
     public int HookDebounceMs { get; set; } = 5000;
+
+    // ═══════════════════════════════════════════════════════════════
+    // CHAT SERVICE OPTIONS (ENTERPRISE)
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Path to the directory for storing chat conversations
+    /// Default: C:\scripts\.orchestration-chats
+    /// </summary>
+    public string ChatConversationsPath { get; set; } = @"C:\scripts\.orchestration-chats";
 }

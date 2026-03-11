@@ -8,6 +8,15 @@ public class EmbeddingInfo
     [JsonConverter(typeof(EmbeddingJsonConverter))]
     public Embedding Data { get; set; }
 
+    // Parameterless constructor required for System.Text.Json deserialization
+    public EmbeddingInfo()
+    {
+        Key = string.Empty;
+        Checksum = string.Empty;
+        Data = new Embedding();
+    }
+
+    [JsonConstructor]
     public EmbeddingInfo(string key, string checksum, Embedding data)
     {
         Key = key;

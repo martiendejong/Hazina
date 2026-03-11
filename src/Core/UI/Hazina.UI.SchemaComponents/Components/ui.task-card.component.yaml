@@ -1,0 +1,75 @@
+id: ui.task-card
+type: visualization
+category: task
+description: Displays task breakdown with steps, risks, and approval status
+
+schema:
+  type: object
+  required:
+    - title
+    - steps
+  properties:
+    title:
+      type: string
+      maxLength: 200
+      description: Human-readable task title
+    description:
+      type: string
+      maxLength: 2000
+      description: Detailed task description
+    steps:
+      type: array
+      minItems: 1
+      maxItems: 20
+      description: List of task steps to execute
+      items:
+        type: object
+        required:
+          - action
+          - target
+        properties:
+          action:
+            type: string
+            enum:
+              - read
+              - write
+              - execute
+              - analyze
+              - delete
+            description: Type of action to perform
+          target:
+            type: string
+            description: Target resource (file path, command, query)
+          riskLevel:
+            type: string
+            enum:
+              - read
+              - write
+              - execute
+              - admin
+            description: Risk classification for this step
+          description:
+            type: string
+            description: Human-readable description of this step
+    estimatedDuration:
+      type: string
+      pattern: ^PT\d+[HMS]$
+      description: ISO 8601 duration (e.g., PT30S, PT5M, PT1H)
+    requiresApproval:
+      type: boolean
+      description: Whether user approval is required before execution
+
+validation:
+  rules:
+    - name: admin-requires-approval
+      condition: riskLevel == 'admin'
+      requires: requiresApproval == true
+      message: Admin-level tasks MUST require approval
+
+security:
+  requiresApproval: true
+  allowedOperations:
+    - view
+    - approve
+    - reject
+  riskLevel: read

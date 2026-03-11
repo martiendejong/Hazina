@@ -143,6 +143,108 @@ public class TerminalController : ControllerBase
     }
 
     /// <summary>
+    /// Create a new terminal session and execute a prompt immediately.
+    /// This is a convenience endpoint that combines session creation with prompt execution,
+    /// similar to claude-terminal --message "prompt".
+    ///
+    /// Workflow:
+    /// 1. Create session with provided config (or defaults)
+    /// 2. Wait for session to be running
+    /// 3. Wait for Claude CLI to initialize (2 seconds)
+    /// 4. Send prompt + Enter to the session
+    /// 5. Return session details (client can connect via SignalR to see output)
+    /// </summary>
+    [HttpPost("sessions/execute")]
+    public async Task<ActionResult<TerminalSessionDto>> CreateSessionAndExecute(
+        [FromBody] ExecutePromptRequest request,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Prompt))
+        {
+            return BadRequest(new { error = "Prompt is required" });
+        }
+
+        _logger.LogInformation("Creating terminal session with prompt execution: {Prompt}",
+            request.Prompt.Length > 50 ? request.Prompt.Substring(0, 50) + "..." : request.Prompt);
+
+        var config = new TerminalSessionConfig
+        {
+            Command = request.Command ?? _options.DefaultCommand,
+            Arguments = request.Arguments ?? _options.DefaultArguments,
+            WorkingDirectory = request.WorkingDirectory ?? _options.DefaultWorkingDirectory,
+            Columns = request.Columns ?? _options.DefaultTerminalColumns,
+            Rows = request.Rows ?? _options.DefaultTerminalRows,
+            MergeStderr = request.MergeStderr ?? true
+        };
+
+        if (request.Environment != null)
+        {
+            foreach (var (key, value) in request.Environment)
+            {
+                config.Environment[key] = value;
+            }
+        }
+
+        try
+        {
+            // Step 1: Create session
+            var session = await _sessionManager.CreateSessionAsync(config, ct);
+            _logger.LogInformation("Created terminal session {SessionId} for prompt execution", session.SessionId);
+
+            // Step 2: Wait for session to be running (timeout 10 seconds)
+            var startupTimeout = DateTime.UtcNow.AddSeconds(10);
+            while (!session.IsRunning && DateTime.UtcNow < startupTimeout)
+            {
+                await Task.Delay(100, ct);
+            }
+
+            if (!session.IsRunning)
+            {
+                _logger.LogWarning("Session {SessionId} not running after 10 seconds", session.SessionId);
+                return StatusCode(500, new
+                {
+                    error = "Session failed to start",
+                    sessionId = session.SessionId
+                });
+            }
+
+            // Step 3: Wait for Claude CLI to initialize (same as claude-terminal: 2000ms)
+            var initDelay = request.InitializationDelayMs ?? 2000;
+            _logger.LogDebug("Waiting {Delay}ms for Claude CLI initialization in session {SessionId}",
+                initDelay, session.SessionId);
+            await Task.Delay(initDelay, ct);
+
+            // Step 4: Send prompt with Enter (carriage return in raw terminal mode)
+            var promptWithEnter = request.Prompt + "\r";
+            await session.WriteInputAsync(promptWithEnter, ct);
+
+            _logger.LogInformation("Sent prompt to session {SessionId}: {Prompt}",
+                session.SessionId, request.Prompt.Length > 50 ? request.Prompt.Substring(0, 50) + "..." : request.Prompt);
+
+            // Step 5: Return session details
+            return CreatedAtAction(
+                nameof(GetSession),
+                new { sessionId = session.SessionId },
+                new TerminalSessionDto
+                {
+                    SessionId = session.SessionId,
+                    Command = session.Command,
+                    Title = session.Title,
+                    StartedAt = session.StartedAt,
+                    IsRunning = session.IsRunning,
+                    WaitingForInput = session.WaitingForInput,
+                    SignalRHubUrl = "/hubs/terminal",
+                    Instructions = "Connect to SignalR hub and call JoinSession(sessionId) to receive output"
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create session and execute prompt");
+            return StatusCode(500, new { error = "Failed to execute prompt", message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Terminate a terminal session
     /// </summary>
     [HttpDelete("sessions/{sessionId}")]
@@ -196,6 +298,61 @@ public class TerminalController : ControllerBase
         }
 
         return Ok(new { message = "Input sent", sessionId });
+    }
+
+    /// <summary>
+    /// Execute a prompt in an existing terminal session.
+    /// This is a convenience endpoint that sends a prompt with automatic Enter submission.
+    ///
+    /// Difference from SendInput:
+    /// - SendInput: Sends raw text without Enter (for interactive typing)
+    /// - Execute: Sends prompt + Enter (for automated instruction execution)
+    ///
+    /// Use case: Remote agent sends instructions to an existing Claude session.
+    /// </summary>
+    [HttpPost("sessions/{sessionId}/execute")]
+    public async Task<IActionResult> ExecutePromptInSession(
+        string sessionId,
+        [FromBody] ExecuteInSessionRequest request,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Prompt))
+        {
+            return BadRequest(new { error = "Prompt is required" });
+        }
+
+        var session = _sessionManager.GetSession(sessionId);
+        if (session == null)
+        {
+            return NotFound(new { error = "Session not found", sessionId });
+        }
+
+        if (!session.IsRunning)
+        {
+            return BadRequest(new { error = "Session is not running", sessionId });
+        }
+
+        _logger.LogInformation("Executing prompt in session {SessionId}: {Prompt}",
+            sessionId, request.Prompt.Length > 50 ? request.Prompt.Substring(0, 50) + "..." : request.Prompt);
+
+        try
+        {
+            // Send prompt with Enter (carriage return for raw terminal mode)
+            var promptWithEnter = request.Prompt + "\r";
+            await session.WriteInputAsync(promptWithEnter, ct);
+
+            return Ok(new
+            {
+                message = "Prompt executed",
+                sessionId,
+                promptLength = request.Prompt.Length
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to execute prompt in session {SessionId}", sessionId);
+            return StatusCode(500, new { error = "Failed to execute prompt", message = ex.Message });
+        }
     }
 
     /// <summary>
@@ -996,6 +1153,40 @@ public class CreateTerminalSessionRequest
     public Dictionary<string, string>? Environment { get; set; }
 }
 
+/// <summary>
+/// Request to create a session and execute a prompt immediately.
+/// Combines CreateTerminalSessionRequest with a prompt to execute.
+/// </summary>
+public class ExecutePromptRequest
+{
+    /// <summary>The prompt to execute in the new session (required)</summary>
+    public string Prompt { get; set; } = "";
+
+    /// <summary>Command to execute (default: "claude")</summary>
+    public string? Command { get; set; }
+
+    /// <summary>Command arguments</summary>
+    public string[]? Arguments { get; set; }
+
+    /// <summary>Working directory</summary>
+    public string? WorkingDirectory { get; set; }
+
+    /// <summary>Terminal columns (default: 120)</summary>
+    public int? Columns { get; set; }
+
+    /// <summary>Terminal rows (default: 30)</summary>
+    public int? Rows { get; set; }
+
+    /// <summary>Merge stderr into stdout (default: true)</summary>
+    public bool? MergeStderr { get; set; }
+
+    /// <summary>Additional environment variables</summary>
+    public Dictionary<string, string>? Environment { get; set; }
+
+    /// <summary>Delay in milliseconds to wait for CLI initialization before sending prompt (default: 2000)</summary>
+    public int? InitializationDelayMs { get; set; }
+}
+
 public class SendInputRequest
 {
     /// <summary>Text input</summary>
@@ -1003,6 +1194,16 @@ public class SendInputRequest
 
     /// <summary>Raw bytes input (base64 encoded)</summary>
     public byte[]? Bytes { get; set; }
+}
+
+/// <summary>
+/// Request to execute a prompt in an existing session.
+/// Automatically appends Enter to submit the prompt.
+/// </summary>
+public class ExecuteInSessionRequest
+{
+    /// <summary>The prompt to execute (required)</summary>
+    public string Prompt { get; set; } = "";
 }
 
 public class SendSignalRequest

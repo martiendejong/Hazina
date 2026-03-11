@@ -1,0 +1,23 @@
+<Project Sdk="WixToolset.Sdk/4.0.5">
+  <PropertyGroup>
+    <OutputName>HazinaTaskRunner</OutputName>
+    <OutputType>Package</OutputType>
+    <Platform>x64</Platform>
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <EnableDefaultItems>false</EnableDefaultItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--<PackageReference Include="WixToolset.UI.wixext" Version="4.0.5" />-->
+    <PackageReference Include="WixToolset.Util.wixext" Version="4.0.5" />
+  </ItemGroup>
+
+  <!-- Define build output location -->
+  <PropertyGroup>
+    <UIBinPath>..\src\Hazina.TaskRunner.UI\bin\$(Configuration)\net8.0-windows\win-x64\publish\</UIBinPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Product.wxs" />
+  </ItemGroup>
+</Project>
