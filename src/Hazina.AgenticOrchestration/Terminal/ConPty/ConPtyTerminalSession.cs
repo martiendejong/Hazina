@@ -336,6 +336,9 @@ public class ConPtyTerminalSession : ITerminalSession
         env["COLUMNS"] = _config.Columns.ToString();
         env["LINES"] = _config.Rows.ToString();
 
+        // Pass session ID to child process for log file naming consistency
+        env["ORCHESTRATION_SESSION_ID"] = SessionId;
+
         // Add custom environment variables
         foreach (var (key, value) in _config.Environment)
         {

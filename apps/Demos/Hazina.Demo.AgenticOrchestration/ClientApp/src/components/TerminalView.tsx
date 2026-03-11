@@ -16,9 +16,10 @@ interface TerminalViewProps {
   onTitleChanged?: (sessionId: string, title: string) => void
   pendingRestore?: PendingRestore
   onRestoreComplete?: () => void
+  onEditProperties?: (sessionId: string) => void
 }
 
-export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChanged, pendingRestore, onRestoreComplete }: TerminalViewProps) {
+export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChanged, pendingRestore, onRestoreComplete, onEditProperties }: TerminalViewProps) {
   console.log('[DEBUG TerminalView] Component rendered with props:', {
     sessionId,
     hasPendingRestore: !!pendingRestore,
@@ -40,6 +41,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const disconnectTimeoutRef = useRef<number | null>(null)
   const connectionStableTimeRef = useRef<number | null>(null)
   const [mobileInput, setMobileInput] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showSpecialKeys, setShowSpecialKeys] = useState(false)
 
   // Voice control - send transcribed speech to terminal
   const handleVoiceTranscript = useCallback((text: string) => {
@@ -52,9 +55,10 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
       if (!sanitized) return
 
-      // Send the text as input with a newline to execute
+      // Send the text as input with a carriage return to execute
+      // ConPTY expects \r (carriage return) for Enter, not \n (line feed)
       const encoder = new TextEncoder()
-      const bytes = Array.from(encoder.encode(sanitized + '\n'))
+      const bytes = Array.from(encoder.encode(sanitized + '\r'))
       connection.current.invoke('SendInput', sessionId, bytes)
         .catch(err => console.error('SendInput (voice) failed:', err))
 
@@ -70,12 +74,58 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const handleSendMobileInput = useCallback(() => {
     if (connection.current?.state === signalR.HubConnectionState.Connected && mobileInput.trim()) {
       const encoder = new TextEncoder()
-      const bytes = Array.from(encoder.encode(mobileInput))
+      // ConPTY expects \r (carriage return) for Enter, not \n (line feed)
+      const bytes = Array.from(encoder.encode(mobileInput + '\r'))
       connection.current.invoke('SendInput', sessionId, bytes)
         .catch(err => console.error('SendInput (mobile) failed:', err))
       setMobileInput('')
     }
   }, [sessionId, mobileInput])
+
+  // File upload handler
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await authFetch('/api/terminal/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        terminalInstance.current?.writeln(`\r\n\x1b[32m[Uploaded: ${result.originalName} (${(result.size / 1024).toFixed(1)} KB)]\x1b[0m`)
+        terminalInstance.current?.writeln(`\x1b[90m[File: ${result.fileName}]\x1b[0m`)
+        // Pre-fill the input with the filename for easy reference
+        setMobileInput(result.fileName)
+      } else {
+        try {
+          const err = await response.json()
+          terminalInstance.current?.writeln(`\r\n\x1b[31m[Upload failed: ${err.error}]\x1b[0m`)
+        } catch {
+          terminalInstance.current?.writeln(`\r\n\x1b[31m[Upload failed: ${response.statusText}]\x1b[0m`)
+        }
+      }
+    } catch (err) {
+      console.error('Upload failed:', err)
+      terminalInstance.current?.writeln(`\r\n\x1b[31m[Upload failed: network error]\x1b[0m`)
+    }
+
+    // Reset file input so same file can be selected again
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }, [])
+
+  // Send special key sequence (escape codes) to terminal
+  const sendSpecialKey = useCallback((sequence: number[]) => {
+    if (connection.current?.state === signalR.HubConnectionState.Connected) {
+      connection.current.invoke('SendInput', sessionId, sequence)
+        .catch(err => console.error('SendSpecialKey failed:', err))
+    }
+  }, [sessionId])
 
   // Keyboard shortcut: Ctrl+M to toggle voice
   useEffect(() => {
@@ -184,6 +234,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
     // Open terminal
     terminal.open(terminalRef.current)
+    // Establish positioning context for toast overlays (clipboard denied, etc.)
+    terminalRef.current.style.position = 'relative'
 
     // Initial fit after DOM is ready
     requestAnimationFrame(() => {
@@ -292,50 +344,126 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       }
     })
 
-    // Handle user input
+    // Toast helper for clipboard/connection errors (non-intrusive, won't corrupt TUI apps)
+    const showToast = (message: string, color = '#d29922') => {
+      if (!terminalRef.current) return
+      const toast = document.createElement('div')
+      toast.className = 'terminal-toast'
+      toast.textContent = message
+      toast.style.cssText = `
+        position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+        background: ${color}; color: #1e1e1e; padding: 6px 16px; border-radius: 4px;
+        font-size: 13px; z-index: 1001; pointer-events: none;
+      `
+      terminalRef.current.appendChild(toast)
+      setTimeout(() => toast.remove(), 3000)
+    }
+
+    // Chunked send: splits large input into 4KB chunks to avoid SignalR message size limits.
+    // Uses a lock to prevent interleaving when user types during a multi-chunk paste.
+    const PASTE_CHUNK_SIZE = 4096
+    let sendingChunks = false
+    const pendingInputs: Uint8Array[] = []
+
+    const sendBytes = async (bytes: Uint8Array) => {
+      if (hubConnection.state !== signalR.HubConnectionState.Connected) return
+
+      if (bytes.length <= PASTE_CHUNK_SIZE) {
+        // Small input - send directly
+        try {
+          await hubConnection.invoke('SendInput', sessionId, Array.from(bytes))
+        } catch {
+          // Show error for paste-sized input (>10 bytes), ignore single keystroke failures
+          if (bytes.length > 10) showToast('Send failed - connection error', '#f14c4c')
+        }
+        return
+      }
+
+      // Large input - send in chunks with delays. Retry each chunk once on failure.
+      for (let offset = 0; offset < bytes.length; offset += PASTE_CHUNK_SIZE) {
+        const chunk = Array.from(bytes.slice(offset, offset + PASTE_CHUNK_SIZE))
+        try {
+          await hubConnection.invoke('SendInput', sessionId, chunk)
+        } catch {
+          // Retry once after a short delay
+          await new Promise(resolve => setTimeout(resolve, 50))
+          try {
+            await hubConnection.invoke('SendInput', sessionId, chunk)
+          } catch {
+            // Chunk permanently failed - remaining chunks would arrive out of context
+            showToast('Paste incomplete - connection error', '#f14c4c')
+            return
+          }
+        }
+        if (offset + PASTE_CHUNK_SIZE < bytes.length) {
+          await new Promise(resolve => setTimeout(resolve, 10))
+        }
+      }
+    }
+
+    const enqueueInput = (bytes: Uint8Array) => {
+      pendingInputs.push(bytes)
+      if (sendingChunks) return // Already processing queue
+      const processQueue = async () => {
+        sendingChunks = true
+        while (pendingInputs.length > 0) {
+          const next = pendingInputs.shift()!
+          try {
+            await sendBytes(next)
+          } catch (err) {
+            console.error('SendInput failed:', err)
+          }
+        }
+        sendingChunks = false
+      }
+      processQueue()
+    }
+
+    // Convenience wrapper for string input (used by context menu paste)
+    const sendPasteChunked = (text: string) => {
+      if (!text) return
+      enqueueInput(new TextEncoder().encode(text))
+    }
+
+    // Handle user input - all input goes through the queue to prevent interleaving
     terminal.onData(data => {
       if (hubConnection.state === signalR.HubConnectionState.Connected) {
-        const encoder = new TextEncoder()
-        const bytes = Array.from(encoder.encode(data))
-        hubConnection.invoke('SendInput', sessionId, bytes)
-          .catch(err => console.error('SendInput failed:', err))
+        enqueueInput(new TextEncoder().encode(data))
       }
     })
 
     // Custom keyboard handler for copy/paste
-    // Ctrl+C: Copy if text selected, otherwise send interrupt
-    // Ctrl+V: Paste from clipboard
+    // Strategy: Use browser-native paste flow (reliable, no permission issues)
+    // instead of navigator.clipboard.readText() which silently fails on permission denial.
+    // Native flow: Ctrl+V keydown -> browser paste event -> xterm textarea -> onData -> chunked send
+    // NOTE: This relies on @xterm/xterm 6.x firing onData from native paste events independently
+    // of attachCustomKeyEventHandler. Retest paste on xterm major version upgrades.
     terminal.attachCustomKeyEventHandler((event) => {
-      // Handle Ctrl+C - copy if selection exists
-      if (event.ctrlKey && event.key === 'c' && event.type === 'keydown') {
+      // Handle Ctrl+C - copy if selection exists, otherwise send interrupt
+      if (event.ctrlKey && !event.shiftKey && event.key === 'c' && event.type === 'keydown') {
         const selection = terminal.getSelection()
         if (selection && selection.length > 0) {
+          event.preventDefault() // Stop native copy from overwriting our clipboard write
           navigator.clipboard.writeText(selection).catch(err => {
             console.error('Copy failed:', err)
           })
-          return false // Prevent default (don't send to terminal)
+          return false // Prevent xterm from processing
         }
-        // No selection - let it pass through as interrupt (Ctrl+C)
+        // No selection - let it through as interrupt signal (sends \x03)
         return true
       }
 
-      // Handle Ctrl+V - paste
-      if (event.ctrlKey && event.key === 'v' && event.type === 'keydown') {
-        navigator.clipboard.readText().then(text => {
-          if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-            const encoder = new TextEncoder()
-            const bytes = Array.from(encoder.encode(text))
-            hubConnection.invoke('SendInput', sessionId, bytes)
-              .catch(err => console.error('Paste failed:', err))
-          }
-        }).catch(err => {
-          console.error('Paste failed:', err)
-        })
-        return false // Prevent default
+      // Handle Ctrl+V - let browser native paste work
+      // Return false to prevent xterm sending \x16 control code,
+      // but do NOT preventDefault so the browser paste event fires normally.
+      // Xterm catches the paste via its hidden textarea and fires onData.
+      if (event.ctrlKey && !event.shiftKey && event.key === 'v' && event.type === 'keydown') {
+        return false
       }
 
       // Handle Ctrl+Shift+C - always copy (alternative shortcut)
       if (event.ctrlKey && event.shiftKey && event.key === 'C' && event.type === 'keydown') {
+        event.preventDefault()
         const selection = terminal.getSelection()
         if (selection && selection.length > 0) {
           navigator.clipboard.writeText(selection).catch(err => {
@@ -345,23 +473,49 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         return false
       }
 
-      // Handle Ctrl+Shift+V - always paste (alternative shortcut)
+      // Handle Ctrl+Shift+V - explicit clipboard read with preventDefault to avoid double paste.
+      // Chrome fires native paste for Ctrl+Shift+V, so without preventDefault both readText
+      // AND native paste would fire, sending the text twice through the queue.
       if (event.ctrlKey && event.shiftKey && event.key === 'V' && event.type === 'keydown') {
-        navigator.clipboard.readText().then(text => {
-          if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-            const encoder = new TextEncoder()
-            const bytes = Array.from(encoder.encode(text))
-            hubConnection.invoke('SendInput', sessionId, bytes)
-              .catch(err => console.error('Paste failed:', err))
-          }
-        }).catch(err => {
-          console.error('Paste failed:', err)
-        })
+        event.preventDefault()
+        navigator.clipboard.readText()
+          .then(text => text && sendPasteChunked(text))
+          .catch(() => showToast('Clipboard access denied. Use Ctrl+V to paste.'))
         return false
       }
 
       return true // Allow all other keys
     })
+
+    // Document-level paste fallback: catches paste when xterm's textarea doesn't have focus
+    // but the terminal container is visible. Fixes "need to press space first" issue.
+    const handleDocumentPaste = (e: ClipboardEvent) => {
+      // Only handle if terminal container is visible and no other input is focused
+      const activeEl = document.activeElement
+      const isInputFocused = activeEl instanceof HTMLInputElement ||
+        activeEl instanceof HTMLTextAreaElement ||
+        (activeEl as HTMLElement)?.isContentEditable
+      // Skip if user is typing in an input/textarea (e.g. mobile input box)
+      if (isInputFocused) return
+      // Skip if terminal container is not in the DOM
+      if (!terminalRef.current) return
+
+      e.preventDefault()
+      e.stopPropagation()
+      const text = e.clipboardData?.getData('text')
+      if (text) {
+        // Focus terminal so subsequent keystrokes go there
+        terminal.focus()
+        sendPasteChunked(text)
+      }
+    }
+    document.addEventListener('paste', handleDocumentPaste)
+
+    // Click-to-focus: ensure clicking terminal area always focuses xterm
+    const handleContainerClick = () => {
+      terminal.focus()
+    }
+    terminalRef.current.addEventListener('click', handleContainerClick)
 
     // Right-click context menu for copy/paste
     const handleContextMenu = (e: MouseEvent) => {
@@ -418,17 +572,21 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         !selection || selection.length === 0
       ))
 
-      // Paste option
+      // Paste option - uses Clipboard API (requires permission)
       menu.appendChild(createMenuItem(
         'Paste',
         () => {
-          navigator.clipboard.readText().then(text => {
-            if (text && hubConnection.state === signalR.HubConnectionState.Connected) {
-              const encoder = new TextEncoder()
-              const bytes = Array.from(encoder.encode(text))
-              hubConnection.invoke('SendInput', sessionId, bytes)
-            }
-          })
+          navigator.clipboard.readText()
+            .then(text => {
+              if (text) {
+                terminal.focus()
+                sendPasteChunked(text)
+              }
+            })
+            .catch(() => {
+              terminal.focus()
+              showToast('Clipboard access denied. Use Ctrl+V to paste.')
+            })
         }
       ))
 
@@ -512,19 +670,25 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize)
+      document.removeEventListener('paste', handleDocumentPaste)
       if (resizeObserver) {
         resizeObserver.disconnect()
       }
       if (resizeTimeoutRef.current) {
         clearTimeout(resizeTimeoutRef.current)
       }
-      // Remove context menu handler
+      // Remove context menu and click handlers
       if (terminalRef.current) {
         terminalRef.current.removeEventListener('contextmenu', handleContextMenu)
+        terminalRef.current.removeEventListener('click', handleContainerClick)
       }
       // Remove any lingering context menu
       const existingMenu = document.querySelector('.terminal-context-menu')
       if (existingMenu) existingMenu.remove()
+
+      // Drain input queue to stop stale async processing
+      pendingInputs.length = 0
+      sendingChunks = false
 
       if (hubConnection.state === signalR.HubConnectionState.Connected) {
         hubConnection.invoke('LeaveSession', sessionId).catch(() => {})
@@ -533,17 +697,6 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       terminal.dispose()
     }
   }, [sessionId, isMobile])
-
-  const handleInterrupt = async () => {
-    if (connection.current?.state === signalR.HubConnectionState.Connected) {
-      try {
-        await connection.current.invoke('SendSignal', sessionId, 'interrupt')
-        terminalInstance.current?.writeln('\r\n\x1b[33m[Sent Ctrl+C]\x1b[0m')
-      } catch (err) {
-        console.error('SendSignal failed:', err)
-      }
-    }
-  }
 
   const handleTerminate = async () => {
     if (connection.current?.state === signalR.HubConnectionState.Connected) {
@@ -599,7 +752,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         // IMPORTANT: Also send the context to Claude so it understands the conversation history
         // We send it as input with a clear instruction that this is restored context
         try {
-          const contextInstruction = `This is a RESTORED SESSION. The conversation history above should be understood as prior context. Please briefly acknowledge that you understand this context and are ready to continue helping with the same task.\n`
+          const contextInstruction = `This is a RESTORED SESSION. The conversation history above should be understood as prior context. Please briefly acknowledge that you understand this context and are ready to continue helping with the same task.\r`
 
           const encoder = new TextEncoder()
           const bytes = Array.from(encoder.encode(contextInstruction))
@@ -642,7 +795,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     <div className="terminal-view">
       <div className="terminal-toolbar">
         <div className="terminal-info">
-          <span className="session-label">Session: {sessionId.slice(0, 12)}...</span>
+          <span className="session-label">Session: {sessionId}</span>
           <span className={`connection-status ${displayConnected ? 'connected' : 'disconnected'}`}>
             {displayConnected ? 'Connected' : 'Disconnected'}
           </span>
@@ -679,9 +832,19 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
           {voiceState.error && (
             <span className="voice-error" aria-hidden="true">{voiceState.error}</span>
           )}
-          <button className="btn-interrupt" onClick={handleInterrupt} title="Send Ctrl+C">
-            Ctrl+C
-          </button>
+          {onEditProperties && (
+            <button
+              className="btn-edit-props"
+              onClick={() => onEditProperties(sessionId)}
+              title="Edit session properties"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+              Rename
+            </button>
+          )}
           <button className="btn-terminate" onClick={handleTerminate} title="Terminate process">
             Terminate
           </button>
@@ -693,9 +856,24 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       {error && <div className="terminal-error">{error}</div>}
       <div className="terminal-container" ref={terminalRef} />
       <div className="terminal-input-container">
+        <button
+          className="btn-upload"
+          onClick={() => fileInputRef.current?.click()}
+          title="Upload file"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+            <path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/>
+          </svg>
+        </button>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          style={{ display: 'none' }}
+        />
         <textarea
           className="terminal-input"
-          placeholder="Type command for mobile..."
+          placeholder={isMobile ? 'Type command...' : 'Type command here (Enter to send)...'}
           value={mobileInput}
           onChange={(e) => setMobileInput(e.target.value)}
           onKeyDown={(e) => {
@@ -705,10 +883,34 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
             }
           }}
         />
+        {isMobile && (
+          <button
+            className={`btn-special-keys ${showSpecialKeys ? 'active' : ''}`}
+            onClick={() => setShowSpecialKeys(prev => !prev)}
+            title="Special keys"
+          >
+            +
+          </button>
+        )}
         <button className="btn-send-terminal" onClick={handleSendMobileInput}>
           <span>Send</span>
         </button>
       </div>
+      {showSpecialKeys && isMobile && (
+        <div className="special-keys-panel">
+          <div className="special-keys-row">
+            <button onClick={() => sendSpecialKey([0x1b, 0x5b, 0x41])}>Up</button>
+            <button onClick={() => sendSpecialKey([0x1b, 0x5b, 0x42])}>Down</button>
+            <button onClick={() => sendSpecialKey([0x1b, 0x5b, 0x44])}>Left</button>
+            <button onClick={() => sendSpecialKey([0x1b, 0x5b, 0x43])}>Right</button>
+          </div>
+          <div className="special-keys-row">
+            <button onClick={() => sendSpecialKey([0x1b])}>ESC</button>
+            <button onClick={() => sendSpecialKey([0x09])}>Tab</button>
+            <button onClick={() => sendSpecialKey([0x03])}>Ctrl+C</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
