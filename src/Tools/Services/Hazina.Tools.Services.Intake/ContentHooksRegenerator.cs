@@ -44,7 +44,7 @@ namespace HazinaStore.IntakeRegenerators
             File.WriteAllText(filePath, "{\n  \"ContentHooks\": []\n}");
         }
 
-        public async Task RegenerateAll(Project project, Action<string> log, object retry, CancellationToken cancel)
+        public async Task RegenerateAll(Project project, Action<string> log, object retry, CancellationToken cancel, string language = null)
         {
             log?.Invoke("Starting content hooks generation...");
 
@@ -62,6 +62,13 @@ namespace HazinaStore.IntakeRegenerators
 
                 log?.Invoke($"Built project context ({context.Length} chars)");
 
+                // Build language instruction
+                var languageInstruction = GetLanguageInstruction(language);
+                if (!string.IsNullOrWhiteSpace(languageInstruction))
+                {
+                    log?.Invoke($"Using language: {language}");
+                }
+
                 // Create prompt for content hooks generation
                 var prompt = $@"Based on the following project context, generate 5-8 strategic content hooks (themes) that would be valuable for content marketing.
 
@@ -73,7 +80,7 @@ Content hooks are high-level themes or topics that resonate with the target audi
 
 PROJECT CONTEXT:
 {context}
-
+{languageInstruction}
 Return ONLY JSON in this exact format (no markdown, no code blocks, no explanation):
 {{""contentHooks"":[{{""id"":""unique-id"",""name"":""Hook Name"",""description"":""Brief description"",""reason"":""Why this matters for the brand"",""examples"":[""Example 1"",""Example 2""]}}]}}";
 
@@ -286,6 +293,42 @@ Return ONLY JSON in this exact format (no markdown, no code blocks, no explanati
             }
 
             return context.ToString();
+        }
+
+        /// <summary>
+        /// Gets the language instruction to append to prompts.
+        /// Returns empty string if language is English (default) or null/empty.
+        /// </summary>
+        private string GetLanguageInstruction(string languageCode)
+        {
+            if (string.IsNullOrWhiteSpace(languageCode))
+                return string.Empty;
+
+            // Normalize language code (e.g., "en-US" -> "en")
+            var normalized = languageCode.Split('-')[0].ToLowerInvariant();
+
+            // Default to English, no instruction needed
+            if (normalized == "en")
+                return string.Empty;
+
+            // Language names mapping
+            var languageNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "en", "English" },
+                { "es", "Spanish" },
+                { "fr", "French" },
+                { "de", "German" },
+                { "nl", "Dutch" },
+            };
+
+            // Get language name, fallback to code if not found
+            if (!languageNames.TryGetValue(normalized, out var languageName))
+            {
+                // Unknown language - still add instruction with the code
+                return $"\n\nIMPORTANT: You must respond ONLY in {normalized.ToUpper()} language. All content hook names, descriptions, reasons, and examples must be written in {normalized.ToUpper()}.";
+            }
+
+            return $"\n\nIMPORTANT: You must respond ONLY in {languageName} language. All content hook names, descriptions, reasons, and examples must be written in {languageName}.";
         }
 
         // Helper classes for JSON parsing

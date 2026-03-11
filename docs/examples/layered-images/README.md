@@ -19,6 +19,7 @@ This directory contains example JSON definitions for common layered image use ca
 | `04-text-heavy-design.json` | Corporate | ❌ OFF | ⭐ Simple | Annual report cover with typography |
 | `05-mixed-content.json` | Marketing | ✅ ON | ⭐⭐⭐ Complex | Hero banner with mixed content types |
 | `06-performance-optimized.json` | Iterative | ❌ OFF | ⭐ Simple | Layer reuse for fast iteration |
+| `07-sociaal-cognitief-platform.json` | Branding | ✅ ON | ⭐⭐ Medium | Neural network branding with text overlay |
 
 ## Example Categories
 
@@ -63,6 +64,55 @@ This directory contains example JSON definitions for common layered image use ca
 - **Layers**: 3 (2 cached, 1 new)
 - **Time**: ~8-12 seconds
 - **Use When**: Iterating on designs, A/B testing variations
+
+### 7. **Sociaal Cognitief Platform** (07-sociaal-cognitief-platform.json)
+- **Format**: 1920x1080 (HD landscape)
+- **Vision**: ON (for visual coherence between neural network elements)
+- **Layers**: 4 (Background neural network, Brain visualization, Social connections, Text title)
+- **Time**: ~30-40 seconds
+- **Use When**: Creating branding images for cognitive/AI platforms with text overlay
+
+## Smart Layered Image Generation (NEW!)
+
+Instead of writing JSON definitions, you can now use **natural language prompts**!
+
+### Using ISmartLayeredImageService
+
+```csharp
+// Inject the service
+var smartService = serviceProvider.GetRequiredService<ISmartLayeredImageService>();
+
+// Generate from a natural language prompt
+var result = await smartService.GenerateFromPromptAsync(
+    prompt: "Een luxe straat met een villa, een witte Opel Combo met SCP op de zijkant geparkeerd op de weg",
+    width: 1024,
+    height: 1024,
+    format: "pdn");
+
+if (result.Success)
+{
+    await File.WriteAllBytesAsync("output.pdn", result.LayeredImageData!);
+    await File.WriteAllBytesAsync("preview.png", result.CompositePreview!);
+    Console.WriteLine($"Generated {result.Layers.Count} layers");
+    Console.WriteLine($"Reasoning: {result.CompositionReasoning}");
+}
+```
+
+### How It Works
+
+1. **LLM Plans Layers** - GPT-4 analyzes your prompt and decides what layers are needed
+2. **Key Insight**: Background should INCLUDE static elements (buildings, streets). Only foreground elements are separate transparent layers.
+3. **Vision Positioning** - GPT-4 Vision looks at the composite and decides optimal positioning for each element.
+
+### Example Prompts
+
+```
+"Een straat met een moderne villa, een blauwe Bugatti op de oprit"
+
+"Sunset beach with palm trees, surfboard in foreground, text 'Paradise' at bottom"
+
+"Office interior with desk, person silhouette, motivational quote overlay"
+```
 
 ## Customization Guide
 

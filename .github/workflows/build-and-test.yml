@@ -1,11 +1,15 @@
 name: Build, Test, and Security Scan
 
+# MANUAL ONLY - Save GitHub Actions billing
+# Run this manually before merging PRs
+# For local testing, use: C:\scripts\tools\local-ci\pre-commit-check.ps1
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
   workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for running this workflow'
+        required: false
+        default: 'Manual validation before merge'
 
 # Required for uploading SARIF results to GitHub Security tab
 permissions:
@@ -57,7 +61,7 @@ jobs:
           --logger "trx;LogFileName=test-results.trx"
 
     - name: Upload test results
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: test-results
@@ -75,7 +79,7 @@ jobs:
         name: codecov-hazina
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       if: success()
       with:
         name: build-artifacts
@@ -153,7 +157,7 @@ jobs:
 
     steps:
     - name: Download test results
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: test-results
         path: TestResults

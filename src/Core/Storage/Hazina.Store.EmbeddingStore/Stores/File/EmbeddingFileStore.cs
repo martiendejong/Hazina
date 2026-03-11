@@ -52,27 +52,70 @@ public class EmbeddingFileStore : AbstractTextEmbeddingStore, ITextEmbeddingStor
             try
             {
                 var data = File.ReadAllText(EmbeddingsFilePath);
+
+                // Configure JSON options to handle Embedding (which extends List<double>)
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    WriteIndented = false,
+                    Converters = { new EmbeddingJsonConverter() }
+                };
+
                 try
                 {
-                    var e = JsonSerializer.Deserialize<List<EmbeddingInfo>>(data);
-                    if (e != null)
-                        return e;
-                }
-                catch
-                {
-                    var q = new List<EmbeddingInfo>();
-                    var lines = data.Split('\n');
-                    foreach (var line in lines)
+                    var e = JsonSerializer.Deserialize<List<EmbeddingInfo>>(data, options);
+                    if (e != null && e.Count > 0)
                     {
-                        var parts = line.Split(",");
-                        var b = new EmbeddingInfo(parts[0], parts[2], [.. parts.Skip(3).Select(p => double.Parse(p)).ToList()]);
-                        q.Add(b);
+                        Console.WriteLine($"[EmbeddingFileStore] Successfully loaded {e.Count} embeddings from {EmbeddingsFilePath}");
+                        return e;
                     }
-                    return q;
+
+                    Console.WriteLine($"[EmbeddingFileStore] WARNING: Deserialized list is null or empty from {EmbeddingsFilePath}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[EmbeddingFileStore] ERROR deserializing JSON: {ex.Message}");
+                    Console.WriteLine($"[EmbeddingFileStore] Stack trace: {ex.StackTrace}");
+
+                    // Try legacy CSV fallback format (unlikely but kept for compatibility)
+                    try
+                    {
+                        var q = new List<EmbeddingInfo>();
+                        var lines = data.Split('\n');
+                        foreach (var line in lines.Where(l => !string.IsNullOrWhiteSpace(l)))
+                        {
+                            var parts = line.Split(",");
+                            if (parts.Length < 4) continue;
+                            var b = new EmbeddingInfo(parts[0], parts[2], [.. parts.Skip(3).Select(p => double.Parse(p)).ToList()]);
+                            q.Add(b);
+                        }
+
+                        if (q.Count > 0)
+                        {
+                            Console.WriteLine($"[EmbeddingFileStore] Loaded {q.Count} embeddings from legacy CSV format");
+                            return q;
+                        }
+                    }
+                    catch (Exception csvEx)
+                    {
+                        Console.WriteLine($"[EmbeddingFileStore] ERROR parsing CSV fallback: {csvEx.Message}");
+                    }
                 }
             }
-            catch { }
+            catch (IOException fileEx)
+            {
+                Console.WriteLine($"[EmbeddingFileStore] ERROR reading file {EmbeddingsFilePath}: {fileEx.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EmbeddingFileStore] Unexpected error: {ex.Message}");
+            }
         }
+        else
+        {
+            Console.WriteLine($"[EmbeddingFileStore] File does not exist: {EmbeddingsFilePath}");
+        }
+
         return new List<EmbeddingInfo>();
     }
 
@@ -88,7 +131,13 @@ public class EmbeddingFileStore : AbstractTextEmbeddingStore, ITextEmbeddingStor
         {
             Directory.CreateDirectory(directory);
         }
-        await File.WriteAllTextAsync(EmbeddingsFilePath, JsonSerializer.Serialize(Embeddings));
+        // Use consistent serialization options matching ReadEmbeddingsFile
+        var options = new JsonSerializerOptions
+        {
+            WriteIndented = false,
+            Converters = { new EmbeddingJsonConverter() }
+        };
+        await File.WriteAllTextAsync(EmbeddingsFilePath, JsonSerializer.Serialize(Embeddings, options));
     }
 
     public override async Task<EmbeddingInfo?> GetEmbedding(string key)

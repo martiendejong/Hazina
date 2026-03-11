@@ -129,6 +129,149 @@ public class ConnectedAccount
     /// Additional metadata.
     /// </summary>
     public Dictionary<string, string> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Authentication type for this connection.
+    /// Default: OAuth (for backward compatibility with existing accounts).
+    /// </summary>
+    public AuthType AuthType { get; set; } = AuthType.OAuth;
+
+    /// <summary>
+    /// What operations are allowed for this account.
+    /// Default: ImportPosts | ImportImages (read-only with images).
+    /// </summary>
+    public AccountPermissions Permissions { get; set; } =
+        AccountPermissions.ImportPosts | AccountPermissions.ImportImages;
+
+    /// <summary>
+    /// Provider category (social-network, website, etc.).
+    /// Default: social-network (for backward compatibility).
+    /// </summary>
+    public string ProviderCategory { get; set; } = "social-network";
+
+    /// <summary>
+    /// Base URL for website providers (e.g., "https://example.com").
+    /// Only applicable for website-type providers.
+    /// </summary>
+    public string? BaseUrl { get; set; }
+
+    /// <summary>
+    /// Credentials storage (encrypted at rest).
+    /// For WordPress: { "username": "admin", "appPassword": "xxxx xxxx xxxx" }
+    /// For ApiKey: { "apiKey": "secret" }
+    /// For NoAuth: empty
+    /// </summary>
+    public Dictionary<string, string> Credentials { get; set; } = new();
+
+    // Helper properties for permission checks
+    /// <summary>
+    /// Can import posts/articles from this account.
+    /// </summary>
+    public bool CanImportPosts => Permissions.HasFlag(AccountPermissions.ImportPosts);
+
+    /// <summary>
+    /// Can publish new posts to this platform.
+    /// </summary>
+    public bool CanPublishPosts => Permissions.HasFlag(AccountPermissions.PublishPosts);
+
+    /// <summary>
+    /// Can import pages (website-specific: About, Contact, etc.).
+    /// </summary>
+    public bool CanImportPages => Permissions.HasFlag(AccountPermissions.ImportPages);
+
+    /// <summary>
+    /// Whether to download images during import.
+    /// </summary>
+    public bool CanImportImages => Permissions.HasFlag(AccountPermissions.ImportImages);
+
+    /// <summary>
+    /// Whether this is a website provider (vs social network).
+    /// </summary>
+    public bool IsWebsite => ProviderCategory == "website";
+
+    /// <summary>
+    /// Whether this is a social network provider.
+    /// </summary>
+    public bool IsSocialNetwork => ProviderCategory == "social-network";
+}
+
+/// <summary>
+/// Authentication method used for connecting an account.
+/// </summary>
+public enum AuthType
+{
+    /// <summary>
+    /// No authentication - public scraping only.
+    /// Suitable for importing public content from websites.
+    /// </summary>
+    NoAuth = 0,
+
+    /// <summary>
+    /// OAuth 2.0 flow (LinkedIn, Facebook, Instagram, etc.).
+    /// Standard OAuth authorization with access/refresh tokens.
+    /// </summary>
+    OAuth = 1,
+
+    /// <summary>
+    /// WordPress Application Password.
+    /// Uses WordPress REST API with Basic authentication.
+    /// </summary>
+    WordPressAppPassword = 2,
+
+    /// <summary>
+    /// Generic API key authentication.
+    /// For platforms that use API keys (Twitter, YouTube, etc.).
+    /// </summary>
+    ApiKey = 3
+}
+
+/// <summary>
+/// Permissions flags for what an account can do.
+/// Uses [Flags] to allow combining multiple permissions.
+/// </summary>
+[Flags]
+public enum AccountPermissions
+{
+    /// <summary>
+    /// No permissions.
+    /// </summary>
+    None = 0,
+
+    /// <summary>
+    /// Can import posts/articles from the platform.
+    /// Read access to blog posts, social posts, articles.
+    /// </summary>
+    ImportPosts = 1,
+
+    /// <summary>
+    /// Can publish new posts to the platform.
+    /// Write access - ability to create content on the platform.
+    /// </summary>
+    PublishPosts = 2,
+
+    /// <summary>
+    /// Can import pages (WordPress pages, static website pages).
+    /// Website-specific: About, Contact, Services pages, etc.
+    /// </summary>
+    ImportPages = 4,
+
+    /// <summary>
+    /// Download and store images during import.
+    /// When disabled, only image URLs are stored (not downloaded).
+    /// </summary>
+    ImportImages = 8,
+
+    /// <summary>
+    /// Full read access (posts + pages + images).
+    /// Convenience flag for common read-only scenarios.
+    /// </summary>
+    FullRead = ImportPosts | ImportPages | ImportImages,
+
+    /// <summary>
+    /// Full control (read + write).
+    /// All permissions enabled.
+    /// </summary>
+    FullControl = FullRead | PublishPosts
 }
 
 /// <summary>

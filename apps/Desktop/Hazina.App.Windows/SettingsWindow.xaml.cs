@@ -6,7 +6,7 @@ namespace Hazina.App.Windows;
 public partial class SettingsWindow : Window
     {
         private readonly string appSettingsPath = "appsettings.json";
-        private dynamic originalConfig; // For cancel functionality
+        private dynamic? originalConfig; // For cancel functionality
         public bool RestartRequired { get; private set; } = false;
 
         public SettingsWindow()

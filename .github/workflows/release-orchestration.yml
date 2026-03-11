@@ -1,0 +1,181 @@
+name: Release Orchestration Demo
+
+on:
+  push:
+    tags:
+      - 'orchestration-v*'  # Trigger on tags like orchestration-v1.0.0
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        type: string
+      create_release:
+        description: 'Create GitHub release'
+        required: false
+        type: boolean
+        default: true
+
+env:
+  PROJECT_PATH: apps/Demos/Hazina.Demo.AgenticOrchestration
+  DOTNET_VERSION: '9.0.x'
+  NODE_VERSION: '20'
+
+jobs:
+  build:
+    name: Build ${{ matrix.runtime }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            runtime: win-x64
+            artifact_name: HazinaOrchestration-win-x64
+            executable: HazinaOrchestration.exe
+          - os: ubuntu-latest
+            runtime: linux-x64
+            artifact_name: HazinaOrchestration-linux-x64
+            executable: HazinaOrchestration
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: ${{ env.PROJECT_PATH }}/ClientApp/package-lock.json
+
+    - name: Install frontend dependencies
+      working-directory: ${{ env.PROJECT_PATH }}/ClientApp
+      run: npm ci
+
+    - name: Build frontend
+      working-directory: ${{ env.PROJECT_PATH }}/ClientApp
+      run: npm run build
+
+    - name: Restore .NET dependencies
+      run: dotnet restore ${{ env.PROJECT_PATH }}
+
+    - name: Publish executable
+      run: |
+        dotnet publish ${{ env.PROJECT_PATH }} \
+          --configuration Release \
+          --runtime ${{ matrix.runtime }} \
+          --output ./publish/${{ matrix.runtime }} \
+          --self-contained true \
+          -p:PublishSingleFile=true \
+          -p:EnableCompressionInSingleFile=true \
+          -p:IncludeNativeLibrariesForSelfExtract=true \
+          -p:DebugType=none \
+          -p:DebugSymbols=false
+
+    - name: Create archive (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        cd publish/${{ matrix.runtime }}
+        7z a -tzip ../${{ matrix.artifact_name }}.zip .
+
+    - name: Create archive (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cd publish/${{ matrix.runtime }}
+        chmod +x ${{ matrix.executable }}
+        tar -czvf ../${{ matrix.artifact_name }}.tar.gz .
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: |
+          publish/${{ matrix.artifact_name }}.zip
+          publish/${{ matrix.artifact_name }}.tar.gz
+        if-no-files-found: error
+        retention-days: 30
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v8
+      with:
+        path: artifacts
+
+    - name: Get version
+      id: version
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION="${GITHUB_REF#refs/tags/orchestration-v}"
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: "Hazina Orchestration v${{ steps.version.outputs.version }}"
+        tag_name: ${{ github.event_name == 'workflow_dispatch' && format('orchestration-v{0}', github.event.inputs.version) || github.ref_name }}
+        body: |
+          ## Hazina Agentic Orchestration v${{ steps.version.outputs.version }}
+
+          Web-based orchestration interface for managing Claude Code CLI instances.
+
+          ### Downloads
+
+          | Platform | File | Description |
+          |----------|------|-------------|
+          | Windows x64 | `HazinaOrchestration-win-x64.zip` | Self-contained executable, no .NET required |
+          | Linux x64 | `HazinaOrchestration-linux-x64.tar.gz` | Self-contained executable, no .NET required |
+
+          ### Quick Start
+
+          **Windows:**
+          ```powershell
+          # Extract and run
+          Expand-Archive HazinaOrchestration-win-x64.zip -DestinationPath orchestration
+          cd orchestration
+          .\HazinaOrchestration.exe
+          ```
+
+          **Linux:**
+          ```bash
+          # Extract and run
+          tar -xzf HazinaOrchestration-linux-x64.tar.gz -C orchestration
+          cd orchestration
+          ./HazinaOrchestration
+          ```
+
+          Then open http://localhost:5000 in your browser.
+
+          ### Features
+
+          - Web terminal for Claude Code CLI sessions
+          - Voice input support (Ctrl+M)
+          - Multi-session management
+          - Real-time output streaming via SignalR
+          - Basic HTTP authentication
+
+          ---
+          *Built with [Hazina Framework](https://github.com/martiendejong/Hazina)*
+        files: |
+          artifacts/**/*.zip
+          artifacts/**/*.tar.gz
+        fail_on_unmatched_files: true
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

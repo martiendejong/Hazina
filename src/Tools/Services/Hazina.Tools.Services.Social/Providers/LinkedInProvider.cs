@@ -20,6 +20,8 @@ public class LinkedInProvider : ISocialProvider
     private const string AuthorizeUrl = "https://www.linkedin.com/oauth/v2/authorization";
     private const string TokenUrl = "https://www.linkedin.com/oauth/v2/accessToken";
     private const string ApiBaseUrl = "https://api.linkedin.com/v2";
+    private const string RestApiBaseUrl = "https://api.linkedin.com/rest";
+    private const string LinkedInApiVersion = "202506";
 
     public string ProviderId => "linkedin";
     public string DisplayName => "LinkedIn";
@@ -38,10 +40,7 @@ public class LinkedInProvider : ISocialProvider
 
     public string GetAuthorizationUrl(string redirectUri, string state)
     {
-        // NOTE: LinkedIn permissions are product-gated.
-        // `r_liteprofile` is a legacy scope and commonly rejected ("not authorized") unless explicitly granted.
-        // For basic account connection + userinfo, OpenID Connect scopes are sufficient.
-        var scopes = "openid profile email";
+        var scopes = "openid profile email w_member_social";
         var encodedRedirect = HttpUtility.UrlEncode(redirectUri);
         var encodedScopes = HttpUtility.UrlEncode(scopes);
 
@@ -167,33 +166,6 @@ public class LinkedInProvider : ISocialProvider
             return new SocialProfile { Id = "", Name = "Unknown" };
         }
 
-        // LinkedIn's /userinfo may return locale as either:
-        // - string (legacy)
-        // - object (e.g. { "language": "...", "country": "..." })
-        // Be tolerant to both shapes so we don't fail the OAuth flow.
-        var localeStr = "";
-        try
-        {
-            if (profile.locale.HasValue)
-            {
-                var el = profile.locale.Value;
-                if (el.ValueKind == JsonValueKind.String)
-                {
-                    localeStr = el.GetString() ?? "";
-                }
-                else if (el.ValueKind == JsonValueKind.Object)
-                {
-                    var lang = el.TryGetProperty("language", out var l) && l.ValueKind == JsonValueKind.String ? (l.GetString() ?? "") : "";
-                    var country = el.TryGetProperty("country", out var c) && c.ValueKind == JsonValueKind.String ? (c.GetString() ?? "") : "";
-                    localeStr = string.Join("-", new[] { lang, country }.Where(s => !string.IsNullOrWhiteSpace(s)));
-                }
-            }
-        }
-        catch
-        {
-            localeStr = "";
-        }
-
         return new SocialProfile
         {
             Id = profile.sub ?? "",
@@ -205,7 +177,7 @@ public class LinkedInProvider : ISocialProvider
             {
                 ["given_name"] = profile.given_name ?? "",
                 ["family_name"] = profile.family_name ?? "",
-                ["locale"] = localeStr
+                ["locale"] = profile.locale?.ToString() ?? ""
             }
         };
     }
@@ -222,6 +194,7 @@ public class LinkedInProvider : ISocialProvider
             // Get user profile first to get the URN
             var profile = await GetProfileAsync(accessToken, cancellationToken);
             var memberUrn = $"urn:li:person:{profile.Id}";
+            Console.WriteLine($"[LinkedIn] ImportContent: profileId={profile.Id}, memberUrn={memberUrn}, contentTypes={string.Join(",", options.ContentTypes)}");
 
             // Import from personal profile
             if (options.ContentTypes.Contains("posts"))
@@ -337,14 +310,21 @@ public class LinkedInProvider : ISocialProvider
 
         try
         {
-            // LinkedIn v2 API for posts
-            var url = $"{ApiBaseUrl}/shares?q=owners&owners={HttpUtility.UrlEncode(ownerUrn)}&count={options.MaxItems}";
+            // Use LinkedIn v2 ugcPosts API (works with w_member_social scope)
+            // The /rest/posts endpoint requires Community Management API approval
+            var count = Math.Min(options.MaxItems, 50);
+            var url = $"{ApiBaseUrl}/ugcPosts?q=authors&authors=List({HttpUtility.UrlEncode(ownerUrn)})&count={count}&sortBy=LAST_MODIFIED";
 
             var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            request.Headers.Add("X-Restli-Protocol-Version", "2.0.0");
 
             var response = await _httpClient.SendAsync(request, cancellationToken);
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            Console.WriteLine($"[LinkedIn] Import posts for {sourceName}: {response.StatusCode}");
+            Console.WriteLine($"[LinkedIn] URL: {url}");
+            Console.WriteLine($"[LinkedIn] Response: {json.Substring(0, Math.Min(json.Length, 500))}");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -353,24 +333,45 @@ public class LinkedInProvider : ISocialProvider
                 return posts;
             }
 
-            var sharesResponse = JsonSerializer.Deserialize<LinkedInSharesResponse>(json);
-            if (sharesResponse?.elements == null)
+            var postsResponse = JsonSerializer.Deserialize<LinkedInUgcPostsResponse>(json);
+            Console.WriteLine($"[LinkedIn] Parsed elements: {postsResponse?.elements?.Count ?? 0}");
+            if (postsResponse?.elements == null)
             {
                 return posts;
             }
 
-            foreach (var share in sharesResponse.elements)
+            foreach (var element in postsResponse.elements)
             {
+                var postUrn = element.id ?? "";
+                // Extract text from specificContent -> com.linkedin.ugc.ShareContent -> shareCommentary
+                var content = "";
+                try
+                {
+                    if (element.specificContent != null)
+                    {
+                        var shareContent = element.specificContent.Values.FirstOrDefault();
+                        if (shareContent.TryGetProperty("shareCommentary", out var commentary)
+                            && commentary.TryGetProperty("text", out var text))
+                        {
+                            content = text.GetString() ?? "";
+                        }
+                    }
+                }
+                catch { /* ignore parse errors for individual posts */ }
+
+                var createdAt = element.created?.time > 0
+                    ? DateTimeOffset.FromUnixTimeMilliseconds(element.created.time).UtcDateTime
+                    : DateTime.UtcNow;
+
                 var post = new SocialPost
                 {
-                    Id = share.id ?? "",
+                    Id = postUrn,
                     AccountId = ownerUrn,
-                    Content = share.text?.text ?? "",
-                    CreatedAt = DateTimeOffset.FromUnixTimeMilliseconds(share.created?.time ?? 0).UtcDateTime,
-                    Url = $"https://www.linkedin.com/feed/update/{share.activity}",
+                    Content = content,
+                    CreatedAt = createdAt,
+                    Url = $"https://www.linkedin.com/feed/update/{postUrn}",
                     Metadata = new Dictionary<string, string>
                     {
-                        ["activity"] = share.activity ?? "",
                         ["source"] = sourceName,
                         ["owner_urn"] = ownerUrn
                     }
@@ -432,6 +433,32 @@ public class LinkedInProvider : ISocialProvider
         }
     }
 
+    /// <summary>
+    /// Fetches comments for specific content.
+    /// TODO: Implement platform-specific comment fetching.
+    /// </summary>
+    public Task<List<SocialComment>> FetchCommentsAsync(
+        string accessToken,
+        string contentId,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement platform-specific comment fetching
+        return Task.FromResult(new List<SocialComment>());
+    }
+
+    /// <summary>
+    /// Fetches engagement metrics for specific content.
+    /// TODO: Implement platform-specific engagement fetching.
+    /// </summary>
+    public Task<SocialEngagement> FetchEngagementAsync(
+        string accessToken,
+        string contentId,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement platform-specific engagement metrics
+        return Task.FromResult(new SocialEngagement());
+    }
+
     // LinkedIn API response classes
     private class LinkedInTokenResponse
     {
@@ -451,22 +478,18 @@ public class LinkedInProvider : ISocialProvider
         public JsonElement? locale { get; set; }
     }
 
-    private class LinkedInSharesResponse
+    private class LinkedInUgcPostsResponse
     {
-        public List<LinkedInShare>? elements { get; set; }
+        public List<LinkedInUgcPost>? elements { get; set; }
     }
 
-    private class LinkedInShare
+    private class LinkedInUgcPost
     {
         public string? id { get; set; }
-        public string? activity { get; set; }
-        public LinkedInText? text { get; set; }
+        public string? author { get; set; }
+        public string? lifecycleState { get; set; }
+        public Dictionary<string, JsonElement>? specificContent { get; set; }
         public LinkedInCreated? created { get; set; }
-    }
-
-    private class LinkedInText
-    {
-        public string? text { get; set; }
     }
 
     private class LinkedInCreated

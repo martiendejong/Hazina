@@ -36,6 +36,7 @@ project.lock.json
 project.fragment.lock.json
 packages.lock.json
 artifacts/
+**/artifacts/
 **/packages/*
 !**/packages/build/
 
@@ -113,3 +114,9 @@ docs/api/.manifest
 
 # DocFX log files
 docs/obj/
+node_modules
+/apps/Demos/Hazina.Demo.AgenticOrchestration/publish
+embeddings.json
+chunks.json
+appsettings.Secrets.json
+/scp

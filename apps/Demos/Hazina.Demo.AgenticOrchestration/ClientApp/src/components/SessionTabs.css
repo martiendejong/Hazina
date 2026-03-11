@@ -1,0 +1,131 @@
+.session-tabs {
+  display: flex;
+  flex-direction: column;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+}
+
+.tab-list {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 2px;
+  padding: 4px 8px 0;
+  scrollbar-width: thin;
+  scrollbar-color: #6e7681 #21262d;
+}
+
+.tab-list::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tab-list::-webkit-scrollbar-track {
+  background: #21262d;
+}
+
+.tab-list::-webkit-scrollbar-thumb {
+  background: #6e7681;
+  border-radius: 2px;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 120px;
+  max-width: 200px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.tab-item:hover {
+  background: #30363d;
+}
+
+.tab-item.active {
+  background: #0d1117;
+  border-color: #58a6ff;
+  border-bottom-color: transparent;
+}
+
+.tab-status {
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.tab-title {
+  flex: 1;
+  font-size: 0.875rem;
+  color: #c9d1d9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-item.active .tab-title {
+  color: #58a6ff;
+  font-weight: 600;
+}
+
+.tab-close {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #8b949e;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-close:hover {
+  background: #da3633;
+  color: #ffffff;
+}
+
+.tab-shortcuts-hint {
+  font-size: 0.7rem;
+  color: #6e7681;
+  padding: 4px 12px;
+  text-align: center;
+  background: #161b22;
+}
+
+.session-tabs-empty {
+  padding: 1rem;
+  text-align: center;
+  color: #8b949e;
+  font-size: 0.875rem;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+}
+
+/* Mobile: Hide shortcuts hint, make tabs scrollable */
+@media (max-width: 768px) {
+  .tab-shortcuts-hint {
+    display: none;
+  }
+
+  .tab-item {
+    min-width: 100px;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .tab-title {
+    font-size: 0.8rem;
+  }
+}

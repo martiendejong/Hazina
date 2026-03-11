@@ -35,11 +35,33 @@ public class PartialJsonParser
             Console.WriteLine(e.Message);
         }
 
-        Console.WriteLine("Trying to correct the JSON by removing the first part before {");
+        Console.WriteLine("Trying to correct the JSON by removing the first part before { or [");
         string correctedJson = "";
         try
         {
-            var start = partialJson.IndexOf('{');
+            // Support both objects {...} and arrays [...]
+            var startBrace = partialJson.IndexOf('{');
+            var startBracket = partialJson.IndexOf('[');
+
+            int start;
+            if (startBrace >= 0 && startBracket >= 0)
+            {
+                // Both found - use whichever comes first
+                start = Math.Min(startBrace, startBracket);
+            }
+            else if (startBrace >= 0)
+            {
+                start = startBrace;
+            }
+            else if (startBracket >= 0)
+            {
+                start = startBracket;
+            }
+            else
+            {
+                throw new Exception("Not valid JSON object or array");
+            }
+
             correctedJson = partialJson.Substring(start);
 
             var json = JsonSerializer.Deserialize<TResponse>(correctedJson);
@@ -213,21 +235,69 @@ public class PartialJsonParser
         string jsonPart = "";
         try
         {
-            var start = partialJson.IndexOf('{');
-            if (start < 0)
-                throw new Exception("Not valid JSON object");
+            // Support both objects {...} and arrays [...]
+            var startBrace = partialJson.IndexOf('{');
+            var startBracket = partialJson.IndexOf('[');
 
-            var end = partialJson.LastIndexOf('}');
-
-            partialJson = partialJson.Substring(start, end - start + 1).Trim()
-                //.Replace("\\\"", "\"")
-                .Replace("{{", "{")
-                .Replace("}}", "}");
-
-            var braces = CountBraces(partialJson);
-            if (braces.openBraces > braces.closeBraces)
+            int start;
+            char openChar, closeChar;
+            if (startBrace >= 0 && startBracket >= 0)
             {
-                partialJson += new string('}', braces.openBraces - braces.closeBraces);
+                // Both found - use whichever comes first
+                if (startBrace < startBracket)
+                {
+                    start = startBrace;
+                    openChar = '{';
+                    closeChar = '}';
+                }
+                else
+                {
+                    start = startBracket;
+                    openChar = '[';
+                    closeChar = ']';
+                }
+            }
+            else if (startBrace >= 0)
+            {
+                start = startBrace;
+                openChar = '{';
+                closeChar = '}';
+            }
+            else if (startBracket >= 0)
+            {
+                start = startBracket;
+                openChar = '[';
+                closeChar = ']';
+            }
+            else
+            {
+                throw new Exception("Not valid JSON object or array");
+            }
+
+            var end = partialJson.LastIndexOf(closeChar);
+
+            partialJson = partialJson.Substring(start, end - start + 1).Trim();
+
+            // Clean up doubled delimiters
+            if (openChar == '{')
+            {
+                partialJson = partialJson
+                    .Replace("{{", "{")
+                    .Replace("}}", "}");
+            }
+            else
+            {
+                partialJson = partialJson
+                    .Replace("[[", "[")
+                    .Replace("]]", "]");
+            }
+
+            // Count and balance delimiters
+            int openCount = partialJson.Count(c => c == openChar);
+            int closeCount = partialJson.Count(c => c == closeChar);
+            if (openCount > closeCount)
+            {
+                partialJson += new string(closeChar, openCount - closeCount);
             }
 
             jsonPart = partialJson;

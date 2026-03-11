@@ -82,6 +82,16 @@ public class LayeredImageResult
     public string FileUrl { get; set; } = string.Empty;
 
     /// <summary>
+    /// Raw file data (for in-memory usage).
+    /// </summary>
+    public byte[]? FileData { get; set; }
+
+    /// <summary>
+    /// Flattened composite PNG preview.
+    /// </summary>
+    public byte[]? CompositePreview { get; set; }
+
+    /// <summary>
     /// Format used for export.
     /// </summary>
     public LayeredImageFormat Format { get; set; }
@@ -108,6 +118,21 @@ public class LayerResultInfo
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// Layer type (Generated, Text, etc.).
+    /// </summary>
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Layer description.
+    /// </summary>
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// Raw image data for the layer.
+    /// </summary>
+    public byte[]? ImageData { get; set; }
+
+    /// <summary>
     /// Layer width.
     /// </summary>
     public int Width { get; set; }
@@ -116,6 +141,16 @@ public class LayerResultInfo
     /// Layer height.
     /// </summary>
     public int Height { get; set; }
+
+    /// <summary>
+    /// Position X on canvas.
+    /// </summary>
+    public int PositionX { get; set; }
+
+    /// <summary>
+    /// Position Y on canvas.
+    /// </summary>
+    public int PositionY { get; set; }
 
     /// <summary>
     /// Whether this layer was generated successfully.

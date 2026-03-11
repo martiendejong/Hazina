@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+
+  <?define ProductName = "Hazina Agentic Orchestration" ?>
+  <?define ProductVersion = "1.0.0" ?>
+  <?define Manufacturer = "Hazina Framework" ?>
+  <?define UpgradeCode = "12345678-1234-1234-1234-123456789012" ?>
+
+  <Product Id="*"
+           Name="$(var.ProductName)"
+           Language="1033"
+           Version="$(var.ProductVersion)"
+           Manufacturer="$(var.Manufacturer)"
+           UpgradeCode="$(var.UpgradeCode)">
+
+    <Package InstallerVersion="500"
+             Compressed="yes"
+             InstallScope="perMachine"
+             Description="$(var.ProductName) Installer"
+             Comments="Installs Hazina Agentic Orchestration as a Windows Service" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Feature: Main Application -->
+    <Feature Id="ProductFeature" Title="Hazina Agentic Orchestration" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="ServiceComponents" />
+    </Feature>
+
+    <!-- UI -->
+    <UIRef Id="WixUI_InstallDir" />
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+
+    <!-- License -->
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="Hazina Orchestration" />
+      </Directory>
+
+      <!-- Create C:\scripts directories if they don't exist -->
+      <Directory Id="SCRIPTS_ROOT" Name="C:\">
+        <Directory Id="SCRIPTS_DIR" Name="scripts">
+          <Directory Id="SCRIPTS_MACHINE" Name="_machine" />
+          <Directory Id="SCRIPTS_LOGS" Name="logs">
+            <Directory Id="SCRIPTS_LOGS_SESSIONS" Name="agent-sessions" />
+          </Directory>
+        </Directory>
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <!-- Main application files -->
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="MainExecutable" Guid="*">
+        <File Id="HazinaOrchestrationExe"
+              Source="$(var.PublishDir)\HazinaOrchestration.exe"
+              KeyPath="yes" />
+
+        <File Id="AppSettingsJson"
+              Source="$(var.PublishDir)\appsettings.json" />
+      </Component>
+
+      <Component Id="WwwRoot" Guid="*">
+        <File Id="IndexHtml"
+              Source="$(var.PublishDir)\wwwroot\index.html"
+              KeyPath="yes" />
+        <!-- Add more wwwroot files as needed -->
+      </Component>
+    </ComponentGroup>
+
+    <!-- Windows Service registration -->
+    <ComponentGroup Id="ServiceComponents" Directory="INSTALLFOLDER">
+      <Component Id="WindowsService" Guid="*">
+        <File Id="ServiceExe"
+              Source="$(var.PublishDir)\HazinaOrchestration.exe"
+              KeyPath="yes" />
+
+        <ServiceInstall Id="ServiceInstaller"
+                        Type="ownProcess"
+                        Name="HazinaOrchestration"
+                        DisplayName="Hazina Agentic Orchestration"
+                        Description="Web-based orchestration interface for managing Claude Code CLI instances"
+                        Start="auto"
+                        Account="LocalSystem"
+                        ErrorControl="normal"
+                        Interactive="no">
+          <util:ServiceConfig FirstFailureActionType="restart"
+                              SecondFailureActionType="restart"
+                              ThirdFailureActionType="restart"
+                              RestartServiceDelayInSeconds="60" />
+        </ServiceInstall>
+
+        <ServiceControl Id="StartService"
+                        Start="install"
+                        Stop="both"
+                        Remove="uninstall"
+                        Name="HazinaOrchestration"
+                        Wait="yes" />
+      </Component>
+
+      <!-- Firewall rule for port 5000 -->
+      <Component Id="FirewallException" Guid="*">
+        <util:FirewallException Id="FWException1"
+                                Name="Hazina Orchestration HTTP"
+                                Port="5000"
+                                Protocol="tcp"
+                                Scope="localSubnet"
+                                IgnoreFailure="yes"
+                                Profile="all" />
+      </Component>
+
+      <!-- Create required directories with permissions -->
+      <Component Id="ScriptsMachineDir" Directory="SCRIPTS_MACHINE" Guid="*">
+        <CreateFolder>
+          <util:PermissionEx User="Everyone" GenericAll="yes" />
+        </CreateFolder>
+      </Component>
+
+      <Component Id="ScriptsLogsDir" Directory="SCRIPTS_LOGS_SESSIONS" Guid="*">
+        <CreateFolder>
+          <util:PermissionEx User="Everyone" GenericAll="yes" />
+        </CreateFolder>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>
