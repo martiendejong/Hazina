@@ -27,4 +27,20 @@ public class ClaudeOrchestrationHub : Hub
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, "agentic-orchestrators");
     }
+
+    /// <summary>
+    /// Join a chat session to receive real-time chat updates
+    /// </summary>
+    public async Task JoinChatSession(string sessionId)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"chat-{sessionId}");
+    }
+
+    /// <summary>
+    /// Leave a chat session
+    /// </summary>
+    public async Task LeaveChatSession(string sessionId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"chat-{sessionId}");
+    }
 }

@@ -1,19 +1,35 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { SessionList } from './components/SessionList'
 import { TerminalView } from './components/TerminalView'
 import { ChatView } from './components/ChatView'
 import { ArchiveView } from './components/ArchiveView'
 import { Login } from './components/Login'
 import { SplitPane } from './components/SplitPane'
-import { SessionTabs } from './components/SessionTabs'
 import { CommandPalette, useCommandPalette } from './components/CommandPalette'
+import { SessionPropertiesDialog } from './components/SessionPropertiesDialog'
 import { authFetch, hasCredentials, clearCredentials } from './auth'
-import type { TerminalSession, ExternalClaudeInstance, AllSessions, TerminalConfig, PendingRestore } from './types'
+import type { TerminalSession, ExternalClaudeInstance, AllSessions, TerminalConfig, PendingRestore, SessionProperties } from './types'
 import './App.css'
+
+const SESSION_PROPS_KEY = 'hazina-session-properties'
+
+function loadSessionProperties(): Record<string, SessionProperties> {
+  try {
+    const stored = localStorage.getItem(SESSION_PROPS_KEY)
+    return stored ? JSON.parse(stored) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveSessionProperties(props: Record<string, SessionProperties>) {
+  localStorage.setItem(SESSION_PROPS_KEY, JSON.stringify(props))
+}
 
 type ViewMode = 'sessions' | 'chat' | 'archive'
 
 function App() {
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
   const [isAuthenticated, setIsAuthenticated] = useState(hasCredentials())
   const [sessions, setSessions] = useState<TerminalSession[]>([])
   const [externalInstances, setExternalInstances] = useState<ExternalClaudeInstance[]>([])
@@ -25,6 +41,9 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('sessions')
   const [pendingRestore, setPendingRestore] = useState<PendingRestore | null>(null)
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const [version, setVersion] = useState<string | null>(null)
+  const [sessionProperties, setSessionProperties] = useState<Record<string, SessionProperties>>(loadSessionProperties)
+  const [propsDialogSession, setPropsDialogSession] = useState<string | null>(null)
 
   // Command palette keyboard shortcut (Cmd+K / Ctrl+K)
   useCommandPalette(() => setCommandPaletteOpen(prev => !prev))
@@ -82,8 +101,12 @@ function App() {
   useEffect(() => {
     if (!isAuthenticated) return
 
-    // Fetch config once on mount
+    // Fetch config and version once on mount
     fetchConfig()
+    authFetch('/api/terminal/version')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.version) setVersion(data.version) })
+      .catch(() => {})
     // Fetch sessions initially - no auto-refresh
     fetchSessions()
 
@@ -154,20 +177,29 @@ function App() {
 
   const handleTerminateSession = async (sessionId: string) => {
     try {
-      const response = await authFetch(`/api/terminal/sessions/${sessionId}`, { method: 'DELETE' })
-      if (response.status === 401) {
-        handleUnauthorized()
-        return
-      }
+      // Optimistically remove from UI immediately
       setSessions(prev => prev.filter(s => s.sessionId !== sessionId))
-      // Also close the tab if it was open
       setOpenSessions(prev => prev.filter(id => id !== sessionId))
       if (activeSessionId === sessionId) {
         const remaining = openSessions.filter(id => id !== sessionId)
         setActiveSessionId(remaining.length > 0 ? remaining[0] : null)
       }
+
+      // Then call the API
+      const response = await authFetch(`/api/terminal/sessions/${sessionId}`, { method: 'DELETE' })
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
+      }
+      if (!response.ok) {
+        // If DELETE fails, re-fetch to restore correct state
+        fetchSessions()
+        throw new Error('Failed to terminate session')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to terminate session')
+      // Re-fetch sessions to restore correct state after error
+      fetchSessions()
     }
   }
 
@@ -189,15 +221,38 @@ function App() {
   }
 
   const handleTitleChanged = (sessionId: string, title: string) => {
+    // Strip ANSI escape sequences (ESC[...X patterns) from title
+    const cleanTitle = title
+      .replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')  // CSI sequences like ESC[111C, ESC[K, ESC[0m
+      .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '')  // OSC sequences
+      .replace(/\x1b[()][0-2]/g, '')  // Character set sequences
+      .trim()
     setSessions(prev => prev.map(s =>
       s.sessionId === sessionId
-        ? { ...s, title }
+        ? { ...s, title: cleanTitle }
         : s
     ))
   }
 
+  const handleSaveSessionProperties = useCallback((sessionId: string, props: SessionProperties) => {
+    setSessionProperties(prev => {
+      const updated = { ...prev }
+      if (!props.customName && !props.cardColor) {
+        delete updated[sessionId]
+      } else {
+        updated[sessionId] = props
+      }
+      saveSessionProperties(updated)
+      return updated
+    })
+  }, [])
+
+  const handleEditProperties = useCallback((sessionId: string) => {
+    setPropsDialogSession(sessionId)
+  }, [])
+
   // Handle restoring a session from archive
-  const handleRestoreSession = async (archivedSessionId: string, content: string) => {
+  const handleRestoreSession = async (archivedSessionId: string) => {
     try {
       // Use backend restore endpoint - it creates the session and returns archived content
       const response = await authFetch(`/api/terminal/archive/${archivedSessionId}/restore`, {
@@ -264,7 +319,7 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Claude Terminal Orchestration</h1>
+        <h1>Claude Terminal Orchestration{version && <span className="version-badge">v{version}</span>}</h1>
         <div className="header-actions">
           <button
             className={`btn-nav ${viewMode === 'sessions' ? 'active' : ''}`}
@@ -305,53 +360,71 @@ function App() {
       <main className="app-main">
         {viewMode === 'sessions' && (
           <>
-            <SplitPane
-              left={
+            {isMobile ? (
+              // Mobile: full-screen session list OR full-screen terminal
+              activeSessionId ? (
+                <TerminalView
+                  sessionId={activeSessionId}
+                  onClose={() => handleCloseTab(activeSessionId)}
+                  onStateChanged={handleStateChanged}
+                  onTitleChanged={handleTitleChanged}
+                  pendingRestore={pendingRestore?.sessionId === activeSessionId ? pendingRestore : undefined}
+                  onRestoreComplete={handleRestoreComplete}
+                  onEditProperties={handleEditProperties}
+                />
+              ) : (
                 <SessionList
                   sessions={sessions}
                   externalInstances={externalInstances}
                   selectedSession={activeSessionId}
                   loading={loading}
+                  sessionProperties={sessionProperties}
                   onSelect={handleSelectSession}
                   onTerminate={handleTerminateSession}
+                  onEditProperties={handleEditProperties}
                 />
-              }
-              right={
-                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                  {openSessions.length > 0 && (
-                    <SessionTabs
-                      sessions={sessions.filter(s => openSessions.includes(s.sessionId))}
-                      activeSessionId={activeSessionId}
-                      onSelect={setActiveSessionId}
-                      onClose={handleCloseTab}
+              )
+            ) : (
+              // Desktop: split pane layout
+              <SplitPane
+                left={
+                  <SessionList
+                    sessions={sessions}
+                    externalInstances={externalInstances}
+                    selectedSession={activeSessionId}
+                    loading={loading}
+                    sessionProperties={sessionProperties}
+                    onSelect={handleSelectSession}
+                    onTerminate={handleTerminateSession}
+                    onEditProperties={handleEditProperties}
+                  />
+                }
+                right={
+                  activeSessionId ? (
+                    <TerminalView
+                      sessionId={activeSessionId}
+                      onClose={() => handleCloseTab(activeSessionId)}
+                      onStateChanged={handleStateChanged}
+                      onTitleChanged={handleTitleChanged}
+                      pendingRestore={pendingRestore?.sessionId === activeSessionId ? pendingRestore : undefined}
+                      onRestoreComplete={handleRestoreComplete}
+                      onEditProperties={handleEditProperties}
                     />
-                  )}
-                  <div style={{ flex: 1, overflow: 'hidden' }}>
-                    {activeSessionId ? (
-                      <TerminalView
-                        sessionId={activeSessionId}
-                        onClose={() => handleCloseTab(activeSessionId)}
-                        onStateChanged={handleStateChanged}
-                        onTitleChanged={handleTitleChanged}
-                        pendingRestore={pendingRestore?.sessionId === activeSessionId ? pendingRestore : undefined}
-                        onRestoreComplete={handleRestoreComplete}
-                      />
-                    ) : (
-                      <div className="no-session">
-                        <p>Select a session or create a new one</p>
-                        <p style={{ fontSize: '0.875rem', color: '#8b949e', marginTop: '0.5rem' }}>
-                          Press Cmd+K or Ctrl+K to open command palette
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              }
-              defaultSize={320}
-              minSize={250}
-              maxSize={500}
-              storageKey="terminal-orchestrator-split"
-            />
+                  ) : (
+                    <div className="no-session">
+                      <p>Select a session or create a new one</p>
+                      <p style={{ fontSize: '0.875rem', color: '#8b949e', marginTop: '0.5rem' }}>
+                        Press Cmd+K or Ctrl+K to open command palette
+                      </p>
+                    </div>
+                  )
+                }
+                defaultSize={320}
+                minSize={250}
+                maxSize={500}
+                storageKey="terminal-orchestrator-split"
+              />
+            )}
 
             <CommandPalette
               sessions={sessions}
@@ -361,6 +434,20 @@ function App() {
               isOpen={commandPaletteOpen}
               onClose={() => setCommandPaletteOpen(false)}
             />
+
+            {propsDialogSession && (() => {
+              const session = sessions.find(s => s.sessionId === propsDialogSession)
+              return session ? (
+                <SessionPropertiesDialog
+                  isOpen={true}
+                  sessionId={session.sessionId}
+                  currentTitle={session.title || session.command}
+                  properties={sessionProperties[session.sessionId] || {}}
+                  onSave={handleSaveSessionProperties}
+                  onClose={() => setPropsDialogSession(null)}
+                />
+              ) : null
+            })()}
           </>
         )}
 

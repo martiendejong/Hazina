@@ -198,6 +198,37 @@ export class ClaudeTerminalClient {
             this.fitAddon.fit();
         });
 
+        // Handle paste events - read clipboard and send to terminal
+        document.addEventListener('paste', async (e) => {
+            const terminalElement = container.querySelector('.xterm');
+            if (!terminalElement) return;
+
+            // Always prevent default browser paste to avoid duplication
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Give terminal focus if it doesn't have it
+            const textarea = terminalElement.querySelector('textarea');
+            if (textarea && document.activeElement !== textarea) {
+                (textarea as HTMLElement).focus();
+            }
+
+            // Read clipboard and send to terminal via onData handler
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text && this.currentSessionId && this.isConnected) {
+                    // Send via terminal's onData mechanism
+                    const encoder = new TextEncoder();
+                    const bytes = encoder.encode(text);
+                    this.connection.invoke('SendInput', this.currentSessionId, Array.from(bytes))
+                        .catch(err => console.error('Failed to send paste:', err));
+                }
+            } catch (err) {
+                console.error('Failed to read clipboard:', err);
+                // Fallback: let xterm.js handle it if clipboard read fails
+            }
+        });
+
         // Connect to SignalR
         try {
             await this.connection.start();

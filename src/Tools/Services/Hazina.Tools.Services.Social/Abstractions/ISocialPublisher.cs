@@ -95,6 +95,21 @@ public class PublishPostRequest
     /// Internal post ID from our database (for logging/tracking).
     /// </summary>
     public string? InternalPostId { get; set; }
+
+    /// <summary>
+    /// Binary image data for direct upload (used when MediaUrls contains local file references).
+    /// </summary>
+    public byte[]? ImageData { get; set; }
+
+    /// <summary>
+    /// Original filename of the image being uploaded.
+    /// </summary>
+    public string? ImageFileName { get; set; }
+
+    /// <summary>
+    /// MIME content type of the image (e.g., "image/jpeg", "image/png").
+    /// </summary>
+    public string? ImageContentType { get; set; }
 }
 
 /// <summary>

@@ -1,0 +1,40 @@
+{
+  "id": "orchestration",
+  "name": "Agent Orchestration",
+  "description": "Manages Claude Code agent coordination and task distribution",
+  "enabled": true,
+  "color": "#4A90E2",
+  "icon": "robot",
+  "tasks": [
+    {
+      "id": "check-agent-status",
+      "name": "Check Agent Status",
+      "scriptPath": "C:\\scripts\\tools\\check-agent-status.ps1",
+      "cronExpression": "*/5 * * * *",
+      "enabled": true,
+      "runElevated": false,
+      "timeoutSeconds": 120,
+      "workingDirectory": "C:\\scripts"
+    },
+    {
+      "id": "cleanup-stale-worktrees",
+      "name": "Cleanup Stale Worktrees",
+      "scriptPath": "C:\\scripts\\tools\\cleanup-stale-worktrees.ps1",
+      "cronExpression": "0 */2 * * *",
+      "enabled": true,
+      "runElevated": false,
+      "timeoutSeconds": 300,
+      "workingDirectory": "C:\\scripts"
+    },
+    {
+      "id": "sync-agent-pool",
+      "name": "Sync Agent Pool Status",
+      "scriptPath": "C:\\scripts\\tools\\sync-agent-pool.ps1",
+      "cronExpression": "*/15 * * * *",
+      "enabled": true,
+      "runElevated": false,
+      "timeoutSeconds": 60,
+      "workingDirectory": "C:\\scripts"
+    }
+  ]
+}
