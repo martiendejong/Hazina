@@ -176,9 +176,12 @@ internal sealed class ConPtyProcess : IDisposable
                     creationFlags |= CREATE_UNICODE_ENVIRONMENT;
                 }
 
+                // CreateProcessW can modify lpCommandLine, so use StringBuilder
+                var commandLine = new System.Text.StringBuilder(command);
+
                 if (!CreateProcess(
                     null,
-                    command,
+                    commandLine,
                     IntPtr.Zero,
                     IntPtr.Zero,
                     false,
@@ -216,6 +219,16 @@ internal sealed class ConPtyProcess : IDisposable
     {
         var startupInfo = new STARTUPINFOEX();
         startupInfo.StartupInfo.cb = Marshal.SizeOf<STARTUPINFOEX>();
+
+        // CRITICAL: Set STARTF_USESTDHANDLES with null handles to prevent Windows from
+        // duplicating the parent's standard handles to the child process. Without this,
+        // if the parent has a console (e.g. running via 'dotnet run'), the child's stdout
+        // goes to the parent's console instead of through the ConPTY pipe.
+        // See: https://github.com/microsoft/terminal/issues/11276
+        startupInfo.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
+        startupInfo.StartupInfo.hStdInput = IntPtr.Zero;
+        startupInfo.StartupInfo.hStdOutput = IntPtr.Zero;
+        startupInfo.StartupInfo.hStdError = IntPtr.Zero;
 
         // Determine the size needed for the attribute list
         IntPtr size = IntPtr.Zero;

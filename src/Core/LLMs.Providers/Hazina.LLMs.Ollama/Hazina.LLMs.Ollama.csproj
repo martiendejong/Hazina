@@ -18,10 +18,10 @@
     <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.3" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />

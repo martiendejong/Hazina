@@ -28,6 +28,19 @@ namespace Hazina.Tools.Services.FileOps.Helpers
             var apiSettings = configuration.GetSection("ApiSettings").Get<ApiSettings>();
             var projectSettings = configuration.GetSection("ProjectSettings").Get<ProjectSettings>();
             var googleOAuthSettings = configuration.GetSection("GoogleOAuth").Get<GoogleOAuthSettings>();
+
+            // Guard against null ProjectSettings - can happen when config binding fails on IIS
+            if (projectSettings == null)
+            {
+                System.Console.WriteLine($"[HazinaStoreConfigLoader] WARNING: ProjectSettings binding returned null. BaseDirectory={AppContext.BaseDirectory}");
+                var fallbackFolder = Path.Combine(AppContext.BaseDirectory, "projects");
+                projectSettings = new ProjectSettings
+                {
+                    ProjectsFolder = fallbackFolder,
+                    FrontendUrl = "https://app.brand2boost.com"
+                };
+                System.Console.WriteLine($"[HazinaStoreConfigLoader] Using fallback ProjectsFolder: {fallbackFolder}");
+            }
             var openAIConfig = Hazina.LLMs.OpenAI.OpenAIConfig.FromConfiguration(configuration);
 
             System.Console.WriteLine($"[HazinaStoreConfigLoader] OpenAI config loaded: Model='{openAIConfig.Model}', ApiKey={(string.IsNullOrEmpty(openAIConfig.ApiKey) ? "(empty)" : "(set)")}");

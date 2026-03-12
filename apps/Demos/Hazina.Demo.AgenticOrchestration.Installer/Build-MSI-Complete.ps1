@@ -327,12 +327,18 @@ $sb = [System.Text.StringBuilder]::new()
 [void]$sb.AppendLine('                  Execute="immediate"')
 [void]$sb.AppendLine('                  Return="ignore" />')
 [void]$sb.AppendLine('')
-[void]$sb.AppendLine('    <!-- Custom action to update credentials (immediate execution - properties work!) -->')
-[void]$sb.AppendLine('    <Property Id="POWERSHELL_EXE" Value="powershell.exe" />')
+[void]$sb.AppendLine('    <!-- Custom action to update credentials using WixQuietExec pattern -->')
+[void]$sb.AppendLine('    <!-- Step 1: Set command line for WixQuietExec (immediate - can access properties) -->')
+[void]$sb.AppendLine('    <CustomAction Id="SetCredentials_SetCmdLine"')
+[void]$sb.AppendLine('                  Property="SetCredentials"')
+[void]$sb.AppendLine('                  Value="&quot;powershell.exe&quot; -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetCredentials.ps1&quot; -InstallDir &quot;[INSTALLFOLDER]&quot; -Username &quot;[AUTH_USERNAME]&quot; -Password &quot;[AUTH_PASSWORD]&quot; -ShellCommand &quot;[SHELL_COMMAND]&quot; -WorkingDirectory &quot;[WORKING_DIRECTORY]&quot;"')
+[void]$sb.AppendLine('                  Execute="immediate" />')
+[void]$sb.AppendLine('    <!-- Step 2: Execute PowerShell via WixQuietExec (deferred - files exist on disk) -->')
 [void]$sb.AppendLine('    <CustomAction Id="SetCredentials"')
-[void]$sb.AppendLine('                  Property="POWERSHELL_EXE"')
-[void]$sb.AppendLine('                  ExeCommand="-ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetCredentials.ps1&quot; -InstallDir &quot;[INSTALLFOLDER]&quot; -Username &quot;[AUTH_USERNAME]&quot; -Password &quot;[AUTH_PASSWORD]&quot; -ShellCommand &quot;[SHELL_COMMAND]&quot; -WorkingDirectory &quot;[WORKING_DIRECTORY]&quot;"')
-[void]$sb.AppendLine('                  Execute="immediate"')
+[void]$sb.AppendLine('                  Execute="deferred"')
+[void]$sb.AppendLine('                  Impersonate="no"')
+[void]$sb.AppendLine('                  BinaryKey="WixCA"')
+[void]$sb.AppendLine('                  DllEntry="WixQuietExec"')
 [void]$sb.AppendLine('                  Return="check" />')
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('    <!-- Custom action to set file permissions using WixQuietExec pattern -->')
@@ -353,7 +359,8 @@ $sb = [System.Text.StringBuilder]::new()
 [void]$sb.AppendLine('      <Custom Action="KillRunningProcess" Before="InstallValidate">1</Custom>')
 [void]$sb.AppendLine('      <Custom Action="StopOldService" After="KillRunningProcess">1</Custom>')
 [void]$sb.AppendLine('      <Custom Action="DeleteOldService" After="StopOldService">1</Custom>')
-[void]$sb.AppendLine('      <Custom Action="SetCredentials" After="InstallFiles">NOT Installed</Custom>')
+[void]$sb.AppendLine('      <Custom Action="SetCredentials_SetCmdLine" After="InstallFiles">NOT Installed</Custom>')
+[void]$sb.AppendLine('      <Custom Action="SetCredentials" After="SetCredentials_SetCmdLine">NOT Installed</Custom>')
 [void]$sb.AppendLine('      <!-- Set file permissions so regular users can modify appsettings.json -->')
 [void]$sb.AppendLine('      <Custom Action="SetFilePermissions_SetCmdLine" Before="InstallFinalize">1</Custom>')
 [void]$sb.AppendLine('      <Custom Action="SetFilePermissions" After="SetFilePermissions_SetCmdLine">1</Custom>')
@@ -663,9 +670,9 @@ if ($LASTEXITCODE -ne 0) {
 
 Pop-Location
 
-$msiPath = Join-Path $msiOutputDir "HazinaOrchestrationSetup.msi"
+$msiPath = Join-Path $msiOutputDir $msiFileName
 if (-not (Test-Path $msiPath)) {
-    Write-Host "  [FAILED] MSI not created" -ForegroundColor Red
+    Write-Host "  [FAILED] MSI not created at: $msiPath" -ForegroundColor Red
     exit 1
 }
 

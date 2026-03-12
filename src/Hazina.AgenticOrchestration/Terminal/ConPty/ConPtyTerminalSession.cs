@@ -197,7 +197,11 @@ public class ConPtyTerminalSession : ITerminalSession
         if (_process != null)
             throw new InvalidOperationException("Session already started");
 
-        _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        // IMPORTANT: Do NOT link to the request's CancellationToken.
+        // The request CT is cancelled when the HTTP request completes (client disconnects),
+        // which would kill the output read loop and exit monitor prematurely.
+        // The session's lifetime is independent of the HTTP request that created it.
+        _cts = new CancellationTokenSource();
 
         try
         {
@@ -213,6 +217,14 @@ public class ConPtyTerminalSession : ITerminalSession
                 _outputPipe.WriteHandle,
                 (short)_config.Columns,
                 (short)_config.Rows);
+
+            // CRITICAL: Close the PTY-side pipe handles after CreatePseudoConsole.
+            // CreatePseudoConsole duplicates these handles internally.
+            // If the parent keeps them open, the child process won't get proper
+            // stdin/stdout signals, causing it to exit prematurely.
+            // See: https://github.com/microsoft/terminal/blob/main/samples/ConPTY/MiniTerm/MiniTerm/Terminal.cs
+            _inputPipe.ReadHandle.Close();
+            _outputPipe.WriteHandle.Close();
 
             _logger?.LogInformation(
                 "Created ConPTY pseudo console {Cols}x{Rows} for session {SessionId}",
@@ -315,7 +327,8 @@ public class ConPtyTerminalSession : ITerminalSession
 
     private Dictionary<string, string> BuildEnvironment()
     {
-        var env = new Dictionary<string, string>();
+        // Use case-insensitive keys since Windows environment variables are case-insensitive
+        var env = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         // Copy current environment
         foreach (System.Collections.DictionaryEntry entry in Environment.GetEnvironmentVariables())

@@ -45,12 +45,18 @@
                   Execute="immediate"
                   Return="ignore" />
 
-    <!-- Custom action to update credentials (immediate execution - properties work!) -->
-    <Property Id="POWERSHELL_EXE" Value="powershell.exe" />
+    <!-- Custom action to update credentials using WixQuietExec pattern -->
+    <!-- Step 1: Set command line for WixQuietExec (immediate - can access properties) -->
+    <CustomAction Id="SetCredentials_SetCmdLine"
+                  Property="SetCredentials"
+                  Value="&quot;powershell.exe&quot; -ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetCredentials.ps1&quot; -InstallDir &quot;[INSTALLFOLDER]&quot; -Username &quot;[AUTH_USERNAME]&quot; -Password &quot;[AUTH_PASSWORD]&quot; -ShellCommand &quot;[SHELL_COMMAND]&quot; -WorkingDirectory &quot;[WORKING_DIRECTORY]&quot;"
+                  Execute="immediate" />
+    <!-- Step 2: Execute PowerShell via WixQuietExec (deferred - files exist on disk) -->
     <CustomAction Id="SetCredentials"
-                  Property="POWERSHELL_EXE"
-                  ExeCommand="-ExecutionPolicy Bypass -File &quot;[INSTALLFOLDER]SetCredentials.ps1&quot; -InstallDir &quot;[INSTALLFOLDER]&quot; -Username &quot;[AUTH_USERNAME]&quot; -Password &quot;[AUTH_PASSWORD]&quot; -ShellCommand &quot;[SHELL_COMMAND]&quot; -WorkingDirectory &quot;[WORKING_DIRECTORY]&quot;"
-                  Execute="immediate"
+                  Execute="deferred"
+                  Impersonate="no"
+                  BinaryKey="WixCA"
+                  DllEntry="WixQuietExec"
                   Return="check" />
 
     <!-- Custom action to set file permissions using WixQuietExec pattern -->
@@ -71,7 +77,8 @@
       <Custom Action="KillRunningProcess" Before="InstallValidate">1</Custom>
       <Custom Action="StopOldService" After="KillRunningProcess">1</Custom>
       <Custom Action="DeleteOldService" After="StopOldService">1</Custom>
-      <Custom Action="SetCredentials" After="InstallFiles">NOT Installed</Custom>
+      <Custom Action="SetCredentials_SetCmdLine" After="InstallFiles">NOT Installed</Custom>
+      <Custom Action="SetCredentials" After="SetCredentials_SetCmdLine">NOT Installed</Custom>
       <!-- Set file permissions so regular users can modify appsettings.json -->
       <Custom Action="SetFilePermissions_SetCmdLine" Before="InstallFinalize">1</Custom>
       <Custom Action="SetFilePermissions" After="SetFilePermissions_SetCmdLine">1</Custom>
@@ -91,12 +98,12 @@
       <ComponentRef Id="WwwRoot_vite_svg" />
       <ComponentRef Id="WwwRoot_vite_svg_br" />
       <ComponentRef Id="WwwRoot_vite_svg_gz" />
-      <ComponentRef Id="AssetFile_index_B24UAhMd_css" />
-      <ComponentRef Id="AssetFile_index_B24UAhMd_css_br" />
-      <ComponentRef Id="AssetFile_index_B24UAhMd_css_gz" />
-      <ComponentRef Id="AssetFile_index_CFANkm62_js" />
-      <ComponentRef Id="AssetFile_index_CFANkm62_js_br" />
-      <ComponentRef Id="AssetFile_index_CFANkm62_js_gz" />
+      <ComponentRef Id="AssetFile_index_9nNxXUfs_css" />
+      <ComponentRef Id="AssetFile_index_9nNxXUfs_css_br" />
+      <ComponentRef Id="AssetFile_index_9nNxXUfs_css_gz" />
+      <ComponentRef Id="AssetFile_index_Bfjjd0MV_js" />
+      <ComponentRef Id="AssetFile_index_Bfjjd0MV_js_br" />
+      <ComponentRef Id="AssetFile_index_Bfjjd0MV_js_gz" />
       <ComponentRef Id="SetupScript" />
       <ComponentRef Id="SetupCmd" />
       <ComponentRef Id="SetupConfigExample" />
@@ -312,23 +319,23 @@
   </Fragment>
 
   <Fragment>
-    <Component Id="AssetFile_index_B24UAhMd_css" Directory="WWWROOT_ASSETS" Guid="288EFAED-C073-E760-CC98-7AE0B7AC6A67">
-      <File Id="AF_index_B24UAhMd_css" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-B24UAhMd.css" KeyPath="yes" />
+    <Component Id="AssetFile_index_9nNxXUfs_css" Directory="WWWROOT_ASSETS" Guid="7B11F306-D7C9-30E8-AB3A-7F71F07B8941">
+      <File Id="AF_index_9nNxXUfs_css" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-9nNxXUfs.css" KeyPath="yes" />
     </Component>
-    <Component Id="AssetFile_index_B24UAhMd_css_br" Directory="WWWROOT_ASSETS" Guid="D196D190-AC71-7BA2-BEC3-9BCA0839FCCD">
-      <File Id="AF_index_B24UAhMd_css_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-B24UAhMd.css.br" KeyPath="yes" />
+    <Component Id="AssetFile_index_9nNxXUfs_css_br" Directory="WWWROOT_ASSETS" Guid="8416501A-6223-2C1B-F330-EA7495C3A89F">
+      <File Id="AF_index_9nNxXUfs_css_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-9nNxXUfs.css.br" KeyPath="yes" />
     </Component>
-    <Component Id="AssetFile_index_B24UAhMd_css_gz" Directory="WWWROOT_ASSETS" Guid="C57CB18E-9981-757C-9D02-2F5F50DD0075">
-      <File Id="AF_index_B24UAhMd_css_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-B24UAhMd.css.gz" KeyPath="yes" />
+    <Component Id="AssetFile_index_9nNxXUfs_css_gz" Directory="WWWROOT_ASSETS" Guid="FBE57E64-5138-57FD-EF11-7DE109367592">
+      <File Id="AF_index_9nNxXUfs_css_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-9nNxXUfs.css.gz" KeyPath="yes" />
     </Component>
-    <Component Id="AssetFile_index_CFANkm62_js" Directory="WWWROOT_ASSETS" Guid="08EAADFD-59D2-F1BA-D177-AE8F9C2E270D">
-      <File Id="AF_index_CFANkm62_js" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-CFANkm62.js" KeyPath="yes" />
+    <Component Id="AssetFile_index_Bfjjd0MV_js" Directory="WWWROOT_ASSETS" Guid="25A0B744-6D1D-6134-BD8B-39E214DE86E0">
+      <File Id="AF_index_Bfjjd0MV_js" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-Bfjjd0MV.js" KeyPath="yes" />
     </Component>
-    <Component Id="AssetFile_index_CFANkm62_js_br" Directory="WWWROOT_ASSETS" Guid="7E7F359A-8B02-76C0-5410-145B4731CFC3">
-      <File Id="AF_index_CFANkm62_js_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-CFANkm62.js.br" KeyPath="yes" />
+    <Component Id="AssetFile_index_Bfjjd0MV_js_br" Directory="WWWROOT_ASSETS" Guid="741E71AD-10AD-0BB8-B026-6B3EB452C96B">
+      <File Id="AF_index_Bfjjd0MV_js_br" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-Bfjjd0MV.js.br" KeyPath="yes" />
     </Component>
-    <Component Id="AssetFile_index_CFANkm62_js_gz" Directory="WWWROOT_ASSETS" Guid="2281EFA0-3F40-9769-841E-1C37CDFF2264">
-      <File Id="AF_index_CFANkm62_js_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-CFANkm62.js.gz" KeyPath="yes" />
+    <Component Id="AssetFile_index_Bfjjd0MV_js_gz" Directory="WWWROOT_ASSETS" Guid="B17ED22D-5B78-2B1C-4C29-7184B5C1FCDF">
+      <File Id="AF_index_Bfjjd0MV_js_gz" Source="C:\Projects\hazina\apps\Demos\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\wwwroot\assets\index-Bfjjd0MV.js.gz" KeyPath="yes" />
     </Component>
   </Fragment>
 

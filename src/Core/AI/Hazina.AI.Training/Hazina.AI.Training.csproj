@@ -19,7 +19,7 @@
     <PackageReference Include="TorchSharp-cuda-linux" Version="0.105.2" />
     <PackageReference Include="libtorch-cuda-12.8-win-x64" Version="2.7.1.1" />
     -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Hazina.AI.Core\Hazina.AI.Core.csproj" />
