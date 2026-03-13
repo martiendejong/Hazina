@@ -24,6 +24,9 @@ Console.SetError(logWriter);
 // ═══════════════════════════════════════════════════════════════
 var builder = WebApplication.CreateBuilder(args);
 
+// Enable Windows Service hosting
+builder.Host.UseWindowsService();
+
 // Load secrets file (not committed to git)
 builder.Configuration.AddJsonFile("appsettings.Secrets.json", optional: true, reloadOnChange: true);
 
