@@ -1,23 +1,28 @@
 param(
-    [string]$InstallDir,
     [string]$Username,
     [string]$Password,
     [string]$ShellCommand,
     [string]$WorkingDirectory
 )
 
+# Derive install directory from script location (avoids MSI path quoting issues)
+$InstallDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+# Log to user temp (perUser install runs as user, not SYSTEM)
+$logDir = if ($env:TEMP) { $env:TEMP } else { "C:\Windows\Temp" }
+
 # Emergency logging - write BEFORE anything else
-$emergencyLog = "C:\Windows\Temp\SetCredentials-ENTRY-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+$emergencyLog = Join-Path $logDir "SetCredentials-ENTRY-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
 try {
     "Script started at $(Get-Date)" | Out-File $emergencyLog -Encoding UTF8
-    "Parameters: InstallDir=$InstallDir, Username=$Username" | Out-File $emergencyLog -Append -Encoding UTF8
+    "Derived InstallDir: $InstallDir" | Out-File $emergencyLog -Append -Encoding UTF8
+    "Parameters: Username=$Username" | Out-File $emergencyLog -Append -Encoding UTF8
 } catch {
     # If even this fails, we have bigger problems
 }
 
 $ErrorActionPreference = "Stop"
-# Log to Windows\Temp which SYSTEM can always write to
-$logFile = "C:\Windows\Temp\SetCredentials-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+$logFile = Join-Path $logDir "SetCredentials-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
 
 function Write-Log {
     param([string]$Message)
@@ -36,11 +41,6 @@ try {
     Write-Log "Log File: $logFile"
     Write-Log "PowerShell Version: $($PSVersionTable.PSVersion)"
     Write-Log "Running as: $([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)"
-
-    if ([string]::IsNullOrEmpty($InstallDir)) {
-        Write-Log "WARNING: InstallDir parameter is empty - skipping configuration"
-        exit 0  # Exit gracefully so installer can continue
-    }
 
     $configPath = Join-Path $InstallDir "appsettings.Production.json"
     Write-Log "Config Path: $configPath"
