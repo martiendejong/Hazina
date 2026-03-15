@@ -13,6 +13,8 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>hazinacoder</ToolCommandName>
     <PackageOutputPath>./nupkg</PackageOutputPath>
+    <!-- Exclude from library package workflow; will be published separately as .NET tool -->
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
