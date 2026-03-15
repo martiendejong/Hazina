@@ -68,7 +68,23 @@ jobs:
         Write-Host "`n✅ Ready to publish $($packages.Count) packages"
 
     - name: Publish to NuGet.org
-      run: dotnet nuget push ./nupkgs/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      shell: pwsh
+      run: |
+        $packages = Get-ChildItem ./nupkgs/*.nupkg | Where-Object { $_.Name -notlike '*.snupkg' }
+        Write-Host "📤 Publishing $($packages.Count) packages to NuGet.org..."
+
+        foreach ($pkg in $packages) {
+          Write-Host "  ⬆️  Publishing $($pkg.Name)..."
+          dotnet nuget push $pkg.FullName --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "  ✅ $($pkg.Name) published successfully"
+          } else {
+            Write-Warning "  ⚠️  Failed to publish $($pkg.Name)"
+          }
+        }
+
+        Write-Host "`n🎉 Publishing complete!"
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
