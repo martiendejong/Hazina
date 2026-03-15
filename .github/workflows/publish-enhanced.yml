@@ -1,0 +1,118 @@
+name: Publish NuGet Packages (Enhanced)
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0, v1.0.0-beta.1, etc.
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  publish:
+    name: Build, Test, and Publish
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0  # Full history for GitVersion
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v3
+      with:
+        versionSpec: '6.x'
+
+    - name: Determine Version
+      id: gitversion
+      uses: gittools/actions/gitversion/execute@v3
+      with:
+        useConfigFile: true
+        configFilePath: GitVersion.yml
+
+    - name: Display Version
+      run: |
+        echo "Version: ${{ steps.gitversion.outputs.semVer }}"
+        echo "NuGetVersion: ${{ steps.gitversion.outputs.nuGetVersion }}"
+        echo "PreReleaseTag: ${{ steps.gitversion.outputs.preReleaseTag }}"
+
+    - name: Restore dependencies
+      run: dotnet restore Hazina.sln
+
+    - name: Build solution
+      run: dotnet build Hazina.sln --configuration Release --no-restore /p:Version=${{ steps.gitversion.outputs.nuGetVersion }}
+
+    - name: Run tests
+      run: dotnet test Hazina.sln --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+    - name: Publish test results
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Test Results
+        path: '**/test-results.trx'
+        reporter: dotnet-trx
+
+    - name: Pack NuGet packages
+      run: dotnet pack Hazina.sln --configuration Release --no-build --output ./nupkgs /p:PackageVersion=${{ steps.gitversion.outputs.nuGetVersion }}
+
+    - name: Validate packages
+      shell: pwsh
+      run: |
+        $packages = Get-ChildItem ./nupkgs -Filter *.nupkg -Exclude *.symbols.nupkg
+        Write-Host "Found $($packages.Count) packages to publish"
+
+        foreach ($pkg in $packages) {
+          $sizeMB = [math]::Round($pkg.Length / 1MB, 2)
+          Write-Host "  - $($pkg.Name) ($sizeMB MB)"
+
+          if ($sizeMB -gt 10) {
+            Write-Warning "Package $($pkg.Name) is larger than 10MB"
+          }
+        }
+
+        if ($packages.Count -eq 0) {
+          Write-Error "No packages found to publish!"
+          exit 1
+        }
+
+    - name: Publish to NuGet.org
+      run: dotnet nuget push ./nupkgs/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      continue-on-error: false
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          ./nupkgs/*.nupkg
+          ./nupkgs/*.snupkg
+        generate_release_notes: true
+        body: |
+          ## NuGet Packages Published
+
+          Version: `${{ steps.gitversion.outputs.semVer }}`
+          NuGet Version: `${{ steps.gitversion.outputs.nuGetVersion }}`
+
+          ### Installation
+          ```bash
+          dotnet add package Hazina.Core --version ${{ steps.gitversion.outputs.nuGetVersion }}
+          ```
+
+          See [NuGet.org](https://www.nuget.org/packages?q=Hazina) for all published packages.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: nuget-packages
+        path: ./nupkgs/
+        retention-days: 30
