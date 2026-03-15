@@ -48,7 +48,7 @@ jobs:
     - name: Validate packages
       shell: pwsh
       run: |
-        $packages = Get-ChildItem ./nupkgs -Filter *.nupkg -Exclude *.symbols.nupkg
+        $packages = Get-ChildItem ./nupkgs/*.nupkg | Where-Object { $_.Name -notlike '*.snupkg' }
         Write-Host "📦 Found $($packages.Count) packages to publish:"
 
         foreach ($pkg in $packages) {
