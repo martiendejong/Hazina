@@ -84,7 +84,7 @@ jobs:
 
         foreach ($pkg in $packages) {
           Write-Host "  ⬆️  Publishing $($pkg.Name)..."
-          dotnet nuget push $pkg.FullName --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+          dotnet nuget push $pkg.FullName --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate --no-symbols
 
           if ($LASTEXITCODE -eq 0) {
             Write-Host "  ✅ $($pkg.Name) published successfully"
