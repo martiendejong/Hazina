@@ -3,7 +3,8 @@
 [![.NET 9.0](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/hazina-ai/hazina)
-[![NuGet](https://img.shields.io/badge/NuGet-coming%20soon-blue)](https://www.nuget.org/)
+[![NuGet](https://img.shields.io/badge/NuGet-v1.0.1-blue)](https://www.nuget.org/packages?q=Hazina)
+[![Packages](https://img.shields.io/badge/packages-99-success)](https://www.nuget.org/packages?q=owner:martiendejong+Hazina)
 [![Documentation](https://img.shields.io/badge/docs-docs/apidoc-blue)](docs/apidoc/index.html)
 [![Deploy Docs](https://github.com/martiendejong/Hazina/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/martiendejong/Hazina/actions/workflows/deploy-docs.yml)
 
@@ -80,6 +81,42 @@ See the full [30-Minute RAG Tutorial](docs/quickstart.md) for:
 - Add PostgreSQL/Supabase backend
 - Enable/disable embeddings
 - Add multi-layer reasoning
+
+## 📦 NuGet Packages
+
+**99 production-ready packages now available on NuGet.org!**
+
+All Hazina packages are published at **version 1.0.1** and ready for use in your production applications.
+
+🔗 **Browse all packages:** https://www.nuget.org/packages?q=owner:martiendejong+Hazina
+
+### Package Categories
+
+- **🤖 Core AI & LLM Providers** (38 packages) - OpenAI, Anthropic, Ollama, Gemini, Mistral, HuggingFace
+- **🛠️ Tools & Services** (33 packages) - Database, social media, file operations, text extraction
+- **🔐 Storage, Security & Observability** (13 packages) - Embeddings, PostgreSQL, authentication, logging
+- **🎯 Agents, CodeGen, API & UI** (15 packages) - Multi-agent coordination, code generation, dynamic APIs
+
+### Popular Packages
+
+```bash
+# Core orchestration
+dotnet add package Hazina.AI.Orchestration --version 1.0.1
+dotnet add package Hazina.AI.FluentAPI --version 1.0.1
+
+# LLM providers
+dotnet add package Hazina.LLMs.OpenAI --version 1.0.1
+dotnet add package Hazina.LLMs.Anthropic --version 1.0.1
+dotnet add package Hazina.LLMs.Ollama --version 1.0.1
+
+# RAG & agents
+dotnet add package Hazina.AI.RAG --version 1.0.1
+dotnet add package Hazina.AI.Agents --version 1.0.1
+
+# Tools & services
+dotnet add package Hazina.Tools.Services.Database --version 1.0.1
+dotnet add package Hazina.Storage.Embeddings --version 1.0.1
+```
 
 ## Installation
 
