@@ -207,7 +207,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       convertEol: false,
       // Mobile optimizations
       scrollOnUserInput: true,
-      fastScrollSensitivity: isMobile ? 1 : 5,
+      fastScrollSensitivity: isMobile ? 1 : 2,  // Reduced from 5 to 2 for better desktop UX
       smoothScrollDuration: isMobile ? 0 : 125,  // Disable smooth scroll on mobile
       // Clipboard support
       rightClickSelectsWord: true,  // Right-click selects word for easy copy

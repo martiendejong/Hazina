@@ -16,18 +16,10 @@ public sealed class TrayApplicationContext : ApplicationContext
     private readonly ToolStripMenuItem _autoStartItem;
     private readonly string _baseUrl;
 
-    public TrayApplicationContext(WebApplication webApp)
+    public TrayApplicationContext(WebApplication webApp, string baseUrl)
     {
         _webApp = webApp;
-
-        // Resolve the actual base URL from the running web host
-        _baseUrl = webApp.Urls.FirstOrDefault(u => u.StartsWith("https://"))
-                   ?? webApp.Urls.FirstOrDefault()
-                   ?? "https://localhost:5123";
-
-        // Normalize 0.0.0.0 and [::] to localhost for browser URLs
-        _baseUrl = _baseUrl.Replace("://0.0.0.0:", "://localhost:")
-                           .Replace("://[::]:", "://localhost:");
+        _baseUrl = baseUrl;
 
         // Load icon from embedded resource, fall back to system icon
         var icon = LoadEmbeddedIcon() ?? SystemIcons.Application;

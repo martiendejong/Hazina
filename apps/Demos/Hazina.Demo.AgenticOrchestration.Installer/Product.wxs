@@ -3,7 +3,7 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
   <?define ProductName = "Hazina Agentic Orchestration" ?>
-  <?define ProductVersion = "2.4.3" ?>
+  <?define ProductVersion = "2.4.4" ?>
   <?define Manufacturer = "Hazina Framework" ?>
   <?define UpgradeCode = "12345678-1234-1234-1234-123456789012" ?>
 
@@ -149,10 +149,10 @@
   <Fragment>
     <ComponentGroup Id="WwwRootAssetsComponents" Directory="WWWROOT_ASSETS">
       <Component Id="Assets1" Guid="*">
-        <File Id="AssetsCss" Source="$(var.PublishDir)\wwwroot\assets\index-9nNxXUfs.css" />
+        <File Id="AssetsCss" Source="$(var.PublishDir)\wwwroot\assets\index-CDIpq_jv.css" />
       </Component>
       <Component Id="Assets2" Guid="*">
-        <File Id="AssetsJs" Source="$(var.PublishDir)\wwwroot\assets\index-Bfjjd0MV.js" />
+        <File Id="AssetsJs" Source="$(var.PublishDir)\wwwroot\assets\index-CAqNMBij.js" />
       </Component>
     </ComponentGroup>
   </Fragment>

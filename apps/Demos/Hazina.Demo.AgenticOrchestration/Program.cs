@@ -1,10 +1,13 @@
 using System.Diagnostics;
+using System.Text;
 using Hazina.AgenticOrchestration.Extensions;
 using Hazina.AgenticOrchestration.Services;
 using Hazina.Demo.AgenticOrchestration;
 using Hazina.Demo.AgenticOrchestration.Authentication;
 using Hazina.LLMs;
 using Hazina.LLMs.OpenAI;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 // ═══════════════════════════════════════════════════════════════
@@ -145,18 +148,58 @@ catch (Exception ex)
     Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] OpenAI LLM Client skipped: {ex.Message}");
 }
 
-// Authentication
-builder.Services.AddAuthentication(BasicAuthenticationExtensions.SchemeName)
-    .AddBasicAuthentication(options =>
-    {
-        options.Enabled = authEnabled;
-        options.Username = authUsername;
-        options.Password = authPassword;
-        options.Realm = authRealm;
-    });
+// JWT Configuration
+var jwtConfig = authConfig.GetSection("Jwt");
+var jwtEnabled = bool.TryParse(jwtConfig["Enabled"], out var jwtEn) && jwtEn;
+var jwtSecretKey = jwtConfig["SecretKey"] ?? string.Empty;
+var jwtIssuer = jwtConfig["Issuer"] ?? "HazinaOrchestration";
+var jwtAudience = jwtConfig["Audience"] ?? "HazinaOrchestrationClient";
+
+// Register JWT services
+if (jwtEnabled)
+{
+    builder.Services.AddSingleton<JwtService>();
+    builder.Services.AddSingleton<RefreshTokenStore>();
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] JWT services registered");
+}
+
+// Authentication - support both Basic and JWT Bearer
+builder.Services.AddAuthentication(options =>
+{
+    // Default to JWT if enabled, otherwise Basic Auth
+    options.DefaultAuthenticateScheme = jwtEnabled ? JwtBearerDefaults.AuthenticationScheme : BasicAuthenticationExtensions.SchemeName;
+    options.DefaultChallengeScheme = jwtEnabled ? JwtBearerDefaults.AuthenticationScheme : BasicAuthenticationExtensions.SchemeName;
+})
+.AddBasicAuthentication(options =>
+{
+    options.Enabled = authEnabled;
+    options.Username = authUsername;
+    options.Password = authPassword;
+    options.Realm = authRealm;
+});
+
+// Add JWT Bearer authentication if enabled
+if (jwtEnabled && !string.IsNullOrEmpty(jwtSecretKey))
+{
+    builder.Services.AddAuthentication()
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey)),
+                ValidateIssuer = true,
+                ValidIssuer = jwtIssuer,
+                ValidateAudience = true,
+                ValidAudience = jwtAudience,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
+        });
+}
 
 builder.Services.AddAuthorization();
-Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Basic Authentication configured (enabled: {authEnabled})");
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Authentication configured - Basic: {authEnabled}, JWT: {jwtEnabled}");
 
 // ASP.NET Core Services
 builder.Services.AddControllers()
@@ -184,14 +227,15 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 
-    // Add Basic Authentication to Swagger
-    if (authEnabled)
+    // Add authentication schemes to Swagger
+    if (jwtEnabled)
     {
-        c.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
+        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
         {
             Type = SecuritySchemeType.Http,
-            Scheme = "basic",
-            Description = "Basic HTTP Authentication. Enter your username and password."
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "JWT Authorization header using the Bearer scheme. Enter your JWT token."
         });
 
         c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -202,12 +246,41 @@ builder.Services.AddSwaggerGen(c =>
                     Reference = new OpenApiReference
                     {
                         Type = ReferenceType.SecurityScheme,
-                        Id = "Basic"
+                        Id = "Bearer"
                     }
                 },
                 Array.Empty<string>()
             }
         });
+    }
+
+    if (authEnabled)
+    {
+        c.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "basic",
+            Description = "Basic HTTP Authentication. Enter your username and password."
+        });
+
+        // Only add Basic to requirements if JWT is not enabled
+        if (!jwtEnabled)
+        {
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Basic"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
+        }
     }
 });
 
@@ -404,6 +477,17 @@ else
     // ═══════════════════════════════════════════════════════════════
     Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Running in DESKTOP MODE (with system tray)");
 
+    // Capture URLs BEFORE starting the web host to avoid ObjectDisposedException
+    var baseUrl = app.Urls.FirstOrDefault(u => u.StartsWith("https://"))
+                  ?? app.Urls.FirstOrDefault()
+                  ?? "https://localhost:5123";
+
+    // Normalize 0.0.0.0 and [::] to localhost for browser URLs
+    baseUrl = baseUrl.Replace("://0.0.0.0:", "://localhost:")
+                     .Replace("://[::]:", "://localhost:");
+
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Base URL: {baseUrl}");
+
     // Start the ASP.NET Core web host in the background
     _ = Task.Run(async () =>
     {
@@ -425,7 +509,7 @@ else
     // Run WinForms on the main thread (required for message pump)
     Application.EnableVisualStyles();
     Application.SetCompatibleTextRenderingDefault(false);
-    Application.Run(new TrayApplicationContext(app));
+    Application.Run(new TrayApplicationContext(app, baseUrl));
 
     // Cleanup after tray app exits
     Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Application shutting down...");
