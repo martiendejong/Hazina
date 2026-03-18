@@ -16,7 +16,7 @@
     <AssemblyName>HazinaOrchestration</AssemblyName>
     <Product>Hazina Agentic Orchestration</Product>
     <Description>Desktop tray application for managing Claude Code CLI instances</Description>
-    <Version>2.4.5</Version>
+    <Version>2.5.0</Version>
 
     <!-- Publishing defaults -->
     <PublishSingleFile>true</PublishSingleFile>
