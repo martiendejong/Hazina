@@ -44,30 +44,6 @@ public class ProviderOrchestrator : CapabilityProviderBase, IProviderOrchestrato
         _budgetManager.BudgetAlertTriggered += OnBudgetAlertTriggered;
     }
 
-    #region ICapabilityProvider
-
-    public ProviderCapability SupportedCapabilities => ProviderCapability.All;
-
-    public bool SupportsCapability(ProviderCapability capability) =>
-        (SupportedCapabilities & capability) == capability;
-
-    public IEnumerable<string> GetSupportedCapabilityNames()
-    {
-        var names = new List<string>();
-        foreach (var cap in Enum.GetValues<ProviderCapability>())
-            if (cap != ProviderCapability.None && cap != ProviderCapability.All && SupportsCapability(cap))
-                names.Add(cap.ToString());
-        return names;
-    }
-
-    public void RequireCapabilities(ProviderCapability requiredCapabilities)
-    {
-        if (!SupportsCapability(requiredCapabilities))
-            throw new NotSupportedException($"No registered provider supports required capabilities: {requiredCapabilities}");
-    }
-
-    #endregion
-
     #region Provider Management
 
     /// <summary>
