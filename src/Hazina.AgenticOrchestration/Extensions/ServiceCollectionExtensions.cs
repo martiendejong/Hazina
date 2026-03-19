@@ -180,6 +180,22 @@ public static class ServiceCollectionExtensions
         // Register SessionOrderingService for session display ordering
         services.AddSingleton<ISessionOrderingService, SessionOrderingService>();
 
+        // ═══════════════════════════════════════════════════════════════
+        // LOCAL AGENT PLATFORM SERVICES (Milestone 1.1)
+        // ═══════════════════════════════════════════════════════════════
+
+        // Register Event Store for event sourcing
+        services.AddSingleton<Hazina.EventSourcing.IEventStore>(sp =>
+            new Hazina.EventSourcing.SQLiteEventStore(
+                Path.Combine(Path.GetDirectoryName(options.DatabasePath) ?? "data", "event-store.db"),
+                sp.GetRequiredService<ILogger<Hazina.EventSourcing.SQLiteEventStore>>()));
+
+        // Register Intent Parser (stub for now, can be replaced with LLamaSharp later)
+        services.AddSingleton<Hazina.AI.LocalLLM.IIntentParser, Hazina.AI.LocalLLM.StubIntentParser>();
+
+        // Register Structural Indexer for file system awareness
+        services.AddSingleton<Hazina.Indexing.LocalSystem.IStructuralIndexer, Hazina.Indexing.LocalSystem.StructuralIndexer>();
+
         return services;
     }
 

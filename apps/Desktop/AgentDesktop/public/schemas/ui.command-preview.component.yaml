@@ -1,0 +1,92 @@
+id: ui.command-preview
+type: visualization
+category: execution
+description: Preview of command/script before execution with safety analysis
+
+schema:
+  type: object
+  required:
+    - command
+    - riskLevel
+  properties:
+    command:
+      type: string
+      description: Full command or script to be executed
+    commandType:
+      type: string
+      enum:
+        - shell
+        - powershell
+        - python
+        - sql
+        - api-call
+      description: Type of command
+    workingDirectory:
+      type: string
+      description: Working directory for command execution
+    environment:
+      type: object
+      description: Environment variables
+      additionalProperties:
+        type: string
+    arguments:
+      type: array
+      description: Command arguments
+      items:
+        type: string
+    riskLevel:
+      type: string
+      enum:
+        - read
+        - write
+        - execute
+        - admin
+      description: Risk classification
+    safetyAnalysis:
+      type: object
+      description: Automated safety analysis results
+      properties:
+        destructiveOperations:
+          type: array
+          description: Potentially destructive operations detected
+          items:
+            type: string
+        affectedResources:
+          type: array
+          description: Resources that will be affected
+          items:
+            type: string
+        reversible:
+          type: boolean
+          description: Whether command effects can be undone
+        requiresSudo:
+          type: boolean
+          description: Whether command requires elevated privileges
+    expectedOutput:
+      type: string
+      description: Expected command output or result
+    timeout:
+      type: integer
+      description: Execution timeout in seconds
+      minimum: 0
+      maximum: 3600
+
+validation:
+  rules:
+    - name: destructive-requires-admin-risk
+      condition: safetyAnalysis.destructiveOperations.length > 0
+      requires: riskLevel == 'admin'
+      message: Commands with destructive operations must have admin risk level
+    - name: sudo-requires-admin-risk
+      condition: safetyAnalysis.requiresSudo == true
+      requires: riskLevel == 'admin'
+      message: Commands requiring sudo must have admin risk level
+
+security:
+  requiresApproval: true
+  allowedOperations:
+    - view
+    - approve
+    - reject
+    - modify
+  riskLevel: execute
