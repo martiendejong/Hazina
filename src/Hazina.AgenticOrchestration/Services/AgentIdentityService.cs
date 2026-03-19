@@ -1,3 +1,4 @@
+using Hazina.AgenticOrchestration.Abstractions;
 using Hazina.AgenticOrchestration.Models;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -20,21 +21,29 @@ public class AgentIdentityService : IAgentIdentityService
 {
     private readonly string _identitiesPath;
     private readonly ILogger<AgentIdentityService> _logger;
+    private readonly IFileSystem _fileSystem;
+    private readonly ISystemClock _clock;
 
-    public AgentIdentityService(string identitiesPath, ILogger<AgentIdentityService> logger)
+    public AgentIdentityService(
+        string identitiesPath,
+        ILogger<AgentIdentityService> logger,
+        IFileSystem fileSystem,
+        ISystemClock clock)
     {
         _identitiesPath = identitiesPath;
         _logger = logger;
+        _fileSystem = fileSystem;
+        _clock = clock;
 
         // Ensure identities directory exists
-        Directory.CreateDirectory(_identitiesPath);
+        _fileSystem.CreateDirectory(_identitiesPath);
     }
 
     public async Task<AgentIdentity> CreateIdentityAsync(AgentIdentity identity)
     {
         var filePath = GetIdentityPath(identity.Name);
 
-        if (File.Exists(filePath))
+        if (_fileSystem.FileExists(filePath))
         {
             throw new InvalidOperationException($"Agent identity {identity.Name} already exists");
         }
@@ -49,14 +58,14 @@ public class AgentIdentityService : IAgentIdentityService
     {
         var filePath = GetIdentityPath(agentName);
 
-        if (!File.Exists(filePath))
+        if (!_fileSystem.FileExists(filePath))
         {
             return null;
         }
 
         try
         {
-            var json = await File.ReadAllTextAsync(filePath);
+            var json = await _fileSystem.ReadAllTextAsync(filePath);
             var identity = JsonSerializer.Deserialize<AgentIdentity>(json);
             _logger.LogInformation("Loaded agent identity: {AgentName} ({Sessions} sessions)", agentName, identity?.SessionsCompleted ?? 0);
             return identity;
@@ -86,7 +95,7 @@ public class AgentIdentityService : IAgentIdentityService
         }
 
         identity.SessionsCompleted++;
-        identity.LastSession = DateTime.UtcNow;
+        identity.LastSession = _clock.UtcNow;
 
         // Add to recent tasks (keep last 10)
         identity.RecentTasks.Insert(0, task);
@@ -113,6 +122,6 @@ public class AgentIdentityService : IAgentIdentityService
         };
 
         var json = JsonSerializer.Serialize(identity, options);
-        await File.WriteAllTextAsync(filePath, json);
+        await _fileSystem.WriteAllTextAsync(filePath, json);
     }
 }

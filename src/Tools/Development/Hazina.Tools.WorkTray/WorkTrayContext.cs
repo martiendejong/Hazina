@@ -25,8 +25,11 @@ namespace WorkTray
 
         public WorkTrayContext()
         {
-            _statePath = @"C:\scripts\_machine\work-state.json";
-            _dashboardPath = "http://localhost:4242/work-dashboard.html";
+            // Configurable via environment variable HAZINA_STATE_PATH or HAZINA_DASHBOARD_URL
+            _statePath = Environment.GetEnvironmentVariable("HAZINA_STATE_PATH")
+                ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "work-state.json");
+            _dashboardPath = Environment.GetEnvironmentVariable("HAZINA_DASHBOARD_URL")
+                ?? "http://localhost:4242/work-dashboard.html";
 
             InitializeTrayIcon();
             InitializeTimer();
