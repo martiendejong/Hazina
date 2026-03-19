@@ -6,8 +6,33 @@ using System.Text.Json;
 namespace Hazina.AI.Agents.Core;
 
 /// <summary>
-/// Base agent class with tool calling capabilities
+/// Base agent class with tool calling and NeuroChain reasoning capabilities.
 /// </summary>
+/// <remarks>
+/// <para>
+/// An <see cref="Agent"/> wraps an <see cref="IProviderOrchestrator"/> and an optional
+/// <see cref="NeuroChainOrchestrator"/> to execute tasks. When tools are registered, the agent
+/// enters an agentic loop: it calls the LLM, parses any <c>TOOL: ToolName(args)</c> directives
+/// from the response, executes the matching <see cref="AgentTool"/>, and feeds results back until
+/// the model produces a final answer (up to <see cref="AgentConfig.MaxToolIterations"/> iterations).
+/// </para>
+/// <para>
+/// Conversation history is retained in-memory across <see cref="ExecuteAsync"/> calls. Call
+/// <see cref="ClearHistory"/> to reset between independent tasks.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// var orchestrator = new ProviderOrchestrator();
+/// orchestrator.RegisterProvider("openai", openAiClient, openAiMetadata);
+///
+/// var agent = new Agent("CodeReviewer", "Reviews code for quality issues", orchestrator);
+/// agent.RegisterTool(new CalculatorTool());
+///
+/// var result = await agent.ExecuteAsync("Calculate the cyclomatic complexity of this method: ...");
+/// Console.WriteLine(result.Success ? result.Result : result.Error);
+/// </code>
+/// </example>
 public class Agent
 {
     private readonly IProviderOrchestrator _orchestrator;
@@ -16,10 +41,30 @@ public class Agent
     private readonly AgentConfig _config;
     private readonly List<AgentMessage> _conversationHistory = new();
 
+    /// <summary>Gets the agent's display name.</summary>
     public string Name { get; }
+
+    /// <summary>Gets the agent's role description, injected into the system prompt.</summary>
     public string Description { get; }
+
+    /// <summary>Gets the read-only list of tools registered with this agent.</summary>
     public IReadOnlyList<AgentTool> Tools => _tools.AsReadOnly();
 
+    /// <summary>
+    /// Initializes a new <see cref="Agent"/> instance.
+    /// </summary>
+    /// <param name="name">Display name for the agent (used in logging and responses).</param>
+    /// <param name="description">Role description injected into the system prompt.</param>
+    /// <param name="orchestrator">LLM provider orchestrator used to generate responses.</param>
+    /// <param name="neurochain">Optional NeuroChain orchestrator for structured reasoning. When provided
+    /// and <see cref="AgentConfig.UseNeurochain"/> is <see langword="true"/>, reasoning goes through
+    /// NeuroChain instead of the raw LLM.</param>
+    /// <param name="config">Optional agent configuration. Defaults to <see cref="AgentConfig"/> with
+    /// sensible defaults when <see langword="null"/>.</param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="name"/>, <paramref name="description"/>, or
+    /// <paramref name="orchestrator"/> is <see langword="null"/>.
+    /// </exception>
     public Agent(
         string name,
         string description,
@@ -35,8 +80,9 @@ public class Agent
     }
 
     /// <summary>
-    /// Register a tool for this agent to use
+    /// Registers a tool with this agent. Duplicate tool names are silently ignored.
     /// </summary>
+    /// <param name="tool">The tool to register.</param>
     public void RegisterTool(AgentTool tool)
     {
         if (!_tools.Any(t => t.Name == tool.Name))
@@ -46,8 +92,16 @@ public class Agent
     }
 
     /// <summary>
-    /// Execute agent task
+    /// Executes a task, automatically handling tool calls until a final response is produced.
     /// </summary>
+    /// <param name="task">Natural-language description of the task for the agent to perform.</param>
+    /// <param name="context">Optional key/value pairs injected into the system prompt as context.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>
+    /// An <see cref="AgentResponse"/> with <see cref="AgentResponse.Success"/> set to
+    /// <see langword="true"/> and <see cref="AgentResponse.Result"/> populated on success,
+    /// or <see cref="AgentResponse.Error"/> populated on failure.
+    /// </returns>
     public async Task<AgentResponse> ExecuteAsync(
         string task,
         Dictionary<string, object>? context = null,
@@ -348,68 +402,117 @@ public class Agent
     }
 
     /// <summary>
-    /// Get conversation history
+    /// Returns the full conversation history accumulated across all <see cref="ExecuteAsync"/> calls.
     /// </summary>
+    /// <returns>Read-only list of messages in chronological order.</returns>
     public IReadOnlyList<AgentMessage> GetConversationHistory() => _conversationHistory.AsReadOnly();
 
     /// <summary>
-    /// Clear conversation history
+    /// Clears the in-memory conversation history, resetting the agent to a clean state.
     /// </summary>
     public void ClearHistory() => _conversationHistory.Clear();
 }
 
 /// <summary>
-/// Agent configuration
+/// Configuration options for an <see cref="Agent"/> instance.
 /// </summary>
 public class AgentConfig
 {
+    /// <summary>
+    /// When <see langword="true"/>, tasks are routed through the NeuroChain orchestrator for
+    /// structured multi-step reasoning instead of a direct LLM call.
+    /// Requires a <c>neurochain</c> instance to be passed to the <see cref="Agent"/> constructor.
+    /// Default: <see langword="false"/>.
+    /// </summary>
     public bool UseNeurochain { get; set; } = false;
+
+    /// <summary>
+    /// Minimum confidence threshold (0.0–1.0) for NeuroChain reasoning to be accepted.
+    /// Responses below this threshold trigger re-reasoning. Default: <c>0.8</c>.
+    /// </summary>
     public double MinConfidence { get; set; } = 0.8;
+
+    /// <summary>
+    /// Maximum number of tool-calling iterations per <see cref="Agent.ExecuteAsync"/> call.
+    /// Prevents infinite loops in agentic workflows. Default: <c>10</c>.
+    /// </summary>
     public int MaxToolIterations { get; set; } = 10;
 }
 
 /// <summary>
-/// Agent response
+/// Result returned by <see cref="Agent.ExecuteAsync"/>.
 /// </summary>
 public class AgentResponse
 {
+    /// <summary>Gets or sets the name of the agent that produced this response.</summary>
     public string AgentName { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the task description that was executed.</summary>
     public string Task { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the final text result from the agent. Empty string on failure.</summary>
     public string Result { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the UTC timestamp when task execution began.</summary>
     public DateTime StartTime { get; set; }
+
+    /// <summary>Gets or sets the UTC timestamp when task execution completed.</summary>
     public DateTime EndTime { get; set; }
+
+    /// <summary>Gets or sets the total elapsed time for the task.</summary>
     public TimeSpan Duration { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether the task completed successfully.</summary>
     public bool Success { get; set; }
+
+    /// <summary>Gets or sets the error message when <see cref="Success"/> is <see langword="false"/>.</summary>
     public string? Error { get; set; }
+
+    /// <summary>Gets or sets the names of tools invoked during task execution.</summary>
     public List<string> ToolsUsed { get; set; } = new();
 }
 
 /// <summary>
-/// Agent message
+/// A single message in an agent's conversation history.
 /// </summary>
 public class AgentMessage
 {
+    /// <summary>Gets or sets the role of the participant who produced this message.</summary>
     public AgentRole Role { get; set; }
+
+    /// <summary>Gets or sets the text content of the message.</summary>
     public string Content { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the UTC timestamp when the message was created.</summary>
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+    /// <summary>Gets or sets optional context data attached to the message.</summary>
     public Dictionary<string, object>? Context { get; set; }
 }
 
 /// <summary>
-/// Agent role
+/// Role of a participant in an agent conversation.
 /// </summary>
 public enum AgentRole
 {
+    /// <summary>Human or system input initiating a task.</summary>
     User,
+
+    /// <summary>Response generated by the agent/LLM.</summary>
     Assistant,
+
+    /// <summary>System-level instructions (e.g., persona or tool descriptions).</summary>
     System
 }
 
 /// <summary>
-/// Tool call
+/// Represents a parsed tool call extracted from an LLM response.
 /// </summary>
 public class ToolCall
 {
+    /// <summary>Gets or sets the name of the tool to invoke.</summary>
     public string ToolName { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the named arguments to pass to the tool.</summary>
     public Dictionary<string, object> Arguments { get; set; } = new();
 }
