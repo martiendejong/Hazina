@@ -1,17 +1,20 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace Hazina.Store.EmbeddingStore;
 
 /// <summary>
-/// File-based embedding store using JSON serialization.
-/// Suitable for small to medium datasets (< 10k embeddings).
+/// File-based embedding store using JSON serialization with atomic writes and checksum validation.
+/// Suitable for small to medium datasets (less than 10k embeddings).
 /// This is the refactored version replacing EmbeddingFileStore.
 /// </summary>
-public class EmbeddingJsonFileStore : IEmbeddingStore, IEnumerableEmbeddingStore, IVectorSearchStore
+public class EmbeddingJsonFileStore : IEmbeddingStore, IEnumerableEmbeddingStore, IVectorSearchStore, IBatchEmbeddingStore
 {
     private readonly string _filePath;
     private readonly object _lock = new object();
     private List<EmbeddingInfo> _embeddings;
+    private string? _fileChecksum;
 
     /// <summary>
     /// Creates a new EmbeddingJsonFileStore.
@@ -34,6 +37,26 @@ public class EmbeddingJsonFileStore : IEmbeddingStore, IEnumerableEmbeddingStore
         try
         {
             var json = File.ReadAllText(_filePath);
+
+            // Validate checksum if checksum file exists
+            var checksumPath = _filePath + ".sha256";
+            if (File.Exists(checksumPath))
+            {
+                var storedChecksum = File.ReadAllText(checksumPath).Trim();
+                var actualChecksum = ComputeSha256(json);
+
+                if (storedChecksum != actualChecksum)
+                {
+                    Console.WriteLine($"WARNING: Checksum mismatch for {_filePath}. File may be corrupted.");
+                    Console.WriteLine($"  Expected: {storedChecksum}");
+                    Console.WriteLine($"  Actual:   {actualChecksum}");
+                }
+                else
+                {
+                    _fileChecksum = actualChecksum;
+                }
+            }
+
             var embeddings = JsonSerializer.Deserialize<List<EmbeddingInfo>>(json);
             return embeddings ?? new List<EmbeddingInfo>();
         }
@@ -45,6 +68,19 @@ public class EmbeddingJsonFileStore : IEmbeddingStore, IEnumerableEmbeddingStore
         }
     }
 
+    /// <summary>
+    /// Computes SHA256 checksum of a string.
+    /// </summary>
+    private static string ComputeSha256(string data)
+    {
+        var bytes = Encoding.UTF8.GetBytes(data);
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// Saves embeddings to file using atomic write-temp-rename pattern with checksum validation.
+    /// </summary>
     private async Task SaveToFileAsync()
     {
         try
@@ -61,7 +97,38 @@ public class EmbeddingJsonFileStore : IEmbeddingStore, IEnumerableEmbeddingStore
                 WriteIndented = true // Makes file human-readable
             });
 
-            await File.WriteAllTextAsync(_filePath, json);
+            // Compute checksum
+            var checksum = ComputeSha256(json);
+
+            // ATOMIC WRITE PATTERN: Write to temp file first
+            var tempPath = _filePath + ".tmp";
+            var checksumPath = _filePath + ".sha256";
+            var tempChecksumPath = checksumPath + ".tmp";
+
+            try
+            {
+                // Write data to temp file
+                await File.WriteAllTextAsync(tempPath, json);
+
+                // Write checksum to temp file
+                await File.WriteAllTextAsync(tempChecksumPath, checksum);
+
+                // Atomic rename: move temp files to final destination
+                File.Move(tempPath, _filePath, overwrite: true);
+                File.Move(tempChecksumPath, checksumPath, overwrite: true);
+
+                _fileChecksum = checksum;
+            }
+            catch
+            {
+                // Clean up temp files if something went wrong
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+                if (File.Exists(tempChecksumPath))
+                    File.Delete(tempChecksumPath);
+
+                throw;
+            }
         }
         catch (Exception ex)
         {
@@ -171,6 +238,71 @@ public class EmbeddingJsonFileStore : IEmbeddingStore, IEnumerableEmbeddingStore
             cancellationToken.ThrowIfCancellationRequested();
             yield return embedding;
         }
+    }
+
+    #endregion
+
+    #region IBatchEmbeddingStore Implementation
+
+    public async Task<int> StoreBatchAsync(
+        IEnumerable<(string key, Embedding embedding, string checksum)> batch,
+        CancellationToken cancellationToken = default)
+    {
+        if (batch == null)
+            throw new ArgumentNullException(nameof(batch));
+
+        var count = 0;
+        var batchList = batch.ToList();
+
+        lock (_lock)
+        {
+            foreach (var (key, embedding, checksum) in batchList)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (string.IsNullOrEmpty(key) || embedding == null)
+                    continue;
+
+                var existing = _embeddings.FirstOrDefault(e => e.Key == key);
+                if (existing != null)
+                {
+                    // Update existing
+                    existing.Checksum = checksum;
+                    existing.Data = embedding;
+                }
+                else
+                {
+                    // Add new
+                    _embeddings.Add(new EmbeddingInfo(key, checksum, embedding));
+                }
+
+                count++;
+            }
+        }
+
+        // Single atomic write for the entire batch
+        await SaveToFileAsync();
+        return count;
+    }
+
+    public Task<List<EmbeddingInfo>> GetBatchAsync(
+        IEnumerable<string> keys,
+        CancellationToken cancellationToken = default)
+    {
+        if (keys == null)
+            throw new ArgumentNullException(nameof(keys));
+
+        var keySet = new HashSet<string>(keys);
+        List<EmbeddingInfo> results;
+
+        lock (_lock)
+        {
+            results = _embeddings
+                .Where(e => keySet.Contains(e.Key))
+                .ToList();
+        }
+
+        return Task.FromResult(results);
     }
 
     #endregion
