@@ -1,0 +1,166 @@
+// Hazina QuickStart Template: Multi-Provider Setup with Failover
+//
+// This template demonstrates how to set up multiple LLM providers with
+// automatic failover, cost optimization, and health monitoring.
+//
+// Use Case: Production resilience with provider redundancy
+// Time to Production: 45 minutes
+// Difficulty: Intermediate
+
+using Hazina.AI.FluentAPI.Configuration;
+using Hazina.LLMs.OpenAI;
+using Hazina.LLMs.Anthropic;
+using Hazina.LLMs.Ollama;
+using Hazina.AI.Providers.Core;
+
+namespace {{NAMESPACE}}
+{
+    public class MultiProviderExample
+    {
+        private readonly ProviderOrchestrator _orchestrator;
+
+        public MultiProviderExample(
+            string? openAiKey = null,
+            string? anthropicKey = null,
+            string? ollamaEndpoint = null)
+        {
+            _orchestrator = new ProviderOrchestrator();
+
+            // Register OpenAI (Priority 1 - Primary)
+            if (!string.IsNullOrEmpty(openAiKey))
+            {
+                var openAiConfig = new OpenAIConfig
+                {
+                    ApiKey = openAiKey,
+                    Model = "gpt-4o-mini"  // Fast and cheap
+                };
+                var openAiClient = new OpenAIClientWrapper(openAiConfig);
+                _orchestrator.RegisterProvider("openai", openAiClient, priority: 1);
+            }
+
+            // Register Anthropic (Priority 2 - Failover)
+            if (!string.IsNullOrEmpty(anthropicKey))
+            {
+                var anthropicConfig = new AnthropicConfig
+                {
+                    ApiKey = anthropicKey,
+                    Model = "claude-3-5-sonnet-20241022"  // High quality
+                };
+                var anthropicClient = new ClaudeClientWrapper(anthropicConfig);
+                _orchestrator.RegisterProvider("anthropic", anthropicClient, priority: 2);
+            }
+
+            // Register Ollama (Priority 3 - Local fallback)
+            if (!string.IsNullOrEmpty(ollamaEndpoint))
+            {
+                var ollamaConfig = new OllamaConfig
+                {
+                    Endpoint = ollamaEndpoint,
+                    Model = "llama3:8b"  // Free and local
+                };
+                var ollamaClient = new OllamaClientWrapper(ollamaConfig);
+                _orchestrator.RegisterProvider("ollama", ollamaClient, priority: 3);
+            }
+
+            // Set default strategy
+            _orchestrator.SetDefaultStrategy(SelectionStrategy.Priority);  // Try in order
+            // Or use: SelectionStrategy.LeastCost, SelectionStrategy.FastestResponse
+        }
+
+        public async Task<string> GetResponseAsync(
+            string prompt,
+            CancellationToken cancel = default)
+        {
+            var messages = new List<HazinaChatMessage>
+            {
+                new(HazinaMessageRole.System, "You are a helpful assistant."),
+                new(HazinaMessageRole.User, prompt)
+            };
+
+            // Automatic failover: tries OpenAI → Anthropic → Ollama
+            var response = await _orchestrator.GetResponse(messages, cancel);
+
+            return response.Result;
+        }
+
+        public async Task<string> GetResponseWithStrategy(
+            string prompt,
+            SelectionStrategy strategy,
+            CancellationToken cancel = default)
+        {
+            var messages = new List<HazinaChatMessage>
+            {
+                new(HazinaMessageRole.User, prompt)
+            };
+
+            // Use specific strategy for this request
+            var response = await _orchestrator.GetResponse(
+                messages,
+                strategy,
+                cancel
+            );
+
+            return response.Result;
+        }
+    }
+
+    // Example Usage
+    public class Program
+    {
+        public static async Task Main(string[] args)
+        {
+            // Load API keys from environment
+            var openAiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+            var anthropicKey = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
+            var ollamaEndpoint = "http://localhost:11434";  // Local Ollama
+
+            var ai = new MultiProviderExample(openAiKey, anthropicKey, ollamaEndpoint);
+
+            // Example 1: Priority-based (try in order)
+            Console.WriteLine("=== Priority-based failover ===");
+            var answer = await ai.GetResponseAsync("What is 2+2?");
+            Console.WriteLine($"Answer: {answer}");
+
+            // Example 2: Cost-optimized (cheapest first)
+            Console.WriteLine("\n=== Cost-optimized ===");
+            answer = await ai.GetResponseWithStrategy(
+                "Explain quantum computing",
+                SelectionStrategy.LeastCost
+            );
+            Console.WriteLine($"Answer: {answer}");
+
+            // Example 3: Speed-optimized (fastest first)
+            Console.WriteLine("\n=== Speed-optimized ===");
+            answer = await ai.GetResponseWithStrategy(
+                "Generate a greeting",
+                SelectionStrategy.FastestResponse
+            );
+            Console.WriteLine($"Answer: {answer}");
+        }
+    }
+}
+
+// Advanced Configuration:
+//
+// 1. Circuit Breaker (auto-disable failing providers):
+//    _orchestrator.EnableCircuitBreaker(
+//        failureThreshold: 5,
+//        resetTimeout: TimeSpan.FromMinutes(5)
+//    );
+//
+// 2. Cost Tracking:
+//    _orchestrator.EnableCostTracking(budgetLimit: 100.00m);
+//
+// 3. Health Monitoring:
+//    _orchestrator.EnableHealthMonitoring();
+//    var health = await _orchestrator.GetHealthStatusAsync();
+//
+// 4. Custom Retry Policy:
+//    _orchestrator.SetRetryPolicy(new ExponentialBackoffRetry(
+//        maxRetries: 3,
+//        initialDelay: TimeSpan.FromSeconds(1)
+//    ));
+//
+// 5. Provider-Specific Timeouts:
+//    openAiConfig.Timeout = TimeSpan.FromSeconds(30);
+//    anthropicConfig.Timeout = TimeSpan.FromSeconds(60);
