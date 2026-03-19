@@ -481,6 +481,146 @@ The `HazinaChatMessage` class supports rich conversation context including agent
 ### Tool Definition Pattern
 `HazinaChatTool` provides a declarative way to define tools with parameters and executable logic, making it easy to extend LLM capabilities.
 
+## Tool System (New)
+
+Comprehensive tool management system with providers, validation, guardrails, mocking, and opt-in tool sets.
+
+### Tool Providers (`Providers/`)
+
+Abstraction for managing tools from different sources:
+
+```csharp
+// Register a provider
+var registry = new ToolProviderRegistry();
+var builtInProvider = new BuiltInToolProvider();
+registry.RegisterProvider(builtInProvider);
+
+// Get all tools from all providers
+var allTools = await registry.GetAllToolsAsync();
+
+// Find a specific tool
+var (provider, tool) = await registry.FindToolAsync("calculator");
+```
+
+### Validation System (`Validation/`)
+
+Multi-layer validation for tool execution:
+
+```csharp
+var validator = new CompositeToolValidator(
+    new ParameterValidator(),
+    new PermissionValidator(),
+    new TimeoutValidator(TimeSpan.FromMinutes(5)),
+    new ReadOnlyValidator("write", "delete"),
+    new RateLimitValidator(maxCallsPerMinute: 10)
+);
+
+var context = new ToolExecutionContext
+{
+    UserId = "user123",
+    PermissionLevel = ToolPermissionLevel.Standard
+};
+
+var result = await validator.ValidateAsync(tool, toolCall, context);
+```
+
+### Guardrails System (`Guardrails/`)
+
+Runtime safety mechanisms:
+
+```csharp
+var config = new ToolGuardrailsConfig
+{
+    DefaultTimeout = TimeSpan.FromMinutes(5),
+    BlacklistedTools = new HashSet<string> { "dangerous_tool" },
+    RequireWhitelist = true,
+    WhitelistedTools = new HashSet<string> { "safe_tool" }
+};
+
+var guardrails = new ToolGuardrails(config);
+var result = await guardrails.ExecuteWithGuardrailsAsync(
+    tool, toolCall, messages, cancellationToken);
+```
+
+### Testing Support (`Testing/`)
+
+Mock and fake tools:
+
+```csharp
+// Mock provider
+var mockProvider = new MockToolProvider();
+mockProvider.RegisterMockTool("test_tool", "Test", "Mock response");
+
+// Pre-built fakes
+var calcTool = FakeTools.CreateCalculatorTool();
+var echoTool = FakeTools.CreateEchoTool();
+var dataStoreTool = FakeTools.CreateDataStoreTool();
+```
+
+### Tool Sets (`ToolSets/`)
+
+Organize tools into opt-in groups:
+
+```csharp
+var manager = new ToolSetManager(providerRegistry);
+StandardToolSets.RegisterAll(manager);
+
+// User opt-in
+manager.OptIn("user123", "write");
+manager.OptIn("user123", "build");
+
+// Get user's available tools
+var userTools = await manager.GetUserToolsAsync("user123");
+```
+
+**Standard Tool Sets**:
+- **CoreTools** (enabled by default): read, list, relevancy
+- **WriteTools** (opt-in): write, delete
+- **BuildTools** (opt-in): build, compile, test
+- **GitTools** (opt-in): version control
+- **EmailTools** (opt-in): email operations
+- **WordPressTools** (opt-in): WordPress CLI
+- **BigQueryTools** (opt-in): BigQuery operations
+- **AgentTools** (opt-in): multi-agent orchestration
+
+### Complete Example
+
+```csharp
+// Setup full tool system
+var registry = new ToolProviderRegistry();
+var builtInProvider = new BuiltInToolProvider();
+registry.RegisterProvider(builtInProvider);
+
+var validator = new CompositeToolValidator(
+    new ParameterValidator(),
+    new PermissionValidator()
+);
+
+var guardrails = new ToolGuardrails(new ToolGuardrailsConfig
+{
+    DefaultTimeout = TimeSpan.FromMinutes(5)
+});
+
+var toolSetManager = new ToolSetManager(registry);
+StandardToolSets.RegisterAll(toolSetManager);
+toolSetManager.OptIn("user123", "core");
+
+// Execute with full safety stack
+var userTools = await toolSetManager.GetUserToolsAsync("user123");
+var context = new ToolExecutionContext { UserId = "user123" };
+
+foreach (var tool in userTools)
+{
+    var validationResult = await validator.ValidateAsync(tool, toolCall, context);
+    if (!validationResult.IsValid) continue;
+
+    var result = await guardrails.ExecuteWithGuardrailsAsync(
+        tool, toolCall, messages, cancellationToken);
+
+    Console.WriteLine($"Success: {result.Success}, Duration: {result.Duration}");
+}
+```
+
 ## See Also
 
 - [Hazina.LLMs.Client](../Hazina.LLMs.Client/README.md) - LLM client abstraction using these classes
