@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -157,6 +158,9 @@ public class EmbeddingFileStore : AbstractTextEmbeddingStore, ITextEmbeddingStor
         _embeddings = ReadEmbeddingsFile();
     }
 
+    /// <summary>
+    /// Saves embeddings to file using atomic write-temp-rename pattern with checksum validation.
+    /// </summary>
     public async Task StoreEmbeddingsFile()
     {
         var directory = Path.GetDirectoryName(EmbeddingsFilePath);
@@ -164,13 +168,56 @@ public class EmbeddingFileStore : AbstractTextEmbeddingStore, ITextEmbeddingStor
         {
             Directory.CreateDirectory(directory);
         }
+
         // Use consistent serialization options matching ReadEmbeddingsFile
         var options = new JsonSerializerOptions
         {
             WriteIndented = false,
             Converters = { new EmbeddingJsonConverter() }
         };
-        await File.WriteAllTextAsync(EmbeddingsFilePath, JsonSerializer.Serialize(Embeddings, options));
+
+        var json = JsonSerializer.Serialize(Embeddings, options);
+
+        // Compute checksum
+        var checksum = ComputeSha256(json);
+
+        // ATOMIC WRITE PATTERN: Write to temp file first
+        var tempPath = EmbeddingsFilePath + ".tmp";
+        var checksumPath = EmbeddingsFilePath + ".sha256";
+        var tempChecksumPath = checksumPath + ".tmp";
+
+        try
+        {
+            // Write data to temp file
+            await File.WriteAllTextAsync(tempPath, json);
+
+            // Write checksum to temp file
+            await File.WriteAllTextAsync(tempChecksumPath, checksum);
+
+            // Atomic rename: move temp files to final destination
+            File.Move(tempPath, EmbeddingsFilePath, overwrite: true);
+            File.Move(tempChecksumPath, checksumPath, overwrite: true);
+        }
+        catch
+        {
+            // Clean up temp files if something went wrong
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+            if (File.Exists(tempChecksumPath))
+                File.Delete(tempChecksumPath);
+
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Computes SHA256 checksum of a string.
+    /// </summary>
+    private static string ComputeSha256(string data)
+    {
+        var bytes = Encoding.UTF8.GetBytes(data);
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
     public override async Task<EmbeddingInfo?> GetEmbedding(string key)
