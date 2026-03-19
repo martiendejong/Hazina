@@ -1,10 +1,18 @@
 using System.Text;
 using System.Text.Json;
 using Hazina.LLMs;
+using Hazina.LLMs.Capabilities;
 using Hazina.LLMs.Mistral;
 
-public class MistralClientWrapper : ILLMClient
+public class MistralClientWrapper : CapabilityProviderBase, ILLMClient
 {
+    /// <inheritdoc/>
+    public override ProviderCapability SupportedCapabilities =>
+        ProviderCapability.Chat |
+        ProviderCapability.Streaming |
+        ProviderCapability.JsonMode |
+        ProviderCapability.SystemMessages;
+
     private readonly MistralConfig _config;
     private readonly HttpClient _http;
 

@@ -4,15 +4,26 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Hazina.LLMs.Anthropic;
 using Hazina.LLMs;
+using Hazina.LLMs.Capabilities;
 
 /// <summary>
 /// Anthropic Claude API client with full tool calling support.
 /// Implements the Messages API with streaming and function calling.
 /// </summary>
-public class ClaudeClientWrapper : ILLMClient
+public class ClaudeClientWrapper : CapabilityProviderBase, ILLMClient
 {
     private readonly AnthropicConfig _config;
     private readonly HttpClient _http;
+
+    /// <inheritdoc/>
+    public override ProviderCapability SupportedCapabilities =>
+        ProviderCapability.Chat |
+        ProviderCapability.Streaming |
+        ProviderCapability.Tools |
+        ProviderCapability.Vision |
+        ProviderCapability.JsonMode |
+        ProviderCapability.SystemMessages |
+        ProviderCapability.StreamingTools;
 
     public ClaudeClientWrapper(AnthropicConfig config)
     {
