@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Hazina.Store.EmbeddingStore.Utilities;
 
 namespace Hazina.Store.EmbeddingStore;
 
@@ -22,7 +23,7 @@ public class EmbeddingJsonFileStore : IEmbeddingStore, IEnumerableEmbeddingStore
         if (string.IsNullOrWhiteSpace(filePath))
             throw new ArgumentException("File path cannot be null or empty", nameof(filePath));
 
-        _filePath = filePath;
+        _filePath = PathNormalizer.MakeAbsolute(filePath);
         _embeddings = LoadFromFile();
     }
 

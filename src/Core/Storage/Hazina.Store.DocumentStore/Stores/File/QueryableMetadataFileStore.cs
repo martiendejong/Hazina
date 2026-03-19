@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Hazina.Store.EmbeddingStore.Utilities;
 
 /// <summary>
 /// File-based implementation of IQueryableMetadataStore.
@@ -28,7 +29,7 @@ public class QueryableMetadataFileStore : IQueryableMetadataStore
 
     public QueryableMetadataFileStore(string rootFolder)
     {
-        _rootFolder = rootFolder;
+        _rootFolder = PathNormalizer.MakeAbsolute(rootFolder);
         Directory.CreateDirectory(_rootFolder);
     }
 
@@ -99,7 +100,7 @@ public class QueryableMetadataFileStore : IQueryableMetadataStore
     private string GetMetadataPath(string id)
     {
         var sanitized = id.Replace('/', '_').Replace('\\', '_').Replace(':', '_');
-        return Path.Combine(_rootFolder, $"{sanitized}.metadata.json");
+        return PathNormalizer.Combine(_rootFolder, $"{sanitized}.metadata.json");
     }
 
     public async Task<bool> Store(string id, DocumentMetadata metadata)
