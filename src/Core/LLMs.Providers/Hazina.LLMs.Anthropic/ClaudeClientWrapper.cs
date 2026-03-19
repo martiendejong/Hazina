@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Hazina.LLMs.Anthropic;
 using Hazina.LLMs;
+using Hazina.LLMs.Capabilities;
 
 /// <summary>
 /// Anthropic Claude API client with full tool calling support.
@@ -623,6 +624,33 @@ public class ClaudeClientWrapper : ILLMClient
         };
 
         return (tokens / 1_000_000m) * pricePerMillion;
+    }
+
+    #endregion
+
+    #region ICapabilityProvider
+
+    public ProviderCapability SupportedCapabilities =>
+        ProviderCapability.Chat | ProviderCapability.Streaming | ProviderCapability.Tools |
+        ProviderCapability.Vision | ProviderCapability.JsonMode | ProviderCapability.SystemMessages |
+        ProviderCapability.StreamingTools;
+
+    public bool SupportsCapability(ProviderCapability capability) =>
+        (SupportedCapabilities & capability) == capability;
+
+    public IEnumerable<string> GetSupportedCapabilityNames()
+    {
+        var names = new List<string>();
+        foreach (var cap in Enum.GetValues<ProviderCapability>())
+            if (cap != ProviderCapability.None && cap != ProviderCapability.All && SupportsCapability(cap))
+                names.Add(cap.ToString());
+        return names;
+    }
+
+    public void RequireCapabilities(ProviderCapability requiredCapabilities)
+    {
+        if (!SupportsCapability(requiredCapabilities))
+            throw new NotSupportedException($"Claude does not support required capabilities: {requiredCapabilities}");
     }
 
     #endregion

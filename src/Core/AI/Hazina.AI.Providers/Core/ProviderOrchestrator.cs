@@ -3,6 +3,7 @@ using Hazina.AI.Providers.Health;
 using Hazina.AI.Providers.Resilience;
 using Hazina.AI.Providers.Selection;
 using Hazina.LLMs;
+using Hazina.LLMs.Capabilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -40,6 +41,30 @@ public class ProviderOrchestrator : IProviderOrchestrator
         // Subscribe to budget alerts
         _budgetManager.BudgetAlertTriggered += OnBudgetAlertTriggered;
     }
+
+    #region ICapabilityProvider
+
+    public ProviderCapability SupportedCapabilities => ProviderCapability.All;
+
+    public bool SupportsCapability(ProviderCapability capability) =>
+        (SupportedCapabilities & capability) == capability;
+
+    public IEnumerable<string> GetSupportedCapabilityNames()
+    {
+        var names = new List<string>();
+        foreach (var cap in Enum.GetValues<ProviderCapability>())
+            if (cap != ProviderCapability.None && cap != ProviderCapability.All && SupportsCapability(cap))
+                names.Add(cap.ToString());
+        return names;
+    }
+
+    public void RequireCapabilities(ProviderCapability requiredCapabilities)
+    {
+        if (!SupportsCapability(requiredCapabilities))
+            throw new NotSupportedException($"No registered provider supports required capabilities: {requiredCapabilities}");
+    }
+
+    #endregion
 
     #region Provider Management
 
