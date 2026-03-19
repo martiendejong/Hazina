@@ -4,6 +4,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <Version>1.0.0</Version>
+    <Authors>Prospergenics</Authors>
+    <Description>AI agent framework for Hazina. Provides autonomous agent capabilities with decision tracking, memory management, and task orchestration.</Description>
+    <PackageTags>ai;agents;autonomous;llm;hazina</PackageTags>
+    <RepositoryUrl>https://github.com/martiendejong/hazina</RepositoryUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
   </PropertyGroup>

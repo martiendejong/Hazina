@@ -4,6 +4,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <Version>1.0.0</Version>
+    <Authors>Prospergenics</Authors>
+    <Description>Context compression utilities for Hazina's AI stack. Automatically compress and manage LLM context windows for optimal token usage.</Description>
+    <PackageTags>ai;compression;context;llm;tokens;hazina</PackageTags>
+    <RepositoryUrl>https://github.com/martiendejong/hazina</RepositoryUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
