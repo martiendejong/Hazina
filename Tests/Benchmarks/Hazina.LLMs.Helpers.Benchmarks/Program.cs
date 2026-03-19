@@ -11,9 +11,11 @@ Console.WriteLine("2. TokensPerPart Configuration Benchmarks");
 Console.WriteLine("3. Token Counter Benchmarks");
 Console.WriteLine("4. Token Counter Comparison Benchmarks");
 Console.WriteLine("5. String Processing Benchmarks");
-Console.WriteLine("6. All Benchmarks");
+Console.WriteLine("6. EmbeddingStore Benchmarks");
+Console.WriteLine("7. EmbeddingStore Parallel Benchmarks");
+Console.WriteLine("8. All Benchmarks");
 Console.WriteLine();
-Console.Write("Enter choice (1-6): ");
+Console.Write("Enter choice (1-8): ");
 
 var choice = Console.ReadLine();
 
@@ -35,12 +37,20 @@ switch (choice)
         BenchmarkRunner.Run<StringProcessingBenchmarks>();
         break;
     case "6":
+        BenchmarkRunner.Run<EmbeddingStoreBenchmarks>();
+        break;
+    case "7":
+        BenchmarkRunner.Run<EmbeddingStoreParallelBenchmarks>();
+        break;
+    case "8":
         Console.WriteLine("\nRunning all benchmarks...\n");
         BenchmarkRunner.Run<DocumentSplitterBenchmarks>();
         BenchmarkRunner.Run<TokensPerPartBenchmarks>();
         BenchmarkRunner.Run<TokenCounterBenchmarks>();
         BenchmarkRunner.Run<TokenCounterComparisonBenchmarks>();
         BenchmarkRunner.Run<StringProcessingBenchmarks>();
+        BenchmarkRunner.Run<EmbeddingStoreBenchmarks>();
+        BenchmarkRunner.Run<EmbeddingStoreParallelBenchmarks>();
         break;
     default:
         Console.WriteLine("Invalid choice. Running all benchmarks...");
@@ -49,6 +59,8 @@ switch (choice)
         BenchmarkRunner.Run<TokenCounterBenchmarks>();
         BenchmarkRunner.Run<TokenCounterComparisonBenchmarks>();
         BenchmarkRunner.Run<StringProcessingBenchmarks>();
+        BenchmarkRunner.Run<EmbeddingStoreBenchmarks>();
+        BenchmarkRunner.Run<EmbeddingStoreParallelBenchmarks>();
         break;
 }
 
