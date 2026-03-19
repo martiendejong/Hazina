@@ -276,7 +276,7 @@ public class AgentFactory
         var message = new HazinaChatMessage
         {
             MessageId = messageId,
-            Role = HazinaMessageRole.Assistant,
+            Role = HazinaMessageRole.User,
             Text = $"{caller}: {query}",
             AgentName = name,
             FunctionName = string.Empty,
@@ -331,7 +331,7 @@ public class AgentFactory
         var message = new HazinaChatMessage
         {
             MessageId = messageId,
-            Role = HazinaMessageRole.Assistant,
+            Role = HazinaMessageRole.User,
             Text = $"{caller}: {query}",
             AgentName = name,
             FunctionName = "CodeModify",

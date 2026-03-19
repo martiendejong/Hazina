@@ -1,0 +1,241 @@
+// Hazina QuickStart Template: Agentic Workflow
+//
+// This template demonstrates how to build multi-agent systems where
+// specialized agents collaborate to complete complex tasks.
+//
+// Use Case: Research → Writing → Review pipeline
+// Time to Production: 1 hour
+// Difficulty: Advanced
+
+using Hazina.AI.FluentAPI.Configuration;
+using Hazina.AI.Agents;
+
+namespace {{NAMESPACE}}
+{
+    public class AgenticWorkflowExample
+    {
+        private readonly MultiAgentCoordinator _coordinator;
+
+        public AgenticWorkflowExample(string apiKey)
+        {
+            var ai = QuickSetup.SetupOpenAI(apiKey);
+            _coordinator = new MultiAgentCoordinator();
+
+            // Agent 1: Researcher
+            // Gathers information and synthesizes findings
+            var researcherPrompt = @"
+You are a research specialist. Your role:
+1. Analyze the topic thoroughly
+2. Gather relevant information
+3. Identify key insights
+4. Present findings clearly
+
+Output format:
+## Research Findings
+- Finding 1: [description]
+- Finding 2: [description]
+...
+
+## Key Insights
+- Insight 1: [description]
+- Insight 2: [description]
+";
+            _coordinator.AddAgent(new Agent(
+                name: "researcher",
+                systemPrompt: researcherPrompt,
+                client: ai
+            ));
+
+            // Agent 2: Writer
+            // Transforms research into polished content
+            var writerPrompt = @"
+You are a professional writer. Your role:
+1. Transform research into engaging content
+2. Maintain clarity and accuracy
+3. Follow best writing practices
+4. Structure content logically
+
+Output format:
+# [Title]
+
+## Introduction
+[Engaging introduction]
+
+## Main Content
+[Well-structured content based on research]
+
+## Conclusion
+[Strong conclusion]
+";
+            _coordinator.AddAgent(new Agent(
+                name: "writer",
+                systemPrompt: writerPrompt,
+                client: ai
+            ));
+
+            // Agent 3: Reviewer
+            // Reviews and suggests improvements
+            var reviewerPrompt = @"
+You are a critical reviewer. Your role:
+1. Evaluate content quality
+2. Check accuracy and clarity
+3. Suggest improvements
+4. Approve or request revisions
+
+Output format:
+## Review Summary
+- Overall: [APPROVED | NEEDS REVISION]
+- Quality Score: [1-10]
+
+## Strengths
+- Strength 1: [description]
+- Strength 2: [description]
+
+## Issues
+- Issue 1: [description] [CRITICAL | MINOR]
+- Issue 2: [description]
+
+## Recommendations
+- Recommendation 1: [description]
+- Recommendation 2: [description]
+";
+            _coordinator.AddAgent(new Agent(
+                name: "reviewer",
+                systemPrompt: reviewerPrompt,
+                client: ai
+            ));
+        }
+
+        public async Task<string> ExecuteSequentialWorkflow(
+            string topic,
+            CancellationToken cancel = default)
+        {
+            // Sequential execution: Researcher → Writer → Reviewer
+            var result = await _coordinator.ExecuteAsync(
+                task: $"Create a comprehensive article about: {topic}",
+                strategy: CoordinationStrategy.Sequential,
+                cancel
+            );
+
+            return result.FinalOutput;
+        }
+
+        public async Task<string> ExecuteParallelWorkflow(
+            string topic,
+            CancellationToken cancel = default)
+        {
+            // Parallel execution: All agents work simultaneously
+            var result = await _coordinator.ExecuteAsync(
+                task: $"Analyze topic from multiple perspectives: {topic}",
+                strategy: CoordinationStrategy.Parallel,
+                cancel
+            );
+
+            return result.FinalOutput;
+        }
+
+        public async Task<string> ExecuteIterativeWorkflow(
+            string topic,
+            int maxIterations = 3,
+            CancellationToken cancel = default)
+        {
+            // Iterative execution: Research → Write → Review → (Revise if needed)
+            var iteration = 0;
+            string? currentDraft = null;
+
+            while (iteration < maxIterations)
+            {
+                iteration++;
+                Console.WriteLine($"\n=== Iteration {iteration} ===");
+
+                // Research
+                var research = await _coordinator.GetAgentAsync("researcher");
+                var researchResult = await research.ExecuteAsync(
+                    $"Research: {topic}",
+                    cancel
+                );
+                Console.WriteLine($"Research completed: {researchResult.Length} chars");
+
+                // Write
+                var writer = await _coordinator.GetAgentAsync("writer");
+                var writeResult = await writer.ExecuteAsync(
+                    $"Write based on research:\n\n{researchResult}",
+                    cancel
+                );
+                currentDraft = writeResult;
+                Console.WriteLine($"Draft created: {writeResult.Length} chars");
+
+                // Review
+                var reviewer = await _coordinator.GetAgentAsync("reviewer");
+                var reviewResult = await reviewer.ExecuteAsync(
+                    $"Review this draft:\n\n{writeResult}",
+                    cancel
+                );
+                Console.WriteLine($"Review completed");
+
+                // Check if approved
+                if (reviewResult.Contains("APPROVED"))
+                {
+                    Console.WriteLine($"\n✓ Approved after {iteration} iteration(s)");
+                    return currentDraft!;
+                }
+
+                Console.WriteLine($"⚠ Needs revision. Feedback:\n{reviewResult}");
+            }
+
+            Console.WriteLine($"\n⚠ Max iterations reached. Returning last draft.");
+            return currentDraft!;
+        }
+    }
+
+    // Example Usage
+    public class Program
+    {
+        public static async Task Main(string[] args)
+        {
+            var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new InvalidOperationException("OPENAI_API_KEY not set");
+
+            var workflow = new AgenticWorkflowExample(apiKey);
+
+            var topic = "The Impact of AI on Software Development";
+
+            // Example 1: Sequential workflow
+            Console.WriteLine("=== Sequential Workflow ===");
+            var result = await workflow.ExecuteSequentialWorkflow(topic);
+            Console.WriteLine(result);
+
+            // Example 2: Iterative workflow with quality control
+            Console.WriteLine("\n=== Iterative Workflow (with revisions) ===");
+            result = await workflow.ExecuteIterativeWorkflow(topic, maxIterations: 3);
+            Console.WriteLine(result);
+        }
+    }
+}
+
+// Advanced Patterns:
+//
+// 1. Agent Communication:
+//    - Agents can pass context between each other
+//    - Use shared memory for collaboration
+//    - Implement message passing protocols
+//
+// 2. Dynamic Agent Selection:
+//    - Route tasks to most appropriate agent
+//    - Load balance across agents
+//    - Scale agents based on workload
+//
+// 3. Tool Integration:
+//    - Equip agents with tools (web search, database, APIs)
+//    - Agents can call tools autonomously
+//    - Tool results feed back into workflow
+//
+// 4. Quality Gates:
+//    - Enforce quality criteria at each step
+//    - Automatic retry with feedback
+//    - Escalation on repeated failures
+//
+// 5. Monitoring & Observability:
+//    - Track agent performance metrics
+//    - Log agent decisions and reasoning
+//    - Visualize workflow execution
