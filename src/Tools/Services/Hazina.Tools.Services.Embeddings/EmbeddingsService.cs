@@ -16,6 +16,7 @@ using HazinaStore.Models;
 using Hazina.Tools.Services.FileOps.Helpers;
 using HazinaStore;
 using Microsoft.Extensions.Configuration;
+using Hazina.Store.EmbeddingStore;
 
 namespace Hazina.Tools.Services.Embeddings
 {
@@ -219,6 +220,138 @@ namespace Hazina.Tools.Services.Embeddings
             // await extractor.ExtractTextFromDocument(filePath, textFilePath);
 
             await setup.Store.Embed(fileName);
+        }
+
+        public async Task<int> CompactProjectEmbeddingsAsync(string projectId)
+        {
+            if (string.IsNullOrWhiteSpace(projectId))
+                throw new ArgumentException("projectId is required", nameof(projectId));
+
+            var gate = GetLock(projectId);
+            await gate.WaitAsync();
+            try
+            {
+                var projectFolder = _fileLocator.GetProjectFolder(projectId);
+                var setup = StoreProvider.GetStoreSetup(projectFolder, _config.OpenAI);
+
+                // Check if store supports compaction
+                if (setup.Store.EmbeddingStore is EmbeddingJsonFileStore jsonStore)
+                {
+                    return await jsonStore.CompactAsync(projectFolder);
+                }
+
+                // Fallback for stores that don't support compaction directly
+                Console.WriteLine($"[EmbeddingsService] Store type {setup.Store.EmbeddingStore.GetType().Name} does not support compaction");
+                return 0;
+            }
+            finally
+            {
+                gate.Release();
+            }
+        }
+
+        public async Task<List<string>> VerifyProjectEmbeddingsIntegrityAsync(string projectId)
+        {
+            if (string.IsNullOrWhiteSpace(projectId))
+                throw new ArgumentException("projectId is required", nameof(projectId));
+
+            var gate = GetLock(projectId);
+            await gate.WaitAsync();
+            try
+            {
+                var projectFolder = _fileLocator.GetProjectFolder(projectId);
+                var setup = StoreProvider.GetStoreSetup(projectFolder, _config.OpenAI);
+
+                // Check if store supports integrity verification
+                if (setup.Store.EmbeddingStore is EmbeddingJsonFileStore jsonStore)
+                {
+                    return await jsonStore.VerifyIntegrityAsync();
+                }
+
+                // Fallback
+                return new List<string> { $"Store type {setup.Store.EmbeddingStore.GetType().Name} does not support integrity verification" };
+            }
+            finally
+            {
+                gate.Release();
+            }
+        }
+
+        public async Task<int> RepairProjectEmbeddingsAsync(string projectId)
+        {
+            if (string.IsNullOrWhiteSpace(projectId))
+                throw new ArgumentException("projectId is required", nameof(projectId));
+
+            var gate = GetLock(projectId);
+            await gate.WaitAsync();
+            try
+            {
+                var projectFolder = _fileLocator.GetProjectFolder(projectId);
+                var setup = StoreProvider.GetStoreSetup(projectFolder, _config.OpenAI);
+
+                // Check if store supports repair
+                if (setup.Store.EmbeddingStore is EmbeddingJsonFileStore jsonStore)
+                {
+                    return await jsonStore.RepairAsync();
+                }
+
+                // Fallback
+                Console.WriteLine($"[EmbeddingsService] Store type {setup.Store.EmbeddingStore.GetType().Name} does not support repair");
+                return 0;
+            }
+            finally
+            {
+                gate.Release();
+            }
+        }
+
+        public async Task<int> BatchIndexFilesAsync(
+            string projectId,
+            IEnumerable<string> files,
+            Action<int, int>? progressCallback = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(projectId))
+                throw new ArgumentException("projectId is required", nameof(projectId));
+
+            if (files == null)
+                throw new ArgumentNullException(nameof(files));
+
+            var gate = GetLock(projectId);
+            await gate.WaitAsync(cancellationToken);
+            try
+            {
+                var projectFolder = _fileLocator.GetProjectFolder(projectId);
+                var setup = StoreProvider.GetStoreSetup(projectFolder, _config.OpenAI);
+                var store = setup.Store;
+
+                var fileList = files.ToList();
+                var total = fileList.Count;
+                var completed = 0;
+
+                foreach (var file in fileList)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    try
+                    {
+                        await store.Embed(file);
+                        completed++;
+                        progressCallback?.Invoke(completed, total);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[BatchIndexFilesAsync] Error embedding {file}: {ex.Message}");
+                        // Continue with other files
+                    }
+                }
+
+                return completed;
+            }
+            finally
+            {
+                gate.Release();
+            }
         }
 
         private class EmbeddingEntry

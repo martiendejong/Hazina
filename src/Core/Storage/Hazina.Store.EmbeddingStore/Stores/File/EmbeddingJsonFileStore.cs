@@ -1,17 +1,28 @@
 using System.Text.Json;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Hazina.Store.EmbeddingStore;
 
 /// <summary>
-/// File-based embedding store using JSON serialization.
-/// Suitable for small to medium datasets (< 10k embeddings).
+/// File-based embedding store using JSON serialization with schema versioning and atomic writes.
+/// Suitable for small to medium datasets (less than 10k embeddings).
 /// This is the refactored version replacing EmbeddingFileStore.
 /// </summary>
-public class EmbeddingJsonFileStore : IEmbeddingStore, IEnumerableEmbeddingStore, IVectorSearchStore
+/// <remarks>
+/// Features:
+/// - Schema versioning for backward compatibility
+/// - Atomic write-then-rename to prevent corruption
+/// - Automatic backup before overwrites
+/// - Batch operations for efficient bulk updates
+/// - Integrity verification and repair utilities
+/// </remarks>
+public class EmbeddingJsonFileStore : IEmbeddingStore, IEnumerableEmbeddingStore, IVectorSearchStore, IBatchEmbeddingStore
 {
     private readonly string _filePath;
     private readonly object _lock = new object();
     private List<EmbeddingInfo> _embeddings;
+    private const int CurrentSchemaVersion = 1;
 
     /// <summary>
     /// Creates a new EmbeddingJsonFileStore.
@@ -34,8 +45,31 @@ public class EmbeddingJsonFileStore : IEmbeddingStore, IEnumerableEmbeddingStore
         try
         {
             var json = File.ReadAllText(_filePath);
+
+            // Try versioned format first
+            try
+            {
+                var format = JsonSerializer.Deserialize<EmbeddingFileFormat>(json);
+                if (format != null && format.Version <= CurrentSchemaVersion)
+                {
+                    Console.WriteLine($"[EmbeddingJsonFileStore] Loaded {format.Embeddings.Count} embeddings from versioned format (v{format.Version})");
+                    return format.Embeddings;
+                }
+            }
+            catch
+            {
+                // Fall back to legacy format
+            }
+
+            // Fall back to legacy list format (backward compatibility)
             var embeddings = JsonSerializer.Deserialize<List<EmbeddingInfo>>(json);
-            return embeddings ?? new List<EmbeddingInfo>();
+            if (embeddings != null)
+            {
+                Console.WriteLine($"[EmbeddingJsonFileStore] Loaded {embeddings.Count} embeddings from legacy format");
+                return embeddings;
+            }
+
+            return new List<EmbeddingInfo>();
         }
         catch (Exception ex)
         {
@@ -56,12 +90,42 @@ public class EmbeddingJsonFileStore : IEmbeddingStore, IEnumerableEmbeddingStore
                 Directory.CreateDirectory(directory);
             }
 
-            var json = JsonSerializer.Serialize(_embeddings, new JsonSerializerOptions
+            // Create versioned format with metadata
+            var format = new EmbeddingFileFormat
+            {
+                Version = CurrentSchemaVersion,
+                Embeddings = _embeddings,
+                Metadata = new EmbeddingFileMetadata
+                {
+                    LastModified = DateTime.UtcNow,
+                    Count = _embeddings.Count
+                }
+            };
+
+            var json = JsonSerializer.Serialize(format, new JsonSerializerOptions
             {
                 WriteIndented = true // Makes file human-readable
             });
 
-            await File.WriteAllTextAsync(_filePath, json);
+            // Atomic write: write to temp file, then rename
+            // This prevents corruption if write is interrupted
+            var tempPath = _filePath + ".tmp";
+            var backupPath = _filePath + ".bak";
+
+            // Write to temp file
+            await File.WriteAllTextAsync(tempPath, json);
+
+            // Create backup of existing file (if exists)
+            if (File.Exists(_filePath))
+            {
+                File.Copy(_filePath, backupPath, overwrite: true);
+            }
+
+            // Atomic rename
+            File.Move(tempPath, _filePath, overwrite: true);
+
+            // Clean up old backup (keep only most recent)
+            // Note: We keep the .bak file for safety, can be manually cleaned
         }
         catch (Exception ex)
         {
@@ -213,6 +277,225 @@ public class EmbeddingJsonFileStore : IEmbeddingStore, IEnumerableEmbeddingStore
         }
 
         return Task.FromResult(results);
+    }
+
+    #endregion
+
+    #region IBatchEmbeddingStore Implementation
+
+    public async Task<int> StoreBatchAsync(
+        IEnumerable<(string key, Embedding embedding, string checksum)> batch,
+        CancellationToken cancellationToken = default)
+    {
+        if (batch == null)
+            throw new ArgumentNullException(nameof(batch));
+
+        var items = batch.ToList();
+        if (items.Count == 0)
+            return 0;
+
+        int stored = 0;
+        lock (_lock)
+        {
+            foreach (var (key, embedding, checksum) in items)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (string.IsNullOrEmpty(key) || embedding == null)
+                    continue;
+
+                var existing = _embeddings.FirstOrDefault(e => e.Key == key);
+                if (existing != null)
+                {
+                    // Update existing
+                    existing.Checksum = checksum;
+                    existing.Data = embedding;
+                }
+                else
+                {
+                    // Add new
+                    _embeddings.Add(new EmbeddingInfo(key, checksum, embedding));
+                }
+                stored++;
+            }
+        }
+
+        // Single atomic write for entire batch
+        await SaveToFileAsync();
+        return stored;
+    }
+
+    public Task<List<EmbeddingInfo>> GetBatchAsync(
+        IEnumerable<string> keys,
+        CancellationToken cancellationToken = default)
+    {
+        if (keys == null)
+            throw new ArgumentNullException(nameof(keys));
+
+        var keySet = new HashSet<string>(keys);
+        List<EmbeddingInfo> results;
+
+        lock (_lock)
+        {
+            results = _embeddings
+                .Where(e => keySet.Contains(e.Key))
+                .ToList();
+        }
+
+        return Task.FromResult(results);
+    }
+
+    #endregion
+
+    #region Compaction and Integrity
+
+    /// <summary>
+    /// Removes embeddings for files that no longer exist in the specified directory.
+    /// </summary>
+    /// <param name="baseDirectory">Base directory to check file existence against</param>
+    /// <returns>Number of orphaned embeddings removed</returns>
+    public async Task<int> CompactAsync(string baseDirectory)
+    {
+        if (string.IsNullOrEmpty(baseDirectory))
+            throw new ArgumentException("Base directory cannot be null or empty", nameof(baseDirectory));
+
+        if (!Directory.Exists(baseDirectory))
+            throw new DirectoryNotFoundException($"Base directory not found: {baseDirectory}");
+
+        int removed = 0;
+        List<string> toRemove = new();
+
+        lock (_lock)
+        {
+            foreach (var embedding in _embeddings)
+            {
+                var filePath = Path.Combine(baseDirectory, embedding.Key);
+                if (!File.Exists(filePath))
+                {
+                    toRemove.Add(embedding.Key);
+                }
+            }
+
+            foreach (var key in toRemove)
+            {
+                var existing = _embeddings.FirstOrDefault(e => e.Key == key);
+                if (existing != null)
+                {
+                    _embeddings.Remove(existing);
+                    removed++;
+                }
+            }
+        }
+
+        if (removed > 0)
+        {
+            await SaveToFileAsync();
+            Console.WriteLine($"[EmbeddingJsonFileStore] Compacted {removed} orphaned embeddings");
+        }
+
+        return removed;
+    }
+
+    /// <summary>
+    /// Verifies integrity of all embeddings and returns list of issues found.
+    /// </summary>
+    /// <returns>List of integrity issues (empty if all OK)</returns>
+    public Task<List<string>> VerifyIntegrityAsync()
+    {
+        var issues = new List<string>();
+
+        lock (_lock)
+        {
+            // Check for duplicate keys
+            var duplicates = _embeddings
+                .GroupBy(e => e.Key)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+
+            foreach (var dup in duplicates)
+            {
+                issues.Add($"Duplicate key found: {dup}");
+            }
+
+            // Check for null or empty keys
+            var emptyKeys = _embeddings
+                .Where(e => string.IsNullOrWhiteSpace(e.Key))
+                .ToList();
+
+            if (emptyKeys.Any())
+            {
+                issues.Add($"Found {emptyKeys.Count} embeddings with null or empty keys");
+            }
+
+            // Check for null embedding data
+            var nullData = _embeddings
+                .Where(e => e.Data == null || e.Data.Count == 0)
+                .Select(e => e.Key)
+                .ToList();
+
+            foreach (var key in nullData)
+            {
+                issues.Add($"Null or empty embedding data for key: {key}");
+            }
+
+            // Check for inconsistent embedding dimensions
+            var dimensions = _embeddings
+                .Where(e => e.Data != null && e.Data.Count > 0)
+                .GroupBy(e => e.Data.Count)
+                .ToList();
+
+            if (dimensions.Count > 1)
+            {
+                var dimStr = string.Join(", ", dimensions.Select(g => $"{g.Key} ({g.Count()} embeddings)"));
+                issues.Add($"Inconsistent embedding dimensions found: {dimStr}");
+            }
+        }
+
+        return Task.FromResult(issues);
+    }
+
+    /// <summary>
+    /// Repairs integrity issues by removing invalid entries.
+    /// </summary>
+    /// <returns>Number of entries removed</returns>
+    public async Task<int> RepairAsync()
+    {
+        int removed = 0;
+        List<EmbeddingInfo> toRemove = new();
+
+        lock (_lock)
+        {
+            // Remove embeddings with null or empty keys
+            toRemove.AddRange(_embeddings.Where(e => string.IsNullOrWhiteSpace(e.Key)));
+
+            // Remove embeddings with null or empty data
+            toRemove.AddRange(_embeddings.Where(e => e.Data == null || e.Data.Count == 0));
+
+            // Remove duplicates (keep first occurrence)
+            var seen = new HashSet<string>();
+            foreach (var embedding in _embeddings.ToList())
+            {
+                if (!seen.Add(embedding.Key))
+                {
+                    toRemove.Add(embedding);
+                }
+            }
+
+            foreach (var item in toRemove)
+            {
+                if (_embeddings.Remove(item))
+                    removed++;
+            }
+        }
+
+        if (removed > 0)
+        {
+            await SaveToFileAsync();
+            Console.WriteLine($"[EmbeddingJsonFileStore] Repaired {removed} invalid entries");
+        }
+
+        return removed;
     }
 
     #endregion
