@@ -16,27 +16,6 @@ using Hazina.LLMs.Capabilities;
 
 public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
 {
-    // ICapabilityProvider
-    public ProviderCapability SupportedCapabilities => ProviderCapability.All;
-
-    public bool SupportsCapability(ProviderCapability capability) =>
-        (SupportedCapabilities & capability) == capability;
-
-    public IEnumerable<string> GetSupportedCapabilityNames()
-    {
-        var names = new List<string>();
-        foreach (var cap in Enum.GetValues<ProviderCapability>())
-            if (cap != ProviderCapability.None && cap != ProviderCapability.All && SupportsCapability(cap))
-                names.Add(cap.ToString());
-        return names;
-    }
-
-    public void RequireCapabilities(ProviderCapability requiredCapabilities)
-    {
-        if (!SupportsCapability(requiredCapabilities))
-            throw new NotSupportedException($"OpenAI does not support required capabilities: {requiredCapabilities}");
-    }
-
     public string GetFormatInstruction<ResponseType>() where ResponseType : ChatResponse<ResponseType>, new()
     {
         return $"YOUR OUTPUT WILL ALWAYS BE ONLY A JSON RESPONSE IN THIS FORMAT AND NOTHING ELSE: {ChatResponse<ResponseType>.Signature} EXAMPLE: {JsonSerializer.Serialize(ChatResponse<ResponseType>.Example)}";
