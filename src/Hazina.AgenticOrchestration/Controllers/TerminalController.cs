@@ -1019,6 +1019,76 @@ public class TerminalController : ControllerBase
     }
 
     /// <summary>
+    /// Get all recoverable sessions (crashed but persisted)
+    /// </summary>
+    [HttpGet("recoverable")]
+    public async Task<ActionResult<IEnumerable<RecoverableSessionDto>>> GetRecoverableSessions()
+    {
+        try
+        {
+            var recoverable = await _sessionManager.GetRecoverableSessionsAsync();
+
+            var dtos = recoverable.Select(m => new RecoverableSessionDto
+            {
+                SessionId = m.SessionId,
+                Command = m.Command,
+                WorkingDirectory = m.WorkingDirectory,
+                CreatedAt = m.CreatedAt,
+                LastActive = m.LastActive,
+                State = m.State.ToString(),
+                DisplayOrder = m.DisplayOrder
+            });
+
+            _logger.LogInformation("Returning {Count} recoverable sessions", dtos.Count());
+            return Ok(dtos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get recoverable sessions");
+            return StatusCode(500, new { error = "Failed to get recoverable sessions", message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Restore a crashed session from persisted state
+    /// </summary>
+    [HttpPost("sessions/{sessionId}/restore")]
+    public async Task<ActionResult<TerminalSessionDto>> RestoreSession(
+        string sessionId,
+        CancellationToken ct)
+    {
+        try
+        {
+            _logger.LogInformation("Restoring session {SessionId}", sessionId);
+
+            var session = await _sessionManager.RestoreSessionAsync(sessionId, ct);
+
+            if (session == null)
+            {
+                return NotFound(new { error = "Session not found or cannot be restored", sessionId });
+            }
+
+            return Ok(new TerminalSessionDto
+            {
+                SessionId = session.SessionId,
+                Command = session.Command,
+                Title = session.Title ?? "Restored: " + session.Command,
+                StartedAt = session.StartedAt,
+                IsRunning = session.IsRunning,
+                WaitingForInput = session.WaitingForInput,
+                ExitCode = session.ExitCode,
+                SignalRHubUrl = "/hubs/terminal",
+                Instructions = "Session restored. Connect to SignalR hub and call JoinSession(sessionId) to view transcript"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to restore session {SessionId}", sessionId);
+            return StatusCode(500, new { error = "Failed to restore session", message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Get application version
     /// </summary>
     [HttpGet("version")]
@@ -1336,4 +1406,15 @@ public class UploadedFileDto
     public string FileName { get; set; } = "";
     public long Size { get; set; }
     public DateTime UploadedAt { get; set; }
+}
+
+public class RecoverableSessionDto
+{
+    public string SessionId { get; set; } = "";
+    public string Command { get; set; } = "";
+    public string WorkingDirectory { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+    public DateTime LastActive { get; set; }
+    public string State { get; set; } = "";
+    public int DisplayOrder { get; set; }
 }
