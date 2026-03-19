@@ -1,0 +1,321 @@
+// Hazina QuickStart Template: Production Deployment
+//
+// This template demonstrates production-ready setup with monitoring,
+// error handling, cost tracking, and resilience patterns.
+//
+// Use Case: Enterprise-grade AI application
+// Time to Production: 2 hours
+// Difficulty: Advanced
+
+using Hazina.AI.FluentAPI.Configuration;
+using Hazina.Production.Monitoring;
+using Hazina.LLMs.OpenAI;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+namespace {{NAMESPACE}}
+{
+    public class ProductionDeploymentExample
+    {
+        private readonly IServiceProvider _serviceProvider;
+
+        public ProductionDeploymentExample()
+        {
+            var services = new ServiceCollection();
+
+            // 1. Logging
+            services.AddLogging(builder =>
+            {
+                builder.AddConsole();
+                builder.AddApplicationInsights();  // Azure Application Insights
+                builder.SetMinimumLevel(LogLevel.Information);
+            });
+
+            // 2. Configuration
+            services.AddSingleton<IConfiguration>(sp =>
+            {
+                return new ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.json", optional: false)
+                    .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", optional: true)
+                    .AddEnvironmentVariables()
+                    .AddAzureKeyVault()  // For secrets
+                    .Build();
+            });
+
+            // 3. Hazina AI Services
+            services.AddSingleton<ILLMClient>(sp =>
+            {
+                var config = sp.GetRequiredService<IConfiguration>();
+                var logger = sp.GetRequiredService<ILogger<OpenAIClientWrapper>>();
+
+                var openAiConfig = new OpenAIConfig
+                {
+                    ApiKey = config["OpenAI:ApiKey"]
+                        ?? throw new InvalidOperationException("OpenAI:ApiKey not configured"),
+                    Model = config["OpenAI:Model"] ?? "gpt-4o-mini",
+                    Timeout = TimeSpan.Parse(config["OpenAI:Timeout"] ?? "00:00:30"),
+                    MaxRetries = int.Parse(config["OpenAI:MaxRetries"] ?? "3")
+                };
+
+                return new OpenAIClientWrapper(openAiConfig);
+            });
+
+            // 4. Cost Tracking
+            services.AddSingleton<ICostTracker, CostTracker>();
+            services.AddSingleton<ICostBudgetEnforcer>(sp =>
+            {
+                var config = sp.GetRequiredService<IConfiguration>();
+                var dailyBudget = decimal.Parse(config["Hazina:DailyBudget"] ?? "100.00");
+
+                return new CostBudgetEnforcer(
+                    dailyLimit: dailyBudget,
+                    monthlyLimit: dailyBudget * 30
+                );
+            });
+
+            // 5. Circuit Breaker
+            services.AddSingleton<ICircuitBreaker>(sp =>
+            {
+                return new CircuitBreaker(
+                    failureThreshold: 5,
+                    resetTimeout: TimeSpan.FromMinutes(5),
+                    halfOpenAttempts: 2
+                );
+            });
+
+            // 6. Rate Limiter
+            services.AddSingleton<IRateLimiter>(sp =>
+            {
+                return new TokenBucketRateLimiter(
+                    tokensPerSecond: 10,
+                    bucketSize: 100
+                );
+            });
+
+            // 7. Health Checks
+            services.AddHealthChecks()
+                .AddCheck<HazinaHealthCheck>("hazina")
+                .AddCheck<OpenAIHealthCheck>("openai");
+
+            // 8. Metrics
+            services.AddSingleton<IMetricsCollector, PrometheusMetricsCollector>();
+
+            // 9. Production AI Service
+            services.AddSingleton<ProductionAIService>();
+
+            _serviceProvider = services.BuildServiceProvider();
+        }
+
+        public async Task<string> GetResponseAsync(
+            string prompt,
+            string userId,
+            CancellationToken cancel = default)
+        {
+            var service = _serviceProvider.GetRequiredService<ProductionAIService>();
+            return await service.GetResponseAsync(prompt, userId, cancel);
+        }
+    }
+
+    public class ProductionAIService
+    {
+        private readonly ILLMClient _llmClient;
+        private readonly ICostTracker _costTracker;
+        private readonly ICostBudgetEnforcer _budgetEnforcer;
+        private readonly ICircuitBreaker _circuitBreaker;
+        private readonly IRateLimiter _rateLimiter;
+        private readonly IMetricsCollector _metrics;
+        private readonly ILogger<ProductionAIService> _logger;
+
+        public ProductionAIService(
+            ILLMClient llmClient,
+            ICostTracker costTracker,
+            ICostBudgetEnforcer budgetEnforcer,
+            ICircuitBreaker circuitBreaker,
+            IRateLimiter rateLimiter,
+            IMetricsCollector metrics,
+            ILogger<ProductionAIService> logger)
+        {
+            _llmClient = llmClient;
+            _costTracker = costTracker;
+            _budgetEnforcer = budgetEnforcer;
+            _circuitBreaker = circuitBreaker;
+            _rateLimiter = rateLimiter;
+            _metrics = metrics;
+            _logger = logger;
+        }
+
+        public async Task<string> GetResponseAsync(
+            string prompt,
+            string userId,
+            CancellationToken cancel = default)
+        {
+            var requestId = Guid.NewGuid().ToString();
+            var startTime = DateTime.UtcNow;
+
+            try
+            {
+                // STEP 1: Rate Limiting
+                if (!await _rateLimiter.TryAcquireAsync(userId))
+                {
+                    _logger.LogWarning(
+                        "Rate limit exceeded for user {UserId}, request {RequestId}",
+                        userId, requestId
+                    );
+                    throw new RateLimitExceededException($"Too many requests from user {userId}");
+                }
+
+                // STEP 2: Budget Check
+                var currentCost = await _costTracker.GetTotalCostAsync(userId);
+                if (!_budgetEnforcer.CanProceed(currentCost))
+                {
+                    _logger.LogWarning(
+                        "Budget exceeded for user {UserId}, current: ${Cost}, request {RequestId}",
+                        userId, currentCost, requestId
+                    );
+                    throw new BudgetExceededException($"Daily budget exceeded for user {userId}");
+                }
+
+                // STEP 3: Circuit Breaker Check
+                if (!_circuitBreaker.IsCallPermitted())
+                {
+                    _logger.LogWarning(
+                        "Circuit breaker open, rejecting request {RequestId}",
+                        requestId
+                    );
+                    throw new CircuitBreakerOpenException("Service temporarily unavailable");
+                }
+
+                // STEP 4: Execute Request
+                _logger.LogInformation(
+                    "Processing request {RequestId} for user {UserId}",
+                    requestId, userId
+                );
+
+                var messages = new List<HazinaChatMessage>
+                {
+                    new(HazinaMessageRole.System, "You are a helpful assistant."),
+                    new(HazinaMessageRole.User, prompt)
+                };
+
+                var response = await _llmClient.GetResponse(
+                    messages,
+                    HazinaChatResponseFormat.Text,
+                    toolsContext: null,
+                    images: null,
+                    cancel
+                );
+
+                // STEP 5: Track Cost
+                await _costTracker.RecordCostAsync(
+                    userId,
+                    response.TokenUsage.TotalCost
+                );
+
+                // STEP 6: Record Success
+                _circuitBreaker.RecordSuccess();
+
+                var duration = DateTime.UtcNow - startTime;
+                _metrics.RecordLatency("ai_request", duration.TotalMilliseconds);
+                _metrics.IncrementCounter("ai_request_success");
+
+                _logger.LogInformation(
+                    "Request {RequestId} completed in {Duration}ms, cost ${Cost}, tokens {Tokens}",
+                    requestId,
+                    duration.TotalMilliseconds,
+                    response.TokenUsage.TotalCost,
+                    response.TokenUsage.TotalTokens
+                );
+
+                return response.Result;
+            }
+            catch (Exception ex)
+            {
+                // STEP 7: Error Handling
+                _circuitBreaker.RecordFailure();
+                _metrics.IncrementCounter("ai_request_error");
+
+                _logger.LogError(
+                    ex,
+                    "Request {RequestId} failed for user {UserId}: {ErrorMessage}",
+                    requestId, userId, ex.Message
+                );
+
+                throw;
+            }
+        }
+    }
+
+    // Example Usage
+    public class Program
+    {
+        public static async Task Main(string[] args)
+        {
+            var production = new ProductionDeploymentExample();
+
+            try
+            {
+                var response = await production.GetResponseAsync(
+                    prompt: "Explain quantum computing",
+                    userId: "user123"
+                );
+
+                Console.WriteLine($"Response: {response}");
+            }
+            catch (RateLimitExceededException ex)
+            {
+                Console.WriteLine($"Rate limited: {ex.Message}");
+            }
+            catch (BudgetExceededException ex)
+            {
+                Console.WriteLine($"Budget exceeded: {ex.Message}");
+            }
+            catch (CircuitBreakerOpenException ex)
+            {
+                Console.WriteLine($"Service unavailable: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+    }
+}
+
+// appsettings.json Configuration:
+//
+// {
+//   "OpenAI": {
+//     "ApiKey": "sk-...",
+//     "Model": "gpt-4o-mini",
+//     "Timeout": "00:00:30",
+//     "MaxRetries": 3
+//   },
+//   "Hazina": {
+//     "DailyBudget": 100.00,
+//     "RateLimit": {
+//       "RequestsPerSecond": 10,
+//       "BucketSize": 100
+//     },
+//     "CircuitBreaker": {
+//       "FailureThreshold": 5,
+//       "ResetTimeoutMinutes": 5
+//     }
+//   },
+//   "ApplicationInsights": {
+//     "InstrumentationKey": "..."
+//   }
+// }
+
+// Production Checklist:
+//
+// ✓ Error handling and retries
+// ✓ Rate limiting per user
+// ✓ Cost tracking and budget enforcement
+// ✓ Circuit breaker for resilience
+// ✓ Comprehensive logging
+// ✓ Metrics collection (Prometheus)
+// ✓ Health checks
+// ✓ Configuration from secure sources (Azure Key Vault)
+// ✓ Timeout enforcement
+// ✓ Graceful degradation

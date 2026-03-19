@@ -182,10 +182,10 @@
       },
       "OpenAI": {
         "type": "Transitive",
-        "resolved": "2.6.0",
-        "contentHash": "5hUnDrcAREi+UMnwzGEKKG6KHC+FUPcATPL0U3mz84F9wEa1E4EfCuZtv0poccvtRqYrUoie9l29I4GW6q5J0g==",
+        "resolved": "2.8.0",
+        "contentHash": "KcYpZ9IhuxFD2hGAJlL5vABtkr00CjeJU0SY8CjZQyzvzkzLop8jhdX3iDvteVJg6e3y4TEiY+Kti4gDJAagnA==",
         "dependencies": {
-          "System.ClientModel": "1.7.0",
+          "System.ClientModel": "1.8.1",
           "System.Net.ServerSentEvents": "9.0.9"
         }
       },
@@ -290,8 +290,8 @@
       },
       "System.ClientModel": {
         "type": "Transitive",
-        "resolved": "1.7.0",
-        "contentHash": "NKKA3/O6B7PxmtIzOifExHdfoWthy3AD4EZ1JfzcZU8yGZTbYrK1qvXsHUL/1yQKKqWSKgIR1Ih/yf2gOaHc4w==",
+        "resolved": "1.8.1",
+        "contentHash": "4oUQgw/vaO4FBOk3YsH40hbrjxRED1l95rRLvTMtHXfQxapXya9IfPpm/KgwValFFtYTfYGFOs/qzGmGyexicQ==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
           "System.Memory.Data": "8.0.1"
@@ -396,7 +396,7 @@
           "Microsoft.Extensions.Configuration.Binder": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Json": "[10.0.3, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )",
-          "OpenAI": "[2.1.0, )"
+          "OpenAI": "[2.8.0, )"
         }
       },
       "hazina.llms.helpers": {
@@ -432,7 +432,7 @@
           "Hazina.LLMs.Client": "[2.0.0, )",
           "Hazina.LLMs.Helpers": "[2.0.0, )",
           "Npgsql": "[8.0.3, )",
-          "OpenAI": "[2.6.0, )",
+          "OpenAI": "[2.8.0, )",
           "Pgvector": "[0.2.0, )",
           "Supabase": "[1.1.1, )"
         }
