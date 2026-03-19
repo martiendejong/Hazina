@@ -1,8 +1,14 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Hazina.AI.Learning;
 
 /// <summary>
 /// Extracts patterns from outcomes and updates system behavior
 /// </summary>
+/// <remarks>
+/// This is an experimental API and may change in future versions without notice.
+/// </remarks>
+[Experimental("HAZ004")]
 public interface IPatternExtractor
 {
     /// <summary>

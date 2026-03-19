@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Hazina.AI.FaultDetection.Core;
 
 namespace Hazina.AI.FaultDetection.Detectors;
@@ -5,6 +6,10 @@ namespace Hazina.AI.FaultDetection.Detectors;
 /// <summary>
 /// Interface for detecting hallucinations in LLM responses
 /// </summary>
+/// <remarks>
+/// This is an experimental API and may change in future versions without notice.
+/// </remarks>
+[Experimental("HAZ003")]
 public interface IHallucinationDetector
 {
     /// <summary>

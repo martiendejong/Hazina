@@ -143,6 +143,74 @@ dotnet_diagnostic.CA2213.severity = warning     # Disposable fields should be di
 dotnet_diagnostic.CS1591.severity = suggestion  # Missing XML comment for publicly visible type
 
 # =============================================================================
+# ASYNCFIXER RULES (Async/Await Best Practices)
+# =============================================================================
+
+# AsyncFixer01: Unnecessary async/await
+dotnet_diagnostic.AsyncFixer01.severity = warning
+
+# AsyncFixer02: Long-running operation inside async method
+dotnet_diagnostic.AsyncFixer02.severity = warning
+
+# AsyncFixer03: Fire-and-forget async void methods
+dotnet_diagnostic.AsyncFixer03.severity = error
+
+# AsyncFixer04: Fire-and-forget async call inside a using block
+dotnet_diagnostic.AsyncFixer04.severity = warning
+
+# AsyncFixer05: Downcasting from a nested task to an outer task
+dotnet_diagnostic.AsyncFixer05.severity = warning
+
+# =============================================================================
+# ROSLYNATOR ANALYZERS (Code Quality & Refactoring)
+# =============================================================================
+
+# RCS1001: Add braces
+dotnet_diagnostic.RCS1001.severity = suggestion
+
+# RCS1032: Remove redundant parentheses
+dotnet_diagnostic.RCS1032.severity = suggestion
+
+# RCS1036: Remove unnecessary blank line
+dotnet_diagnostic.RCS1036.severity = suggestion
+
+# RCS1037: Remove trailing white-space
+dotnet_diagnostic.RCS1037.severity = suggestion
+
+# RCS1085: Use auto-property
+dotnet_diagnostic.RCS1085.severity = suggestion
+
+# RCS1090: Call ConfigureAwait(false)
+dotnet_diagnostic.RCS1090.severity = none  # Disabled - not needed in ASP.NET Core apps
+
+# RCS1146: Use conditional access
+dotnet_diagnostic.RCS1146.severity = suggestion
+
+# RCS1158: Static member in generic type should use a type parameter
+dotnet_diagnostic.RCS1158.severity = warning
+
+# RCS1163: Unused parameter
+dotnet_diagnostic.RCS1163.severity = suggestion
+
+# RCS1175: Unused this parameter
+dotnet_diagnostic.RCS1175.severity = suggestion
+
+# RCS1188: Remove redundant auto-property initialization
+dotnet_diagnostic.RCS1188.severity = suggestion
+
+# RCS1194: Implement exception constructors
+dotnet_diagnostic.RCS1194.severity = warning
+
+# RCS1202: Avoid NullReferenceException
+dotnet_diagnostic.RCS1202.severity = warning
+
+# RCS1210: Return Task.FromResult instead of returning null
+dotnet_diagnostic.RCS1210.severity = error
+
+# RCS1229: Use async/await when possible
+dotnet_diagnostic.RCS1229.severity = suggestion
+
+# =============================================================================
 # CODE STYLE PREFERENCES
 # =============================================================================
 

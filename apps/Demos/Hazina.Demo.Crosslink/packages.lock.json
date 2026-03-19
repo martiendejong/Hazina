@@ -1,7 +1,13 @@
 {
   "version": 1,
   "dependencies": {
-    "net8.0": {
+    "net9.0": {
+      "AsyncFixer": {
+        "type": "Direct",
+        "requested": "[1.6.0, )",
+        "resolved": "1.6.0",
+        "contentHash": "/Xfs9H3UMfEv64cwT+C/JrTRp4w08BmPuFbj0ageadCHpx6rxYJxAU2C6sEqRFG22xmGk5cX9ewzoiiehWVHOw=="
+      },
       "Meziantou.Analyzer": {
         "type": "Direct",
         "requested": "[2.0.169, )",
@@ -40,6 +46,12 @@
           "Microsoft.Extensions.FileProviders.Abstractions": "10.0.3",
           "System.Text.Json": "10.0.3"
         }
+      },
+      "Roslynator.Analyzers": {
+        "type": "Direct",
+        "requested": "[4.12.11, )",
+        "resolved": "4.12.11",
+        "contentHash": "yvsRYT5EVtcT+V8ZW+5cxd1O9Sgf8PbC7DlQL/T5NA4g5yjaFe+WQ7evpy92Lj29m2E+XayBsO2TnCWKZlPWaA=="
       },
       "SonarAnalyzer.CSharp": {
         "type": "Direct",

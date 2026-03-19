@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Hazina.AI.ContextEngineering.Configuration;
 
 namespace Hazina.AI.ContextEngineering.Orchestration;
@@ -5,6 +6,10 @@ namespace Hazina.AI.ContextEngineering.Orchestration;
 /// <summary>
 /// Main interface for the Context Engineering system
 /// </summary>
+/// <remarks>
+/// This is an experimental API and may change in future versions without notice.
+/// </remarks>
+[Experimental("HAZ002")]
 public interface IContextEngine
 {
     /// <summary>

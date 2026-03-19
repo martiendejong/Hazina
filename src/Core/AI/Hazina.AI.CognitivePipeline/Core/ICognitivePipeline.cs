@@ -1,8 +1,14 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Hazina.AI.CognitivePipeline.Core;
 
 /// <summary>
 /// The main SCP cognitive pipeline interface. Orchestrates S→O→L→F→B→M stages.
 /// </summary>
+/// <remarks>
+/// This is an experimental API and may change in future versions without notice.
+/// </remarks>
+[Experimental("HAZ001")]
 public interface ICognitivePipeline
 {
     /// <summary>
@@ -14,6 +20,10 @@ public interface ICognitivePipeline
 /// <summary>
 /// Complete result of an SCP pipeline execution.
 /// </summary>
+/// <remarks>
+/// This is an experimental API and may change in future versions without notice.
+/// </remarks>
+[Experimental("HAZ001")]
 public class CognitivePipelineResult
 {
     /// <summary>
