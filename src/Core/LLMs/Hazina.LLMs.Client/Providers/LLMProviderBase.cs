@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Hazina.LLMs.Configuration;
+using Hazina.LLMs.Resilience;
 
 namespace Hazina.LLMs.Providers;
 
@@ -24,6 +25,11 @@ public abstract class LLMProviderBase<TConfig> where TConfig : IProviderConfig
     protected HttpClient Http { get; }
 
     /// <summary>
+    /// Resilience executor for retry and rate limiting.
+    /// </summary>
+    protected ResilienceExecutor Resilience { get; }
+
+    /// <summary>
     /// JSON serializer options for request/response handling.
     /// </summary>
     protected static readonly JsonSerializerOptions JsonOptions = new()
@@ -36,11 +42,22 @@ public abstract class LLMProviderBase<TConfig> where TConfig : IProviderConfig
     /// <summary>
     /// Creates a new provider instance with the specified configuration.
     /// </summary>
-    protected LLMProviderBase(TConfig config)
+    /// <param name="config">Provider configuration.</param>
+    /// <param name="retryStrategy">Optional retry strategy (defaults to exponential backoff).</param>
+    /// <param name="rateLimiter">Optional rate limiter.</param>
+    protected LLMProviderBase(
+        TConfig config,
+        IRetryStrategy? retryStrategy = null,
+        IRateLimiter? rateLimiter = null)
     {
         Config = config ?? throw new ArgumentNullException(nameof(config));
         // Initialize HttpClient directly to avoid virtual method call in constructor
         Http = CreateHttpClientInternal();
+
+        // Initialize resilience executor with default or provided strategies
+        Resilience = new ResilienceExecutor(
+            retryStrategy ?? new ExponentialBackoffStrategy(),
+            rateLimiter);
     }
 
     /// <summary>
@@ -86,41 +103,49 @@ public abstract class LLMProviderBase<TConfig> where TConfig : IProviderConfig
 
     /// <summary>
     /// Sends a POST request with JSON content and deserializes the response.
+    /// Automatically applies retry and rate limiting.
     /// </summary>
     protected async Task<TResponse> PostJsonAsync<TRequest, TResponse>(
         string endpoint,
         TRequest request,
         CancellationToken cancellationToken = default)
     {
-        var json = JsonSerializer.Serialize(request, JsonOptions);
-        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+        return await Resilience.ExecuteAsync(async () =>
+        {
+            var json = JsonSerializer.Serialize(request, JsonOptions);
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var response = await Http.PostAsync(endpoint, content, cancellationToken);
-        response.EnsureSuccessStatusCode();
+            var response = await Http.PostAsync(endpoint, content, cancellationToken);
+            response.EnsureSuccessStatusCode();
 
-        var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
-        return JsonSerializer.Deserialize<TResponse>(responseJson, JsonOptions)
-            ?? throw new InvalidOperationException("Failed to deserialize response");
+            var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
+            return JsonSerializer.Deserialize<TResponse>(responseJson, JsonOptions)
+                ?? throw new InvalidOperationException("Failed to deserialize response");
+        }, cancellationToken);
     }
 
     /// <summary>
     /// Sends a POST request and returns the raw response stream for SSE handling.
+    /// Automatically applies retry and rate limiting.
     /// </summary>
     protected async Task<Stream> PostStreamAsync<TRequest>(
         string endpoint,
         TRequest request,
         CancellationToken cancellationToken = default)
     {
-        var json = JsonSerializer.Serialize(request, JsonOptions);
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
+        return await Resilience.ExecuteAsync(async () =>
         {
-            Content = new StringContent(json, Encoding.UTF8, "application/json")
-        };
+            var json = JsonSerializer.Serialize(request, JsonOptions);
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
 
-        var response = await Http.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        response.EnsureSuccessStatusCode();
+            var response = await Http.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadAsStreamAsync(cancellationToken);
+            return await response.Content.ReadAsStreamAsync(cancellationToken);
+        }, cancellationToken);
     }
 
     /// <summary>
