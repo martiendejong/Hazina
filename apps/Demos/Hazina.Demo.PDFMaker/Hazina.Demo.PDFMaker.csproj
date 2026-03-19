@@ -7,6 +7,7 @@
     <RootNamespace>DevGPT.App.PDFMaker</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 </Project>
 

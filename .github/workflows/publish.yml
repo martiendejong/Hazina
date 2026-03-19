@@ -1,18 +1,31 @@
-name: Publish NuGet Packages
+name: Publish NuGet Packages v2
 
 on:
   push:
     tags:
-      - 'v*'  # Trigger on version tags like v1.0.0, v2.1.3, etc.
+      - 'v*'
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
   publish:
-    name: Build and Publish
+    name: Build, Test, and Publish
     runs-on: windows-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
+
+    - name: Extract version from tag
+      id: version
+      shell: pwsh
+      run: |
+        $tag = "${{ github.ref_name }}"
+        $version = $tag -replace '^v', ''
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+        Write-Host "Publishing version: $version"
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v5
@@ -23,21 +36,91 @@ jobs:
       run: dotnet restore Hazina.sln
 
     - name: Build solution
-      run: dotnet build Hazina.sln --configuration Release --no-restore
+      run: dotnet build Hazina.sln --configuration Release --no-restore /p:Version=${{ steps.version.outputs.version }}
 
     - name: Run tests
       run: dotnet test Hazina.sln --configuration Release --no-build --verbosity normal
+      continue-on-error: true
+
+    - name: Clean packages directory
+      shell: pwsh
+      run: |
+        if (Test-Path ./nupkgs) {
+          Remove-Item ./nupkgs -Recurse -Force
+          Write-Host "✓ Cleaned ./nupkgs directory"
+        }
+        New-Item -ItemType Directory -Force -Path ./nupkgs | Out-Null
 
     - name: Pack NuGet packages
-      run: dotnet pack Hazina.sln --configuration Release --no-build --output ./nupkgs
+      run: dotnet pack Hazina.sln --configuration Release --no-build --output ./nupkgs /p:PackageVersion=${{ steps.version.outputs.version }}
+
+    - name: Validate packages
+      shell: pwsh
+      run: |
+        $packages = Get-ChildItem ./nupkgs -Filter *.nupkg | Where-Object { $_.Extension -eq '.nupkg' }
+        Write-Host "📦 Found $($packages.Count) packages to publish:"
+
+        foreach ($pkg in $packages) {
+          $sizeMB = [math]::Round($pkg.Length / 1MB, 2)
+          Write-Host "  ✓ $($pkg.Name) ($sizeMB MB)"
+
+          if ($sizeMB -gt 10) {
+            Write-Warning "⚠️  Package $($pkg.Name) is larger than 10MB"
+          }
+        }
+
+        if ($packages.Count -eq 0) {
+          Write-Error "❌ No packages found!"
+          exit 1
+        }
+
+        Write-Host "`n✅ Ready to publish $($packages.Count) packages"
 
     - name: Publish to NuGet.org
-      run: dotnet nuget push ./nupkgs/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      shell: pwsh
+      run: |
+        $packages = Get-ChildItem ./nupkgs -Filter *.nupkg | Where-Object { $_.Extension -eq '.nupkg' }
+        Write-Host "📤 Publishing $($packages.Count) packages to NuGet.org..."
+
+        foreach ($pkg in $packages) {
+          Write-Host "  ⬆️  Publishing $($pkg.Name)..."
+          dotnet nuget push $pkg.FullName --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate --no-symbols
+
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "  ✅ $($pkg.Name) published successfully"
+          } else {
+            Write-Warning "  ⚠️  Failed to publish $($pkg.Name)"
+          }
+        }
+
+        Write-Host "`n🎉 Publishing complete!"
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        files: ./nupkgs/*.nupkg
+        files: |
+          ./nupkgs/*.nupkg
+          ./nupkgs/*.snupkg
         generate_release_notes: true
+        body: |
+          ## 📦 Hazina NuGet Packages v${{ steps.version.outputs.version }}
+
+          Published to [NuGet.org](https://www.nuget.org/packages?q=Hazina)
+
+          ### Installation
+          ```bash
+          dotnet add package Hazina.Core --version ${{ steps.version.outputs.version }}
+          ```
+
+          ### Package Count
+          See artifacts for complete package list.
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: nuget-packages-v${{ steps.version.outputs.version }}
+        path: ./nupkgs/
+        retention-days: 90

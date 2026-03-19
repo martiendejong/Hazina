@@ -16,17 +16,10 @@ public sealed class TrayApplicationContext : ApplicationContext
     private readonly ToolStripMenuItem _autoStartItem;
     private readonly string _baseUrl;
 
-    public TrayApplicationContext(WebApplication webApp)
+    public TrayApplicationContext(WebApplication webApp, string baseUrl)
     {
         _webApp = webApp;
-
-        // Resolve the actual base URL from the running web host
-        _baseUrl = webApp.Urls.FirstOrDefault(u => u.StartsWith("https://"))
-                   ?? webApp.Urls.FirstOrDefault()
-                   ?? "https://localhost:5123";
-
-        // Normalize 0.0.0.0 to localhost for browser URLs
-        _baseUrl = _baseUrl.Replace("://0.0.0.0:", "://localhost:");
+        _baseUrl = baseUrl;
 
         // Load icon from embedded resource, fall back to system icon
         var icon = LoadEmbeddedIcon() ?? SystemIcons.Application;
@@ -43,6 +36,7 @@ public sealed class TrayApplicationContext : ApplicationContext
         contextMenu.Items.Add("Open Dashboard", null, OnOpenDashboard);
         contextMenu.Items.Add("Swagger API", null, OnOpenSwagger);
         contextMenu.Items.Add(new ToolStripSeparator());
+        contextMenu.Items.Add("Settings...", null, OnOpenSettings);
         contextMenu.Items.Add(_autoStartItem);
         contextMenu.Items.Add(new ToolStripSeparator());
         contextMenu.Items.Add("Exit", null, OnExit);
@@ -87,6 +81,36 @@ public sealed class TrayApplicationContext : ApplicationContext
     private void OnOpenSwagger(object? sender, EventArgs e)
     {
         OpenUrl($"{_baseUrl}/swagger");
+    }
+
+    private void OnOpenSettings(object? sender, EventArgs e)
+    {
+        try
+        {
+            // Resolve config path from the application directory
+            var configPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+
+            if (!File.Exists(configPath))
+            {
+                MessageBox.Show(
+                    $"Configuration file not found at: {configPath}",
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return;
+            }
+
+            using var settingsForm = new SettingsForm(configPath);
+            settingsForm.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Error opening settings: {ex.Message}",
+                "Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
     }
 
     private void OnAutoStartToggle(object? sender, EventArgs e)

@@ -1,0 +1,33 @@
+mode: Mainline
+branches:
+  main:
+    regex: ^main$
+    tag: ''
+    increment: Minor
+    prevent-increment-of-merged-branch-version: false
+  develop:
+    regex: ^develop$
+    tag: beta
+    increment: Minor
+    prevent-increment-of-merged-branch-version: false
+  feature:
+    regex: ^features?[/-]
+    tag: alpha
+    increment: Minor
+  hotfix:
+    regex: ^hotfix(es)?[/-]
+    tag: hotfix
+    increment: Patch
+  release:
+    regex: ^releases?[/-]
+    tag: rc
+    increment: None
+ignore:
+  sha: []
+merge-message-formats: {}
+tag-prefix: 'v'
+major-version-bump-message: '\+semver:\s?(breaking|major)'
+minor-version-bump-message: '\+semver:\s?(feature|minor)'
+patch-version-bump-message: '\+semver:\s?(fix|patch)'
+no-bump-message: '\+semver:\s?(none|skip)'
+commit-date-format: 'yyyy-MM-dd'

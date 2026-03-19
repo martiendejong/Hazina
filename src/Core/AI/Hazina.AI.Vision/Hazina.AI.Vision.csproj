@@ -16,7 +16,7 @@
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
     <!-- Video frame extraction -->
     <PackageReference Include="FFMpegCore" Version="5.1.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Hazina.AI.Core\Hazina.AI.Core.csproj" />

@@ -131,7 +131,13 @@ public class EmbeddingFileStore : AbstractTextEmbeddingStore, ITextEmbeddingStor
         {
             Directory.CreateDirectory(directory);
         }
-        await File.WriteAllTextAsync(EmbeddingsFilePath, JsonSerializer.Serialize(Embeddings));
+        // Use consistent serialization options matching ReadEmbeddingsFile
+        var options = new JsonSerializerOptions
+        {
+            WriteIndented = false,
+            Converters = { new EmbeddingJsonConverter() }
+        };
+        await File.WriteAllTextAsync(EmbeddingsFilePath, JsonSerializer.Serialize(Embeddings, options));
     }
 
     public override async Task<EmbeddingInfo?> GetEmbedding(string key)

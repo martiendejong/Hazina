@@ -1,0 +1,86 @@
+id: ui.progress-tracker
+type: visualization
+category: monitoring
+description: Real-time progress tracking for multi-step operations
+
+schema:
+  type: object
+  required:
+    - taskId
+    - totalSteps
+    - currentStep
+  properties:
+    taskId:
+      type: string
+      description: Unique identifier for tracked task
+    title:
+      type: string
+      description: Task title
+    totalSteps:
+      type: integer
+      minimum: 1
+      description: Total number of steps
+    currentStep:
+      type: integer
+      minimum: 0
+      description: Current step index (0-based)
+    steps:
+      type: array
+      description: Detailed step information
+      items:
+        type: object
+        required:
+          - index
+          - description
+          - status
+        properties:
+          index:
+            type: integer
+            description: Step index
+          description:
+            type: string
+            description: Human-readable step description
+          status:
+            type: string
+            enum:
+              - pending
+              - in-progress
+              - completed
+              - failed
+              - skipped
+          startTime:
+            type: string
+            format: date-time
+            description: When step started
+          endTime:
+            type: string
+            format: date-time
+            description: When step completed/failed
+          error:
+            type: string
+            description: Error message if step failed
+    overallStatus:
+      type: string
+      enum:
+        - not-started
+        - in-progress
+        - completed
+        - failed
+        - cancelled
+    startTime:
+      type: string
+      format: date-time
+    endTime:
+      type: string
+      format: date-time
+    estimatedCompletion:
+      type: string
+      format: date-time
+      description: Estimated completion time based on progress
+
+security:
+  requiresApproval: false
+  allowedOperations:
+    - view
+    - cancel
+  riskLevel: read

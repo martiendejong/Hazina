@@ -16,15 +16,10 @@ interface TerminalViewProps {
   onTitleChanged?: (sessionId: string, title: string) => void
   pendingRestore?: PendingRestore
   onRestoreComplete?: () => void
+  onEditProperties?: (sessionId: string) => void
 }
 
-export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChanged, pendingRestore, onRestoreComplete }: TerminalViewProps) {
-  console.log('[DEBUG TerminalView] Component rendered with props:', {
-    sessionId,
-    hasPendingRestore: !!pendingRestore,
-    pendingRestoreSessionId: pendingRestore?.sessionId,
-    contentLength: pendingRestore?.content?.length
-  })
+export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChanged, pendingRestore, onRestoreComplete, onEditProperties }: TerminalViewProps) {
 
   const terminalRef = useRef<HTMLDivElement>(null)
   const terminalInstance = useRef<Terminal | null>(null)
@@ -54,9 +49,10 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
       if (!sanitized) return
 
-      // Send the text as input with a newline to execute
+      // Send the text as input with a carriage return to execute
+      // ConPTY expects \r (carriage return) for Enter, not \n (line feed)
       const encoder = new TextEncoder()
-      const bytes = Array.from(encoder.encode(sanitized + '\n'))
+      const bytes = Array.from(encoder.encode(sanitized + '\r'))
       connection.current.invoke('SendInput', sessionId, bytes)
         .catch(err => console.error('SendInput (voice) failed:', err))
 
@@ -72,7 +68,8 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
   const handleSendMobileInput = useCallback(() => {
     if (connection.current?.state === signalR.HubConnectionState.Connected && mobileInput.trim()) {
       const encoder = new TextEncoder()
-      const bytes = Array.from(encoder.encode(mobileInput + '\n'))
+      // ConPTY expects \r (carriage return) for Enter, not \n (line feed)
+      const bytes = Array.from(encoder.encode(mobileInput + '\r'))
       connection.current.invoke('SendInput', sessionId, bytes)
         .catch(err => console.error('SendInput (mobile) failed:', err))
       setMobileInput('')
@@ -163,13 +160,10 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
     }
   }, [isConnected])
 
-  // Maintain terminal focus after state changes to prevent focus loss
-  useEffect(() => {
-    if (terminalInstance.current && isConnected) {
-      // Focus the terminal when state changes
-      terminalInstance.current.focus()
-    }
-  }, [isWaitingForInput, isConnected])
+  // NOTE: Removed focus() useEffect that was causing refresh flickering
+  // The original issue (focus loss) was already fixed by the OnStateChanged handler
+  // that only updates state when value actually changes (line 269).
+  // The focus() call on every isWaitingForInput change caused visual disruption.
 
   // Detect if we're on a mobile device
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -213,7 +207,7 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       convertEol: false,
       // Mobile optimizations
       scrollOnUserInput: true,
-      fastScrollSensitivity: isMobile ? 1 : 5,
+      fastScrollSensitivity: isMobile ? 1 : 2,  // Reduced from 5 to 2 for better desktop UX
       smoothScrollDuration: isMobile ? 0 : 125,  // Disable smooth scroll on mobile
       // Clipboard support
       rightClickSelectsWord: true,  // Right-click selects word for easy copy
@@ -708,17 +702,6 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
 
   // Handle pending restore - paste content when Claude is ready (waiting for input)
   useEffect(() => {
-    console.log('[DEBUG TerminalView] Restore effect triggered:', {
-      hasPendingRestore: !!pendingRestore,
-      pendingRestoreSessionId: pendingRestore?.sessionId,
-      currentSessionId: sessionId,
-      isConnected,
-      restoreHandled: restoreHandledRef.current,
-      hubConnectionState: connection.current?.state,
-      contentLength: pendingRestore?.content?.length,
-      hasTerminalInstance: !!terminalInstance.current
-    })
-
     // Only proceed if:
     // 1. We have pending restore content for this session
     // 2. We're connected
@@ -732,7 +715,6 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       connection.current?.state === signalR.HubConnectionState.Connected
     ) {
       const performRestore = async () => {
-        console.log('[DEBUG TerminalView] Performing restore with content length:', pendingRestore.content.length)
         restoreHandledRef.current = true
 
         // Show restore message in terminal
@@ -749,22 +731,19 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
         // IMPORTANT: Also send the context to Claude so it understands the conversation history
         // We send it as input with a clear instruction that this is restored context
         try {
-          const contextInstruction = `This is a RESTORED SESSION. The conversation history above should be understood as prior context. Please briefly acknowledge that you understand this context and are ready to continue helping with the same task.\n`
+          const contextInstruction = `This is a RESTORED SESSION. The conversation history above should be understood as prior context. Please briefly acknowledge that you understand this context and are ready to continue helping with the same task.\r`
 
           const encoder = new TextEncoder()
           const bytes = Array.from(encoder.encode(contextInstruction))
 
           if (connection.current?.state === signalR.HubConnectionState.Connected) {
             await connection.current.invoke('SendInput', sessionId, bytes)
-            console.log('[DEBUG TerminalView] Context instruction sent to Claude')
             terminalInstance.current?.writeln('\x1b[32m[Context sent - Claude will acknowledge shortly]\x1b[0m\r\n')
           }
         } catch (err) {
-          console.error('[DEBUG TerminalView] Failed to send context to Claude:', err)
+          console.error('Failed to send context to Claude:', err)
           terminalInstance.current?.writeln('\x1b[31m[Warning: Failed to send context to Claude]\x1b[0m\r\n')
         }
-
-        console.log('[DEBUG TerminalView] Session content displayed successfully')
 
         if (onRestoreComplete) {
           onRestoreComplete()
@@ -775,8 +754,6 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
       // No need to wait for waitingForInput - we're just showing output
       if (terminalInstance.current) {
         performRestore()
-      } else {
-        console.log('[DEBUG TerminalView] Cannot perform restore - no terminal instance')
       }
     }
   }, [pendingRestore, sessionId, isConnected, isWaitingForInput, onRestoreComplete])
@@ -828,6 +805,19 @@ export function TerminalView({ sessionId, onClose, onStateChanged, onTitleChange
           )}
           {voiceState.error && (
             <span className="voice-error" aria-hidden="true">{voiceState.error}</span>
+          )}
+          {onEditProperties && (
+            <button
+              className="btn-edit-props"
+              onClick={() => onEditProperties(sessionId)}
+              title="Edit session properties"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+              Rename
+            </button>
           )}
           <button className="btn-terminate" onClick={handleTerminate} title="Terminate process">
             Terminate

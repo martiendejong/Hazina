@@ -30,29 +30,6 @@ namespace Hazina.Tools.Services.Chat
         public ChatImageService(
             ProjectsRepository projects,
             ProjectFileLocator fileLocator,
-            GeneratorAgentBase agent,
-            IntakeRepository intake,
-            IGeneratedImageRepository generatedImageRepository,
-            IChatMetadataService metadataService,
-            IChatMessageService messageService,
-            IImageAnalysisService? imageAnalysisService = null)
-            : this(
-                  projects,
-                  fileLocator,
-                  intake,
-                  agent?.Config?.ApiSettings?.OpenApiKey,
-                  agent?.Config?.ApiSettings?.GeminiApiKey,
-                  generatedImageRepository,
-                  metadataService,
-                  messageService,
-                  imageAnalysisService)
-        {
-        }
-
-        public ChatImageService(
-            ProjectsRepository projects,
-            ProjectFileLocator fileLocator,
-            IntakeRepository intake,
             string? openAiApiKey,
             string? geminiApiKey,
             IGeneratedImageRepository generatedImageRepository,

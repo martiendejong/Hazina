@@ -8,6 +8,7 @@
     <RootNamespace>DevGPT.App.AppBuilder</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 </Project>
 

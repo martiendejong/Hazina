@@ -101,6 +101,8 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
 
         // Track last state to detect changes
         bool lastWaitingState = false;
+        DateTime lastStateChangeSent = DateTime.MinValue;
+        const int STATE_CHANGE_DEBOUNCE_MS = 500; // Debounce OnStateChanged events to prevent focus loss
 
         // NOTE: Periodic state check timer is DISABLED to prevent refresh flickering.
         // The WaitingForInput property is computed dynamically (checks idle time),
@@ -144,14 +146,26 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
                     .Group($"terminal-{sessionId}")
                     .SendAsync("OnOutput", sessionId, intArray, CancellationToken.None);
 
-                // Immediately check state on output too
+                // Check state on output, but DEBOUNCE to prevent focus loss during rapid output
+                // Problem: When Claude outputs character-by-character, WaitingForInput flips constantly
+                // This triggers OnStateChanged → React re-render → user loses focus while typing
+                // Solution: Only send OnStateChanged if 500ms passed since last state change event
                 var currentWaitingState = session.WaitingForInput;
-                if (currentWaitingState != lastWaitingState)
+                var timeSinceLastChange = DateTime.UtcNow - lastStateChangeSent;
+
+                if (currentWaitingState != lastWaitingState && timeSinceLastChange.TotalMilliseconds >= STATE_CHANGE_DEBOUNCE_MS)
                 {
                     lastWaitingState = currentWaitingState;
+                    lastStateChangeSent = DateTime.UtcNow;
                     await _hubContext.Clients
                         .Group($"terminal-{sessionId}")
                         .SendAsync("OnStateChanged", sessionId, session.IsRunning, currentWaitingState, CancellationToken.None);
+                    _logger.LogDebug("State changed for session {SessionId}: WaitingForInput={Waiting}", sessionId, currentWaitingState);
+                }
+                else if (currentWaitingState != lastWaitingState)
+                {
+                    // State changed but we're in debounce period - just track it, don't send event
+                    lastWaitingState = currentWaitingState;
                 }
             }
             catch (Exception ex)

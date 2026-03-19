@@ -42,7 +42,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>ai;llm;openai;anthropic;claude;gpt;rag;agents;neurochain;production;dotnet</PackageTags>
-    <PackageIcon>icon.png</PackageIcon>
+    <!-- PackageIcon>icon.png</PackageIcon --> <!-- TODO: Add icon.png to repository root -->
 
     <!-- Source Link for debugging -->
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
