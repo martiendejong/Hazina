@@ -185,6 +185,6 @@ public class AgentManager
             var key = $"{DateTime.Now.ToString("yy_MM_dd_HH_mm")}_input";
             await historyStore.Store(key, input);
         }
-        History.Add(new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = input });
+        History.Add(new HazinaChatMessage { Role = HazinaMessageRole.User, Text = input });
     }
 }

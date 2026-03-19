@@ -1,0 +1,117 @@
+// Hazina QuickStart Template: Basic RAG Setup
+//
+// This template demonstrates the fastest way to set up a production-ready
+// RAG (Retrieval-Augmented Generation) system with Hazina.
+//
+// Use Case: Answer questions using your document corpus
+// Time to Production: 30 minutes
+// Difficulty: Beginner
+
+using Hazina.AI.FluentAPI.Configuration;
+using Hazina.AI.RAG.Core;
+using Hazina.Storage.Embeddings;
+
+namespace {{NAMESPACE}}
+{
+    public class BasicRAGExample
+    {
+        private readonly RAGEngine _rag;
+
+        public BasicRAGExample(string openAiApiKey)
+        {
+            // 1. Setup AI provider (one line)
+            var ai = QuickSetup.SetupOpenAI(openAiApiKey);
+
+            // 2. Create vector store
+            // For production: Use PostgreSQL with pgvector
+            // For demo: Use in-memory store
+            var vectorStore = new InMemoryVectorStore();
+
+            // 3. Create RAG engine
+            _rag = new RAGEngine(ai, vectorStore);
+        }
+
+        public async Task IndexDocumentsAsync(CancellationToken cancel = default)
+        {
+            // Add your documents
+            var documents = new List<Document>
+            {
+                new()
+                {
+                    Id = "doc1",
+                    Content = "Hazina is a .NET AI framework for production applications.",
+                    Metadata = new Dictionary<string, object> { ["source"] = "README.md" }
+                },
+                new()
+                {
+                    Id = "doc2",
+                    Content = "RAG combines retrieval with generation for accurate, context-aware answers.",
+                    Metadata = new Dictionary<string, object> { ["source"] = "RAG_GUIDE.md" }
+                },
+                // Add more documents...
+            };
+
+            // Index documents (automatic chunking + embedding)
+            await _rag.IndexDocumentsAsync(documents, cancel);
+        }
+
+        public async Task<string> QueryAsync(string question, CancellationToken cancel = default)
+        {
+            // Query with automatic context retrieval
+            var response = await _rag.QueryAsync(question, new RAGQueryOptions
+            {
+                TopK = 5,                    // Retrieve top 5 relevant chunks
+                MinSimilarity = 0.7,         // Minimum relevance score
+                RequireCitation = true       // Include source citations
+            }, cancel);
+
+            return response.Answer;
+        }
+    }
+
+    // Example Usage
+    public class Program
+    {
+        public static async Task Main(string[] args)
+        {
+            var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
+                ?? throw new InvalidOperationException("OPENAI_API_KEY not set");
+
+            var rag = new BasicRAGExample(apiKey);
+
+            // Step 1: Index documents
+            Console.WriteLine("Indexing documents...");
+            await rag.IndexDocumentsAsync();
+
+            // Step 2: Query
+            Console.WriteLine("\nQuerying: 'What is Hazina?'");
+            var answer = await rag.QueryAsync("What is Hazina?");
+            Console.WriteLine($"Answer: {answer}");
+
+            Console.WriteLine("\nQuerying: 'Explain RAG'");
+            answer = await rag.QueryAsync("Explain RAG");
+            Console.WriteLine($"Answer: {answer}");
+        }
+    }
+}
+
+// Next Steps:
+// 1. Replace InMemoryVectorStore with PostgreSQL for production:
+//    var vectorStore = new PostgresVectorStore(connectionString);
+//
+// 2. Load documents from your actual corpus:
+//    var docs = await LoadDocumentsFromDirectory("./docs");
+//
+// 3. Add multi-provider failover:
+//    var ai = QuickSetup.SetupWithFailover(openAiKey, anthropicKey);
+//
+// 4. Enable monitoring:
+//    ai.EnableCostTracking(budgetLimit: 100.00m);
+//    ai.EnableHealthMonitoring();
+//
+// 5. Customize chunking strategy:
+//    var options = new ChunkingOptions
+//    {
+//        MaxChunkSize = 1000,
+//        OverlapSize = 200
+//    };
