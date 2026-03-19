@@ -1,19 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Hazina.LLMs;
-using Hazina.Observability.Core.Correlation;
-using Hazina.Observability.Core.Logging;
-using Hazina.Observability.Core.Tracing;
+using Hazina.LLMs.Capabilities;
 using Microsoft.Extensions.Logging;
 
 namespace Hazina.Observability.LLMLogs;
 
 /// <summary>
-/// Wraps an LLM client to add comprehensive logging, tracing, and correlation
+/// Wraps an LLM client to add basic logging
 /// </summary>
 public class LLMLoggingWrapper : ILLMClient
 {
@@ -31,129 +28,98 @@ public class LLMLoggingWrapper : ILLMClient
         _providerName = providerName;
     }
 
-    public async Task<LLMResponse?> GetResponse(
+    // ICapabilityProvider - delegate to inner
+    public ProviderCapability SupportedCapabilities => _inner.SupportedCapabilities;
+    public bool SupportsCapability(ProviderCapability capability) => _inner.SupportsCapability(capability);
+    public IEnumerable<string> GetSupportedCapabilityNames() => _inner.GetSupportedCapabilityNames();
+    public void RequireCapabilities(ProviderCapability requiredCapabilities) => _inner.RequireCapabilities(requiredCapabilities);
+
+    public Task<Embedding> GenerateEmbedding(string data)
+        => _inner.GenerateEmbedding(data);
+
+    public Task<LLMResponse<HazinaGeneratedImage>> GetImage(
         string prompt,
-        CancellationToken? cancel = null,
-        List<HazinaChatMessage>? history = null,
-        bool addRelevantDocuments = false,
-        bool addFilesList = false,
-        string? toolsContext = null,
-        HazinaImage[]? images = null)
+        HazinaChatResponseFormat responseFormat,
+        IToolsContext? toolsContext,
+        List<ImageData>? images,
+        CancellationToken cancel)
+        => _inner.GetImage(prompt, responseFormat, toolsContext, images, cancel);
+
+    public async Task<LLMResponse<string>> GetResponse(
+        List<HazinaChatMessage> messages,
+        HazinaChatResponseFormat responseFormat,
+        IToolsContext? toolsContext,
+        List<ImageData>? images,
+        CancellationToken cancel)
     {
-        var correlationId = CorrelationContext.GetOrCreateCorrelationId();
         var startTime = DateTime.UtcNow;
 
-        using var activity = HazinaActivitySource.StartLLMOperation(
-            "GetResponse",
-            _providerName);
-
         _logger.LogInformation(
-            "[LLM-REQUEST] Starting request | Provider: {Provider} | PromptLength: {PromptLength} | HistoryCount: {HistoryCount} | AddDocs: {AddDocs} | AddFiles: {AddFiles} | CorrelationId: {CorrelationId}",
-            _providerName,
-            prompt.Length,
-            history?.Count ?? 0,
-            addRelevantDocuments,
-            addFilesList,
-            correlationId);
-
-        // Redact sensitive data from prompt for logging
-        var redactedPrompt = SensitiveDataRedactor.RedactForLogging(prompt, maxLength: 200);
-        _logger.LogDebug(
-            "[LLM-REQUEST] Prompt preview: {PromptPreview} | CorrelationId: {CorrelationId}",
-            redactedPrompt,
-            correlationId);
+            "[LLM-REQUEST] Provider: {Provider} | Messages: {Count}",
+            _providerName, messages.Count);
 
         try
         {
-            var response = await _inner.GetResponse(
-                prompt,
-                cancel,
-                history,
-                addRelevantDocuments,
-                addFilesList,
-                toolsContext,
-                images);
-
+            var response = await _inner.GetResponse(messages, responseFormat, toolsContext, images, cancel);
             var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
 
-            if (response != null)
-            {
-                // Record metrics
-                HazinaActivitySource.RecordCost(
-                    activity,
-                    0, // Cost tracking would be added separately
-                    response.TokenUsage?.InputTokens ?? 0,
-                    response.TokenUsage?.OutputTokens ?? 0);
-
-                var redactedResponse = SensitiveDataRedactor.RedactForLogging(response.Result, maxLength: 200);
-
-                _logger.LogInformation(
-                    "[LLM-RESPONSE] Request completed | Provider: {Provider} | Duration: {DurationMs}ms | InputTokens: {InputTokens} | OutputTokens: {OutputTokens} | TotalTokens: {TotalTokens} | CorrelationId: {CorrelationId}",
-                    _providerName,
-                    duration,
-                    response.TokenUsage?.InputTokens ?? 0,
-                    response.TokenUsage?.OutputTokens ?? 0,
-                    response.TokenUsage?.TotalTokens ?? 0,
-                    correlationId);
-
-                _logger.LogDebug(
-                    "[LLM-RESPONSE] Response preview: {ResponsePreview} | CorrelationId: {CorrelationId}",
-                    redactedResponse,
-                    correlationId);
-            }
-            else
-            {
-                _logger.LogWarning(
-                    "[LLM-RESPONSE] Null response | Provider: {Provider} | Duration: {DurationMs}ms | CorrelationId: {CorrelationId}",
-                    _providerName,
-                    duration,
-                    correlationId);
-            }
+            _logger.LogInformation(
+                "[LLM-RESPONSE] Provider: {Provider} | Duration: {DurationMs}ms | Tokens: {TotalTokens}",
+                _providerName, duration, response.TokenUsage?.TotalTokens ?? 0);
 
             return response;
         }
         catch (Exception ex)
         {
             var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
-
-            HazinaActivitySource.RecordError(activity, ex);
-
-            _logger.LogError(
-                ex,
-                "[LLM-ERROR] Request failed | Provider: {Provider} | Duration: {DurationMs}ms | Error: {ErrorType} | Message: {ErrorMessage} | CorrelationId: {CorrelationId}",
-                _providerName,
-                duration,
-                ex.GetType().Name,
-                ex.Message,
-                correlationId);
-
+            _logger.LogError(ex,
+                "[LLM-ERROR] Provider: {Provider} | Duration: {DurationMs}ms | Error: {ErrorType}",
+                _providerName, duration, ex.GetType().Name);
             throw;
         }
     }
 
-    public Task<LLMResponse?> GetResponse(
+    public Task<LLMResponse<ResponseType?>> GetResponse<ResponseType>(
         List<HazinaChatMessage> messages,
-        CancellationToken? cancel = null,
-        bool addRelevantDocuments = false,
-        bool addFilesList = false,
-        string? toolsContext = null,
-        HazinaImage[]? images = null)
+        IToolsContext? toolsContext,
+        List<ImageData>? images,
+        CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
+        => _inner.GetResponse<ResponseType>(messages, toolsContext, images, cancel);
+
+    public async Task<LLMResponse<string>> GetResponseStream(
+        List<HazinaChatMessage> messages,
+        Action<string> onChunkReceived,
+        HazinaChatResponseFormat responseFormat,
+        IToolsContext? toolsContext,
+        List<ImageData>? images,
+        CancellationToken cancel)
     {
-        var correlationId = CorrelationContext.GetOrCreateCorrelationId();
+        _logger.LogInformation(
+            "[LLM-STREAM] Provider: {Provider} | Messages: {Count}",
+            _providerName, messages.Count);
+
+        var response = await _inner.GetResponseStream(messages, onChunkReceived, responseFormat, toolsContext, images, cancel);
 
         _logger.LogInformation(
-            "[LLM-REQUEST] Starting chat request | Provider: {Provider} | MessageCount: {MessageCount} | CorrelationId: {CorrelationId}",
-            _providerName,
-            messages.Count,
-            correlationId);
+            "[LLM-STREAM] Provider: {Provider} | Tokens: {TotalTokens}",
+            _providerName, response.TokenUsage?.TotalTokens ?? 0);
 
-        return GetResponse(
-            messages.LastOrDefault()?.Content ?? string.Empty,
-            cancel,
-            messages.Take(messages.Count - 1).ToList(),
-            addRelevantDocuments,
-            addFilesList,
-            toolsContext,
-            images);
+        return response;
     }
+
+    public Task<LLMResponse<ResponseType?>> GetResponseStream<ResponseType>(
+        List<HazinaChatMessage> messages,
+        Action<string> onChunkReceived,
+        IToolsContext? toolsContext,
+        List<ImageData>? images,
+        CancellationToken cancel) where ResponseType : ChatResponse<ResponseType>, new()
+        => _inner.GetResponseStream<ResponseType>(messages, onChunkReceived, toolsContext, images, cancel);
+
+    public Task SpeakStream(
+        string text,
+        string voice,
+        Action<byte[]> onAudioChunk,
+        string mimeType,
+        CancellationToken cancel)
+        => _inner.SpeakStream(text, voice, onAudioChunk, mimeType, cancel);
 }
