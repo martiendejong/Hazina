@@ -2,10 +2,21 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Hazina.LLMs;
+using Hazina.LLMs.Capabilities;
 using Hazina.LLMs.Gemini;
 
-public class GeminiClientWrapper : ILLMClient
+public class GeminiClientWrapper : CapabilityProviderBase, ILLMClient
 {
+    /// <inheritdoc/>
+    public override ProviderCapability SupportedCapabilities =>
+        ProviderCapability.Chat |
+        ProviderCapability.Streaming |
+        ProviderCapability.Vision |
+        ProviderCapability.ImageGeneration |
+        ProviderCapability.TextToSpeech |
+        ProviderCapability.JsonMode |
+        ProviderCapability.SystemMessages;
+
     private readonly GeminiConfig _config;
     private readonly HttpClient _http;
 

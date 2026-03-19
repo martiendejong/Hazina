@@ -1,5 +1,6 @@
 #pragma warning disable SKEXP0001 // Suppress experimental API warnings for embeddings and image generation
 
+using Hazina.LLMs.Capabilities;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
@@ -13,8 +14,18 @@ namespace Hazina.LLMs;
 /// Semantic Kernel implementation of ILLMClient for Hazina
 /// Provides multi-provider LLM support while maintaining Hazina interfaces
 /// </summary>
-public class SemanticKernelClientWrapper : ILLMClient
+public class SemanticKernelClientWrapper : CapabilityProviderBase, ILLMClient
 {
+    /// <inheritdoc/>
+    public override ProviderCapability SupportedCapabilities =>
+        ProviderCapability.Chat |
+        ProviderCapability.Streaming |
+        ProviderCapability.Tools |
+        ProviderCapability.Embeddings |
+        ProviderCapability.ImageGeneration |
+        ProviderCapability.JsonMode |
+        ProviderCapability.SystemMessages;
+
     public SemanticKernelConfig Config { get; set; }
     private readonly Kernel _kernel;
     private readonly IChatCompletionService _chatService;
