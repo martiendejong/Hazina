@@ -238,6 +238,9 @@ public class DocumentStore : IDocumentStore
             await TextStore.Remove(chunk);
         }
 
+        // Remove the chunk mapping to prevent orphaned metadata
+        await ChunkStore.Remove(name, chunks);
+
         return true;
     }
 
