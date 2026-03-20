@@ -97,6 +97,11 @@ public interface IFileSystem
     string? GetExtension(string path);
 
     /// <summary>
+    /// Gets the file name without extension from a path.
+    /// </summary>
+    string? GetFileNameWithoutExtension(string path);
+
+    /// <summary>
     /// Opens a file for writing, creating it if it doesn't exist.
     /// </summary>
     Stream OpenWrite(string path);
@@ -188,6 +193,8 @@ public class PhysicalFileSystem : IFileSystem
     public string? GetFileName(string path) => Path.GetFileName(path);
 
     public string? GetExtension(string path) => Path.GetExtension(path);
+
+    public string? GetFileNameWithoutExtension(string path) => Path.GetFileNameWithoutExtension(path);
 
     public Stream OpenWrite(string path) => File.OpenWrite(path);
 

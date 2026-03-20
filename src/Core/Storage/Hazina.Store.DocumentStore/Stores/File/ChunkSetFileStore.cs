@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Hazina.LLMs.Infrastructure;
 
 /// <summary>
 /// File-based storage for chunk sets.
@@ -12,17 +13,20 @@ using System.Threading.Tasks;
 public class ChunkSetFileStore : IChunkSetStore
 {
     private readonly string _baseDirectory;
+    private readonly IFileSystem _fileSystem;
 
     /// <summary>
     /// Create a new chunk set file store.
     /// </summary>
     /// <param name="baseDirectory">Base directory for storing chunk set files.</param>
-    public ChunkSetFileStore(string baseDirectory)
+    /// <param name="fileSystem">Optional file system abstraction for testing.</param>
+    public ChunkSetFileStore(string baseDirectory, IFileSystem? fileSystem = null)
     {
         _baseDirectory = baseDirectory;
-        if (!Directory.Exists(_baseDirectory))
+        _fileSystem = fileSystem ?? new PhysicalFileSystem();
+        if (!_fileSystem.DirectoryExists(_baseDirectory))
         {
-            Directory.CreateDirectory(_baseDirectory);
+            _fileSystem.CreateDirectory(_baseDirectory);
         }
     }
 
@@ -33,7 +37,7 @@ public class ChunkSetFileStore : IChunkSetStore
     {
         // Sanitize document ID for filename
         var safeFileName = documentId.Replace(":", "_").Replace("/", "_").Replace("\\", "_");
-        return Path.Combine(_baseDirectory, $"{safeFileName}.chunksets.json");
+        return _fileSystem.PathCombine(_baseDirectory, $"{safeFileName}.chunksets.json");
     }
 
     /// <summary>
@@ -44,10 +48,10 @@ public class ChunkSetFileStore : IChunkSetStore
         try
         {
             var filePath = GetFilePath(documentId);
-            var directory = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            var directory = _fileSystem.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(directory) && !_fileSystem.DirectoryExists(directory))
             {
-                Directory.CreateDirectory(directory);
+                _fileSystem.CreateDirectory(directory);
             }
 
             var chunkSetList = chunkSets.ToList();
@@ -56,7 +60,7 @@ public class ChunkSetFileStore : IChunkSetStore
                 WriteIndented = true
             });
 
-            await File.WriteAllTextAsync(filePath, json);
+            await _fileSystem.WriteAllTextAsync(filePath, json);
             return true;
         }
         catch (Exception)
@@ -73,12 +77,12 @@ public class ChunkSetFileStore : IChunkSetStore
         try
         {
             var filePath = GetFilePath(documentId);
-            if (!File.Exists(filePath))
+            if (!_fileSystem.FileExists(filePath))
             {
                 return Enumerable.Empty<ChunkSet>();
             }
 
-            var json = await File.ReadAllTextAsync(filePath);
+            var json = await _fileSystem.ReadAllTextAsync(filePath);
             var chunkSets = JsonSerializer.Deserialize<List<ChunkSet>>(json);
             return chunkSets ?? Enumerable.Empty<ChunkSet>();
         }
@@ -113,9 +117,9 @@ public class ChunkSetFileStore : IChunkSetStore
         try
         {
             var filePath = GetFilePath(documentId);
-            if (File.Exists(filePath))
+            if (_fileSystem.FileExists(filePath))
             {
-                File.Delete(filePath);
+                _fileSystem.DeleteFile(filePath);
             }
             return true;
         }
@@ -132,17 +136,17 @@ public class ChunkSetFileStore : IChunkSetStore
     {
         try
         {
-            var files = Directory.GetFiles(_baseDirectory, "*.chunksets.json");
+            var files = _fileSystem.GetFiles(_baseDirectory, "*.chunksets.json", SearchOption.TopDirectoryOnly);
             var documentIds = files.Select(f =>
             {
-                var fileName = Path.GetFileNameWithoutExtension(f);
+                var fileName = _fileSystem.GetFileNameWithoutExtension(f);
                 // Remove .chunksets suffix if present
-                if (fileName.EndsWith(".chunksets"))
+                if (fileName != null && fileName.EndsWith(".chunksets"))
                 {
                     fileName = fileName.Substring(0, fileName.Length - ".chunksets".Length);
                 }
                 // Reverse sanitization
-                return fileName.Replace("_", ":");
+                return fileName?.Replace("_", ":") ?? string.Empty;
             });
             return documentIds;
         }

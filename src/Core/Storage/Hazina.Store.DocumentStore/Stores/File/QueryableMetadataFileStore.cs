@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Hazina.LLMs.Infrastructure;
 
 /// <summary>
 /// File-based implementation of IQueryableMetadataStore.
@@ -16,6 +17,7 @@ using System.Threading.Tasks;
 public class QueryableMetadataFileStore : IQueryableMetadataStore
 {
     private readonly string _rootFolder;
+    private readonly IFileSystem _fileSystem;
     private readonly ConcurrentDictionary<string, DocumentMetadata> _index = new();
     private readonly SemaphoreSlim _indexLock = new(1, 1);
     private bool _indexLoaded = false;
@@ -26,10 +28,11 @@ public class QueryableMetadataFileStore : IQueryableMetadataStore
         PropertyNameCaseInsensitive = true
     };
 
-    public QueryableMetadataFileStore(string rootFolder)
+    public QueryableMetadataFileStore(string rootFolder, IFileSystem? fileSystem = null)
     {
         _rootFolder = rootFolder;
-        Directory.CreateDirectory(_rootFolder);
+        _fileSystem = fileSystem ?? new PhysicalFileSystem();
+        _fileSystem.CreateDirectory(_rootFolder);
     }
 
     #region Index Management
@@ -47,12 +50,12 @@ public class QueryableMetadataFileStore : IQueryableMetadataStore
         {
             if (_indexLoaded) return;
 
-            var files = Directory.GetFiles(_rootFolder, "*.metadata.json");
+            var files = _fileSystem.GetFiles(_rootFolder, "*.metadata.json", SearchOption.TopDirectoryOnly);
             foreach (var file in files)
             {
                 try
                 {
-                    var json = await File.ReadAllTextAsync(file);
+                    var json = await _fileSystem.ReadAllTextAsync(file);
                     var metadata = JsonSerializer.Deserialize<DocumentMetadata>(json, _jsonOptions);
                     if (metadata != null && !string.IsNullOrEmpty(metadata.Id))
                     {
@@ -99,7 +102,7 @@ public class QueryableMetadataFileStore : IQueryableMetadataStore
     private string GetMetadataPath(string id)
     {
         var sanitized = id.Replace('/', '_').Replace('\\', '_').Replace(':', '_');
-        return Path.Combine(_rootFolder, $"{sanitized}.metadata.json");
+        return _fileSystem.PathCombine(_rootFolder, $"{sanitized}.metadata.json");
     }
 
     public async Task<bool> Store(string id, DocumentMetadata metadata)
@@ -111,7 +114,7 @@ public class QueryableMetadataFileStore : IQueryableMetadataStore
 
             var path = GetMetadataPath(id);
             var json = JsonSerializer.Serialize(metadata, _jsonOptions);
-            await File.WriteAllTextAsync(path, json);
+            await _fileSystem.WriteAllTextAsync(path, json);
 
             // Update in-memory index
             _index[id] = metadata;
@@ -135,9 +138,9 @@ public class QueryableMetadataFileStore : IQueryableMetadataStore
         try
         {
             var path = GetMetadataPath(id);
-            if (!File.Exists(path)) return null;
+            if (!_fileSystem.FileExists(path)) return null;
 
-            var json = await File.ReadAllTextAsync(path);
+            var json = await _fileSystem.ReadAllTextAsync(path);
             var metadata = JsonSerializer.Deserialize<DocumentMetadata>(json, _jsonOptions);
 
             // Cache in index
@@ -159,9 +162,9 @@ public class QueryableMetadataFileStore : IQueryableMetadataStore
         try
         {
             var path = GetMetadataPath(id);
-            if (File.Exists(path))
+            if (_fileSystem.FileExists(path))
             {
-                File.Delete(path);
+                _fileSystem.DeleteFile(path);
             }
 
             // Remove from index
@@ -183,7 +186,7 @@ public class QueryableMetadataFileStore : IQueryableMetadataStore
         }
 
         var path = GetMetadataPath(id);
-        return Task.FromResult(File.Exists(path));
+        return Task.FromResult(_fileSystem.FileExists(path));
     }
 
     #endregion
