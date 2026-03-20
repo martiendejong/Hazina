@@ -5,11 +5,11 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <RootNamespace>Hazina.AI.Vision</RootNamespace>
-    <Version>1.0.0</Version>
-    <Authors>Prospergenics</Authors>
-    <Description>Vision and video understanding pipelines for Hazina. Includes support for V-JEPA 2 video embeddings, image encoding, and multi-modal AI integration.</Description>
+    <Description>Vision and video understanding pipelines. Includes V-JEPA 2 video embeddings, image encoding, and multi-modal AI integration.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.AI.Vision</PackageId>
+    <PackageTags>hazina;ai;vision;video;image;multi-modal;vjepa</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <!-- Image processing -->

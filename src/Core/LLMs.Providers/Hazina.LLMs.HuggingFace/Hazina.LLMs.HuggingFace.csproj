@@ -5,17 +5,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Hazina.LLMs</RootNamespace>
-    <Version>2.0.0</Version>
-    <PackageVersion>2.0.0</PackageVersion>
-    <Authors>Prospergenics</Authors>
-    <Description>HuggingFace implementation of ILLMClient for Hazina. Provides access to open-source models via HuggingFace Inference API including Llama, Mixtral, and others. Supports chat completions, embeddings (sentence transformers), and image generation (Stable Diffusion).</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>huggingface;llm;ai;open-source;llama;mixtral;stable-diffusion;embeddings;transformers</PackageTags>
+    <Description>HuggingFace implementation of ILLMClient for Hazina. Access open-source models via HuggingFace Inference API including Llama, Mixtral, embeddings, and image generation.</Description>
+    <PackageTags>hazina;huggingface;llm;open-source;llama;mixtral;embeddings;transformers</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.LLMs.HuggingFace</PackageId>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
