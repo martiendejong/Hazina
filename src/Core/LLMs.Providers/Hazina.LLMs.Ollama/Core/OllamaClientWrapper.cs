@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Hazina.LLMs.Capabilities;
+using Hazina.LLMs.Infrastructure;
 
 namespace Hazina.LLMs;
 
@@ -24,10 +25,12 @@ public class OllamaClientWrapper : CapabilityProviderBase, ILLMClient
     private readonly HttpClient _http;
     private readonly PartialJsonParser _parser;
     private readonly PromptBasedToolsOrchestrator _toolsOrchestrator;
+    private readonly IClock _clock;
 
-    public OllamaClientWrapper(OllamaConfig config)
+    public OllamaClientWrapper(OllamaConfig config, IClock? clock = null)
     {
         Config = config;
+        _clock = clock ?? new SystemClock();
         _http = new HttpClient
         {
             BaseAddress = new Uri(config.Endpoint.TrimEnd('/')),
@@ -355,7 +358,7 @@ public class OllamaClientWrapper : CapabilityProviderBase, ILLMClient
 
         try
         {
-            var message = $"{DateTime.Now:yy-MM-dd HH:mm:ss}\n{data ?? ""}";
+            var message = $"{_clock.Now:yy-MM-dd HH:mm:ss}\n{data ?? ""}";
             var dir = Path.GetDirectoryName(Config.LogPath);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
             {

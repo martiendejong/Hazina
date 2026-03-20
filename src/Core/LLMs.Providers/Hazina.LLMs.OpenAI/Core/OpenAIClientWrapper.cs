@@ -13,6 +13,7 @@ using System.Net.Http.Headers;
 using Hazina.LLMs;
 using Hazina.LLMs.OpenAI;
 using Hazina.LLMs.Capabilities;
+using Hazina.LLMs.Infrastructure;
 
 public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
 {
@@ -74,10 +75,12 @@ public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
     private readonly OpenAIClient API;
     private OpenAIStreamHandler StreamHandler { get; set; }
     private readonly HttpClient _http;
+    private readonly IClock _clock;
 
-    public OpenAIClientWrapper(OpenAIConfig config)
+    public OpenAIClientWrapper(OpenAIConfig config, IClock? clock = null)
     {
         Config = config;
+        _clock = clock ?? new SystemClock();
         EmbeddingClient = new EmbeddingClient(config.EmbeddingModel, config.ApiKey);
         API = new OpenAIClient(config.ApiKey);
         StreamHandler = new OpenAIStreamHandler();
@@ -239,7 +242,7 @@ public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
 
         const int maxRetries = 10;
         const int delayMs = 100;
-        string message = $"{DateTime.Now:yy-MM-dd HH:mm:ss}\n{data ?? ""}";
+        string message = $"{_clock.Now:yy-MM-dd HH:mm:ss}\n{data ?? ""}";
 
         // Ensure log directory exists
         var logDir = Path.GetDirectoryName(Config.LogPath);

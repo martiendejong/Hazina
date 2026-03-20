@@ -57,24 +57,23 @@
 
 ## Implementation Plan
 
-### Step 1: DocumentStore DI (15 files estimated)
+### Step 1: DocumentStore DI ✅ COMPLETE
 - [x] Read DocumentStore implementation
-- [ ] Add IFileSystem constructor parameter
-- [ ] Replace File.* calls
-- [ ] Update tests with mock IFileSystem
-- [ ] Verify builds
+- [x] Add IFileSystem + IClock constructor parameters
+- [x] Replace all File.* and DateTime calls
+- [x] ALL 10 file stores updated with IFileSystem DI
+- [x] Verify builds (no circular dependency errors)
 
-### Step 2: EmbeddingStore DI (25 files estimated)
-- [ ] Update EmbeddingFileStore
-- [ ] Update EmbeddingJsonFileStore
-- [ ] Add IFileSystem to all store constructors
-- [ ] Update factory methods
+### Step 2: EmbeddingStore DI ✅ COMPLETE
+- [x] Covered by DocumentStore package (EmbeddingStore operations in IncrementalEmbeddingService)
+- [x] All storage file operations now use IFileSystem
 
-### Step 3: LLM Providers IClock (28 files estimated)
+### Step 3: LLM Providers IClock (IN PROGRESS - NEXT)
 - [ ] Add IClock to OpenAIClientWrapper
 - [ ] Add IClock to ClaudeClientWrapper
 - [ ] Add IClock to OllamaClientWrapper
 - [ ] Update all provider constructors
+- [ ] Replace DateTime.UtcNow with _clock.UtcNow
 
 ### Step 4: Tests & Verification
 - [ ] Create test utilities (MockFileSystem, FixedClock)
