@@ -6,6 +6,9 @@
     <LangVersion>latest</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.AI.FaultDetection</PackageId>
+    <Description>Fault detection and circuit breaker patterns for LLM provider calls. Monitors health and triggers failover.</Description>
+    <PackageTags>hazina;ai;fault-detection;circuit-breaker;resilience;failover</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />

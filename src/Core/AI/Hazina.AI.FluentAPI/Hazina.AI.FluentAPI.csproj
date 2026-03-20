@@ -1,22 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-
     <!-- Package metadata -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Hazina.AI.FluentAPI</PackageId>
-    <Version>1.0.0</Version>
-    <Authors>Hazina Team</Authors>
-    <Description>Developer-first Fluent API for Hazina AI Framework - Multi-provider LLM orchestration made simple</Description>
-    <PackageTags>ai;llm;openai;anthropic;fluent-api;multi-provider</PackageTags>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/hazinatech/hazina</RepositoryUrl>
+    <Description>Developer-first Fluent API for Hazina AI Framework. Multi-provider LLM orchestration made simple.</Description>
+    <PackageTags>hazina;ai;fluent-api;developer-experience;multi-provider</PackageTags>
   </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
@@ -26,5 +19,4 @@
     <ProjectReference Include="..\Hazina.AI.FaultDetection\Hazina.AI.FaultDetection.csproj" />
     <ProjectReference Include="..\Hazina.AI.Orchestration\Hazina.AI.Orchestration.csproj" />
   </ItemGroup>
-
 </Project>

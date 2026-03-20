@@ -6,6 +6,9 @@
     <LangVersion>latest</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.CodeIntelligence</PackageId>
+    <Description>Code analysis and intelligence features for AI-assisted development. Integrates with LLM providers and Neurochain.</Description>
+    <PackageTags>hazina;code-intelligence;analysis;development;ai-assisted</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />

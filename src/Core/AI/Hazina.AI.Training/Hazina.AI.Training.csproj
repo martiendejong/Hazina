@@ -5,11 +5,11 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <RootNamespace>Hazina.AI.Training</RootNamespace>
-    <Version>1.0.0</Version>
-    <Authors>Prospergenics</Authors>
-    <Description>Model training capabilities for Hazina using TorchSharp. Includes LoRA fine-tuning, training loops, and checkpoint management.</Description>
+    <Description>Model training capabilities using TorchSharp. Includes LoRA fine-tuning, training loops, and checkpoint management.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.AI.Training</PackageId>
+    <PackageTags>hazina;ai;training;torchsharp;lora;fine-tuning</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <!-- TorchSharp - base package -->

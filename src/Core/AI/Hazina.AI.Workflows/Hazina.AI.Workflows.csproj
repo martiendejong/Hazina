@@ -6,6 +6,9 @@
     <LangVersion>latest</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.AI.Workflows</PackageId>
+    <Description>AI workflow engine with agent orchestration, guardrails integration, and step-based execution pipelines.</Description>
+    <PackageTags>hazina;ai;workflows;pipeline;steps;automation</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Agents\Hazina.AgentFactory\Hazina.AgentFactory.csproj" />

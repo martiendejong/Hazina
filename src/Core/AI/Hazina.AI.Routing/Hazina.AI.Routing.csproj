@@ -1,15 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <RootNamespace>Hazina.AI.Routing</RootNamespace>
-    <Version>1.0.0</Version>
-    <Authors>Prospergenics</Authors>
-    <Description>Intelligent AI agent routing and delegation framework. Implements Transaction Cost Economics for agent selection, reputation tracking, and cost-optimized task routing.</Description>
+    <Description>Intelligent AI agent routing and delegation with Transaction Cost Economics for agent selection and reputation tracking.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.AI.Routing</PackageId>
+    <PackageTags>hazina;ai;routing;delegation;agent-selection;cost-optimization</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />

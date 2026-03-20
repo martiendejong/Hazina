@@ -4,9 +4,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Description>Persistent episodic memory and fact distillation module for Hazina agents</Description>
+    <Description>Persistent episodic memory and fact distillation module for Hazina agents with EF Core persistence.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.Brain</PackageId>
+    <PackageTags>hazina;brain;memory;episodic;facts;persistence</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <!-- Core Hazina dependencies -->
