@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>WebApiApp</RootNamespace>
+
+    <!-- Suppress analyzer warnings for quickstart template clarity -->
+    <NoWarn>CS1591;CA1852;SA1200;SA1633;MA0004;MA0051</NoWarn>
+
+    <!-- Disable RestorePackagesWithLockFile inherited from Directory.Build.props for standalone use -->
+    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Core Hazina packages for ASP.NET Core API bootstrap.
+      HazinaBootstrap.AddHazina() registers all of these in one call.
+    -->
+    <ProjectReference Include="..\..\src\Core\Agents\Hazina.AgentFactory\Hazina.AgentFactory.csproj" />
+    <ProjectReference Include="..\..\src\Core\AI\Hazina.AI.FluentAPI\Hazina.AI.FluentAPI.csproj" />
+    <ProjectReference Include="..\..\src\Core\AI\Hazina.AI.Providers\Hazina.AI.Providers.csproj" />
+    <ProjectReference Include="..\..\src\Core\LLMs.Providers\Hazina.LLMs.OpenAI\Hazina.LLMs.OpenAI.csproj" />
+    <ProjectReference Include="..\..\src\Core\LLMs.Providers\Hazina.LLMs.Anthropic\Hazina.LLMs.Anthropic.csproj" />
+
+    <!-- Bootstrap helper (the HazinaBootstrap class lives here) -->
+    <ProjectReference Include="..\..\src\Core\AI\Hazina.AI.FluentAPI\Hazina.AI.FluentAPI.csproj" />
+  </ItemGroup>
+
+</Project>
