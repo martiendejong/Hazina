@@ -3,21 +3,61 @@ using Hazina.AI.Agents.Core;
 namespace Hazina.AI.Agents.Workflows;
 
 /// <summary>
-/// Orchestrates multi-step workflows
+/// Executes declarative multi-agent workflows composed of sequential, parallel, conditional, and loop steps.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Register one or more <see cref="Agent"/> instances, then call <see cref="ExecuteWorkflowAsync"/>
+/// with a <see cref="Workflow"/> definition. The engine routes each step to the correct agent,
+/// propagates outputs through a shared context dictionary, and returns a <see cref="WorkflowResult"/>
+/// with per-step details.
+/// </para>
+/// <para>
+/// Supported step types: <see cref="StepType.AgentTask"/>, <see cref="StepType.Parallel"/>,
+/// <see cref="StepType.Conditional"/>, <see cref="StepType.Loop"/>.
+/// </para>
+/// </remarks>
+/// <example>
+/// <code>
+/// var engine = new WorkflowEngine();
+/// engine.RegisterAgent(researchAgent);
+/// engine.RegisterAgent(summaryAgent);
+///
+/// var workflow = new Workflow
+/// {
+///     Name = "ResearchAndSummarize",
+///     Steps =
+///     [
+///         new WorkflowStep { Name = "Research", Type = StepType.AgentTask, AgentName = "Researcher",
+///             Task = "Find recent news about {topic}", OutputKey = "research_result" },
+///         new WorkflowStep { Name = "Summarize", Type = StepType.AgentTask, AgentName = "Summarizer",
+///             Task = "Summarize: {research_result}" }
+///     ]
+/// };
+///
+/// var result = await engine.ExecuteWorkflowAsync(workflow,
+///     new Dictionary&lt;string, object&gt; { ["topic"] = "AI agents" });
+/// Console.WriteLine(result.Success ? "Done!" : result.Error);
+/// </code>
+/// </example>
 public class WorkflowEngine
 {
     private readonly List<Agent> _agents = new();
     private readonly WorkflowConfig _config;
 
+    /// <summary>
+    /// Initializes a new <see cref="WorkflowEngine"/> with optional configuration.
+    /// </summary>
+    /// <param name="config">Workflow configuration. Defaults to <see cref="WorkflowConfig"/> when <see langword="null"/>.</param>
     public WorkflowEngine(WorkflowConfig? config = null)
     {
         _config = config ?? new WorkflowConfig();
     }
 
     /// <summary>
-    /// Register an agent
+    /// Registers an agent with the engine. Agents with duplicate names are silently ignored.
     /// </summary>
+    /// <param name="agent">The agent to register.</param>
     public void RegisterAgent(Agent agent)
     {
         if (!_agents.Any(a => a.Name == agent.Name))
@@ -27,8 +67,16 @@ public class WorkflowEngine
     }
 
     /// <summary>
-    /// Execute a workflow
+    /// Executes all steps in the <paramref name="workflow"/> sequentially, passing outputs
+    /// through a shared context dictionary.
     /// </summary>
+    /// <param name="workflow">The workflow definition containing steps to execute.</param>
+    /// <param name="initialContext">Optional seed values for the shared context (e.g., user input variables).</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>
+    /// A <see cref="WorkflowResult"/> with per-step results and the final context state.
+    /// <see cref="WorkflowResult.Success"/> is <see langword="true"/> only when all steps succeed.
+    /// </returns>
     public async Task<WorkflowResult> ExecuteWorkflowAsync(
         Workflow workflow,
         Dictionary<string, object>? initialContext = null,
