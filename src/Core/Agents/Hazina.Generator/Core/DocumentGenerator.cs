@@ -19,6 +19,12 @@ public class DocumentGenerator : IDocumentGenerator
     protected ILLMClient LLMClient { get; set; }
     public int MaxTokens { get; set; } = 6000;
 
+    /// <summary>
+    /// Safety policy applied to all UpdateStore file operations.
+    /// Configure to set max file size, allowed extensions, or disable entirely.
+    /// </summary>
+    public StoreSafetyPolicy SafetyPolicy { get; set; } = new StoreSafetyPolicy();
+
     public EmbeddingMatcher EmbeddingMatcher = new EmbeddingMatcher();
 
     public async Task<LLMResponse<HazinaGeneratedImage>> GetImage(string message, CancellationToken cancel, IEnumerable<HazinaChatMessage>? history = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
@@ -153,6 +159,7 @@ public class DocumentGenerator : IDocumentGenerator
         if (response.Modifications != null)
             foreach (var modification in response.Modifications)
             {
+                SafetyPolicy.Validate(modification.Path, modification.Contents);
                 await Store.Store(modification.Path, modification.Contents, null, false);
             }
         if (response.Deletions != null)
@@ -163,6 +170,7 @@ public class DocumentGenerator : IDocumentGenerator
         if (response.Moves != null)
             foreach (var move in response.Moves)
             {
+                SafetyPolicy.ValidateMove(move.NewPath);
                 await Store.Move(move.Path, move.NewPath, false);
             }
     }
