@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Hazina.LLMs.Infrastructure;
 using Hazina.LLMs;
 using Hazina.Store.EmbeddingStore;
 
@@ -23,10 +24,11 @@ public class DocumentStore : IDocumentStore
     // New architecture components (optional for backward compatibility)
     private readonly IVectorSearchStore? _vectorSearchStore;
     private readonly IEmbeddingGenerator? _embeddingGenerator;
+    private readonly IClock _clock;
 
     // Legacy constructor for backward compatibility
     public DocumentStore(ITextEmbeddingStore embeddingStore, ITextStore textStore, IChunkStore chunkStore, IDocumentMetadataStore metadataStore, ILLMClient llmClient)
-        : this(embeddingStore, textStore, chunkStore, metadataStore, llmClient, null, null)
+        : this(embeddingStore, textStore, chunkStore, metadataStore, llmClient, null, null, null)
     {
     }
 
@@ -38,7 +40,8 @@ public class DocumentStore : IDocumentStore
         IDocumentMetadataStore metadataStore,
         ILLMClient llmClient,
         IVectorSearchStore? vectorSearchStore,
-        IEmbeddingGenerator? embeddingGenerator)
+        IEmbeddingGenerator? embeddingGenerator,
+        IClock? clock = null)
     {
         LLMClient = llmClient;
         EmbeddingStore = embeddingStore;
@@ -48,6 +51,7 @@ public class DocumentStore : IDocumentStore
         BinaryProcessor = new BinaryDocumentProcessor(llmClient);
         _vectorSearchStore = vectorSearchStore;
         _embeddingGenerator = embeddingGenerator;
+        _clock = clock ?? new SystemClock();
     }
 
 
@@ -86,7 +90,7 @@ public class DocumentStore : IDocumentStore
             OriginalPath = "",
             MimeType = "text/plain",
             Size = content.Length,
-            Created = DateTime.UtcNow,
+            Created = _clock.UtcNow,
             CustomMetadata = metadata ?? new Dictionary<string, string>(),
             IsBinary = false,
             Summary = null
@@ -139,7 +143,7 @@ public class DocumentStore : IDocumentStore
             OriginalPath = "",
             MimeType = mimeType,
             Size = content.Length,
-            Created = DateTime.UtcNow,
+            Created = _clock.UtcNow,
             CustomMetadata = metadata ?? new Dictionary<string, string>(),
             IsBinary = BinaryProcessor.IsBinary(mimeType),
             Summary = summary

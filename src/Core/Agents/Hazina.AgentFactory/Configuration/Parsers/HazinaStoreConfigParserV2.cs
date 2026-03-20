@@ -1,4 +1,4 @@
-using Hazina.AgentFactory.Abstractions;
+using Hazina.LLMs.Infrastructure;
 using Hazina.AgentFactory.Configuration.Validation;
 
 namespace Hazina.AgentFactory.Configuration.Parsers;

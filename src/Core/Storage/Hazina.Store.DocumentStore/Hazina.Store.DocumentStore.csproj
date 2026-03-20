@@ -19,6 +19,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />
+    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Helpers\Hazina.LLMs.Helpers.csproj" />
     <ProjectReference Include="..\..\AI\Hazina.AI.Providers\Hazina.AI.Providers.csproj" />
   </ItemGroup>

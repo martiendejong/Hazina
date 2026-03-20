@@ -126,10 +126,10 @@ public class DocumentStore
 2. **Integration tests** - Use `PhysicalFileSystem` (real files)
 3. **Mock tests** - Create `InMemoryFileSystem` for fast tests
 
-## CRITICAL BLOCKER DISCOVERED
+## CIRCULAR DEPENDENCY - RESOLVED ✅
 
-**Circular Dependency Issue:**
-- AgentFactory contains IClock and IFileSystem abstractions
+**Problem (Discovered 2026-03-20):**
+- AgentFactory contained IClock and IFileSystem abstractions in `Hazina.AgentFactory.Abstractions`
 - AgentFactory references DocumentStore and EmbeddingStore
 - If Storage packages reference AgentFactory → circular dependency
 
@@ -139,17 +139,34 @@ error MSB4006: There is a circular dependency in the target dependency graph
 AgentFactory → DocumentStore/EmbeddingStore → AgentFactory
 ```
 
-**Proper Solution (Recommended for Phase 2):**
-1. Create new package: `Hazina.Core.Abstractions`
-2. Move IClock and IFileSystem to this package
-3. Both AgentFactory and Storage packages reference Core.Abstractions
-4. No circular dependency
+**Solution Implemented (2026-03-20):**
+✅ Moved IClock and IFileSystem to existing foundation package
+- Created: `src/Core/LLMs/Hazina.LLMs.Classes/Infrastructure/`
+- Moved: `IClock.cs` and `IFileSystem.cs` from AgentFactory.Abstractions
+- New namespace: `Hazina.LLMs.Infrastructure`
+- Updated all references (2 files):
+  - `Hazina.AgentFactory/Configuration/Parsers/HazinaStoreConfigParserV2.cs`
+  - `Hazina.Store.DocumentStore/Core/DocumentStore.cs`
+- Added reference: DocumentStore now references LLMs.Classes
+- Deleted: Old `Hazina.AgentFactory/Abstractions/` folder
+- Result: **NO circular dependency** ✅
 
-**Phase 1 Approach (Current):**
-- Document the analysis and proposed architecture
-- Create architectural plan for Core.Abstractions package
-- Defer implementation until Core.Abstractions is created
-- Focus on other TODO tasks that don't have this dependency issue
+**Why Hazina.LLMs.Classes?**
+- Already serves as "Core data models and contracts for the Hazina ecosystem"
+- Zero Hazina dependencies (only System.Memory.Data)
+- Perfect foundation layer for infrastructure abstractions
+- No need to create new package for just 2 interfaces
+- More elegant than `Hazina.Core.Abstractions`
+
+**Dependency Graph (Now):**
+```
+Hazina.LLMs.Classes (foundation - Infrastructure namespace)
+     ↑
+     ├─ Hazina.Store.DocumentStore → uses IClock/IFileSystem
+     ├─ Hazina.Store.EmbeddingStore → can use IClock/IFileSystem
+     └─ Hazina.AgentFactory → uses IClock/IFileSystem + references Storage
+        (No circular dependency!)
+```
 
 ## Notes
 

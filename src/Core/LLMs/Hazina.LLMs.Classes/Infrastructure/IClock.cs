@@ -1,4 +1,4 @@
-namespace Hazina.AgentFactory.Abstractions;
+namespace Hazina.LLMs.Infrastructure;
 
 /// <summary>
 /// Abstraction for time operations to enable testability.
