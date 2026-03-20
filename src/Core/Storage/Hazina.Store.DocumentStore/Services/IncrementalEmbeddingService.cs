@@ -317,18 +317,18 @@ public class IncrementalEmbeddingService : IIncrementalEmbeddingService
     private string GetIndexPath(string documentId)
     {
         var safeId = SanitizeFileName(documentId);
-        return Path.Combine(_cachePath, $"{safeId}_index.json");
+        return _fileSystem.PathCombine(_cachePath, $"{safeId}_index.json");
     }
 
     private string GetEmbeddingsPath(string documentId)
     {
         var safeId = SanitizeFileName(documentId);
-        return Path.Combine(_cachePath, $"{safeId}_embeddings.bin");
+        return _fileSystem.PathCombine(_cachePath, $"{safeId}_embeddings.bin");
     }
 
     private static string SanitizeFileName(string fileName)
     {
-        var invalid = Path.GetInvalidFileNameChars();
+        var invalid = System.IO.Path.GetInvalidFileNameChars(); // Static utility, no file system interaction
         return string.Join("_", fileName.Split(invalid, StringSplitOptions.RemoveEmptyEntries));
     }
 

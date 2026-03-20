@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Hazina.LLMs.Infrastructure;
 
 /// <summary>
 /// File-based implementation of hierarchical metadata store.
@@ -13,6 +14,7 @@ using System.Threading.Tasks;
 public class HierarchicalMetadataFileStore : IHierarchicalMetadataStore
 {
     private readonly string _basePath;
+    private readonly IFileSystem _fileSystem;
     private readonly Dictionary<string, QueryableMetadataFileStore> _scopeStores = new();
     private readonly Dictionary<string, ScopeHierarchy> _hierarchies = new();
 
@@ -22,13 +24,14 @@ public class HierarchicalMetadataFileStore : IHierarchicalMetadataStore
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public HierarchicalMetadataFileStore(string basePath)
+    public HierarchicalMetadataFileStore(string basePath, IFileSystem? fileSystem = null)
     {
         _basePath = basePath ?? throw new ArgumentNullException(nameof(basePath));
-        Directory.CreateDirectory(_basePath);
-        Directory.CreateDirectory(Path.Combine(_basePath, "global"));
-        Directory.CreateDirectory(Path.Combine(_basePath, "workspaces"));
-        Directory.CreateDirectory(Path.Combine(_basePath, "projects"));
+        _fileSystem = fileSystem ?? new PhysicalFileSystem();
+        _fileSystem.CreateDirectory(_basePath);
+        _fileSystem.CreateDirectory(_fileSystem.PathCombine(_basePath, "global"));
+        _fileSystem.CreateDirectory(_fileSystem.PathCombine(_basePath, "workspaces"));
+        _fileSystem.CreateDirectory(_fileSystem.PathCombine(_basePath, "projects"));
     }
 
     #region IHierarchicalMetadataStore Implementation
@@ -364,9 +367,9 @@ public class HierarchicalMetadataFileStore : IHierarchicalMetadataStore
     {
         return scope switch
         {
-            KnowledgeScope.Global => Path.Combine(_basePath, "global"),
-            KnowledgeScope.Workspace => Path.Combine(_basePath, "workspaces", scopeId),
-            KnowledgeScope.Project => Path.Combine(_basePath, "projects", scopeId),
+            KnowledgeScope.Global => _fileSystem.PathCombine(_basePath, "global"),
+            KnowledgeScope.Workspace => _fileSystem.PathCombine(_basePath, "workspaces", scopeId),
+            KnowledgeScope.Project => _fileSystem.PathCombine(_basePath, "projects", scopeId),
             _ => throw new ArgumentOutOfRangeException(nameof(scope))
         };
     }
@@ -376,8 +379,8 @@ public class HierarchicalMetadataFileStore : IHierarchicalMetadataStore
         var key = $"{config.Scope}:{config.ScopeId}";
         if (!_scopeStores.TryGetValue(key, out var store))
         {
-            Directory.CreateDirectory(config.StorePath);
-            store = new QueryableMetadataFileStore(config.StorePath);
+            _fileSystem.CreateDirectory(config.StorePath);
+            store = new QueryableMetadataFileStore(config.StorePath, _fileSystem);
             _scopeStores[key] = store;
         }
         return store;

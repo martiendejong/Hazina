@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Hazina.LLMs.Infrastructure;
 
 /// <summary>
 /// File-based implementation of document graph store.
@@ -13,6 +14,7 @@ using System.Threading.Tasks;
 public class DocumentGraphFileStore : IDocumentGraphStore
 {
     private readonly string _basePath;
+    private readonly IFileSystem _fileSystem;
     private readonly string _relationshipsFile;
     private List<DocumentRelationship>? _cache;
     private readonly object _lock = new();
@@ -23,11 +25,12 @@ public class DocumentGraphFileStore : IDocumentGraphStore
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public DocumentGraphFileStore(string basePath)
+    public DocumentGraphFileStore(string basePath, IFileSystem? fileSystem = null)
     {
         _basePath = basePath ?? throw new ArgumentNullException(nameof(basePath));
-        Directory.CreateDirectory(_basePath);
-        _relationshipsFile = Path.Combine(_basePath, "relationships.json");
+        _fileSystem = fileSystem ?? new PhysicalFileSystem();
+        _fileSystem.CreateDirectory(_basePath);
+        _relationshipsFile = _fileSystem.PathCombine(_basePath, "relationships.json");
     }
 
     public async Task AddRelationshipAsync(
@@ -323,13 +326,13 @@ public class DocumentGraphFileStore : IDocumentGraphStore
     {
         if (_cache != null) return _cache;
 
-        if (!File.Exists(_relationshipsFile))
+        if (!_fileSystem.FileExists(_relationshipsFile))
         {
             _cache = new List<DocumentRelationship>();
             return _cache;
         }
 
-        var json = await File.ReadAllTextAsync(_relationshipsFile, ct);
+        var json = await _fileSystem.ReadAllTextAsync(_relationshipsFile, ct);
         _cache = JsonSerializer.Deserialize<List<DocumentRelationship>>(json, JsonOptions)
             ?? new List<DocumentRelationship>();
         return _cache;
@@ -340,7 +343,7 @@ public class DocumentGraphFileStore : IDocumentGraphStore
         CancellationToken ct)
     {
         var json = JsonSerializer.Serialize(relationships, JsonOptions);
-        await File.WriteAllTextAsync(_relationshipsFile, json, ct);
+        await _fileSystem.WriteAllTextAsync(_relationshipsFile, json, ct);
         _cache = relationships;
     }
 }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Hazina.LLMs.Infrastructure;
 
 /// <summary>
 /// File-based implementation of ITagRelevanceStore.
@@ -13,6 +14,7 @@ using System.Threading.Tasks;
 public class TagRelevanceFileStore : ITagRelevanceStore
 {
     private readonly string _basePath;
+    private readonly IFileSystem _fileSystem;
     private readonly string _indexFileName = "_index.json";
     private readonly object _lock = new();
     private Dictionary<string, TagRelevanceIndexEntry>? _index;
@@ -27,10 +29,12 @@ public class TagRelevanceFileStore : ITagRelevanceStore
     /// Create a file-based tag relevance store.
     /// </summary>
     /// <param name="basePath">Directory to store tag relevance files</param>
-    public TagRelevanceFileStore(string basePath)
+    /// <param name="fileSystem">Optional file system abstraction for testing</param>
+    public TagRelevanceFileStore(string basePath, IFileSystem? fileSystem = null)
     {
         _basePath = basePath ?? throw new ArgumentNullException(nameof(basePath));
-        Directory.CreateDirectory(_basePath);
+        _fileSystem = fileSystem ?? new PhysicalFileSystem();
+        _fileSystem.CreateDirectory(_basePath);
     }
 
     /// <summary>
@@ -42,7 +46,7 @@ public class TagRelevanceFileStore : ITagRelevanceStore
 
         var filePath = GetFilePath(index.IndexId);
         var json = JsonSerializer.Serialize(index, JsonOptions);
-        await File.WriteAllTextAsync(filePath, json, ct);
+        await _fileSystem.WriteAllTextAsync(filePath, json, ct);
 
         // Update index
         await UpdateIndexAsync(index, ct);
@@ -56,12 +60,12 @@ public class TagRelevanceFileStore : ITagRelevanceStore
         ct.ThrowIfCancellationRequested();
 
         var filePath = GetFilePath(indexId);
-        if (!File.Exists(filePath))
+        if (!_fileSystem.FileExists(filePath))
         {
             return null;
         }
 
-        var json = await File.ReadAllTextAsync(filePath, ct);
+        var json = await _fileSystem.ReadAllTextAsync(filePath, ct);
         return JsonSerializer.Deserialize<TagRelevanceIndex>(json, JsonOptions);
     }
 
@@ -133,9 +137,9 @@ public class TagRelevanceFileStore : ITagRelevanceStore
         ct.ThrowIfCancellationRequested();
 
         var filePath = GetFilePath(indexId);
-        if (File.Exists(filePath))
+        if (_fileSystem.FileExists(filePath))
         {
-            File.Delete(filePath);
+            _fileSystem.DeleteFile(filePath);
         }
 
         // Update index
@@ -161,9 +165,9 @@ public class TagRelevanceFileStore : ITagRelevanceStore
         foreach (var kv in toRemove)
         {
             var filePath = GetFilePath(kv.Value.IndexId);
-            if (File.Exists(filePath))
+            if (_fileSystem.FileExists(filePath))
             {
-                File.Delete(filePath);
+                _fileSystem.DeleteFile(filePath);
             }
             index.Remove(kv.Key);
         }
@@ -174,13 +178,13 @@ public class TagRelevanceFileStore : ITagRelevanceStore
     private string GetFilePath(string indexId)
     {
         // Sanitize the indexId for use as filename
-        var safe = string.Join("_", indexId.Split(Path.GetInvalidFileNameChars()));
-        return Path.Combine(_basePath, $"{safe}.json");
+        var safe = string.Join("_", indexId.Split(System.IO.Path.GetInvalidFileNameChars())); // Static utility
+        return _fileSystem.PathCombine(_basePath, $"{safe}.json");
     }
 
     private string GetIndexFilePath()
     {
-        return Path.Combine(_basePath, _indexFileName);
+        return _fileSystem.PathCombine(_basePath, _indexFileName);
     }
 
     private async Task<Dictionary<string, TagRelevanceIndexEntry>> LoadIndexAsync(CancellationToken ct)
@@ -191,13 +195,13 @@ public class TagRelevanceFileStore : ITagRelevanceStore
         }
 
         var indexPath = GetIndexFilePath();
-        if (!File.Exists(indexPath))
+        if (!_fileSystem.FileExists(indexPath))
         {
             _index = new Dictionary<string, TagRelevanceIndexEntry>();
             return _index;
         }
 
-        var json = await File.ReadAllTextAsync(indexPath, ct);
+        var json = await _fileSystem.ReadAllTextAsync(indexPath, ct);
         _index = JsonSerializer.Deserialize<Dictionary<string, TagRelevanceIndexEntry>>(json, JsonOptions)
             ?? new Dictionary<string, TagRelevanceIndexEntry>();
         return _index;
@@ -207,7 +211,7 @@ public class TagRelevanceFileStore : ITagRelevanceStore
     {
         var indexPath = GetIndexFilePath();
         var json = JsonSerializer.Serialize(index, JsonOptions);
-        await File.WriteAllTextAsync(indexPath, json, ct);
+        await _fileSystem.WriteAllTextAsync(indexPath, json, ct);
         _index = index;
     }
 
@@ -223,9 +227,9 @@ public class TagRelevanceFileStore : ITagRelevanceStore
             {
                 // Delete old file if different ID
                 var oldPath = GetFilePath(oldId);
-                if (File.Exists(oldPath))
+                if (_fileSystem.FileExists(oldPath))
                 {
-                    File.Delete(oldPath);
+                    _fileSystem.DeleteFile(oldPath);
                 }
             }
         }
