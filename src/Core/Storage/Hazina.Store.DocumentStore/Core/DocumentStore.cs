@@ -25,10 +25,11 @@ public class DocumentStore : IDocumentStore
     private readonly IVectorSearchStore? _vectorSearchStore;
     private readonly IEmbeddingGenerator? _embeddingGenerator;
     private readonly IClock _clock;
+    private readonly IFileSystem _fileSystem;
 
     // Legacy constructor for backward compatibility
     public DocumentStore(ITextEmbeddingStore embeddingStore, ITextStore textStore, IChunkStore chunkStore, IDocumentMetadataStore metadataStore, ILLMClient llmClient)
-        : this(embeddingStore, textStore, chunkStore, metadataStore, llmClient, null, null, null)
+        : this(embeddingStore, textStore, chunkStore, metadataStore, llmClient, null, null, null, null)
     {
     }
 
@@ -41,7 +42,8 @@ public class DocumentStore : IDocumentStore
         ILLMClient llmClient,
         IVectorSearchStore? vectorSearchStore,
         IEmbeddingGenerator? embeddingGenerator,
-        IClock? clock = null)
+        IClock? clock = null,
+        IFileSystem? fileSystem = null)
     {
         LLMClient = llmClient;
         EmbeddingStore = embeddingStore;
@@ -52,6 +54,7 @@ public class DocumentStore : IDocumentStore
         _vectorSearchStore = vectorSearchStore;
         _embeddingGenerator = embeddingGenerator;
         _clock = clock ?? new SystemClock();
+        _fileSystem = fileSystem ?? new PhysicalFileSystem();
     }
 
 
@@ -186,7 +189,7 @@ public class DocumentStore : IDocumentStore
 
     public async Task<bool> StoreFromFile(string name, string filePath, Dictionary<string, string>? metadata = null)
     {
-        if (!File.Exists(filePath))
+        if (!_fileSystem.FileExists(filePath))
         {
             return false;
         }
@@ -195,10 +198,10 @@ public class DocumentStore : IDocumentStore
 
         // Detect MIME type
         var mimeType = BinaryProcessor.DetectMimeType(filePath);
-        var fileInfo = new FileInfo(filePath);
+        var fileInfo = _fileSystem.GetFileInfo(filePath);
 
         // Read file content
-        var content = await File.ReadAllBytesAsync(filePath);
+        var content = await _fileSystem.ReadAllBytesAsync(filePath);
 
         // Update metadata with file info
         var updatedMetadata = metadata ?? new Dictionary<string, string>();
@@ -213,7 +216,7 @@ public class DocumentStore : IDocumentStore
         }
         else
         {
-            var textContent = await File.ReadAllTextAsync(filePath);
+            var textContent = await _fileSystem.ReadAllTextAsync(filePath);
             return await Store(name, textContent, updatedMetadata, true);
         }
     }

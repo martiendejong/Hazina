@@ -22,9 +22,29 @@ public interface IFileSystem
     string ReadAllText(string path);
 
     /// <summary>
+    /// Reads all text from a file asynchronously.
+    /// </summary>
+    Task<string> ReadAllTextAsync(string path, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads all bytes from a file asynchronously.
+    /// </summary>
+    Task<byte[]> ReadAllBytesAsync(string path, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Writes all text to a file, creating it if it doesn't exist.
     /// </summary>
     void WriteAllText(string path, string contents);
+
+    /// <summary>
+    /// Writes all text to a file asynchronously, creating it if it doesn't exist.
+    /// </summary>
+    Task WriteAllTextAsync(string path, string contents, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Writes all bytes to a file asynchronously, creating it if it doesn't exist.
+    /// </summary>
+    Task WriteAllBytesAsync(string path, byte[] contents, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the full path for a given path.
@@ -114,7 +134,19 @@ public class PhysicalFileSystem : IFileSystem
 
     public string ReadAllText(string path) => File.ReadAllText(path);
 
+    public Task<string> ReadAllTextAsync(string path, CancellationToken cancellationToken = default)
+        => File.ReadAllTextAsync(path, cancellationToken);
+
+    public Task<byte[]> ReadAllBytesAsync(string path, CancellationToken cancellationToken = default)
+        => File.ReadAllBytesAsync(path, cancellationToken);
+
     public void WriteAllText(string path, string contents) => File.WriteAllText(path, contents);
+
+    public Task WriteAllTextAsync(string path, string contents, CancellationToken cancellationToken = default)
+        => File.WriteAllTextAsync(path, contents, cancellationToken);
+
+    public Task WriteAllBytesAsync(string path, byte[] contents, CancellationToken cancellationToken = default)
+        => File.WriteAllBytesAsync(path, contents, cancellationToken);
 
     public string GetFullPath(string path) => Path.GetFullPath(path);
 
