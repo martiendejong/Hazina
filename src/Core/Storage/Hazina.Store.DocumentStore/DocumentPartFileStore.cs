@@ -1,20 +1,26 @@
 ﻿using System.Linq;
 using System.Text.Json;
+using Hazina.LLMs.Infrastructure;
 
 public class DocumentPartFileStore : IDocumentPartStore
 {
     public string PartsFilePath { get; set; }
-    public DocumentPartFileStore(string partsFilePath) { PartsFilePath = partsFilePath;
+    private readonly IFileSystem _fileSystem;
+
+    public DocumentPartFileStore(string partsFilePath, IFileSystem? fileSystem = null)
+    {
+        PartsFilePath = partsFilePath;
+        _fileSystem = fileSystem ?? new PhysicalFileSystem();
         LoadPartsFile();
     }
 
     private void LoadPartsFile()
     {
-        if (File.Exists(PartsFilePath))
+        if (_fileSystem.FileExists(PartsFilePath))
         {
             try
             {
-                var data = File.ReadAllText(PartsFilePath);
+                var data = _fileSystem.ReadAllText(PartsFilePath);
                 Parts = JsonSerializer.Deserialize<Dictionary<string, IEnumerable<string>>>(data);
                 return;
             }
@@ -25,13 +31,13 @@ public class DocumentPartFileStore : IDocumentPartStore
 
     public void StorePartsFile()
     {
-        var directory = Path.GetDirectoryName(PartsFilePath);
-        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        var directory = _fileSystem.GetDirectoryName(PartsFilePath);
+        if (!string.IsNullOrEmpty(directory) && !_fileSystem.DirectoryExists(directory))
         {
-            Directory.CreateDirectory(directory);
+            _fileSystem.CreateDirectory(directory);
         }
         var data = JsonSerializer.Serialize(Parts);
-        File.WriteAllText(PartsFilePath, data);
+        _fileSystem.WriteAllText(PartsFilePath, data);
     }
 
     public Dictionary<string, IEnumerable<string>> Parts;

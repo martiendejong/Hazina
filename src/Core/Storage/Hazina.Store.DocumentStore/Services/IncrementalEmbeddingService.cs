@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Hazina.AI.Providers.Core;
+using Hazina.LLMs.Infrastructure;
 
 /// <summary>
 /// Default implementation of incremental embedding service.
@@ -17,6 +18,7 @@ public class IncrementalEmbeddingService : IIncrementalEmbeddingService
     private readonly string _cachePath;
     private readonly IProviderOrchestrator _orchestrator;
     private readonly string _defaultModel;
+    private readonly IFileSystem _fileSystem;
 
     // Cost per 1K tokens (approximate for OpenAI ada-002)
     private const double CostPer1KTokens = 0.0001;
@@ -31,12 +33,14 @@ public class IncrementalEmbeddingService : IIncrementalEmbeddingService
     public IncrementalEmbeddingService(
         string cachePath,
         IProviderOrchestrator orchestrator,
-        string defaultModel = "openai")
+        string defaultModel = "openai",
+        IFileSystem? fileSystem = null)
     {
         _cachePath = cachePath ?? throw new ArgumentNullException(nameof(cachePath));
         _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
         _defaultModel = defaultModel;
-        Directory.CreateDirectory(_cachePath);
+        _fileSystem = fileSystem ?? new PhysicalFileSystem();
+        _fileSystem.CreateDirectory(_cachePath);
     }
 
     public async Task<ChunkDiff> ComputeDiffAsync(
@@ -193,12 +197,12 @@ public class IncrementalEmbeddingService : IIncrementalEmbeddingService
         ct.ThrowIfCancellationRequested();
 
         var indexPath = GetIndexPath(documentId);
-        if (!File.Exists(indexPath))
+        if (!_fileSystem.FileExists(indexPath))
         {
             return new Dictionary<string, string>();
         }
 
-        var json = await File.ReadAllTextAsync(indexPath, ct);
+        var json = await _fileSystem.ReadAllTextAsync(indexPath, ct);
         var records = JsonSerializer.Deserialize<List<ChunkEmbeddingRecord>>(json, JsonOptions);
         return records?.ToDictionary(r => r.ChunkId, r => r.ContentHash)
             ?? new Dictionary<string, string>();
@@ -216,9 +220,9 @@ public class IncrementalEmbeddingService : IIncrementalEmbeddingService
 
         // Load existing records
         var existing = new List<ChunkEmbeddingRecord>();
-        if (File.Exists(indexPath))
+        if (_fileSystem.FileExists(indexPath))
         {
-            var json = await File.ReadAllTextAsync(indexPath, ct);
+            var json = await _fileSystem.ReadAllTextAsync(indexPath, ct);
             existing = JsonSerializer.Deserialize<List<ChunkEmbeddingRecord>>(json, JsonOptions)
                 ?? new List<ChunkEmbeddingRecord>();
         }
@@ -236,10 +240,10 @@ public class IncrementalEmbeddingService : IIncrementalEmbeddingService
 
         // Save updated records
         var indexJson = JsonSerializer.Serialize(merged.Values.ToList(), JsonOptions);
-        await File.WriteAllTextAsync(indexPath, indexJson, ct);
+        await _fileSystem.WriteAllTextAsync(indexPath, indexJson, ct);
 
         // Save embeddings separately (binary format for efficiency)
-        using var embeddingsFile = File.Create(embeddingsPath);
+        using var embeddingsFile = _fileSystem.OpenWrite(embeddingsPath);
         using var writer = new BinaryWriter(embeddingsFile);
         writer.Write(merged.Count);
         foreach (var record in merged.Values)
@@ -261,12 +265,12 @@ public class IncrementalEmbeddingService : IIncrementalEmbeddingService
         ct.ThrowIfCancellationRequested();
 
         var indexPath = GetIndexPath(documentId);
-        if (!File.Exists(indexPath))
+        if (!_fileSystem.FileExists(indexPath))
         {
             return;
         }
 
-        var json = await File.ReadAllTextAsync(indexPath, ct);
+        var json = await _fileSystem.ReadAllTextAsync(indexPath, ct);
         var records = JsonSerializer.Deserialize<List<ChunkEmbeddingRecord>>(json, JsonOptions)
             ?? new List<ChunkEmbeddingRecord>();
 
@@ -274,7 +278,7 @@ public class IncrementalEmbeddingService : IIncrementalEmbeddingService
         records = records.Where(r => !toDelete.Contains(r.ChunkId)).ToList();
 
         var newJson = JsonSerializer.Serialize(records, JsonOptions);
-        await File.WriteAllTextAsync(indexPath, newJson, ct);
+        await _fileSystem.WriteAllTextAsync(indexPath, newJson, ct);
     }
 
     public async Task<EmbeddingStatistics> GetStatisticsAsync(
@@ -286,12 +290,12 @@ public class IncrementalEmbeddingService : IIncrementalEmbeddingService
         var stats = new EmbeddingStatistics();
         var indexPath = GetIndexPath(documentId);
 
-        if (!File.Exists(indexPath))
+        if (!_fileSystem.FileExists(indexPath))
         {
             return stats;
         }
 
-        var json = await File.ReadAllTextAsync(indexPath, ct);
+        var json = await _fileSystem.ReadAllTextAsync(indexPath, ct);
         var records = JsonSerializer.Deserialize<List<ChunkEmbeddingRecord>>(json, JsonOptions)
             ?? new List<ChunkEmbeddingRecord>();
 

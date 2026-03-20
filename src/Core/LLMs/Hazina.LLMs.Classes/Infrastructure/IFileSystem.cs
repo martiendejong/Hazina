@@ -95,6 +95,16 @@ public interface IFileSystem
     /// Gets the file extension from a path.
     /// </summary>
     string? GetExtension(string path);
+
+    /// <summary>
+    /// Opens a file for writing, creating it if it doesn't exist.
+    /// </summary>
+    Stream OpenWrite(string path);
+
+    /// <summary>
+    /// Opens a file for reading.
+    /// </summary>
+    Stream OpenRead(string path);
 }
 
 /// <summary>
@@ -168,6 +178,10 @@ public class PhysicalFileSystem : IFileSystem
     public string? GetFileName(string path) => Path.GetFileName(path);
 
     public string? GetExtension(string path) => Path.GetExtension(path);
+
+    public Stream OpenWrite(string path) => File.OpenWrite(path);
+
+    public Stream OpenRead(string path) => File.OpenRead(path);
 }
 
 /// <summary>
