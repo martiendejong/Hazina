@@ -1,20 +1,26 @@
 ﻿using System.Linq;
 using System.Text.Json;
+using Hazina.LLMs.Infrastructure;
 
 public class ChunkFileStore : IChunkStore
 {
     public string ChunksFilePath { get; set; }
-    public ChunkFileStore(string chunksFilePath) { ChunksFilePath = chunksFilePath;
+    private readonly IFileSystem _fileSystem;
+
+    public ChunkFileStore(string chunksFilePath, IFileSystem? fileSystem = null)
+    {
+        ChunksFilePath = chunksFilePath;
+        _fileSystem = fileSystem ?? new PhysicalFileSystem();
         LoadChunksFile();
     }
 
     private void LoadChunksFile()
     {
-        if (File.Exists(ChunksFilePath))
+        if (_fileSystem.FileExists(ChunksFilePath))
         {
             try
             {
-                var data = File.ReadAllText(ChunksFilePath);
+                var data = _fileSystem.ReadAllText(ChunksFilePath);
                 Chunks = JsonSerializer.Deserialize<Dictionary<string, IEnumerable<string>>>(data);
                 return;
             }
@@ -25,13 +31,13 @@ public class ChunkFileStore : IChunkStore
 
     public void StoreChunksFile()
     {
-        var directory = Path.GetDirectoryName(ChunksFilePath);
-        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        var directory = _fileSystem.GetDirectoryName(ChunksFilePath);
+        if (!string.IsNullOrEmpty(directory) && !_fileSystem.DirectoryExists(directory))
         {
-            Directory.CreateDirectory(directory);
+            _fileSystem.CreateDirectory(directory);
         }
         var data = JsonSerializer.Serialize(Chunks);
-        File.WriteAllText(ChunksFilePath, data);
+        _fileSystem.WriteAllText(ChunksFilePath, data);
     }
 
     public Dictionary<string, IEnumerable<string>> Chunks;

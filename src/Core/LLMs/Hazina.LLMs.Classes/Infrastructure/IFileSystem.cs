@@ -105,6 +105,16 @@ public interface IFileSystem
     /// Opens a file for reading.
     /// </summary>
     Stream OpenRead(string path);
+
+    /// <summary>
+    /// Deletes a file.
+    /// </summary>
+    void DeleteFile(string path);
+
+    /// <summary>
+    /// Deletes a directory.
+    /// </summary>
+    void DeleteDirectory(string path, bool recursive = false);
 }
 
 /// <summary>
@@ -182,6 +192,10 @@ public class PhysicalFileSystem : IFileSystem
     public Stream OpenWrite(string path) => File.OpenWrite(path);
 
     public Stream OpenRead(string path) => File.OpenRead(path);
+
+    public void DeleteFile(string path) => File.Delete(path);
+
+    public void DeleteDirectory(string path, bool recursive = false) => Directory.Delete(path, recursive);
 }
 
 /// <summary>
