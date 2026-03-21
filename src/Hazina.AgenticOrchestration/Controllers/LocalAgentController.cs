@@ -3,6 +3,7 @@ using Hazina.EventSourcing;
 using Hazina.EventSourcing.Events;
 using Hazina.Indexing.LocalSystem;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace Hazina.AgenticOrchestration.Controllers;
 
@@ -271,7 +272,7 @@ public class LocalAgentController : ControllerBase
         return Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
     }
 
-    private TaskInfo? BuildTaskInfo(List<EventStore.EventEntry> events)
+    private TaskInfo? BuildTaskInfo(List<StoredEvent> events)
     {
         if (events.Count == 0) return null;
 
