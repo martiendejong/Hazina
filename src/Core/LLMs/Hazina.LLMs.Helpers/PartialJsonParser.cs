@@ -23,6 +23,15 @@ public class PartialJsonParser
 
     public TResponse? Parse<TResponse>(string partialJson)
     {
+        // Early validation: null, empty, or whitespace-only input
+        if (string.IsNullOrWhiteSpace(partialJson))
+        {
+            return default(TResponse);
+        }
+
+        // Strip trailing commas before closing braces/brackets (common in streaming JSON)
+        partialJson = Regex.Replace(partialJson, @",(\s*[}\]])", "$1");
+
         try
         {
             var json = JsonSerializer.Deserialize<TResponse>(partialJson);
@@ -271,7 +280,9 @@ public class PartialJsonParser
             }
             else
             {
-                throw new Exception("Not valid JSON object or array");
+                // No JSON structure found - return default
+                Console.WriteLine("No valid JSON object or array structure found");
+                return default(TResponse);
             }
 
             var end = partialJson.LastIndexOf(closeChar);
@@ -309,12 +320,14 @@ public class PartialJsonParser
         }
         catch (Exception e)
         {
-            Console.WriteLine("Error parsing the JSON");
+            Console.WriteLine("Error parsing the JSON - all fallback attempts failed");
             Console.WriteLine(e.Message);
             Console.WriteLine(partialJson);
             Console.WriteLine();
             Console.WriteLine(jsonPart);
-            throw;
+
+            // Return default instead of throwing - graceful degradation for unparseable input
+            return default(TResponse);
         }
     }
 }
