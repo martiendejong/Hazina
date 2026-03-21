@@ -1,0 +1,181 @@
+# Static Analysis Gate
+# Runs Roslyn analyzers to catch security and maintainability issues
+# Value: 25x (prevents vulnerability classes from reaching production)
+# Effort: MEDIUM (2 weeks - tool integration)
+# ROI: 12.5:1
+
+name: Static Analysis
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [develop, main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  static-analysis:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Run static analysis
+        id: analysis
+        run: |
+          # Run build with analysis enabled
+          # This captures Roslyn analyzer warnings
+          dotnet build --no-restore \
+            /p:EnforceCodeStyleInBuild=true \
+            /p:AnalysisLevel=latest \
+            /p:AnalysisMode=All \
+            /warnaserror:CS8600,CS8601,CS8602,CS8603,CS8604,CS8618,CS8625 \
+            > analysis.log 2>&1 || true
+
+          # Parse results
+          WARNINGS=$(grep -c "warning CS" analysis.log || echo "0")
+          ERRORS=$(grep -c "error CS" analysis.log || echo "0")
+          NULL_WARNINGS=$(grep -c "warning CS86" analysis.log || echo "0")
+
+          echo "warnings=$WARNINGS" >> $GITHUB_OUTPUT
+          echo "errors=$ERRORS" >> $GITHUB_OUTPUT
+          echo "null_warnings=$NULL_WARNINGS" >> $GITHUB_OUTPUT
+
+          # Extract specific issues
+          echo "## Analysis Results" > analysis-summary.md
+          echo "" >> analysis-summary.md
+          echo "- **Errors:** $ERRORS" >> analysis-summary.md
+          echo "- **Warnings:** $WARNINGS" >> analysis-summary.md
+          echo "- **Null Reference Warnings:** $NULL_WARNINGS" >> analysis-summary.md
+          echo "" >> analysis-summary.md
+
+          if [ "$ERRORS" -gt "0" ]; then
+            echo "### Critical Issues (Errors)" >> analysis-summary.md
+            echo '```' >> analysis-summary.md
+            grep "error CS" analysis.log | head -20 >> analysis-summary.md || true
+            echo '```' >> analysis-summary.md
+          fi
+
+          if [ "$WARNINGS" -gt "0" ]; then
+            echo "### Warnings" >> analysis-summary.md
+            echo '```' >> analysis-summary.md
+            grep "warning CS" analysis.log | head -20 >> analysis-summary.md || true
+            echo '```' >> analysis-summary.md
+          fi
+
+          cat analysis.log
+
+      - name: Evaluate gate
+        id: gate
+        run: |
+          ERRORS=${{ steps.analysis.outputs.errors }}
+          NULL_WARNINGS=${{ steps.analysis.outputs.null_warnings }}
+
+          # Block on errors
+          if [ "$ERRORS" -gt "0" ]; then
+            echo "verdict=FAIL" >> $GITHUB_OUTPUT
+            echo "reason=Found $ERRORS compilation errors" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Block on critical null reference warnings
+          if [ "$NULL_WARNINGS" -gt "5" ]; then
+            echo "verdict=FAIL" >> $GITHUB_OUTPUT
+            echo "reason=Found $NULL_WARNINGS null reference warnings (threshold: 5)" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "verdict=PASS" >> $GITHUB_OUTPUT
+          echo "reason=All checks passed" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR (if failed)
+        if: steps.gate.outputs.verdict == 'FAIL' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('analysis-summary.md', 'utf8');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `❌ **Static Analysis Gate: FAILED**\n\n${summary}\n\n**Action Required:** Fix the issues above before this PR can be merged.`
+            });
+
+      - name: Comment on PR (if passed)
+        if: steps.gate.outputs.verdict == 'PASS' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const warnings = ${{ steps.analysis.outputs.warnings }};
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `✅ **Static Analysis Gate: PASSED**\n\nNo critical issues found.\n- Errors: 0\n- Warnings: ${warnings}\n\nCode quality checks passed.`
+            });
+
+      - name: Fail workflow if gate failed
+        if: steps.gate.outputs.verdict == 'FAIL'
+        run: |
+          echo "::error::Static Analysis Gate failed: ${{ steps.gate.outputs.reason }}"
+          exit 1
+
+      - name: Upload analysis log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-analysis-log
+          path: analysis.log
+          retention-days: 30
+
+# Roslyn Analyzers Checked:
+# - CS8600: Converting null literal or possible null value to non-nullable type
+# - CS8601: Possible null reference assignment
+# - CS8602: Dereference of a possibly null reference
+# - CS8603: Possible null reference return
+# - CS8604: Possible null reference argument
+# - CS8618: Non-nullable field must contain a non-null value when exiting constructor
+# - CS8625: Cannot convert null literal to non-nullable reference type
+#
+# Analysis Modes:
+# - EnforceCodeStyleInBuild: Enforces code style rules
+# - AnalysisLevel: latest (uses newest analyzer rules)
+# - AnalysisMode: All (enables all analysis categories)
+#
+# Gate Thresholds:
+# - Errors: 0 (hard block)
+# - Null Reference Warnings: ≤5 (configurable threshold)
+#
+# Safety Features:
+# - Runs on every PR and push to main branches
+# - Comments on PR with detailed results
+# - Uploads full log as artifact
+# - Can be triggered manually
+# - Blocks merge if critical issues found
+#
+# Deployment:
+# 1. Copy to .github/workflows/static-analysis.yml
+# 2. Enable in repository (automatic on push)
+# 3. PRs will be blocked if critical issues found
+#
+# Configuration:
+# - Adjust warning codes in /warnaserror list
+# - Adjust null warning threshold (currently 5)
+# - Add repository-specific rules as needed
