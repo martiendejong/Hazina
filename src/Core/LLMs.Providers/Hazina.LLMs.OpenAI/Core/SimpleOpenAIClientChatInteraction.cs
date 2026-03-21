@@ -204,7 +204,7 @@ public partial class SimpleOpenAIClientChatInteraction
             }
         }
 
-        return completion;
+        return completion!; // completion is guaranteed to be assigned in the do-while loop before this return
     }
 
     public async Task<GeneratedImage> RunImage(string prompt, CancellationToken cancellationToken)
@@ -374,10 +374,13 @@ public partial class SimpleOpenAIClientChatInteraction
         if(toolCallsMessage != null)
             toolResults.Add(toolCallsMessage);
         // Then, add a new tool message for each tool call that is resolved.
-        foreach (ChatToolCall toolCall in toolCalls)
+        var tools = ToolsContext.Tools;
+        if (tools != null)
         {
-            foreach(var tool in ToolsContext.Tools)
+            foreach (ChatToolCall toolCall in toolCalls)
             {
+                foreach(var tool in tools)
+                {
                 if (toolCall.FunctionName == tool.FunctionName)
                 {
                     var id = Guid.NewGuid().ToString();
@@ -400,7 +403,7 @@ public partial class SimpleOpenAIClientChatInteraction
                     // END PATCH
 
                     // Invoke OnToolExecuted callback if defined
-                    if (ToolsContext.OnToolExecuted != null)
+                    if (ToolsContext?.OnToolExecuted != null)
                     {
                         try
                         {
@@ -414,6 +417,7 @@ public partial class SimpleOpenAIClientChatInteraction
 
                     toolResults.Add(new ToolChatMessage(toolCall.Id, result));
                 }
+            }
             }
         }
         messages.AddRange(toolResults);
