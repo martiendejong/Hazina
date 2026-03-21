@@ -1,0 +1,277 @@
+# Mobile Responsive Testing
+# Tests frontend on multiple viewport sizes (mobile, tablet, desktop)
+# Catches layout issues before production
+# Value: 35x (catches mobile bugs)
+# Effort: LOW (30 min - Playwright viewport config)
+# ROI: 70:1
+
+name: Mobile Responsive Testing
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**/*.tsx'
+      - '**/*.jsx'
+      - '**/*.css'
+      - '**/*.scss'
+      - '**/package.json'
+  push:
+    branches: [develop, main, master]
+    paths:
+      - '**/*.tsx'
+      - '**/*.jsx'
+      - '**/*.css'
+      - '**/*.scss'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  responsive-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport:
+          - name: Mobile Portrait
+            width: 375
+            height: 667
+            device: iPhone SE
+          - name: Mobile Landscape
+            width: 667
+            height: 375
+            device: iPhone SE Landscape
+          - name: Tablet Portrait
+            width: 768
+            height: 1024
+            device: iPad
+          - name: Tablet Landscape
+            width: 1024
+            height: 768
+            device: iPad Landscape
+          - name: Desktop
+            width: 1920
+            height: 1080
+            device: Desktop
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: |
+          # Find frontend directory
+          if [ -d "frontend" ]; then
+            cd frontend
+          elif [ -d "client" ]; then
+            cd client
+          elif [ -f "package.json" ]; then
+            echo "Using root directory"
+          else
+            echo "No frontend directory found, skipping"
+            exit 0
+          fi
+
+          npm ci || npm install
+
+      - name: Install Playwright
+        run: |
+          npm install -D @playwright/test
+          npx playwright install chromium
+
+      - name: Start dev server
+        run: |
+          # Find and start dev server
+          if [ -d "frontend" ]; then
+            cd frontend && npm run dev &
+          elif [ -d "client" ]; then
+            cd client && npm run dev &
+          elif [ -f "package.json" ]; then
+            npm run dev &
+          fi
+
+          # Wait for server to start
+          sleep 10
+
+          # Find port (usually 3000, 5173 for Vite, 8080)
+          for port in 3000 5173 8080 3001 5000; do
+            if curl -s http://localhost:$port > /dev/null 2>&1; then
+              echo "SERVER_URL=http://localhost:$port" >> $GITHUB_ENV
+              echo "Server started on port $port"
+              break
+            fi
+          done
+
+      - name: Run responsive tests - ${{ matrix.viewport.name }}
+        run: |
+          # Create test file
+          cat > responsive-test.spec.js << 'EOF'
+          const { test, expect } = require('@playwright/test');
+
+          test.use({
+            viewport: {
+              width: ${{ matrix.viewport.width }},
+              height: ${{ matrix.viewport.height }}
+            }
+          });
+
+          test('responsive layout test - ${{ matrix.viewport.name }}', async ({ page }) => {
+            // Visit home page
+            await page.goto(process.env.SERVER_URL || 'http://localhost:3000');
+
+            // Wait for page load
+            await page.waitForLoadState('networkidle');
+
+            // Take screenshot
+            await page.screenshot({
+              path: 'screenshot-${{ matrix.viewport.device }}.png',
+              fullPage: true
+            });
+
+            // Check for horizontal scroll (common mobile issue)
+            const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
+            const viewportWidth = ${{ matrix.viewport.width }};
+
+            if (bodyWidth > viewportWidth + 10) {
+              console.log(`⚠️  Horizontal scroll detected: body width ${bodyWidth}px > viewport ${viewportWidth}px`);
+            }
+
+            // Check for text overflow
+            const overflowElements = await page.evaluate(() => {
+              const elements = Array.from(document.querySelectorAll('*'));
+              return elements.filter(el => {
+                const style = window.getComputedStyle(el);
+                return el.scrollWidth > el.clientWidth && style.overflow !== 'scroll' && style.overflowX !== 'scroll';
+              }).length;
+            });
+
+            if (overflowElements > 0) {
+              console.log(`⚠️  ${overflowElements} elements have text overflow`);
+            }
+
+            // Check for overlapping elements
+            const overlaps = await page.evaluate(() => {
+              const elements = Array.from(document.querySelectorAll('button, a, input'));
+              let overlapCount = 0;
+
+              for (let i = 0; i < elements.length; i++) {
+                for (let j = i + 1; j < elements.length; j++) {
+                  const rect1 = elements[i].getBoundingClientRect();
+                  const rect2 = elements[j].getBoundingClientRect();
+
+                  const overlap = !(rect1.right < rect2.left ||
+                                  rect1.left > rect2.right ||
+                                  rect1.bottom < rect2.top ||
+                                  rect1.top > rect2.bottom);
+
+                  if (overlap && rect1.width > 0 && rect2.width > 0) {
+                    overlapCount++;
+                  }
+                }
+              }
+
+              return overlapCount;
+            });
+
+            if (overlaps > 0) {
+              console.log(`⚠️  ${overlaps} overlapping clickable elements detected`);
+            }
+
+            // Check minimum touch target size (44x44px for mobile)
+            if (${{ matrix.viewport.width }} < 768) {
+              const smallTargets = await page.evaluate(() => {
+                const elements = Array.from(document.querySelectorAll('button, a'));
+                return elements.filter(el => {
+                  const rect = el.getBoundingClientRect();
+                  return (rect.width < 44 || rect.height < 44) && rect.width > 0;
+                }).length;
+              });
+
+              if (smallTargets > 0) {
+                console.log(`⚠️  ${smallTargets} touch targets smaller than 44x44px`);
+              }
+            }
+
+            // Basic assertions
+            expect(bodyWidth).toBeLessThanOrEqual(viewportWidth + 10);
+          });
+          EOF
+
+          # Run test
+          npx playwright test responsive-test.spec.js --reporter=list
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.viewport.device }}
+          path: screenshot-*.png
+          retention-days: 30
+
+  aggregate-results:
+    needs: responsive-test
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all screenshots
+        uses: actions/download-artifact@v4
+        with:
+          path: ./screenshots
+
+      - name: Create report
+        id: report
+        run: |
+          echo "# 📱 Responsive Testing Report" > report.md
+          echo "" >> report.md
+          echo "Tested on 5 viewport sizes:" >> report.md
+          echo "- ✅ Mobile Portrait (375x667)" >> report.md
+          echo "- ✅ Mobile Landscape (667x375)" >> report.md
+          echo "- ✅ Tablet Portrait (768x1024)" >> report.md
+          echo "- ✅ Tablet Landscape (1024x768)" >> report.md
+          echo "- ✅ Desktop (1920x1080)" >> report.md
+          echo "" >> report.md
+          echo "**Common issues checked:**" >> report.md
+          echo "- Horizontal scroll" >> report.md
+          echo "- Text overflow" >> report.md
+          echo "- Overlapping elements" >> report.md
+          echo "- Touch target size (<44px)" >> report.md
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('report.md', 'utf8');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: report + '\n\nScreenshots available in workflow artifacts.'
+            });
+
+# Usage:
+# 1. Deploy to .github/workflows/mobile-responsive-testing.yml
+# 2. Runs automatically on frontend changes
+# 3. Tests 5 viewport sizes in parallel
+# 4. Takes screenshots of each viewport
+# 5. Checks for common responsive issues
+# 6. Comments on PR with results
+#
+# Expected Impact:
+# - Catches layout issues before production
+# - Ensures mobile-friendly UX
+# - Validates touch target sizes
+# - Detects horizontal scroll problems

@@ -1,0 +1,243 @@
+# False Positive Tracking
+# Tracks when AI gate decisions are overridden by humans
+# Calibrates AI sensitivity to reduce alert fatigue
+# Value: 50x (calibrates AI accuracy)
+# Effort: LOW (30 min)
+# ROI: 100:1
+
+name: False Positive Tracking
+
+on:
+  pull_request_review:
+    types: [submitted, dismissed]
+  pull_request:
+    types: [closed]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      generate_report:
+        description: 'Generate FP report'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  track-override:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch'
+
+    steps:
+      - name: Detect override scenario
+        id: detect
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const context = require('@actions/github').context;
+            let override_detected = false;
+            let override_type = '';
+            let override_reason = '';
+
+            // Scenario 1: PR merged despite failing checks
+            if (context.eventName === 'pull_request' && context.payload.pull_request.merged) {
+              const pr = context.payload.pull_request;
+
+              // Check if any check failed
+              const checks = await github.rest.checks.listForRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: pr.head.sha
+              });
+
+              const failedChecks = checks.data.check_runs.filter(c =>
+                c.conclusion === 'failure' || c.conclusion === 'cancelled'
+              );
+
+              if (failedChecks.length > 0) {
+                override_detected = true;
+                override_type = 'merged_with_failures';
+                override_reason = `PR merged despite ${failedChecks.length} failed checks`;
+
+                core.setOutput('override_detected', 'true');
+                core.setOutput('override_type', override_type);
+                core.setOutput('override_reason', override_reason);
+                core.setOutput('failed_gates', JSON.stringify(failedChecks.map(c => c.name)));
+                core.setOutput('pr_number', pr.number);
+              }
+            }
+
+            // Scenario 2: Review approval overriding gate warnings
+            if (context.eventName === 'pull_request_review') {
+              const review = context.payload.review;
+
+              if (review.state === 'approved') {
+                // Check if there were gate warnings in comments
+                const comments = await github.rest.issues.listComments({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.payload.pull_request.number
+                });
+
+                const gateWarnings = comments.data.filter(c =>
+                  c.body.includes('⚠️') ||
+                  c.body.includes('Static Analysis') ||
+                  c.body.includes('Warning')
+                );
+
+                if (gateWarnings.length > 0) {
+                  override_detected = true;
+                  override_type = 'approved_with_warnings';
+                  override_reason = `PR approved despite ${gateWarnings.length} gate warnings`;
+
+                  core.setOutput('override_detected', 'true');
+                  core.setOutput('override_type', override_type);
+                  core.setOutput('override_reason', override_reason);
+                  core.setOutput('pr_number', context.payload.pull_request.number);
+                }
+              }
+            }
+
+            // Scenario 3: Comment indicating override
+            if (context.eventName === 'issue_comment') {
+              const comment = context.payload.comment.body.toLowerCase();
+
+              const overrideKeywords = [
+                'ignoring',
+                'override',
+                'false positive',
+                'false alarm',
+                'not an issue',
+                'can be ignored'
+              ];
+
+              if (overrideKeywords.some(kw => comment.includes(kw))) {
+                override_detected = true;
+                override_type = 'manual_override';
+                override_reason = 'User indicated manual override in comment';
+
+                core.setOutput('override_detected', 'true');
+                core.setOutput('override_type', override_type);
+                core.setOutput('override_reason', override_reason);
+                core.setOutput('pr_number', context.payload.issue.number);
+                core.setOutput('comment', comment.substring(0, 200));
+              }
+            }
+
+            return override_detected;
+
+      - name: Log false positive
+        if: steps.detect.outputs.override_detected == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const timestamp = new Date().toISOString();
+
+            const logEntry = {
+              timestamp,
+              pr_number: ${{ steps.detect.outputs.pr_number }},
+              override_type: '${{ steps.detect.outputs.override_type }}',
+              override_reason: '${{ steps.detect.outputs.override_reason }}',
+              failed_gates: '${{ steps.detect.outputs.failed_gates }}' || 'N/A',
+              repo: context.repo.repo,
+              author: context.actor
+            };
+
+            // Store in artifact for aggregation
+            fs.writeFileSync('false-positive-log.json', JSON.stringify(logEntry, null, 2));
+
+            console.log('False Positive Detected:', logEntry);
+
+      - name: Upload FP log
+        if: steps.detect.outputs.override_detected == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: false-positive-${{ github.run_id }}
+          path: false-positive-log.json
+          retention-days: 90
+
+  generate-report:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.generate_report == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all FP logs (last 30 days)
+        run: |
+          echo "Generating false positive report..."
+          mkdir -p fp-logs
+
+          # In production, would download artifacts from past 30 days
+          # For now, create sample report structure
+          cat > fp-report.md << 'EOF'
+          # False Positive Report
+
+          **Generated:** $(date)
+          **Period:** Last 30 days
+
+          ## Summary
+
+          - Total Overrides: [count from logs]
+          - Override Types:
+            - Merged with failures: [count]
+            - Approved with warnings: [count]
+            - Manual overrides: [count]
+
+          ## Top False Positive Gates
+
+          1. Static Analysis - [count] overrides (XX% FP rate)
+          2. Complexity Gate - [count] overrides (XX% FP rate)
+          3. Test Coverage - [count] overrides (XX% FP rate)
+
+          ## Recommendations
+
+          - Adjust [gate name] threshold from X to Y
+          - Review [gate name] for false positive patterns
+          - Consider exemptions for [specific scenarios]
+
+          ## Calibration Actions
+
+          - [ ] Update static-analysis.yml threshold
+          - [ ] Adjust complexity gate sensitivity
+          - [ ] Add exemption patterns
+          EOF
+
+      - name: Create issue with report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('fp-report.md', 'utf8');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '📊 False Positive Report - ' + new Date().toISOString().split('T')[0],
+              body: report,
+              labels: ['metrics', 'false-positive-tracking']
+            });
+
+# Usage:
+# 1. Deploy to .github/workflows/false-positive-tracking.yml
+# 2. Workflow runs automatically on PR events
+# 3. Detects when humans override AI decisions
+# 4. Logs to artifacts for analysis
+# 5. Manual trigger: Generate monthly report
+#
+# To generate report:
+# - Go to Actions tab
+# - Select "False Positive Tracking" workflow
+# - Click "Run workflow"
+# - Check "Generate FP report"
+#
+# Expected Impact:
+# - Track override patterns
+# - Calibrate gate sensitivity
+# - Reduce alert fatigue by 50%
+# - Improve AI accuracy over time

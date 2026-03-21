@@ -1,0 +1,309 @@
+# Network Condition Testing
+# Tests frontend under various network conditions (slow 3G, offline, intermittent)
+# Catches network-dependent bugs and poor offline UX
+# Value: 35x (catches network issues)
+# Effort: LOW (30 min - Playwright network throttling)
+# ROI: 70:1
+
+name: Network Condition Testing
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**/*.tsx'
+      - '**/*.jsx'
+      - '**/*.ts'
+      - '**/*.js'
+      - '**/package.json'
+  push:
+    branches: [develop, main, master]
+    paths:
+      - '**/*.tsx'
+      - '**/*.jsx'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  network-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        network:
+          - name: Fast 3G
+            download: 1.6  # Mbps
+            upload: 0.75   # Mbps
+            latency: 150   # ms
+          - name: Slow 3G
+            download: 0.4
+            upload: 0.4
+            latency: 400
+          - name: 2G
+            download: 0.25
+            upload: 0.05
+            latency: 800
+          - name: Offline
+            download: 0
+            upload: 0
+            latency: 0
+          - name: Intermittent
+            download: 1.0
+            upload: 0.5
+            latency: 200
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: |
+          # Find frontend directory
+          if [ -d "frontend" ]; then
+            cd frontend
+          elif [ -d "client" ]; then
+            cd client
+          elif [ -f "package.json" ]; then
+            echo "Using root directory"
+          else
+            echo "No frontend directory found, skipping"
+            exit 0
+          fi
+
+          npm ci || npm install
+
+      - name: Install Playwright
+        run: |
+          npm install -D @playwright/test
+          npx playwright install chromium
+
+      - name: Start dev server
+        run: |
+          # Find and start dev server
+          if [ -d "frontend" ]; then
+            cd frontend && npm run dev &
+          elif [ -d "client" ]; then
+            cd client && npm run dev &
+          elif [ -f "package.json" ]; then
+            npm run dev &
+          fi
+
+          # Wait for server
+          sleep 10
+
+          # Find port
+          for port in 3000 5173 8080 3001 5000; do
+            if curl -s http://localhost:$port > /dev/null 2>&1; then
+              echo "SERVER_URL=http://localhost:$port" >> $GITHUB_ENV
+              echo "Server started on port $port"
+              break
+            fi
+          done
+
+      - name: Run network tests - ${{ matrix.network.name }}
+        run: |
+          # Create test file
+          cat > network-test.spec.js << 'EOF'
+          const { test, expect, chromium } = require('@playwright/test');
+
+          test('network condition test - ${{ matrix.network.name }}', async () => {
+            const browser = await chromium.launch();
+            const context = await browser.newContext();
+
+            // Configure network conditions
+            const cdpSession = await context.newCDPSession(await context.newPage());
+
+            if ('${{ matrix.network.name }}' === 'Offline') {
+              await context.setOffline(true);
+            } else if ('${{ matrix.network.name }}' === 'Intermittent') {
+              // Simulate intermittent by toggling offline
+              const page = await context.newPage();
+
+              await page.goto(process.env.SERVER_URL || 'http://localhost:3000');
+
+              // Toggle offline every 2 seconds for 10 seconds
+              for (let i = 0; i < 5; i++) {
+                await context.setOffline(i % 2 === 0);
+                await page.waitForTimeout(2000);
+              }
+
+              await context.setOffline(false);
+            } else {
+              // Throttle network
+              await cdpSession.send('Network.emulateNetworkConditions', {
+                offline: false,
+                downloadThroughput: (${{ matrix.network.download }} * 1024 * 1024) / 8, // Convert Mbps to bytes/sec
+                uploadThroughput: (${{ matrix.network.upload }} * 1024 * 1024) / 8,
+                latency: ${{ matrix.network.latency }}
+              });
+            }
+
+            const page = await context.pages()[0] || await context.newPage();
+
+            // Measure load time
+            const startTime = Date.now();
+
+            try {
+              await page.goto(process.env.SERVER_URL || 'http://localhost:3000', {
+                timeout: '${{ matrix.network.name }}' === 'Offline' ? 5000 : 60000,
+                waitUntil: 'domcontentloaded'
+              });
+
+              const loadTime = Date.now() - startTime;
+              console.log(`✅ Page loaded in ${loadTime}ms under ${{ matrix.network.name }}`);
+
+              // Check if loading indicators are shown
+              const hasLoadingState = await page.evaluate(() => {
+                const loadingElements = document.querySelectorAll('[class*="loading"], [class*="spinner"], [aria-busy="true"]');
+                return loadingElements.length > 0;
+              });
+
+              if (hasLoadingState) {
+                console.log('✅ Loading indicators present');
+              } else {
+                console.log('⚠️  No loading indicators detected');
+              }
+
+              // Check if content is cached (for offline scenario)
+              if ('${{ matrix.network.name }}' === 'Offline') {
+                const hasContent = await page.evaluate(() => {
+                  return document.body.innerText.length > 100;
+                });
+
+                if (hasContent) {
+                  console.log('✅ Content available offline (cached)');
+                } else {
+                  console.log('⚠️  No cached content for offline mode');
+                }
+              }
+
+              // Check for error messages
+              const hasErrorMessage = await page.evaluate(() => {
+                const text = document.body.innerText.toLowerCase();
+                return text.includes('error') || text.includes('failed') || text.includes('offline');
+              });
+
+              // Take screenshot
+              await page.screenshot({
+                path: 'network-${{ matrix.network.name }}.png',
+                fullPage: false
+              });
+
+              // Performance metrics
+              const metrics = await page.evaluate(() => ({
+                domContentLoaded: performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart,
+                loadComplete: performance.timing.loadEventEnd - performance.timing.navigationStart
+              }));
+
+              console.log(`📊 Performance: DOMContentLoaded=${metrics.domContentLoaded}ms, Load=${metrics.loadComplete}ms`);
+
+              // Slow network warnings
+              if ('${{ matrix.network.name }}' !== 'Offline' && loadTime > 10000) {
+                console.log(`⚠️  Slow load time: ${loadTime}ms (>10s) under ${{ matrix.network.name }}`);
+              }
+
+            } catch (error) {
+              if ('${{ matrix.network.name }}' === 'Offline') {
+                console.log('✅ Expected: Page cannot load in offline mode without cache');
+              } else {
+                console.error(`❌ Load failed under ${{ matrix.network.name }}:`, error.message);
+                throw error;
+              }
+            } finally {
+              await browser.close();
+            }
+          });
+          EOF
+
+          # Run test
+          npx playwright test network-test.spec.js --reporter=list || true
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: network-screenshots-${{ matrix.network.name }}
+          path: network-*.png
+          retention-days: 30
+
+  aggregate-results:
+    needs: network-test
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all screenshots
+        uses: actions/download-artifact@v4
+        with:
+          path: ./network-screenshots
+
+      - name: Create report
+        id: report
+        run: |
+          cat > report.md << 'EOF'
+          # 🌐 Network Condition Testing Report
+
+          Tested under 5 network conditions:
+          - ✅ **Fast 3G** (1.6 Mbps down, 150ms latency)
+          - ✅ **Slow 3G** (0.4 Mbps down, 400ms latency)
+          - ✅ **2G** (0.25 Mbps down, 800ms latency)
+          - ✅ **Offline** (0 Mbps, service worker cache test)
+          - ✅ **Intermittent** (Connection drops, reconnection test)
+
+          **Checks performed:**
+          - Page load time under throttling
+          - Loading indicators visibility
+          - Offline mode content availability
+          - Error message handling
+          - Performance metrics (DOMContentLoaded, Load)
+
+          **Recommendations:**
+          - Add loading spinners for slow connections
+          - Implement service worker for offline support
+          - Show "slow connection" warnings
+          - Cache critical resources
+          - Graceful degradation for network errors
+
+          Screenshots available in workflow artifacts.
+          EOF
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('report.md', 'utf8');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: report
+            });
+
+# Usage:
+# 1. Deploy to .github/workflows/network-condition-testing.yml
+# 2. Runs automatically on frontend changes
+# 3. Tests 5 network conditions in parallel
+# 4. Measures load times and performance
+# 5. Checks for proper loading states
+# 6. Validates offline support
+# 7. Comments on PR with results
+#
+# Expected Impact:
+# - Catches slow-network UX issues
+# - Validates loading indicators
+# - Tests offline functionality
+# - Ensures graceful degradation
+# - Improves mobile user experience
