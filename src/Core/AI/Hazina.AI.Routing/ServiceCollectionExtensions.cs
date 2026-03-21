@@ -17,6 +17,8 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddAgentRouting(this IServiceCollection services)
     {
         services.AddSingleton<IAgentRoutingService, AgentRoutingService>();
+        services.AddSingleton<IPolymathDelegationService, PolymathDelegationService>();
+        services.AddSingleton<IModularityAnalysisService, ModularityAnalysisService>();
         return services;
     }
 }
