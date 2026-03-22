@@ -15,7 +15,7 @@ public class ChunkFileStore : IChunkStore
             try
             {
                 var data = File.ReadAllText(ChunksFilePath);
-                Chunks = JsonSerializer.Deserialize<Dictionary<string, IEnumerable<string>>>(data);
+                Chunks = JsonSerializer.Deserialize<Dictionary<string, IEnumerable<string>>>(data) ?? new Dictionary<string, IEnumerable<string>>();
                 return;
             }
             catch { }
