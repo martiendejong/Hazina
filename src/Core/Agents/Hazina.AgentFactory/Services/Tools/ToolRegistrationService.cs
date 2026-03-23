@@ -356,10 +356,12 @@ public class ToolRegistrationService : IToolRegistrationService
                 var password = "qEWK IwaU JzyL ufe9 Ecro tkKB";
                 var siteurl = "http://localhost";
 
+#pragma warning disable MA0039 // Do not write your own certificate validation method
                 var handler = new HttpClientHandler
                 {
                     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
                 };
+#pragma warning restore MA0039
                 var httpClient = new HttpClient(handler);
 
                 try
