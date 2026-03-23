@@ -1,7 +1,7 @@
 {
   "version": 1,
   "dependencies": {
-    "net8.0-windows7.0": {
+    "net9.0-windows7.0": {
       "Meziantou.Analyzer": {
         "type": "Direct",
         "requested": "[2.0.169, )",
@@ -39,6 +39,16 @@
           "Microsoft.Extensions.Configuration.FileExtensions": "10.0.3",
           "Microsoft.Extensions.FileProviders.Abstractions": "10.0.3",
           "System.Text.Json": "10.0.3"
+        }
+      },
+      "Microsoft.SourceLink.GitHub": {
+        "type": "Direct",
+        "requested": "[8.0.0, )",
+        "resolved": "8.0.0",
+        "contentHash": "G5q7OqtwIyGTkeIOAc3u2ZuV/kicQaec5EaRnc0pIeSnh9LUjj+PYQrJYBURvDt7twGl2PKA7nSN0kz1Zw5bnQ==",
+        "dependencies": {
+          "Microsoft.Build.Tasks.Git": "8.0.0",
+          "Microsoft.SourceLink.Common": "8.0.0"
         }
       },
       "Microsoft.Windows.Compatibility": {
@@ -224,6 +234,11 @@
         "type": "Transitive",
         "resolved": "1.1.1",
         "contentHash": "MalY0Y/uM/LjXtHfX/26l2VtN4LDNZ2OE3aumNOHDLsT4fNYy2hiHXI4CXCqKpNUNm7iJ2brrc4J89UdaL56FA=="
+      },
+      "Microsoft.Build.Tasks.Git": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "bZKfSIKJRXLTuSzLudMFte/8CempWjVamNUR5eHJizsy+iuOuO/k2gnh7W0dHJmYY0tBf+gUErfluCv5mySAOQ=="
       },
       "Microsoft.Extensions.AI": {
         "type": "Transitive",
@@ -438,6 +453,11 @@
           "Microsoft.SemanticKernel.Abstractions": "1.73.0",
           "System.Numerics.Tensors": "10.0.3"
         }
+      },
+      "Microsoft.SourceLink.Common": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
       },
       "Microsoft.Win32.Registry": {
         "type": "Transitive",
@@ -1028,11 +1048,11 @@
         "dependencies": {
           "Google.Cloud.BigQuery.V2": "[3.11.0, )",
           "Hazina.Generator": "[2.0.0, )",
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )",
-          "Hazina.LLMs.Helpers": "[2.0.0, )",
-          "Hazina.LLMs.OpenAI": "[2.0.0, )",
-          "Hazina.LLMs.SemanticKernel": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
+          "Hazina.LLMs.Helpers": "[1.0.0, )",
+          "Hazina.LLMs.OpenAI": "[1.0.0, )",
+          "Hazina.LLMs.SemanticKernel": "[1.0.0, )",
           "Hazina.Store.DocumentStore": "[2.0.0, )",
           "Hazina.Store.EmbeddingStore": "[2.0.0, )",
           "MailKit": "[4.13.0, )"
@@ -1041,8 +1061,8 @@
       "hazina.ai.providers": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
           "Microsoft.Extensions.Configuration": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Binder": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Json": "[10.0.3, )",
@@ -1056,8 +1076,8 @@
       "hazina.dynamicapi": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
           "Newtonsoft.Json": "[13.0.3, )",
           "System.Text.Json": "[10.0.3, )"
         }
@@ -1065,7 +1085,7 @@
       "hazina.generator": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.OpenAI": "[2.0.0, )",
+          "Hazina.LLMs.OpenAI": "[1.0.0, )",
           "Hazina.Store.DocumentStore": "[2.0.0, )"
         }
       },
@@ -1078,8 +1098,8 @@
       "hazina.llms.client": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Helpers": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Helpers": "[1.0.0, )",
           "HtmlAgilityPack": "[1.12.0, )",
           "Microsoft.Extensions.Configuration": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Binder": "[10.0.3, )",
@@ -1098,7 +1118,7 @@
       "hazina.llms.openai": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Client": "[2.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
           "Microsoft.Extensions.Configuration": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Binder": "[10.0.3, )",
@@ -1108,9 +1128,9 @@
       "hazina.llms.semantickernel": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )",
-          "Hazina.LLMs.Helpers": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
+          "Hazina.LLMs.Helpers": "[1.0.0, )",
           "Hazina.Store.DocumentStore": "[2.0.0, )",
           "Microsoft.Extensions.Configuration": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[10.0.3, )",
@@ -1125,7 +1145,7 @@
         "type": "Project",
         "dependencies": {
           "Hazina.AI.Providers": "[1.0.0, )",
-          "Hazina.LLMs.Helpers": "[2.0.0, )",
+          "Hazina.LLMs.Helpers": "[1.0.0, )",
           "Hazina.Store.EmbeddingStore": "[2.0.0, )",
           "Npgsql": "[8.0.3, )",
           "Supabase": "[1.1.1, )"
@@ -1134,8 +1154,8 @@
       "hazina.store.embeddingstore": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Client": "[2.0.0, )",
-          "Hazina.LLMs.Helpers": "[2.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
+          "Hazina.LLMs.Helpers": "[1.0.0, )",
           "Npgsql": "[8.0.3, )",
           "OpenAI": "[2.8.0, )",
           "Pgvector": "[0.2.0, )",

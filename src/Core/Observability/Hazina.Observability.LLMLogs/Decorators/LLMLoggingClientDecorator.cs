@@ -47,8 +47,7 @@ namespace Hazina.Observability.LLMLogs.Decorators
             _providerName = providerName;
         }
 
-        // ICapabilityProvider - delegate to inner
-        public ProviderCapability SupportedCapabilities => _innerClient.SupportedCapabilities;
+        // ICapabilityProvider - delegate to inner (SupportedCapabilities already overridden above)
         public bool SupportsCapability(ProviderCapability capability) => _innerClient.SupportsCapability(capability);
         public IEnumerable<string> GetSupportedCapabilityNames() => _innerClient.GetSupportedCapabilityNames();
         public void RequireCapabilities(ProviderCapability requiredCapabilities) => _innerClient.RequireCapabilities(requiredCapabilities);
