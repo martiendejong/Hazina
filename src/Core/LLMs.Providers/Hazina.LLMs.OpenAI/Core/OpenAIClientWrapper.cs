@@ -154,7 +154,7 @@ public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.Model);
-        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath, client, imageClient, messages, images, responseFormat, true, true);
+        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath ?? string.Empty, client, imageClient, messages, images, responseFormat, true, true);
         return await interaction.Run(cancel);
     }
 
@@ -162,7 +162,7 @@ public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.ImageModel);
-        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath, client, imageClient, [prompt], images, responseFormat, true, true);
+        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath ?? string.Empty, client, imageClient, [prompt], images, responseFormat, true, true);
         return await interaction.RunImage(prompt, cancel);
     }
 
@@ -170,7 +170,7 @@ public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.Model);
-        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath, client, imageClient, messages, images, responseFormat, true, true);
+        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath ?? string.Empty, client, imageClient, messages, images, responseFormat, true, true);
         return interaction.Stream(cancel);
     }
 
@@ -221,7 +221,7 @@ public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
         string message = $"{DateTime.Now:yy-MM-dd HH:mm:ss}\n{data ?? ""}";
 
         // Ensure log directory exists
-        var logDir = Path.GetDirectoryName(Config.LogPath);
+        var logDir = Path.GetDirectoryName(Config.LogPath ?? string.Empty);
         if (!string.IsNullOrEmpty(logDir) && !Directory.Exists(logDir))
         {
             try
@@ -239,7 +239,7 @@ public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
         {
             try
             {
-                using (FileStream stream = new FileStream(Config.LogPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
+                using (FileStream stream = new FileStream(Config.LogPath ?? string.Empty, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
                 using (StreamWriter writer = new StreamWriter(stream))
                 {
                     writer.WriteLine(message);
