@@ -18,7 +18,7 @@ namespace Hazina.Observability.LLMLogs.Context
         public static LLMLoggingContext? Current
         {
             get => _current.Value;
-            set => _current.Value = value;
+            set => _current.Value = value!;
         }
 
         /// <summary>

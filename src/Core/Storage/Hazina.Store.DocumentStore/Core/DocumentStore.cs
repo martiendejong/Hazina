@@ -298,7 +298,7 @@ public class DocumentStore : IDocumentStore
                 Similarity = scored.Similarity,
                 StoreName = Name,
                 Document = scored.Info,
-                GetText = async (string a) => await TextStore.Get(a)
+                GetText = async (string a) => await TextStore.Get(a) ?? string.Empty
             }).ToList();
             var items = await EmbeddingMatcher.TakeTop(r);
             return items ?? new List<string>();
@@ -307,7 +307,7 @@ public class DocumentStore : IDocumentStore
         // Fall back to old architecture
         var embed = await LLMClient.GenerateEmbedding(cutOffQuery);
         var list = EmbeddingMatcher.GetEmbeddingsWithSimilarity(embed, EmbeddingStore.Embeddings);
-        var legacyResults = list.Select(item => new RelevantEmbedding { Similarity = item.similarity, StoreName = Name, Document = item.document, GetText = async (string a) => await TextStore.Get(a) }).ToList();
+        var legacyResults = list.Select(item => new RelevantEmbedding { Similarity = item.similarity, StoreName = Name, Document = item.document, GetText = async (string a) => await TextStore.Get(a) ?? string.Empty }).ToList();
         var legacyItems = await EmbeddingMatcher.TakeTop(legacyResults);
         return legacyItems ?? new List<string>();
     }
@@ -340,7 +340,7 @@ public class DocumentStore : IDocumentStore
                     StoreName = Name,
                     Document = scored.Info,
                     ParentDocumentKey = parentKey,
-                    GetText = async (string a) => await TextStore.Get(a)
+                    GetText = async (string a) => await TextStore.Get(a) ?? string.Empty
                 });
             }
 
@@ -363,7 +363,7 @@ public class DocumentStore : IDocumentStore
                 StoreName = Name,
                 Document = item.document,
                 ParentDocumentKey = parentKey,
-                GetText = async (string a) => await TextStore.Get(a)
+                GetText = async (string a) => await TextStore.Get(a) ?? string.Empty
             });
         }
 
