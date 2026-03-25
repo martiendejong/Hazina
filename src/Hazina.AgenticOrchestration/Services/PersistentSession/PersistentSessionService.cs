@@ -131,7 +131,7 @@ public class PersistentSessionService : IPersistentSessionService
         var request = new HazinaCompletionRequest
         {
             Messages = messages,
-            Model = "claude-sonnet-4.5", // Latest model
+            Model = "claude-opus-4-6", // Always use Opus
             MaxTokens = 8192,
             Temperature = 0.7
         };

@@ -1269,7 +1269,7 @@ public class TerminalConfigDto
     public string? DefaultWorkingDirectory { get; set; }
 
     /// <summary>Default arguments to pass to the command</summary>
-    public string[] DefaultArguments { get; set; } = Array.Empty<string>();
+    public string[] DefaultArguments { get; set; } = new[] { "--model", "opus" };
 
     /// <summary>Default terminal columns</summary>
     public int DefaultColumns { get; set; } = 120;

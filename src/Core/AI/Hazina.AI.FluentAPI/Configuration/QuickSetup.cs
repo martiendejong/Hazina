@@ -65,7 +65,7 @@ public static class QuickSetup
         string openAIKey,
         string anthropicKey,
         string openAIModel = "gpt-4o-mini",
-        string anthropicModel = "claude-3-5-sonnet-20241022")
+        string anthropicModel = "claude-opus-4-6")
     {
         var orchestrator = new ProviderOrchestrator();
 

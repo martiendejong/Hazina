@@ -315,7 +315,7 @@ public class AgenticOrchestrationOptions
     /// Default arguments to pass to the command
     /// Default: empty array
     /// </summary>
-    public string[] DefaultArguments { get; set; } = Array.Empty<string>();
+    public string[] DefaultArguments { get; set; } = new[] { "--model", "opus" };
 
     /// <summary>
     /// Enable logging of all agent session input/output to files.
