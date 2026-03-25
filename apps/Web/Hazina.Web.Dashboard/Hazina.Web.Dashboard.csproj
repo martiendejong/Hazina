@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>jengo-dashboard</AssemblyName>
+    <Description>Jengo Control Dashboard - Real-time monitoring and control</Description>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Hazina.AgenticOrchestration\Hazina.AgenticOrchestration.csproj" />
+  </ItemGroup>
+
+</Project>
