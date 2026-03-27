@@ -5,17 +5,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Hazina.LLMs</RootNamespace>
-    <Version>2.0.0</Version>
-    <PackageVersion>2.0.0</PackageVersion>
-    <Authors>Prospergenics</Authors>
-    <Description>Mistral AI implementation of ILLMClient for Hazina. Provides access to Mistral language models with chat completions, streaming, token usage tracking, and structured JSON outputs. Supports Mistral's latest models via their API.</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>mistral;llm;ai;chat;streaming;mistral-ai</PackageTags>
+    <Description>Mistral AI implementation of ILLMClient for Hazina. Chat completions, streaming, token usage tracking, and structured JSON outputs for Mistral models.</Description>
+    <PackageTags>hazina;mistral;llm;chat;streaming;mistral-ai</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.LLMs.Mistral</PackageId>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.3" />

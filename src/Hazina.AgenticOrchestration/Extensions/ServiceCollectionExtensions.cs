@@ -1,3 +1,4 @@
+using Hazina.AgenticOrchestration.Abstractions;
 using Hazina.AgenticOrchestration.Data;
 using Hazina.AgenticOrchestration.Hubs;
 using Hazina.AgenticOrchestration.Services;
@@ -62,6 +63,10 @@ public static class ServiceCollectionExtensions
         var dbInitializer = new DatabaseInitializer(options.DatabasePath);
         dbInitializer.Initialize();
 
+        // Register infrastructure abstractions (IFileSystem + ISystemClock)
+        services.TryAddSingleton<IFileSystem, PhysicalFileSystem>();
+        services.TryAddSingleton<ISystemClock, SystemClock>();
+
         // Register options - both as singleton and IOptions<T> for flexibility
         services.AddSingleton(options);
         services.AddOptions<AgenticOrchestrationOptions>()
@@ -119,8 +124,11 @@ public static class ServiceCollectionExtensions
         // Register Agent Session Logger for file-based I/O logging
         if (options.EnableSessionLogging)
         {
-            services.AddSingleton<IAgentSessionLogger>(
-                new AgentSessionLogger(options.AgentSessionLogsPath));
+            services.AddSingleton<IAgentSessionLogger>(sp =>
+                new AgentSessionLogger(
+                    options.AgentSessionLogsPath,
+                    sp.GetRequiredService<IFileSystem>(),
+                    sp.GetRequiredService<ISystemClock>()));
         }
         else
         {
@@ -166,13 +174,16 @@ public static class ServiceCollectionExtensions
             new MailService(
                 options.MailDatabasePath,
                 options.PendingNudgesPath,
-                sp.GetRequiredService<ILogger<MailService>>()));
+                sp.GetRequiredService<ILogger<MailService>>(),
+                sp.GetRequiredService<IFileSystem>()));
 
         // Register AgentIdentityService for persistent agent CVs
         services.AddSingleton<IAgentIdentityService>(sp =>
             new AgentIdentityService(
                 options.AgentIdentitiesPath,
-                sp.GetRequiredService<ILogger<AgentIdentityService>>()));
+                sp.GetRequiredService<ILogger<AgentIdentityService>>(),
+                sp.GetRequiredService<IFileSystem>(),
+                sp.GetRequiredService<ISystemClock>()));
 
         // Register HookConfigService for Claude Code hooks
         services.AddSingleton<IHookConfigService, HookConfigService>();
@@ -210,21 +221,23 @@ public static class ServiceCollectionExtensions
 }
 
 /// <summary>
-/// Configuration options for Agentic Orchestration
+/// Configuration options for Agentic Orchestration.
+/// All path properties default to relative paths from the app's base directory.
+/// Override with absolute paths via appsettings.json or code configuration.
 /// </summary>
 public class AgenticOrchestrationOptions
 {
     /// <summary>
-    /// Path to the SQLite database file
-    /// Default: C:\scripts\_machine\agent-activity.db
+    /// Path to the SQLite database file.
+    /// Default: agent-activity.db (relative to app base directory)
     /// </summary>
-    public string DatabasePath { get; set; } = @"C:\scripts\_machine\agent-activity.db";
+    public string DatabasePath { get; set; } = "agent-activity.db";
 
     /// <summary>
-    /// Path to the logs directory for output streaming
-    /// Default: C:\scripts\logs
+    /// Path to the logs directory for output streaming.
+    /// Default: logs (relative to app base directory)
     /// </summary>
-    public string LogsPath { get; set; } = @"C:\scripts\logs";
+    public string LogsPath { get; set; } = "logs";
 
     /// <summary>
     /// Enable SignalR for real-time updates
@@ -313,9 +326,9 @@ public class AgenticOrchestrationOptions
     /// <summary>
     /// Base path for agent session log files.
     /// Files are organized as: {BasePath}/{yyyy-MM-dd}/{HH}/session-{sessionId}.log
-    /// Default: C:\scripts\logs\agent-sessions
+    /// Default: logs/agent-sessions (relative to app base directory)
     /// </summary>
-    public string AgentSessionLogsPath { get; set; } = @"C:\scripts\logs\agent-sessions";
+    public string AgentSessionLogsPath { get; set; } = Path.Combine("logs", "agent-sessions");
 
     /// <summary>
     /// Path for uploaded files.
@@ -334,22 +347,22 @@ public class AgenticOrchestrationOptions
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Path to the mail database (SQLite)
-    /// Default: C:\scripts\_machine\mail.db
+    /// Path to the mail database (SQLite).
+    /// Default: mail.db (relative to app base directory)
     /// </summary>
-    public string MailDatabasePath { get; set; } = @"C:\scripts\_machine\mail.db";
+    public string MailDatabasePath { get; set; } = "mail.db";
 
     /// <summary>
-    /// Path to agent identities directory
-    /// Default: C:\scripts\_machine\agents
+    /// Path to agent identities directory.
+    /// Default: agents (relative to app base directory)
     /// </summary>
-    public string AgentIdentitiesPath { get; set; } = @"C:\scripts\_machine\agents";
+    public string AgentIdentitiesPath { get; set; } = "agents";
 
     /// <summary>
-    /// Path to pending nudges directory
-    /// Default: C:\scripts\_machine\pending-nudges
+    /// Path to pending nudges directory.
+    /// Default: pending-nudges (relative to app base directory)
     /// </summary>
-    public string PendingNudgesPath { get; set; } = @"C:\scripts\_machine\pending-nudges";
+    public string PendingNudgesPath { get; set; } = "pending-nudges";
 
     /// <summary>
     /// Maximum concurrent agents (parallel agent limit)
@@ -374,8 +387,19 @@ public class AgenticOrchestrationOptions
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Path to the directory for storing chat conversations
-    /// Default: C:\scripts\.orchestration-chats
+    /// Path to the directory for storing chat conversations.
+    /// Default: orchestration-chats (relative to app base directory)
     /// </summary>
-    public string ChatConversationsPath { get; set; } = @"C:\scripts\.orchestration-chats";
+    public string ChatConversationsPath { get; set; } = "orchestration-chats";
+
+    // ═══════════════════════════════════════════════════════════════
+    // PATH SECURITY OPTIONS
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Root directory that worktree paths must be within (for path safety validation).
+    /// Override this to point to your worktrees root directory.
+    /// Default: worker-agents (relative to app base directory)
+    /// </summary>
+    public string WorktreeRoot { get; set; } = "worker-agents";
 }

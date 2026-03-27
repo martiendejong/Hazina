@@ -1,3 +1,4 @@
+using Hazina.AgenticOrchestration.Abstractions;
 using Hazina.AgenticOrchestration.Validation;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -20,10 +21,17 @@ public interface IHookConfigService
 public class HookConfigService : IHookConfigService
 {
     private readonly ILogger<HookConfigService> _logger;
+    private readonly IFileSystem _fileSystem;
+    private readonly string _allowedWorktreeRoot;
 
-    public HookConfigService(ILogger<HookConfigService> logger)
+    public HookConfigService(
+        ILogger<HookConfigService> logger,
+        IFileSystem fileSystem,
+        AgenticOrchestrationOptions options)
     {
         _logger = logger;
+        _fileSystem = fileSystem;
+        _allowedWorktreeRoot = options.WorktreeRoot;
     }
 
     public Task<string> GenerateHooksConfigAsync(string agentName, int debounceMs = 5000)
@@ -72,23 +80,22 @@ public class HookConfigService : IHookConfigService
     public async Task InstallHooksAsync(string worktreePath, string agentName, int debounceMs = 5000)
     {
         // Validate path safety (prevent path traversal)
-        const string allowedRoot = @"C:\Projects\worker-agents";
-        if (!InputValidator.IsPathSafe(worktreePath, allowedRoot))
+        if (!InputValidator.IsPathSafe(worktreePath, _allowedWorktreeRoot))
         {
-            throw new ArgumentException($"Worktree path must be within {allowedRoot}");
+            throw new ArgumentException($"Worktree path must be within {_allowedWorktreeRoot}");
         }
 
         var claudeDir = Path.Combine(worktreePath, ".claude");
-        Directory.CreateDirectory(claudeDir);
+        _fileSystem.CreateDirectory(claudeDir);
 
         var settingsPath = Path.Combine(claudeDir, "settings.local.json");
 
         JsonNode rootNode;
 
         // Load existing settings or create new
-        if (File.Exists(settingsPath))
+        if (_fileSystem.FileExists(settingsPath))
         {
-            var existingJson = await File.ReadAllTextAsync(settingsPath);
+            var existingJson = await _fileSystem.ReadAllTextAsync(settingsPath);
             rootNode = JsonNode.Parse(existingJson) ?? new JsonObject();
         }
         else
@@ -122,13 +129,13 @@ public class HookConfigService : IHookConfigService
         }
 
         // Write back
-        var options = new JsonSerializerOptions
+        var writeOptions = new JsonSerializerOptions
         {
             WriteIndented = true
         };
 
-        var finalJson = rootNode.ToJsonString(options);
-        await File.WriteAllTextAsync(settingsPath, finalJson);
+        var finalJson = rootNode.ToJsonString(writeOptions);
+        await _fileSystem.WriteAllTextAsync(settingsPath, finalJson);
 
         _logger.LogInformation("Installed hooks for agent {AgentName} at {WorktreePath}", agentName, worktreePath);
     }
@@ -137,12 +144,12 @@ public class HookConfigService : IHookConfigService
     {
         var settingsPath = Path.Combine(worktreePath, ".claude", "settings.local.json");
 
-        if (!File.Exists(settingsPath))
+        if (!_fileSystem.FileExists(settingsPath))
         {
             return;
         }
 
-        var json = await File.ReadAllTextAsync(settingsPath);
+        var json = await _fileSystem.ReadAllTextAsync(settingsPath);
         var rootNode = JsonNode.Parse(json);
 
         if (rootNode is JsonObject rootObj && rootObj.ContainsKey("hooks"))
@@ -151,7 +158,7 @@ public class HookConfigService : IHookConfigService
 
             var options = new JsonSerializerOptions { WriteIndented = true };
             var finalJson = rootNode.ToJsonString(options);
-            await File.WriteAllTextAsync(settingsPath, finalJson);
+            await _fileSystem.WriteAllTextAsync(settingsPath, finalJson);
 
             _logger.LogInformation("Uninstalled hooks from {WorktreePath}", worktreePath);
         }
@@ -161,14 +168,14 @@ public class HookConfigService : IHookConfigService
     {
         var settingsPath = Path.Combine(worktreePath, ".claude", "settings.local.json");
 
-        if (!File.Exists(settingsPath))
+        if (!_fileSystem.FileExists(settingsPath))
         {
             return false;
         }
 
         try
         {
-            var json = await File.ReadAllTextAsync(settingsPath);
+            var json = await _fileSystem.ReadAllTextAsync(settingsPath);
             var rootNode = JsonNode.Parse(json);
 
             if (rootNode is JsonObject rootObj && rootObj["hooks"] is JsonObject hooks)

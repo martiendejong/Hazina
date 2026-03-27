@@ -6,6 +6,9 @@
     <LangVersion>latest</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.AI.Orchestration</PackageId>
+    <Description>LLM call orchestration with provider selection, fault detection, compression, and retry logic.</Description>
+    <PackageTags>hazina;ai;orchestration;provider;retry;resilience</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />

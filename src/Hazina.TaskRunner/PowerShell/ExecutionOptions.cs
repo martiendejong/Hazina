@@ -36,7 +36,10 @@ public class ExecutionOptions
     public bool LogExecution { get; set; } = true;
 
     /// <summary>
-    /// Path to log file (default: C:\scripts\_machine\task-execution-log.jsonl)
+    /// Path to log file. Defaults to task-execution-log.jsonl relative to the app base directory.
+    /// Override via configuration or environment variable HAZINA_TASK_LOG_PATH.
     /// </summary>
-    public string LogFilePath { get; set; } = @"C:\scripts\_machine\task-execution-log.jsonl";
+    public string LogFilePath { get; set; } =
+        Environment.GetEnvironmentVariable("HAZINA_TASK_LOG_PATH")
+        ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "task-execution-log.jsonl");
 }

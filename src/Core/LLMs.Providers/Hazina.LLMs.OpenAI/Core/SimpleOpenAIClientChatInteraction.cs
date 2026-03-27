@@ -204,7 +204,7 @@ public partial class SimpleOpenAIClientChatInteraction
             }
         }
 
-        return completion;
+        return completion!;
     }
 
     public async Task<GeneratedImage> RunImage(string prompt, CancellationToken cancellationToken)
@@ -376,7 +376,7 @@ public partial class SimpleOpenAIClientChatInteraction
         // Then, add a new tool message for each tool call that is resolved.
         foreach (ChatToolCall toolCall in toolCalls)
         {
-            foreach(var tool in ToolsContext.Tools)
+            foreach(var tool in ToolsContext?.Tools ?? [])
             {
                 if (toolCall.FunctionName == tool.FunctionName)
                 {
@@ -400,7 +400,7 @@ public partial class SimpleOpenAIClientChatInteraction
                     // END PATCH
 
                     // Invoke OnToolExecuted callback if defined
-                    if (ToolsContext.OnToolExecuted != null)
+                    if (ToolsContext?.OnToolExecuted != null)
                     {
                         try
                         {

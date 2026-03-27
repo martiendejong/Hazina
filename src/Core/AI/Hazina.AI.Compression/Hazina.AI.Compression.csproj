@@ -6,6 +6,9 @@
     <LangVersion>latest</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.AI.Compression</PackageId>
+    <Description>Token-aware context compression for LLM interactions. Reduces token usage while preserving semantic meaning.</Description>
+    <PackageTags>hazina;ai;compression;tokens;context;optimization</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
