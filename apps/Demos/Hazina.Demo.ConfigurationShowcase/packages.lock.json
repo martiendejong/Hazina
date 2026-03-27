@@ -764,11 +764,11 @@
         "dependencies": {
           "Google.Cloud.BigQuery.V2": "[3.11.0, )",
           "Hazina.Generator": "[2.0.0, )",
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )",
-          "Hazina.LLMs.Helpers": "[2.0.0, )",
-          "Hazina.LLMs.OpenAI": "[2.0.0, )",
-          "Hazina.LLMs.SemanticKernel": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
+          "Hazina.LLMs.Helpers": "[1.0.0, )",
+          "Hazina.LLMs.OpenAI": "[1.0.0, )",
+          "Hazina.LLMs.SemanticKernel": "[1.0.0, )",
           "Hazina.Store.DocumentStore": "[2.0.0, )",
           "Hazina.Store.EmbeddingStore": "[2.0.0, )",
           "MailKit": "[4.13.0, )"
@@ -779,15 +779,15 @@
         "dependencies": {
           "Hazina.AI.Providers": "[1.0.0, )",
           "Hazina.AI.RAG": "[1.0.0, )",
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
           "Hazina.Neurochain.Core": "[1.0.0, )"
         }
       },
       "hazina.ai.compression": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Classes": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )",
           "SharpToken": "[2.0.3, )"
         }
@@ -796,8 +796,8 @@
         "type": "Project",
         "dependencies": {
           "Hazina.AI.Providers": "[1.0.0, )",
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )"
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )"
         }
       },
       "hazina.ai.fluentapi": {
@@ -806,10 +806,12 @@
           "Hazina.AI.FaultDetection": "[1.0.0, )",
           "Hazina.AI.Orchestration": "[1.0.0, )",
           "Hazina.AI.Providers": "[1.0.0, )",
-          "Hazina.LLMs.Anthropic": "[2.0.0, )",
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )",
-          "Hazina.LLMs.OpenAI": "[2.0.0, )"
+          "Hazina.AgentFactory": "[2.0.0, )",
+          "Hazina.LLMs.Anthropic": "[1.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
+          "Hazina.LLMs.OpenAI": "[1.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )"
         }
       },
       "hazina.ai.orchestration": {
@@ -818,15 +820,15 @@
           "Hazina.AI.Compression": "[1.0.0, )",
           "Hazina.AI.FaultDetection": "[1.0.0, )",
           "Hazina.AI.Providers": "[1.0.0, )",
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )"
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )"
         }
       },
       "hazina.ai.providers": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
           "Microsoft.Extensions.Configuration": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Binder": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Json": "[10.0.3, )",
@@ -838,8 +840,8 @@
         "type": "Project",
         "dependencies": {
           "Hazina.AI.Providers": "[1.0.0, )",
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
           "Hazina.Neurochain.Core": "[1.0.0, )",
           "Hazina.Store.DocumentStore": "[2.0.0, )",
           "Hazina.Store.EmbeddingStore": "[2.0.0, )",
@@ -851,22 +853,22 @@
       "hazina.generator": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.OpenAI": "[2.0.0, )",
+          "Hazina.LLMs.OpenAI": "[1.0.0, )",
           "Hazina.Store.DocumentStore": "[2.0.0, )"
         }
       },
       "hazina.llmclienttools": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
           "HtmlAgilityPack": "[1.12.0, )"
         }
       },
       "hazina.llms.anthropic": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Client": "[2.0.0, )"
+          "Hazina.LLMs.Client": "[1.0.0, )"
         }
       },
       "hazina.llms.classes": {
@@ -878,8 +880,8 @@
       "hazina.llms.client": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Helpers": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Helpers": "[1.0.0, )",
           "HtmlAgilityPack": "[1.12.0, )",
           "Microsoft.Extensions.Configuration": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Binder": "[10.0.3, )",
@@ -898,7 +900,7 @@
       "hazina.llms.ollama": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Client": "[2.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
           "Microsoft.Extensions.Configuration": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Binder": "[10.0.3, )",
@@ -908,7 +910,7 @@
       "hazina.llms.openai": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Client": "[2.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
           "Microsoft.Extensions.Configuration": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Binder": "[10.0.3, )",
@@ -918,9 +920,9 @@
       "hazina.llms.semantickernel": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )",
-          "Hazina.LLMs.Helpers": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
+          "Hazina.LLMs.Helpers": "[1.0.0, )",
           "Hazina.Store.DocumentStore": "[2.0.0, )",
           "Microsoft.Extensions.Configuration": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[10.0.3, )",
@@ -937,8 +939,8 @@
           "Hazina.AI.FaultDetection": "[1.0.0, )",
           "Hazina.AI.Orchestration": "[1.0.0, )",
           "Hazina.AI.Providers": "[1.0.0, )",
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )"
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )"
         }
       },
       "hazina.production.monitoring": {
@@ -953,7 +955,7 @@
         "type": "Project",
         "dependencies": {
           "Hazina.AI.Providers": "[1.0.0, )",
-          "Hazina.LLMs.Helpers": "[2.0.0, )",
+          "Hazina.LLMs.Helpers": "[1.0.0, )",
           "Hazina.Store.EmbeddingStore": "[2.0.0, )",
           "Npgsql": "[8.0.3, )",
           "Supabase": "[1.1.1, )"
@@ -962,8 +964,8 @@
       "hazina.store.embeddingstore": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Client": "[2.0.0, )",
-          "Hazina.LLMs.Helpers": "[2.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
+          "Hazina.LLMs.Helpers": "[1.0.0, )",
           "Npgsql": "[8.0.3, )",
           "OpenAI": "[2.8.0, )",
           "Pgvector": "[0.2.0, )",
@@ -973,11 +975,13 @@
       "hazina.store.sqlite": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Client": "[2.0.0, )",
-          "Hazina.LLMs.Helpers": "[2.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
+          "Hazina.LLMs.Helpers": "[1.0.0, )",
           "Hazina.Store.DocumentStore": "[2.0.0, )",
           "Hazina.Store.EmbeddingStore": "[2.0.0, )",
           "Microsoft.Data.Sqlite": "[9.0.0, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[10.0.3, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )"
         }
       },
@@ -999,7 +1003,7 @@
       "hazina.tools.data": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMClientTools": "[2.0.0, )",
+          "Hazina.LLMClientTools": "[1.0.0, )",
           "Hazina.Store.DocumentStore": "[2.0.0, )",
           "Hazina.Store.Sqlite": "[2.0.0, )",
           "Hazina.Tools.Common.Models": "[2.0.0, )",
