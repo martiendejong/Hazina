@@ -18,6 +18,7 @@ public interface ISessionPersistence
     Task<string> GetTranscriptAsync(string sessionId);
     Task ArchiveSessionAsync(string sessionId);
     Task<IEnumerable<SessionMetadata>> GetActiveSessionsAsync();
+    Task DeleteSessionFilesAsync(string sessionId);
 }
 
 public class SessionMetadata
@@ -42,7 +43,8 @@ public enum SessionState
 {
     Active,
     Suspended,
-    Completed
+    Completed,
+    Recoverable
 }
 
 public class SessionPersistence : ISessionPersistence
@@ -179,6 +181,27 @@ public class SessionPersistence : ISessionPersistence
         }
 
         return sessions;
+    }
+
+    public Task DeleteSessionFilesAsync(string sessionId)
+    {
+        var files = new[]
+        {
+            GetMetadataPath(sessionId),
+            GetTranscriptPath(sessionId),
+            GetAsciinemaPath(sessionId)
+        };
+
+        foreach (var file in files)
+        {
+            if (File.Exists(file))
+            {
+                File.Delete(file);
+            }
+        }
+
+        _sessionLocks.TryRemove(sessionId, out _);
+        return Task.CompletedTask;
     }
 
     private string GetMetadataPath(string sessionId) =>
