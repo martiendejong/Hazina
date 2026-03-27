@@ -87,7 +87,7 @@ namespace HazinaStore.Core
             };
 
             var directories = Directory.GetDirectories(_basePath)
-                .Select(Path.GetFileName)
+                .Select(d => Path.GetFileName(d)!)
                 .Where(name => !string.IsNullOrEmpty(name) &&
                               !name.StartsWith(".") &&
                               !systemDirectories.Contains(name))

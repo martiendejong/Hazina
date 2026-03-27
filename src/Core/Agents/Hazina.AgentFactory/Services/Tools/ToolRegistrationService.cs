@@ -356,10 +356,12 @@ public class ToolRegistrationService : IToolRegistrationService
                 var password = "qEWK IwaU JzyL ufe9 Ecro tkKB";
                 var siteurl = "http://localhost";
 
+                #pragma warning disable MA0039 // Certificate validation for localhost development
                 var handler = new HttpClientHandler
                 {
                     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
                 };
+                #pragma warning restore MA0039
                 var httpClient = new HttpClient(handler);
 
                 try
@@ -615,12 +617,12 @@ public class ToolRegistrationService : IToolRegistrationService
                 async (messages, toolCall, cancel) =>
                 {
                     cancel.ThrowIfCancellationRequested();
-                    if (CommonToolParameters.Instruction.TryGetValue(toolCall, out string key))
+                    if (CommonToolParameters.Instruction.TryGetValue(toolCall, out string? key))
                     {
                         var id = Guid.NewGuid().ToString();
-                        tools.SendMessage(id, flow, key);
-                        var response = await _callFlowFunc(flow, key, caller, cancel);
-                        tools.SendMessage(id, flow, response);
+                        tools.SendMessage?.Invoke(id, flow, key!);
+                        var response = await _callFlowFunc(flow, key!, caller, cancel);
+                        tools.SendMessage?.Invoke(id, flow, response);
                         return response;
                     }
                     return "No key given";

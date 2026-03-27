@@ -75,7 +75,10 @@ public static class FileHelper
             var uploadedFilesList = await GetUploadedFilesListInternalAsync(listFilePath);
 
             var fileToUpdate = uploadedFilesList.FirstOrDefault(f => f.Filename == filename);
-            fileToUpdate.Label = newLabel;
+            if (fileToUpdate != null)
+            {
+                fileToUpdate.Label = newLabel;
+            }
 
             var jsonContent = JsonSerializer.Serialize(uploadedFilesList, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(listFilePath, jsonContent);

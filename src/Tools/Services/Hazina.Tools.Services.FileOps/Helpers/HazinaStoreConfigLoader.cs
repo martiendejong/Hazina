@@ -62,8 +62,8 @@ namespace Hazina.Tools.Services.FileOps.Helpers
             var config = new HazinaStoreConfig
             {
                 ProjectSettings = projectSettings,
-                ApiSettings = apiSettings,
-                GoogleOAuthSettings = googleOAuthSettings,
+                ApiSettings = apiSettings!,
+                GoogleOAuthSettings = googleOAuthSettings!,
                 OpenAI = openAIConfig
             };
             return config;

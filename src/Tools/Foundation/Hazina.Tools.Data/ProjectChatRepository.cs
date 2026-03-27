@@ -32,12 +32,12 @@ namespace Hazina.Tools.Data
             return LoadListFileOrDefault<ChatMetadata>(chatsFile);
         }
 
-        public ChatMetadata GetChatMetaDataById(string projectId, string chatId)
+        public ChatMetadata? GetChatMetaDataById(string projectId, string chatId)
         {
             return GetChatMetaData(projectId).FirstOrDefault(m => m.Id == chatId);
         }
 
-        public ChatMetadata GetChatMetaDataUserById(string projectId, string chatId, string userId)
+        public ChatMetadata? GetChatMetaDataUserById(string projectId, string chatId, string userId)
         {
             return GetChatMetaDataUser(projectId, userId).FirstOrDefault(m => m.Id == chatId);
         }

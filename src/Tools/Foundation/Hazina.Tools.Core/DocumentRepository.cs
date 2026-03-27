@@ -169,7 +169,7 @@ namespace HazinaStore.Core
         /// </summary>
         /// <param name="documentId">Document ID</param>
         /// <returns>Uploaded document or null if not found</returns>
-        public UploadedDocument GetUploadedDocument(string documentId)
+        public UploadedDocument? GetUploadedDocument(string documentId)
         {
             return GetUploadedDocumentsMetadata().FirstOrDefault(d => d.Id == documentId);
         }
@@ -187,7 +187,7 @@ namespace HazinaStore.Core
             {
                 // Delete physical file
                 // Handle both new format (with FilePath) and old format (without FilePath)
-                string fullPath = null;
+                string? fullPath = null;
 
                 if (!string.IsNullOrWhiteSpace(doc.FilePath))
                 {
@@ -317,6 +317,7 @@ namespace HazinaStore.Core
             }
 
             // Add new revision
+            document.Revisions ??= new List<DocumentRevision>();
             document.Revisions.Add(new DocumentRevision
             {
                 Content = content,
@@ -334,7 +335,7 @@ namespace HazinaStore.Core
         /// </summary>
         /// <param name="name">Document name</param>
         /// <returns>Generated document or null if not found</returns>
-        public GeneratedDocument GetGeneratedDocument(string name)
+        public GeneratedDocument? GetGeneratedDocument(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return null;

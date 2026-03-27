@@ -1,8 +1,10 @@
 using System.Security.Cryptography;
 using Hazina.LLMs;
+using Hazina.LLMs.Capabilities;
 
-class DummyLLMClient : ILLMClient
+class DummyLLMClient : CapabilityProviderBase, ILLMClient
 {
+    public override ProviderCapability SupportedCapabilities => ProviderCapability.Embeddings;
     private readonly int _dimension;
     public DummyLLMClient(int dimension) { _dimension = dimension; }
 

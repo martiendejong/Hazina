@@ -44,7 +44,7 @@ namespace HazinaStore.Core
         /// Get the project-specific custom prompt
         /// </summary>
         /// <returns>Custom prompt text or null if not set</returns>
-        public string GetCustomPrompt()
+        public string? GetCustomPrompt()
         {
             // Custom prompts are stored in the project metadata
             return _project.Metadata.CustomFields.ContainsKey("KlantSpecifiekePrompt")
@@ -92,7 +92,7 @@ namespace HazinaStore.Core
         /// </summary>
         /// <param name="actionName">Action name (without .actions extension)</param>
         /// <returns>Action content or null if not found</returns>
-        public string GetActionFile(string actionName)
+        public string? GetActionFile(string actionName)
         {
             if (string.IsNullOrWhiteSpace(actionName))
                 return null;
@@ -156,7 +156,7 @@ namespace HazinaStore.Core
         /// Get WordPress settings for this project
         /// </summary>
         /// <returns>WordPress settings or null if not configured</returns>
-        public WordpressSettings GetWordpressSettings()
+        public WordpressSettings? GetWordpressSettings()
         {
             // WordPress settings are stored in the old Project model
             // We need to load the project JSON and extract them
@@ -223,7 +223,7 @@ namespace HazinaStore.Core
         /// </summary>
         /// <param name="filename">Prompt filename (e.g., "project.prompts.config.json")</param>
         /// <returns>Prompt content or null if not found</returns>
-        public string GetPromptFile(string filename)
+        public string? GetPromptFile(string filename)
         {
             if (string.IsNullOrWhiteSpace(filename))
                 return null;
@@ -273,7 +273,7 @@ namespace HazinaStore.Core
         /// Get content hooks data
         /// </summary>
         /// <returns>Content hooks JSON or null if not found</returns>
-        public string GetContentHooks()
+        public string? GetContentHooks()
         {
             return GetProjectFile("contenthooks.json");
         }
@@ -291,7 +291,7 @@ namespace HazinaStore.Core
         /// Get blog categories data
         /// </summary>
         /// <returns>Blog categories JSON or null if not found</returns>
-        public string GetBlogCategories()
+        public string? GetBlogCategories()
         {
             return GetProjectFile("BlogCategories.json");
         }
@@ -309,7 +309,7 @@ namespace HazinaStore.Core
         /// Get content planning data
         /// </summary>
         /// <returns>Content planning JSON or null if not found</returns>
-        public string GetContentPlanning()
+        public string? GetContentPlanning()
         {
             return GetProjectFile("ContentPlanning.json");
         }
@@ -332,7 +332,7 @@ namespace HazinaStore.Core
         /// </summary>
         /// <param name="filename">Filename</param>
         /// <returns>File content or null if not found</returns>
-        private string GetProjectFile(string filename)
+        private string? GetProjectFile(string filename)
         {
             if (string.IsNullOrWhiteSpace(filename))
                 return null;

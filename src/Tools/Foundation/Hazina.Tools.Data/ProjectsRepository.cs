@@ -66,12 +66,12 @@ namespace Hazina.Tools.Data
                         return null;
                     Console.WriteLine($"Reading project file for {projectName}");
                     var project = Load(projectName);
-                    if (project.Archived || (project.ProjectType.ToLower() != type && type != "customer"))
+                    if (project == null || project.Archived || (project.ProjectType.ToLower() != type && type != "customer"))
                         return null;
                     return project;
                 })
                 .OfType<Project>().ToList();
-            var filtered = projects.Where(p => filter == null || filter.Contains(p.Id)).ToList();
+            var filtered = projects.Where(p => filter == null || filter.Contains(p.Id ?? string.Empty)).ToList();
             return filtered.OrderByDescending(project => project.Created)
                 .ToList();
         }
@@ -79,7 +79,7 @@ namespace Hazina.Tools.Data
         public List<Project> GetChatProjects(List<string> filter) => GetProjectsList(filter, "chat");
         public List<Project> GetProjectsList(List<string> filter) => GetProjectsList(filter, "customer");
 
-        public Project Load(string projectId)
+        public Project? Load(string projectId)
         {
             if (string.IsNullOrWhiteSpace(projectId))
             {
@@ -104,7 +104,7 @@ namespace Hazina.Tools.Data
             return Project.Load(projectPath);
         }
 
-        public void Save(Project project) => project.Save(_fileLocator.GetProjectFilePath(project.Id));
+        public void Save(Project project) => project.Save(_fileLocator.GetProjectFilePath(project.Id!));
 
         public bool Exists(string projectId) => _fileLocator.Exists(projectId);
 

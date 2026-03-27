@@ -71,6 +71,7 @@ public class PostgresDocumentMetadataStore : IDocumentMetadataStore
             if (result == null) return null;
 
             var json = result.ToString();
+            if (string.IsNullOrEmpty(json)) return null;
             return JsonSerializer.Deserialize<DocumentMetadata>(json);
         }
         catch

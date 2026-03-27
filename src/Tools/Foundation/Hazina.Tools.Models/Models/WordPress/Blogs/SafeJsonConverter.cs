@@ -10,12 +10,12 @@ namespace Hazina.Tools.Models.WordPress.Blogs
             try
             {
                 JsonSerializerOptions newOptions = GetOptionsWithoutSelf(options);
-                return JsonSerializer.Deserialize<T>(ref reader, newOptions);
+                return JsonSerializer.Deserialize<T>(ref reader, newOptions)!;
             }
             catch (JsonException)
             {
                 // Return default if deserialization fails
-                return default;
+                return default!;
             }
         }
 

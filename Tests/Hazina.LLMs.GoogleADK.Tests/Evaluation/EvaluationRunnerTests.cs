@@ -1,3 +1,4 @@
+using Hazina.LLMs.Capabilities;
 using Hazina.LLMs.GoogleADK.Agents;
 using Hazina.LLMs.GoogleADK.Core;
 using Hazina.LLMs.GoogleADK.Evaluation;
@@ -8,7 +9,7 @@ namespace Hazina.LLMs.GoogleADK.Tests.Evaluation;
 
 public class EvaluationRunnerTests
 {
-    private class MockLLMClient : ILLMClient
+    private class MockLLMClient : CapabilityProviderBase, ILLMClient
     {
         private readonly string _response;
 
@@ -16,6 +17,9 @@ public class EvaluationRunnerTests
         {
             _response = response;
         }
+
+        public override ProviderCapability SupportedCapabilities =>
+            ProviderCapability.Chat | ProviderCapability.Streaming | ProviderCapability.Embeddings;
 
         public Task<Embedding> GenerateEmbedding(string data)
         {

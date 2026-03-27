@@ -77,7 +77,7 @@ namespace Hazina.Tools.Extensions
         /// </summary>
         public static void Save(this ProjectsRepository repository, Project project)
         {
-            var projectFolder = Path.Combine(repository.ProjectsFolder, project.Id);
+            var projectFolder = Path.Combine(repository.ProjectsFolder, project.Id!);
             if (!Directory.Exists(projectFolder))
             {
                 Directory.CreateDirectory(projectFolder);
@@ -117,7 +117,7 @@ namespace Hazina.Tools.Extensions
         /// </summary>
         public static string GetPath(this ProjectsRepository repository, Project project, string fileName)
         {
-            return Path.Combine(repository.GetProjectFolder(project.Id), fileName);
+            return Path.Combine(repository.GetProjectFolder(project.Id!), fileName);
         }
 
         /// <summary>
@@ -189,17 +189,17 @@ namespace Hazina.Tools.Extensions
             var path = repository.GetPath(projectId, fileName);
             if (!File.Exists(path))
             {
-                return null;
+                return null!;
             }
 
             try
             {
                 var json = File.ReadAllText(path);
-                return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
             }
             catch
             {
-                return null;
+                return null!;
             }
         }
 
@@ -302,7 +302,7 @@ namespace Hazina.Tools.Extensions
         public static BlogCategoriesClass LoadBlogCategories(this ProjectsRepository repository, string projectId)
         {
             var project = repository.Load(projectId);
-            return LoadBlogCategories(repository, project);
+            return LoadBlogCategories(repository, project!);
         }
 
         /// <summary>
@@ -310,8 +310,8 @@ namespace Hazina.Tools.Extensions
         /// </summary>
         public static BlogCategoriesClass LoadBlogCategories(this ProjectsRepository repository, Project project)
         {
-            var fileName = repository.GetBlogCategoriesFile(project.Id);
-            var path = repository.GetPath(project.Id, fileName);
+            var fileName = repository.GetBlogCategoriesFile(project.Id!);
+            var path = repository.GetPath(project.Id!, fileName);
             if (File.Exists(path))
             {
                 try
@@ -333,7 +333,7 @@ namespace Hazina.Tools.Extensions
         public static WordPressCredentials GetWordPressCredentials(this ProjectsRepository repository, string projectId)
         {
             var project = repository.Load(projectId);
-            return GetWordPressCredentials(repository, project);
+            return GetWordPressCredentials(repository, project!);
         }
 
         /// <summary>
@@ -343,7 +343,7 @@ namespace Hazina.Tools.Extensions
         {
             // This would typically load from project configuration or a credentials file
             // For now, return null - this may need to be implemented based on actual storage location
-            return null;
+            return null!;
         }
 
         /// <summary>
@@ -438,7 +438,7 @@ namespace Hazina.Tools.Extensions
 
             // Add project metadata file
             var projectFile = project.Id + ".json";
-            if (repository.FileExists(project.Id, projectFile))
+            if (repository.FileExists(project.Id!, projectFile))
             {
                 list.Add(projectFile);
             }
@@ -446,7 +446,7 @@ namespace Hazina.Tools.Extensions
             // Add uploaded files if they exist
             try
             {
-                var uploadsJsonPath = Path.Combine(repository.GetProjectFolder(project.Id), "uploadedFiles.json");
+                var uploadsJsonPath = Path.Combine(repository.GetProjectFolder(project.Id!), "uploadedFiles.json");
                 if (File.Exists(uploadsJsonPath))
                 {
                     var json = await File.ReadAllTextAsync(uploadsJsonPath);
@@ -463,7 +463,7 @@ namespace Hazina.Tools.Extensions
             catch { /* ignore and continue */ }
 
             // Add action files
-            var projectFolder = repository.GetProjectFolder(project.Id);
+            var projectFolder = repository.GetProjectFolder(project.Id!);
             var actionFiles = Directory.GetFiles(projectFolder, "*.actions", SearchOption.TopDirectoryOnly);
             foreach (var file in actionFiles)
             {

@@ -2,19 +2,19 @@ namespace Hazina.Tools.Services.BigQuery
 {
     public class BigQueryTableDef
     {
-        public List<BigQueryFieldDef> Fields { get; set; }
-        public string Name { get; set; }
+        public List<BigQueryFieldDef> Fields { get; set; } = new();
+        public string Name { get; set; } = string.Empty;
     }
 
     public class BigQueryFieldDef
     {
-        public string Name { get; set; }
-        public string DataType { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string DataType { get; set; } = string.Empty;
     }
 
     public class BigQueries
     {
-        public static List<BigQueryTableDef> Tables;
+        public static List<BigQueryTableDef> Tables = new();
         public static string SchemaName = Environment.GetEnvironmentVariable("BIGQUERY_SCHEMA") ?? "your-project-id.your-dataset";
 
         public static string GetTablesQuery => @$"

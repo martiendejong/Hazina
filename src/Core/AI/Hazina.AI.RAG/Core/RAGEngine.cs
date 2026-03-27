@@ -242,7 +242,7 @@ public class RAGEngine
                 var embedding = await GenerateEmbeddingAsync(doc.Content, cancellationToken);
 
                 // Store in vector store
-                await _vectorStore.AddAsync(
+                await _vectorStore!.AddAsync(
                     doc.Id,
                     embedding,
                     new Dictionary<string, object>
@@ -401,7 +401,7 @@ public class RAGEngine
         double minSimilarity,
         CancellationToken cancellationToken)
     {
-        var results = await _vectorStore.SearchAsync(
+        var results = await _vectorStore!.SearchAsync(
             queryEmbedding,
             topK,
             cancellationToken

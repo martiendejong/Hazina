@@ -71,7 +71,9 @@ namespace HazinaStore.Services
         private static HttpClient CreateInsecureClient()
         {
             var handler = new HttpClientHandler();
+#pragma warning disable MA0039 // Intentional insecure client for development/testing environments
             handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+#pragma warning restore MA0039
             return new HttpClient(handler);
         }
 

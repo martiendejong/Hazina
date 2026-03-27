@@ -47,7 +47,8 @@ public class HuggingFaceClientWrapper : CapabilityProviderBase, ILLMClient
 
         var content = await response.Content.ReadAsStringAsync();
         try {
-            var vector = JsonSerializer.Deserialize<double[][]>(content)?[0];
+            var vector = JsonSerializer.Deserialize<double[][]>(content)?[0]
+                ?? throw new Exception("Could not extract embedding vector from response.");
             return new Embedding(vector);
         } catch {
             throw new Exception($"Could not parse embedding output: {content}");
@@ -69,7 +70,8 @@ public class HuggingFaceClientWrapper : CapabilityProviderBase, ILLMClient
         // Try to deserialize as { generated_image: <base64str> }
         using var doc = JsonDocument.Parse(content);
         if(doc.RootElement.TryGetProperty("generated_image", out var imgProp) || doc.RootElement.TryGetProperty("image", out imgProp)) {
-            var base64 = imgProp.GetString();
+            var base64 = imgProp.GetString()
+                ?? throw new Exception("Image base64 content was null.");
             var bytes = Convert.FromBase64String(base64);
             // Return only bytes, no URL for HuggingFace
             var image = new HazinaGeneratedImage(null, BinaryData.FromBytes(bytes));
@@ -103,13 +105,13 @@ public class HuggingFaceClientWrapper : CapabilityProviderBase, ILLMClient
                 var elem = doc.RootElement[0];
                 if (elem.TryGetProperty("generated_text", out var text))
                 {
-                    var t = text.GetString();
+                    var t = text.GetString() ?? string.Empty;
                     toolsContext?.SendMessage?.Invoke(id, "LLM Response (HuggingFace)", t);
                     return new LLMResponse<string>(t, tokenUsage);
                 }
                 if(elem.TryGetProperty("output", out text))
                 {
-                    var t = text.GetString();
+                    var t = text.GetString() ?? string.Empty;
                     toolsContext?.SendMessage?.Invoke(id, "LLM Response (HuggingFace)", t);
                     return new LLMResponse<string>(t, tokenUsage);
                 }

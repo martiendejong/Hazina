@@ -24,7 +24,7 @@ namespace Hazina.Tools.Models.Social
             else if (reader.TokenType == JsonTokenType.StartArray)
             {
                 // Handle array format: "Comments": [{...}]
-                return JsonSerializer.Deserialize<List<ConnectedFacebookComment>>(ref reader, options);
+                return JsonSerializer.Deserialize<List<ConnectedFacebookComment>>(ref reader, options) ?? new List<ConnectedFacebookComment>();
             }
             else if (reader.TokenType == JsonTokenType.Null)
             {

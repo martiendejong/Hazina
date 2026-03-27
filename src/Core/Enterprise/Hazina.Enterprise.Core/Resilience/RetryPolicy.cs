@@ -88,7 +88,7 @@ public class RetryPolicy : IRetryPolicy
 
                 return result;
             }
-            catch (Exception ex) when (attempt < _options.MaxRetryAttempts && _options.ShouldRetry(ex))
+            catch (Exception ex) when (attempt < _options.MaxRetryAttempts && (_options.ShouldRetry?.Invoke(ex) ?? false))
             {
                 lastException = ex;
                 attempt++;

@@ -35,17 +35,17 @@ namespace Hazina.Tools.Services.WordPress
             return client;
         }
 
-        public static async Task<Dictionary<string, WordPressPageData>> ScrapeWordpressCategories(string siteUrl, string username = null, string password = null, Func<string, string, string, string, bool> filterPages = null)
+        public static async Task<Dictionary<string, WordPressPageData>> ScrapeWordpressCategories(string siteUrl, string? username = null, string? password = null, Func<string, string, string, string, bool>? filterPages = null)
         {
             var handleResults = async (HttpResponseMessage response) =>
             {
                 var items = new Dictionary<string, WordPressPageData>();
 
                 string json = await response.Content.ReadAsStringAsync();
-                JsonArray categories = (JsonArray)JsonNode.Parse(json);
+                JsonArray categories = (JsonArray)JsonNode.Parse(json)!;
                 foreach (var category in categories)
                 {
-                    var id = category["id"].ToString();
+                    var id = category!["id"]!.ToString();
                     var posts = await ScrapeWordpressPosts(siteUrl + "/wp-json/wp/v2/posts?categories=" + id, username, password, filterPages);
                     foreach(var pair in posts)
                     {
@@ -56,7 +56,7 @@ namespace Hazina.Tools.Services.WordPress
                 return items;
             };
 
-            return await CallClient(siteUrl + "/wp-json/wp/v2/categories", username, password, handleResults);
+            return await CallClient(siteUrl + "/wp-json/wp/v2/categories", username ?? string.Empty, password ?? string.Empty, handleResults);
         }
 
         public static async Task<Dictionary<string, WordPressPageData>> ScrapeWordpressPages(string apiUrl, string? username = null, string? password = null, Func<string, string, string, string, bool>? filterPages = null, HttpClient? client = null, bool getAll = true)
@@ -88,17 +88,17 @@ namespace Hazina.Tools.Services.WordPress
 
             if (!getAll)
             {
-                return await CallClient(apiUrl, username, password, handleResults, client);
+                return await CallClient(apiUrl, username ?? string.Empty, password ?? string.Empty, handleResults, client);
             }
 
             apiUrl += "?per_page=100";
-            var items = await CallClient(apiUrl, username, password, handleResults, client);
+            var items = await CallClient(apiUrl, username ?? string.Empty, password ?? string.Empty, handleResults, client);
             var totalItems = items.ToDictionary();
             var page = 1;
             while (items.Count >= 100)
             {
                 ++page;
-                items = await CallClient(apiUrl + $"&page={page}", username, password, handleResults, client);
+                items = await CallClient(apiUrl + $"&page={page}", username ?? string.Empty, password ?? string.Empty, handleResults, client);
                 foreach (var item in items)
                 {
                     totalItems[item.Key] = item.Value;
@@ -109,36 +109,38 @@ namespace Hazina.Tools.Services.WordPress
 
         private static void ParseWpPageResult(Func<string, string, string, string, bool>? filterPages, Dictionary<string, WordPressPageData> items, JsonNode? page)
         {
-            var title = page["title"]["rendered"].ToString();
-            var link = page["link"].ToString();
-            var content = "<html><body>" + page["content"]["rendered"].ToString() + "</body></html>";
+            if (page == null) return;
+            var title = page["title"]?["rendered"]?.ToString() ?? string.Empty;
+            var link = page["link"]?.ToString() ?? string.Empty;
+            var content = "<html><body>" + (page["content"]?["rendered"]?.ToString() ?? string.Empty) + "</body></html>";
             var html = WebPageScraper.ExtractTextFromHtml(content);
             if (filterPages == null || filterPages(link, title, html, content))
-                items[link] = new WordPressPageData { Id = page["id"].ToString(), Name = link, Content = WebPageScraper.ExtractTextFromHtml(content) };
+                items[link] = new WordPressPageData { Id = page["id"]?.ToString() ?? string.Empty, Name = link, Content = WebPageScraper.ExtractTextFromHtml(content) };
         }
 
-        public static async Task<Dictionary<string, WordPressPageData>> ScrapeWordpressPosts(string apiUrl, string username = null, string password = null, Func<string, string, string, string, bool> filterPages = null)
+        public static async Task<Dictionary<string, WordPressPageData>> ScrapeWordpressPosts(string apiUrl, string? username = null, string? password = null, Func<string, string, string, string, bool>? filterPages = null)
         {
             var handleResults = async (HttpResponseMessage response) =>
             {
                 var items = new Dictionary<string, WordPressPageData>();
 
                 string json = await response.Content.ReadAsStringAsync();
-                JsonArray pages = (JsonArray)JsonNode.Parse(json);
+                JsonArray pages = (JsonArray)JsonNode.Parse(json)!;
                 foreach (var page in pages)
                 {
-                    var title = page["title"]["rendered"].ToString();
-                    var link = page["link"].ToString();
-                    var content = "<html><body>" + page["content"]["rendered"].ToString() + "</body></html>";
+                    if (page == null) continue;
+                    var title = page["title"]?["rendered"]?.ToString() ?? string.Empty;
+                    var link = page["link"]?.ToString() ?? string.Empty;
+                    var content = "<html><body>" + (page["content"]?["rendered"]?.ToString() ?? string.Empty) + "</body></html>";
                     var html = WebPageScraper.ExtractTextFromHtml(content);
-                    if (filterPages(link, title, html, content))
-                        items[link] = new WordPressPageData { Id = page["id"].ToString(), Name = link, Content = WebPageScraper.ExtractTextFromHtml(content) };
+                    if (filterPages == null || filterPages(link, title, html, content))
+                        items[link] = new WordPressPageData { Id = page["id"]?.ToString() ?? string.Empty, Name = link, Content = WebPageScraper.ExtractTextFromHtml(content) };
                 }
 
                 return items;
             };
 
-            return await CallClient(apiUrl, username, password, handleResults);
+            return await CallClient(apiUrl, username ?? string.Empty, password ?? string.Empty, handleResults);
         }
     }
 }

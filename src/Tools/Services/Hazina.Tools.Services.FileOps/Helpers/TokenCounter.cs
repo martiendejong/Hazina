@@ -6,7 +6,7 @@ namespace Hazina.Tools.Services.FileOps.Helpers
         {
             if (string.IsNullOrWhiteSpace(text)) return 0;
             // naive token approximation by whitespace-separated words
-            return text.Split((char[])null, System.StringSplitOptions.RemoveEmptyEntries).Length;
+            return text.Split((char[]?)null, System.StringSplitOptions.RemoveEmptyEntries).Length;
         }
     }
 }

@@ -30,38 +30,14 @@ public class OllamaClientWrapper : CapabilityProviderBase, ILLMClient
         Config = config;
         _http = new HttpClient
         {
-            BaseAddress = new Uri(config.Endpoint.TrimEnd('/')),
+            BaseAddress = new Uri((config.Endpoint ?? "http://localhost:11434").TrimEnd('/')),
             Timeout = TimeSpan.FromMinutes(5)
         };
         _parser = new PartialJsonParser();
         _toolsOrchestrator = new PromptBasedToolsOrchestrator(maxToolCalls: 50);
     }
 
-    #region ICapabilityProvider
-
-    public ProviderCapability SupportedCapabilities =>
-        ProviderCapability.Chat | ProviderCapability.Streaming | ProviderCapability.Tools |
-        ProviderCapability.Embeddings | ProviderCapability.JsonMode | ProviderCapability.SystemMessages;
-
-    public bool SupportsCapability(ProviderCapability capability) =>
-        (SupportedCapabilities & capability) == capability;
-
-    public IEnumerable<string> GetSupportedCapabilityNames()
-    {
-        var names = new List<string>();
-        foreach (var cap in Enum.GetValues<ProviderCapability>())
-            if (cap != ProviderCapability.None && cap != ProviderCapability.All && SupportsCapability(cap))
-                names.Add(cap.ToString());
-        return names;
-    }
-
-    public void RequireCapabilities(ProviderCapability requiredCapabilities)
-    {
-        if (!SupportsCapability(requiredCapabilities))
-            throw new NotSupportedException($"Ollama does not support required capabilities: {requiredCapabilities}");
-    }
-
-    #endregion
+    // ICapabilityProvider methods inherited from CapabilityProviderBase
 
     #region Chat Completion
 

@@ -1,4 +1,5 @@
 using Hazina.LLMs;
+using Hazina.LLMs.Capabilities;
 using Hazina.Tools.Data;
 using Hazina.Store;
 using Hazina.Store.EmbeddingStore;
@@ -15,6 +16,16 @@ class DummyLLMClient : ILLMClient
 {
     private readonly int _dimension;
     public DummyLLMClient(int dimension) { _dimension = dimension; }
+
+    // ICapabilityProvider implementation
+    public ProviderCapability SupportedCapabilities => ProviderCapability.Embeddings;
+    public bool SupportsCapability(ProviderCapability capability) => (SupportedCapabilities & capability) == capability;
+    public IEnumerable<string> GetSupportedCapabilityNames() => new[] { nameof(ProviderCapability.Embeddings) };
+    public void RequireCapabilities(ProviderCapability requiredCapabilities)
+    {
+        if ((SupportedCapabilities & requiredCapabilities) != requiredCapabilities)
+            throw new NotSupportedException($"DummyLLMClient does not support: {requiredCapabilities & ~SupportedCapabilities}");
+    }
 
     public Task<Embedding> GenerateEmbedding(string data)
     {

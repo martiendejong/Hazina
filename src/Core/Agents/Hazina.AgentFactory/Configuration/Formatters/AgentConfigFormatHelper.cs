@@ -14,7 +14,7 @@ public static class AgentConfigFormatHelper
         {
             try
             {
-                return JsonSerializer.Deserialize<List<AgentConfig>>(content);
+                return JsonSerializer.Deserialize<List<AgentConfig>>(content) ?? new List<AgentConfig>();
             }
             catch
             {

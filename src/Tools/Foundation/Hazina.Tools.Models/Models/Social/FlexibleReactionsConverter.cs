@@ -23,7 +23,7 @@ namespace Hazina.Tools.Models.Social
             else if (reader.TokenType == JsonTokenType.StartObject)
             {
                 // Handle dictionary format: "Reactions": {"like": 1, "love": 1}
-                return JsonSerializer.Deserialize<Dictionary<string, int>>(ref reader, options);
+                return JsonSerializer.Deserialize<Dictionary<string, int>>(ref reader, options) ?? new Dictionary<string, int>();
             }
             else if (reader.TokenType == JsonTokenType.Null)
             {

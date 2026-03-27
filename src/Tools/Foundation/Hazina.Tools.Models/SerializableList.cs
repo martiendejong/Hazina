@@ -25,7 +25,7 @@ namespace Hazina.Tools.Models
         public static string Serialize(SerializableList<T> t) => JsonSerializer.Serialize(t, t.GetType(), JsonSerializerOptions);
         public void Save(string file) => File.WriteAllText(file, Serialize());
         public static void Save(SerializableList<T> t, string file) => File.WriteAllText(file, Serialize(t));
-        public static SerializableList<T> Deserialize(string json) => JsonSerializer.Deserialize<SerializableList<T>>(json, JsonSerializerOptions);
+        public static SerializableList<T> Deserialize(string json) => JsonSerializer.Deserialize<SerializableList<T>>(json, JsonSerializerOptions)!;
         public static SerializableList<T> Load(string file) => Deserialize(File.ReadAllText(file));
     }
 }

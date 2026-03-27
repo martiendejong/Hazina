@@ -271,7 +271,7 @@ public class AgentFactory
     {
         var agent = Agents[name];
         var id = Guid.NewGuid().ToString();
-        agent.Tools.SendMessage(id, name, query);
+        agent.Tools.SendMessage?.Invoke(id, name, query);
         Guid messageId = Guid.NewGuid();
         var message = new HazinaChatMessage
         {
@@ -299,7 +299,7 @@ public class AgentFactory
             Response = response
         };
         Messages.Add(replyMsg);
-        agent.Tools.SendMessage(id, name, response);
+        agent.Tools.SendMessage?.Invoke(id, name, response);
         return response;
     }
 
@@ -326,7 +326,7 @@ public class AgentFactory
     {
         var agent = Agents[name];
         var id = Guid.NewGuid().ToString();
-        agent.Tools.SendMessage(id, name, query);
+        agent.Tools.SendMessage?.Invoke(id, name, query);
         Guid messageId = Guid.NewGuid();
         var message = new HazinaChatMessage
         {
@@ -354,7 +354,7 @@ public class AgentFactory
             Response = response
         };
         Messages.Add(replyMsg);
-        agent.Tools.SendMessage(id, name, response);
+        agent.Tools.SendMessage?.Invoke(id, name, response);
         return response;
     }
 
@@ -362,7 +362,7 @@ public class AgentFactory
     {
         var agent = Agents[name];
         var id = Guid.NewGuid().ToString();
-        agent.Tools.SendMessage(id, name, query);
+        agent.Tools.SendMessage?.Invoke(id, name, query);
         Guid messageId = Guid.NewGuid();
         var message = new HazinaChatMessage
         {
@@ -390,7 +390,7 @@ public class AgentFactory
             Response = response
         };
         Messages.Add(replyMsg);
-        agent.Tools.SendMessage(id, name, response);
+        agent.Tools.SendMessage?.Invoke(id, name, response);
         return response;
     }
 
