@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Hazina.AgenticOrchestration.Hubs;
@@ -39,11 +41,50 @@ public interface ITerminalSessionManager
     /// Get session count
     /// </summary>
     int SessionCount { get; }
+
+    /// <summary>
+    /// Get sessions that can be recovered after a crash/restart.
+    /// Scans persisted session files and identifies ones whose processes are no longer running.
+    /// </summary>
+    Task<IEnumerable<RecoverableSessionInfo>> GetRecoverableSessionsAsync();
+
+    /// <summary>
+    /// Restore a previously persisted session by creating a new terminal process
+    /// and replaying the transcript to the connected SignalR clients.
+    /// </summary>
+    Task<ITerminalSession> RestoreSessionAsync(string sessionId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Scan for recoverable sessions on startup and mark them appropriately.
+    /// Called once during application startup.
+    /// </summary>
+    Task ScanForRecoverableSessionsAsync();
+
+    /// <summary>
+    /// Archive a recoverable session (remove from active, move to archive).
+    /// Use when the user decides not to restore a session.
+    /// </summary>
+    Task DismissRecoverableSessionAsync(string sessionId);
+}
+
+/// <summary>
+/// Information about a session that can be recovered after a service restart.
+/// </summary>
+public class RecoverableSessionInfo
+{
+    public string SessionId { get; set; } = string.Empty;
+    public string Command { get; set; } = string.Empty;
+    public string WorkingDirectory { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public DateTime LastActive { get; set; }
+    public long TranscriptSizeBytes { get; set; }
+    public int DisplayOrder { get; set; }
 }
 
 /// <summary>
 /// Implementation of terminal session manager with SignalR integration.
 /// Uses ConPTY (Windows Pseudo Console) for full interactive terminal support.
+/// Persists session metadata and transcripts for crash recovery.
 /// </summary>
 public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
 {
@@ -52,6 +93,7 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
     private readonly ILogger<TerminalSessionManager> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly IAgentSessionLogger _sessionLogger;
+    private readonly ISessionPersistence _persistence;
     private readonly Timer _cleanupTimer;
     private readonly bool _useConPty;
     private bool _disposed;
@@ -62,12 +104,14 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
         IHubContext<TerminalHub> hubContext,
         ILogger<TerminalSessionManager> logger,
         ILoggerFactory loggerFactory,
-        IAgentSessionLogger sessionLogger)
+        IAgentSessionLogger sessionLogger,
+        ISessionPersistence persistence)
     {
         _hubContext = hubContext;
         _logger = logger;
         _loggerFactory = loggerFactory;
         _sessionLogger = sessionLogger;
+        _persistence = persistence;
 
         // Use ConPTY on Windows for full interactive terminal support
         _useConPty = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
@@ -96,6 +140,20 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
             _logger.LogInformation("Creating pipe-based session {SessionId} for command '{Command}'", sessionId, config.Command);
         }
 
+        // Persist session metadata for crash recovery
+        var metadata = new SessionMetadata
+        {
+            SessionId = sessionId,
+            CreatedAt = DateTime.UtcNow,
+            LastActive = DateTime.UtcNow,
+            Command = config.Command,
+            WorkingDirectory = config.WorkingDirectory ?? string.Empty,
+            Dimensions = new TerminalDimensions { Cols = config.Columns, Rows = config.Rows },
+            State = SessionState.Active,
+            DisplayOrder = _sessions.Count
+        };
+        await _persistence.SaveSessionAsync(sessionId, metadata);
+
         // Start session logging
         await _sessionLogger.StartSessionAsync(sessionId, config.Command, config.WorkingDirectory);
 
@@ -109,23 +167,6 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
         // which causes it to flip from false->true when idle time crosses 1000ms.
         // This creates a race condition with the 2-second polling interval.
         // State changes are already detected immediately on output (lines 142-150).
-        //
-        // var stateCheckTimer = new System.Threading.Timer(async _ =>
-        // {
-        //     try
-        //     {
-        //         var currentWaitingState = session.WaitingForInput;
-        //         if (currentWaitingState != lastWaitingState)
-        //         {
-        //             lastWaitingState = currentWaitingState;
-        //             await _hubContext.Clients
-        //                 .Group($"terminal-{sessionId}")
-        //                 .SendAsync("OnStateChanged", sessionId, session.IsRunning, currentWaitingState, CancellationToken.None);
-        //             _logger.LogDebug("State changed for session {SessionId}: WaitingForInput={Waiting}", sessionId, currentWaitingState);
-        //         }
-        //     }
-        //     catch { /* ignore timer errors */ }
-        // }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
 
         // Wire up output to SignalR
         // IMPORTANT: Don't use the request's cancellation token here!
@@ -138,6 +179,10 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
 
                 // Log output to file
                 await _sessionLogger.LogOutputAsync(sessionId, data);
+
+                // Persist output for crash recovery
+                var text = Encoding.UTF8.GetString(data);
+                await _persistence.AppendOutputAsync(sessionId, text);
 
                 // Convert byte[] to int[] because System.Text.Json serializes byte[] as Base64 string
                 // but the JavaScript client expects a number array
@@ -183,6 +228,16 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
 
                 // End session logging
                 await _sessionLogger.EndSessionAsync(sessionId, exitCode);
+
+                // Archive the persisted session (move from active to archive)
+                try
+                {
+                    await _persistence.ArchiveSessionAsync(sessionId);
+                }
+                catch (Exception archiveEx)
+                {
+                    _logger.LogWarning(archiveEx, "Failed to archive session {SessionId} on exit", sessionId);
+                }
 
                 await _hubContext.Clients
                     .Group($"terminal-{sessionId}")
@@ -251,9 +306,162 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
             await session.TerminateAsync();
             await session.DisposeAsync();
 
+            // Archive the persisted session
+            try
+            {
+                await _persistence.ArchiveSessionAsync(sessionId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to archive session {SessionId} on removal", sessionId);
+            }
+
             _logger.LogInformation("Removed terminal session {SessionId}, remaining: {Count}",
                 sessionId, _sessions.Count);
         }
+    }
+
+    public async Task ScanForRecoverableSessionsAsync()
+    {
+        try
+        {
+            var activeSessions = await _persistence.GetActiveSessionsAsync();
+            var recoverableCount = 0;
+
+            foreach (var session in activeSessions)
+            {
+                // Skip sessions that are already tracked in memory (shouldn't happen on fresh startup)
+                if (_sessions.ContainsKey(session.SessionId))
+                    continue;
+
+                // Mark as recoverable - the original process is dead since we just restarted
+                session.State = SessionState.Recoverable;
+                session.LastActive = session.LastActive;
+                await _persistence.SaveSessionAsync(session.SessionId, session);
+                recoverableCount++;
+
+                _logger.LogInformation(
+                    "Found recoverable session {SessionId} (command: {Command}, created: {Created})",
+                    session.SessionId, session.Command, session.CreatedAt);
+            }
+
+            if (recoverableCount > 0)
+            {
+                _logger.LogInformation("Startup scan found {Count} recoverable session(s)", recoverableCount);
+            }
+            else
+            {
+                _logger.LogInformation("Startup scan: no recoverable sessions found");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error scanning for recoverable sessions on startup");
+        }
+    }
+
+    public async Task<IEnumerable<RecoverableSessionInfo>> GetRecoverableSessionsAsync()
+    {
+        var activeSessions = await _persistence.GetActiveSessionsAsync();
+        var recoverable = new List<RecoverableSessionInfo>();
+
+        foreach (var session in activeSessions)
+        {
+            // Only return sessions marked as recoverable (not active in-memory sessions)
+            if (session.State != SessionState.Recoverable)
+                continue;
+
+            // Calculate transcript size
+            var transcript = await _persistence.GetTranscriptAsync(session.SessionId);
+
+            recoverable.Add(new RecoverableSessionInfo
+            {
+                SessionId = session.SessionId,
+                Command = session.Command,
+                WorkingDirectory = session.WorkingDirectory,
+                CreatedAt = session.CreatedAt,
+                LastActive = session.LastActive,
+                TranscriptSizeBytes = Encoding.UTF8.GetByteCount(transcript),
+                DisplayOrder = session.DisplayOrder
+            });
+        }
+
+        return recoverable.OrderBy(r => r.DisplayOrder);
+    }
+
+    public async Task<ITerminalSession> RestoreSessionAsync(string sessionId, CancellationToken ct = default)
+    {
+        // Load the persisted session metadata
+        var metadata = await _persistence.LoadSessionAsync(sessionId);
+        if (metadata == null)
+        {
+            throw new InvalidOperationException($"No persisted session found for {sessionId}");
+        }
+
+        if (metadata.State != SessionState.Recoverable)
+        {
+            throw new InvalidOperationException($"Session {sessionId} is not in recoverable state (current: {metadata.State})");
+        }
+
+        // Load the transcript
+        var transcript = await _persistence.GetTranscriptAsync(sessionId);
+
+        // Create a new terminal session with the same configuration
+        var config = new TerminalSessionConfig
+        {
+            Command = metadata.Command,
+            WorkingDirectory = string.IsNullOrEmpty(metadata.WorkingDirectory) ? null : metadata.WorkingDirectory,
+            Columns = metadata.Dimensions.Cols > 0 ? metadata.Dimensions.Cols : 120,
+            Rows = metadata.Dimensions.Rows > 0 ? metadata.Dimensions.Rows : 30
+        };
+
+        _logger.LogInformation(
+            "Restoring session {OriginalSessionId} with command '{Command}' ({TranscriptSize} bytes transcript)",
+            sessionId, config.Command, transcript.Length);
+
+        // Create the new session (this persists new metadata under a new ID)
+        var newSession = await CreateSessionAsync(config, ct);
+
+        // Archive the old recoverable session (clean up old files)
+        await _persistence.ArchiveSessionAsync(sessionId);
+
+        // Send the historical transcript to connected SignalR clients
+        // This replays the visual output so users see what was on screen before the crash
+        if (!string.IsNullOrEmpty(transcript))
+        {
+            var transcriptBytes = Encoding.UTF8.GetBytes(transcript);
+            var intArray = transcriptBytes.Select(b => (int)b).ToArray();
+
+            await _hubContext.Clients
+                .Group($"terminal-{newSession.SessionId}")
+                .SendAsync("OnOutput", newSession.SessionId, intArray, CancellationToken.None);
+
+            _logger.LogInformation(
+                "Replayed {ByteCount} bytes of transcript to restored session {SessionId}",
+                transcriptBytes.Length, newSession.SessionId);
+        }
+
+        return newSession;
+    }
+
+    public async Task DismissRecoverableSessionAsync(string sessionId)
+    {
+        var metadata = await _persistence.LoadSessionAsync(sessionId);
+        if (metadata == null)
+        {
+            _logger.LogWarning("Cannot dismiss session {SessionId}: not found in persistence", sessionId);
+            return;
+        }
+
+        if (metadata.State != SessionState.Recoverable)
+        {
+            _logger.LogWarning("Cannot dismiss session {SessionId}: not in recoverable state (current: {State})",
+                sessionId, metadata.State);
+            return;
+        }
+
+        await _persistence.ArchiveSessionAsync(sessionId);
+        _logger.LogInformation("Dismissed recoverable session {SessionId} (archived)", sessionId);
     }
 
     private void CleanupDeadSessions(object? state)
@@ -299,19 +507,20 @@ public class TerminalSessionManager : ITerminalSessionManager, IAsyncDisposable
 
         await _cleanupTimer.DisposeAsync();
 
-        var tasks = _sessions.Values.Select(async session =>
+        // On graceful shutdown, archive all active sessions
+        foreach (var kvp in _sessions)
         {
             try
             {
-                await session.TerminateAsync();
-                await session.DisposeAsync();
+                await kvp.Value.TerminateAsync();
+                await kvp.Value.DisposeAsync();
+                await _persistence.ArchiveSessionAsync(kvp.Key);
             }
             catch { /* ignore */ }
-        });
+        }
 
-        await Task.WhenAll(tasks);
         _sessions.Clear();
 
-        _logger.LogInformation("TerminalSessionManager disposed");
+        _logger.LogInformation("TerminalSessionManager disposed (sessions archived for clean shutdown)");
     }
 }
