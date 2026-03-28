@@ -13,17 +13,16 @@ namespace Hazina.AgenticOrchestration.Services.Monitoring;
 /// </summary>
 public class ClickUpEventMonitor
 {
-    private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly string _apiKey;
     private readonly List<string> _listIds;
     private DateTime _lastCheck = DateTime.UtcNow;
 
-    public ClickUpEventMonitor(string apiKey, List<string> listIds)
+    public ClickUpEventMonitor(IHttpClientFactory httpClientFactory, string apiKey, List<string> listIds)
     {
+        _httpClientFactory = httpClientFactory;
         _apiKey = apiKey;
         _listIds = listIds;
-        _httpClient = new HttpClient();
-        _httpClient.DefaultRequestHeaders.Add("Authorization", apiKey);
     }
 
     /// <summary>
@@ -36,6 +35,8 @@ public class ClickUpEventMonitor
     public async Task<List<ClickUpTask>> PollForNewTasks(CancellationToken cancellationToken)
     {
         var newTasks = new List<ClickUpTask>();
+        using var httpClient = _httpClientFactory.CreateClient();
+        httpClient.DefaultRequestHeaders.Add("Authorization", _apiKey);
 
         foreach (var listId in _listIds)
         {
@@ -43,7 +44,7 @@ public class ClickUpEventMonitor
             {
                 // ClickUp API: Get tasks from list
                 var url = $"https://api.clickup.com/api/v2/list/{listId}/task?statuses[]=todo&order_by=updated&reverse=true";
-                var response = await _httpClient.GetFromJsonAsync<ClickUpTasksResponse>(url, cancellationToken);
+                var response = await httpClient.GetFromJsonAsync<ClickUpTasksResponse>(url, cancellationToken);
 
                 if (response?.Tasks != null)
                 {

@@ -111,13 +111,17 @@ public class AutonomousExecutor
         var processInfo = new ProcessStartInfo
         {
             FileName = _claudeCodePath,
-            Arguments = $"--prompt \"{prompt.Replace("\"", "\\\"")}\"",
             WorkingDirectory = _workingDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
+            RedirectStandardInput = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
+        // Use ArgumentList to prevent command injection (no shell escaping needed)
+        processInfo.ArgumentList.Add("--print");
+        processInfo.ArgumentList.Add("--prompt");
+        processInfo.ArgumentList.Add(prompt);
 
         using var process = new Process { StartInfo = processInfo };
 

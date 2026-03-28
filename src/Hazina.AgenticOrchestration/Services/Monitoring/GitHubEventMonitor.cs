@@ -18,18 +18,26 @@ namespace Hazina.AgenticOrchestration.Services.Monitoring;
 /// </summary>
 public class GitHubEventMonitor
 {
-    private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly string _token;
     private readonly string _owner;
     private readonly string _repo;
     private DateTime _lastCheck = DateTime.UtcNow;
 
-    public GitHubEventMonitor(string token, string owner, string repo)
+    public GitHubEventMonitor(IHttpClientFactory httpClientFactory, string token, string owner, string repo)
     {
+        _httpClientFactory = httpClientFactory;
+        _token = token;
         _owner = owner;
         _repo = repo;
-        _httpClient = new HttpClient();
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Jengo", "1.0"));
+    }
+
+    private HttpClient CreateClient()
+    {
+        var client = _httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _token);
+        client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Jengo", "1.0"));
+        return client;
     }
 
     /// <summary>
@@ -38,29 +46,30 @@ public class GitHubEventMonitor
     public async Task<List<GitHubEvent>> PollForNewEvents(CancellationToken cancellationToken)
     {
         var events = new List<GitHubEvent>();
+        using var httpClient = CreateClient();
 
         // Check for new pull requests
-        var newPRs = await GetNewPullRequests(cancellationToken);
+        var newPRs = await GetNewPullRequests(httpClient, cancellationToken);
         events.AddRange(newPRs);
 
         // Check for PR review comments
-        var prComments = await GetPRComments(cancellationToken);
+        var prComments = await GetPRComments(httpClient, cancellationToken);
         events.AddRange(prComments);
 
         // Check for new issues
-        var newIssues = await GetNewIssues(cancellationToken);
+        var newIssues = await GetNewIssues(httpClient, cancellationToken);
         events.AddRange(newIssues);
 
         _lastCheck = DateTime.UtcNow;
         return events;
     }
 
-    private async Task<List<GitHubEvent>> GetNewPullRequests(CancellationToken cancellationToken)
+    private async Task<List<GitHubEvent>> GetNewPullRequests(HttpClient httpClient, CancellationToken cancellationToken)
     {
         try
         {
             var url = $"https://api.github.com/repos/{_owner}/{_repo}/pulls?state=open&sort=updated&direction=desc";
-            var prs = await _httpClient.GetFromJsonAsync<List<GitHubPullRequest>>(url, cancellationToken);
+            var prs = await httpClient.GetFromJsonAsync<List<GitHubPullRequest>>(url, cancellationToken);
 
             return prs?
                 .Where(pr => pr.UpdatedAt > _lastCheck)
@@ -82,13 +91,13 @@ public class GitHubEventMonitor
         }
     }
 
-    private async Task<List<GitHubEvent>> GetPRComments(CancellationToken cancellationToken)
+    private async Task<List<GitHubEvent>> GetPRComments(HttpClient httpClient, CancellationToken cancellationToken)
     {
         try
         {
             // Get recent PR review comments across all PRs
             var url = $"https://api.github.com/repos/{_owner}/{_repo}/pulls/comments?sort=updated&direction=desc&per_page=50";
-            var comments = await _httpClient.GetFromJsonAsync<List<GitHubComment>>(url, cancellationToken);
+            var comments = await httpClient.GetFromJsonAsync<List<GitHubComment>>(url, cancellationToken);
 
             return comments?
                 .Where(c => c.UpdatedAt > _lastCheck)
@@ -112,12 +121,12 @@ public class GitHubEventMonitor
         }
     }
 
-    private async Task<List<GitHubEvent>> GetNewIssues(CancellationToken cancellationToken)
+    private async Task<List<GitHubEvent>> GetNewIssues(HttpClient httpClient, CancellationToken cancellationToken)
     {
         try
         {
             var url = $"https://api.github.com/repos/{_owner}/{_repo}/issues?state=open&sort=updated&direction=desc&per_page=50";
-            var issues = await _httpClient.GetFromJsonAsync<List<GitHubIssue>>(url, cancellationToken);
+            var issues = await httpClient.GetFromJsonAsync<List<GitHubIssue>>(url, cancellationToken);
 
             return issues?
                 .Where(i => i.UpdatedAt > _lastCheck)

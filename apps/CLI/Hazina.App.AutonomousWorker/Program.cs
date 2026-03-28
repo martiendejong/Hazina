@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Hazina.AgenticOrchestration.Services;
 using Hazina.AgenticOrchestration.Services.Execution;
 using Hazina.AgenticOrchestration.Services.Monitoring;
+using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
 
 namespace Hazina.App.AutonomousWorker;
@@ -20,13 +21,21 @@ class Program
         // Load configuration from environment or user input
         var config = await LoadConfiguration();
 
+        // Set up DI for IHttpClientFactory
+        var services = new ServiceCollection();
+        services.AddHttpClient();
+        var serviceProvider = services.BuildServiceProvider();
+        var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+
         // Initialize services
         var clickUpMonitor = new ClickUpEventMonitor(
+            httpClientFactory,
             config.ClickUpApiKey,
             config.ClickUpListIds
         );
 
         var githubMonitor = new GitHubEventMonitor(
+            httpClientFactory,
             config.GitHubToken,
             config.GitHubOwner,
             config.GitHubRepo

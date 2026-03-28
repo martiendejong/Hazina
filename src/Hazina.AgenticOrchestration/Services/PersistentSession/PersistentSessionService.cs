@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Hazina.LLMs.Client;
 using Hazina.LLMs.Classes;
@@ -35,8 +36,8 @@ public class PersistentSessionService : IPersistentSessionService
     private readonly ILlmProviderClient _llmClient;
     private readonly ILogger<PersistentSessionService> _logger;
     private readonly string _stateDirectory;
-    private readonly Dictionary<string, ClaudeSessionState> _activeSessions = new();
-    private readonly Dictionary<string, IRollingContextWindow> _contextWindows = new();
+    private readonly ConcurrentDictionary<string, ClaudeSessionState> _activeSessions = new();
+    private readonly ConcurrentDictionary<string, IRollingContextWindow> _contextWindows = new();
 
     public PersistentSessionService(
         ILlmProviderClient llmClient,
@@ -143,7 +144,7 @@ public class PersistentSessionService : IPersistentSessionService
             throw new InvalidOperationException("No response from LLM");
         }
 
-        var assistantMessage = response.Choices[0].Message.Content ?? string.Empty;
+        var assistantMessage = response.Choices[0]?.Message?.Content ?? string.Empty;
 
         // Add assistant response to context
         await contextWindow.AddMessageAsync(new ContextMessage
@@ -200,8 +201,8 @@ public class PersistentSessionService : IPersistentSessionService
         {
             state.State = SessionLifecycleState.Archived;
             await SaveStateAsync(sessionId);
-            _activeSessions.Remove(sessionId);
-            _contextWindows.Remove(sessionId);
+            _activeSessions.TryRemove(sessionId, out _);
+            _contextWindows.TryRemove(sessionId, out _);
         }
 
         _logger.LogInformation("Archived session {SessionId}", sessionId);
