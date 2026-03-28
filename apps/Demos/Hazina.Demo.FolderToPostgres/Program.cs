@@ -135,10 +135,10 @@ class Program
 
 class DummyLLMClient : CapabilityProviderBase, ILLMClient
 {
+    public override ProviderCapability SupportedCapabilities => ProviderCapability.Embeddings;
+
     private readonly int _dimension;
     public DummyLLMClient(int dimension) { _dimension = dimension; }
-
-    public override ProviderCapability SupportedCapabilities => ProviderCapability.Embeddings;
 
     public Task<Embedding> GenerateEmbedding(string data)
     {

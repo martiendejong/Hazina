@@ -41,7 +41,7 @@ namespace Hazina.Tools.Services.Prompts
             if (File.Exists(filePath))
             {
                 var json = File.ReadAllText(filePath);
-                Prompts = JsonSerializer.Deserialize<List<RolePrompt>>(json)!;
+                Prompts = JsonSerializer.Deserialize<List<RolePrompt>>(json);
             }
             else
             {

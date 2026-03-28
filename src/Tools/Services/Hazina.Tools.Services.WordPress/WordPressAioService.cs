@@ -36,7 +36,7 @@ namespace HazinaStore.Services
                 using var response = await SendWithRetryAsync(request, nameof(GetKennisbankAsync));
                 response.EnsureSuccessStatusCode();
                 var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<KnowledgeBaseResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+                return JsonSerializer.Deserialize<KnowledgeBaseResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             catch (Exception ex)
             {
@@ -76,7 +76,7 @@ namespace HazinaStore.Services
                 response.EnsureSuccessStatusCode();
                 var json = await response.Content.ReadAsStringAsync();
 
-                return JsonSerializer.Deserialize<List<PageOverview>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<PageOverview>();
+                return JsonSerializer.Deserialize<List<PageOverview>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             catch (Exception ex)
             {
@@ -95,7 +95,7 @@ namespace HazinaStore.Services
                 using var response = await SendWithRetryAsync(request, nameof(GetAioInformatieAsync));
                 response.EnsureSuccessStatusCode();
                 var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<AioInformatieResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+                return JsonSerializer.Deserialize<AioInformatieResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             catch (Exception ex)
             {
@@ -184,7 +184,7 @@ namespace HazinaStore.Services
                 {
                     Question = $"Waar gaat de pagina '{pageInfo.Title}' over?",
                     Answer = (pageInfo.Content ?? string.Empty).Trim().Length > 0
-                        ? ((pageInfo.Content ?? string.Empty).Length > 800 ? (pageInfo.Content ?? string.Empty).Substring(0, 800) + "..." : pageInfo.Content ?? string.Empty)
+                        ? (pageInfo.Content.Length > 800 ? pageInfo.Content.Substring(0, 800) + "..." : pageInfo.Content)
                         : "Geen inhoud gevonden op de pagina."
                 };
 
@@ -400,7 +400,7 @@ namespace HazinaStore.Services
             info.Questions[safeIndex] = new AioInformationQuestion
             {
                 Question = $"Waar gaat de pagina '{info.Title}' over? (vraag {safeIndex + 1})",
-                Answer = (info.Content ?? string.Empty).Length > 800 ? (info.Content ?? string.Empty).Substring(0, 800) + "..." : info.Content ?? string.Empty
+                Answer = (info.Content ?? string.Empty).Length > 800 ? info.Content.Substring(0, 800) + "..." : info.Content
             };
             await StoreAioInformatieAsync(info);
         }
@@ -463,7 +463,7 @@ namespace HazinaStore.Services
         {
             if (project == null)
                 throw new ArgumentNullException(nameof(project));
-            List<PageOverview>? pages = null;
+            List<PageOverview> pages = null;
             try
             {
                 pages = await GetPagesAsync();

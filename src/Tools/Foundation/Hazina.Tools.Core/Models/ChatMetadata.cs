@@ -18,8 +18,8 @@ public class ChatMetadata : Serializer<ChatMetadata>
 public class ChatConversation : Serializer<ChatConversation>
 {
     // Convenience properties for frontend mappings
-    public string? Id => MetaData?.Id;
-    public string? ProjectId => MetaData?.ProjectId;
+    public string Id => MetaData?.Id;
+    public string ProjectId => MetaData?.ProjectId;
     public ChatMetadata MetaData { get; set; }
     public List<ConversationMessage> ChatMessages { get; set; }
     public TokenUsageInfo TokenUsage { get; set; }

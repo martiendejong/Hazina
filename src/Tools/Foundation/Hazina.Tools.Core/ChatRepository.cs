@@ -83,7 +83,7 @@ namespace HazinaStore.Core
         /// </summary>
         /// <param name="chatId">Chat identifier</param>
         /// <returns>Chat instance or null if not found</returns>
-        public Chat? GetChat(string chatId)
+        public Chat GetChat(string chatId)
         {
             if (string.IsNullOrWhiteSpace(chatId))
                 return null;
@@ -183,7 +183,7 @@ namespace HazinaStore.Core
         /// <summary>
         /// Get chat metadata by ID
         /// </summary>
-        internal ChatMetadata? GetChatMetadata(string chatId)
+        internal ChatMetadata GetChatMetadata(string chatId)
         {
             return GetAllChatsMetadata().FirstOrDefault(c => c.Id == chatId);
         }

@@ -102,7 +102,7 @@ namespace HazinaStore.Core
         /// </summary>
         /// <param name="roleName">Role name</param>
         /// <returns>Prompt text or null if not found</returns>
-        public string? GetRolePrompt(string roleName)
+        public string GetRolePrompt(string roleName)
         {
             var prompts = GetRolePrompts();
             return prompts.ContainsKey(roleName) ? prompts[roleName] : null;
@@ -237,7 +237,7 @@ namespace HazinaStore.Core
         /// </summary>
         /// <param name="filename">Setting filename</param>
         /// <returns>File content or null if not found</returns>
-        public string? GetCustomSetting(string filename)
+        public string GetCustomSetting(string filename)
         {
             if (string.IsNullOrWhiteSpace(filename))
                 return null;

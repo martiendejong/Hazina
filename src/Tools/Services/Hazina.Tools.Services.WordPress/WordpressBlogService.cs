@@ -149,7 +149,7 @@ namespace HazinaStore.Services
                 var response = await SendWithRetryAsync(request, nameof(CreateCategoryAsync));
                 response.EnsureSuccessStatusCode();
                 var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<WordPressCategory>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+                return JsonSerializer.Deserialize<WordPressCategory>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             catch (Exception ex)
             {
@@ -194,7 +194,7 @@ namespace HazinaStore.Services
                 var response = await SendWithRetryAsync(request, nameof(UpdateCategoryAsync));
                 var json = await response.Content.ReadAsStringAsync();
                 response.EnsureSuccessStatusCode();
-                return JsonSerializer.Deserialize<WordPressCategory>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+                return JsonSerializer.Deserialize<WordPressCategory>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             catch (Exception ex)
             {

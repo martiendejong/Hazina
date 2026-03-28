@@ -18,15 +18,15 @@ namespace Hazina.Tools.Services.BigQuery
     /// </summary>
     public class BigQueryService
     {
-        public string ProjectId { get; set; } = string.Empty;
-        public string DatasetId { get; set; } = string.Empty;
-        public ProjectsRepository Projects { get; set; } = null!;
-        private ProjectFileLocator? _fileLocator => Projects != null ? new ProjectFileLocator(Projects.ProjectsFolder) : null;
+        public string ProjectId { get; set; }
+        public string DatasetId { get; set; }
+        public ProjectsRepository Projects { get; set; }
+        private ProjectFileLocator _fileLocator => Projects != null ? new ProjectFileLocator(Projects.ProjectsFolder) : null;
 
-        public string? _apiKey { get; set; }
-        private string? _credentialsPath;
+        public string _apiKey { get; set; }
+        private string _credentialsPath;
 
-        public BigQueryService(string? apiKey = null, string? datasetId = null, string? credentialsPath = null)
+        public BigQueryService(string apiKey = null, string datasetId = null, string credentialsPath = null)
         {
             _apiKey = apiKey;
             DatasetId = datasetId ?? Environment.GetEnvironmentVariable("BIGQUERY_DATASET") ?? "your-dataset";
@@ -46,7 +46,7 @@ namespace Hazina.Tools.Services.BigQuery
             var bigQueryContext = new BigQueryContext();
             bigQueryContext.Accounts = accounts;
             bigQueryContext.Projects = Projects;
-            bigQueryContext.ApiKey = _apiKey ?? string.Empty;
+            bigQueryContext.ApiKey = _apiKey;
             bigQueryContext.ProjectId = projectId;
 
             if (string.IsNullOrWhiteSpace(prompt))
@@ -56,7 +56,7 @@ namespace Hazina.Tools.Services.BigQuery
             messages.Add(new HazinaChatMessage(HazinaMessageRole.System, "Your role is to execute google big query queries until you have enough data to return the provided results. Run multiple queries, one for each relevant table. never put the account id in the where clause. this is done automatically. When retrieving posts, advertisements or other content that has textual information, always make sure that you include these texts in your response. so when you talk about a facebook post, you will always include the content of the post itself. when talking about advertisements show the content of the advertisement. when its a picture write that this post is a picture. when the user asks about posts or content, never assume on type of contain but look into all of the available data. when the user talks about a table you look into that table instead of showing the table name or the columns with their data types, that is your own private information. your response will always be a representation of the data that is in the tables. only use the actual information, never show example data or hallucinations."));
             messages.Add(new HazinaChatMessage(HazinaMessageRole.System, BigQueries.BigQueryPrompt));
 
-            var folder = _fileLocator?.GetProjectFolder(projectId) ?? throw new InvalidOperationException("Projects repository not configured");
+            var folder = _fileLocator.GetProjectFolder(projectId);
             var config = HazinaStoreConfigLoader.LoadHazinaStoreConfig();
             var bigQueryStoreSetup = StoreProvider.GetStoreSetup(folder, config.OpenAI);
 
@@ -80,22 +80,22 @@ namespace Hazina.Tools.Services.BigQuery
             var client = GetClient();
             var results = await client.ExecuteQueryAsync($"SELECT * FROM `{ProjectId}.{DatasetId}.unique_accounts` where not(account_name is null)", Array.Empty<BigQueryParameter>());
 
-            ConnectedBigQueryAccount? account = null;
+            ConnectedBigQueryAccount account = null;
             foreach (var row in results)
             {
-                if (account == null || account.Id != row["account_id"]?.ToString())
+                if (account == null || account.Id != row["account_id"].ToString())
                 {
                     account = new ConnectedBigQueryAccount()
                     {
-                        Id = row["account_id"]?.ToString() ?? string.Empty,
-                        Name = row["account_name"]?.ToString() ?? string.Empty,
+                        Id = row["account_id"].ToString(),
+                        Name = row["account_name"].ToString(),
                         Tables = new List<ConnectedBigQueryTable>()
                     };
                     accounts.Add(account);
                 }
                 var table = new ConnectedBigQueryTable()
                 {
-                    Name = row["tabel_naam"]?.ToString() ?? string.Empty,
+                    Name = row["tabel_naam"].ToString(),
                     NumRecords = int.TryParse(row["num_records"].ToString(), out var n) ? n : 0
                 };
                 account.Tables.Add(table);
@@ -105,7 +105,7 @@ namespace Hazina.Tools.Services.BigQuery
 
         public string GetBigQueryFolder(string projectId)
         {
-            var projectFolder = _fileLocator?.GetProjectFolder(projectId) ?? throw new InvalidOperationException("Projects repository not configured");
+            var projectFolder = _fileLocator.GetProjectFolder(projectId);
             var socialMediaFolder = Path.Combine(projectFolder, "socialmedia");
             var bigQueryFolder = Path.Combine(socialMediaFolder, "bigquery");
             Directory.CreateDirectory(bigQueryFolder);

@@ -47,8 +47,6 @@ namespace Hazina.Observability.LLMLogs.Decorators
             _providerName = providerName;
         }
 
-        // ICapabilityProvider methods inherited from CapabilityProviderBase via SupportedCapabilities override
-
         public async Task<Embedding> GenerateEmbedding(string data)
         {
             // Embeddings don't have token usage in the same way, just pass through

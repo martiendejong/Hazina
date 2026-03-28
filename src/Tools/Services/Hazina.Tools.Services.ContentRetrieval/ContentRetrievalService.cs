@@ -41,12 +41,12 @@ namespace HazinaStore.ContentRetrieval
             var pass = _config.GetSection("ApiSettings").GetValue<string>("SocialMediaHandboekPassword");
 
             var pages = await WordPressScraper.ScrapeWordpressPages(site + "/wp-json/wp/v2/pages", user, pass, (link, title, content, raw) => true);
-            var categoryPosts = await TryHandleAll(async () => await WordPressScraper.ScrapeWordpressCategories(site!, user, pass, (link, title, content, raw) => true));
+            var categoryPosts = await TryHandleAll(async () => await WordPressScraper.ScrapeWordpressCategories(site, user, pass, (link, title, content, raw) => true));
             var posts = await TryHandleAll(async () => await WordPressScraper.ScrapeWordpressPosts(site + "/wp-json/wp/v2/posts", user, pass, (link, title, content, raw) => true));
 
             var combined = pages
-                .Concat(categoryPosts ?? Enumerable.Empty<KeyValuePair<string, WordPressPageData>>())
-                .Concat(posts ?? Enumerable.Empty<KeyValuePair<string, WordPressPageData>>())
+                .Concat(categoryPosts)
+                .Concat(posts)
                 .GroupBy(kv => kv.Key)
                 .ToDictionary(g => g.Key, g => g.Last().Value);
 

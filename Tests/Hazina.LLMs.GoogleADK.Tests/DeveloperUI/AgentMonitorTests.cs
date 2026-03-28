@@ -11,8 +11,7 @@ public class AgentMonitorTests
 {
     private class MockLLMClient : CapabilityProviderBase, ILLMClient
     {
-        public override ProviderCapability SupportedCapabilities =>
-            ProviderCapability.Chat | ProviderCapability.Streaming | ProviderCapability.Embeddings;
+        public override ProviderCapability SupportedCapabilities => ProviderCapability.Chat;
 
         public Task<Embedding> GenerateEmbedding(string data)
         {

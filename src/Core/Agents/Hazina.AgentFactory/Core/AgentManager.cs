@@ -136,11 +136,12 @@ public class AgentManager
             if (string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase))
                 break;
             var cancel = new CancellationToken();
-            var response = await agent.Generator.GetResponse<IsReadyResult>(input ?? string.Empty, cancel, History, true, true, agent.Tools!, null);
+            var response = await agent.Generator.GetResponse<IsReadyResult>(input ?? string.Empty, cancel, History, true, true, agent.Tools, null);
             while (response.Result != null && !response.Result.IsTheUserRequestProperlyHandledAndFinished)
             {
-                response = await agent.Generator.GetResponse<IsReadyResult>("Continue handling the user request: " + input, cancel, History, true, true, agent.Tools!, null);
-                Console.WriteLine(response.Result?.Message);
+                response = await agent.Generator.GetResponse<IsReadyResult>("Continue handling the user request: " + (input ?? string.Empty), cancel, History, true, true, agent.Tools, null);
+                if (response.Result != null)
+                    Console.WriteLine(response.Result.Message ?? string.Empty);
             }
             History.Add(new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = response.Result?.Message ?? string.Empty });
         }
@@ -162,19 +163,18 @@ public class AgentManager
 
         await AddHistory(input);
 
-        var response = await agent.Generator.GetResponse<IsReadyResult>(input, cancel, History, true, true, agent.Tools!, null);
+        var response = await agent.Generator.GetResponse<IsReadyResult>(input, cancel, History, true, true, agent.Tools, null);
 
-        var message = response.Result?.Message ?? string.Empty;
-        await AddHistory(message);
+        await AddHistory(response.Result?.Message ?? string.Empty);
 
-        return message;
+        return response.Result?.Message ?? string.Empty;
     }
 
     public async Task<string> SendMessage_Flow(string input, CancellationToken cancel, string? flowName = null)
     {
         await AddHistory(input);
 
-        var response = await _quickAgentCreator.AgentFactory.CallFlow(flowName!, input, "REGULAR", cancel);
+        var response = await _quickAgentCreator.AgentFactory.CallFlow(flowName ?? string.Empty, input, "REGULAR", cancel);
         return response;
     }
 

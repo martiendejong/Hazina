@@ -70,7 +70,7 @@ namespace HazinaStore
             var json = File.ReadAllText(file);
             var item = JsonConvert.DeserializeObject<BlogItem>(json);
 
-            return item;
+            return item ?? new BlogItem { Id = blogId };
         }
 
         public List<BlogItem> GetBlogItems(string projectId)
@@ -101,7 +101,7 @@ namespace HazinaStore
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
             string categorie = item.WordpressCategoryId != 0 ? item.WordpressCategoryId.ToString() : (item.Title ?? "");
-            var (success, postId, url) = await wpService.CreateBlogPostAsync(item.Title, categorie, item.Body);
+            var (success, postId, url) = await wpService.CreateBlogPostAsync(item.Title ?? "", categorie, item.Body);
             if (!success || postId == 0)
                 throw new Exception("WordPress publicatie mislukt of postId niet ontvangen.");
 

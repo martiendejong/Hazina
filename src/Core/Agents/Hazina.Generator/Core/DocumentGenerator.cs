@@ -156,18 +156,19 @@ public class DocumentGenerator : IDocumentGenerator
 
     private async Task ModifyDocuments(UpdateStoreResponse? response)
     {
-        if (response?.Modifications != null)
+        if (response == null) return;
+        if (response.Modifications != null)
             foreach (var modification in response.Modifications)
             {
                 SafetyPolicy.Validate(modification.Path, modification.Contents);
                 await Store.Store(modification.Path, modification.Contents, null, false);
             }
-        if (response?.Deletions != null)
+        if (response.Deletions != null)
             foreach (var deletion in response.Deletions)
             {
                 await Store.Remove(deletion.Path);
             }
-        if (response?.Moves != null)
+        if (response.Moves != null)
             foreach (var move in response.Moves)
             {
                 SafetyPolicy.ValidateMove(move.NewPath);

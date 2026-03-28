@@ -39,7 +39,7 @@ public class ConversationMessage : Serializer<ConversationMessage>
     {
         var isPayloadNull = Payload is null || (Payload is JsonElement je && je.ValueKind == JsonValueKind.Undefined);
 
-        var content = isPayloadNull ? Text : Payload!.ToString();
+        var content = isPayloadNull ? Text : Payload.ToString();
 
         if (Role == ChatMessageRole.User) return new HazinaChatMessage(HazinaMessageRole.User, content);
         if (Role == ChatMessageRole.System) return new HazinaChatMessage(HazinaMessageRole.System, content);

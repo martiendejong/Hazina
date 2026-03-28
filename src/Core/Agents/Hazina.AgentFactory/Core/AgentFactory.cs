@@ -267,9 +267,17 @@ public class AgentFactory
     private const string WriteModeText = "\nYou are now in write mode. You cannot call any other {agent}_write tools or write file tools in this mode. The file modifications need to be included in your response.";
     private const string CoderModeText = "\nALL YOUR MODIFICATIONS MUST ALWAYS SUPPLY THE WHOLE FILE. NEVER leave anything out and NEVER replace it with something like /* the rest of the code goes here */ or /* the rest of the code stays the same */";
 
+    private HazinaAgent GetAgent(string name)
+    {
+        if (!Agents.TryGetValue(name, out var agent))
+            throw new InvalidOperationException($"Agent '{name}' not found.");
+        return agent;
+    }
+
     private async Task<string> CallAgentDirect(string name, string query, string caller, CancellationToken cancel)
     {
-        var agent = Agents[name];
+        var agent = GetAgent(name);
+
         var id = Guid.NewGuid().ToString();
         agent.Tools.SendMessage?.Invoke(id, name, query);
         Guid messageId = Guid.NewGuid();
@@ -306,17 +314,17 @@ public class AgentFactory
     private async Task<string> CallFlowDirect(string name, string query, string caller, CancellationToken cancel)
     {
         var flow = Flows[name];
-        foreach (var agent in flow.CallsAgents)
+        foreach (var agentName in flow.CallsAgents)
         {
-            if (Agents[agent].IsCoder && !WriteMode)
+            if (Agents[agentName].IsCoder && !WriteMode)
             {
                 WriteMode = true;
-                query = await CallCoderAgentDirect(agent, query, caller, cancel, flow.Name);
+                query = await CallCoderAgentDirect(agentName, query, caller, cancel, flow.Name);
                 WriteMode = false;
             }
             else
             {
-                query = await CallAgentWithMetaDirect(agent, query, caller, string.Empty, flow.Name, cancel);
+                query = await CallAgentWithMetaDirect(agentName, query, caller, string.Empty, flow.Name, cancel);
             }
         }
         return query;
@@ -324,7 +332,8 @@ public class AgentFactory
 
     private async Task<string> CallCoderAgentDirect(string name, string query, string caller, CancellationToken cancel, string flowName = "")
     {
-        var agent = Agents[name];
+        var agent = GetAgent(name);
+
         var id = Guid.NewGuid().ToString();
         agent.Tools.SendMessage?.Invoke(id, name, query);
         Guid messageId = Guid.NewGuid();
@@ -360,7 +369,8 @@ public class AgentFactory
 
     private async Task<string> CallAgentWithMetaDirect(string name, string query, string caller, string functionName, string flowName, CancellationToken cancel)
     {
-        var agent = Agents[name];
+        var agent = GetAgent(name);
+
         var id = Guid.NewGuid().ToString();
         agent.Tools.SendMessage?.Invoke(id, name, query);
         Guid messageId = Guid.NewGuid();

@@ -29,13 +29,13 @@ namespace Common.Infrastructure.AspNetCore.Email
         /// </summary>
         public async Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
-            using var client = new SmtpClient(_config["Smtp:Host"], int.Parse(_config["Smtp:Port"] ?? "587"))
+            using var client = new SmtpClient(_config["Smtp:Host"], int.Parse(_config["Smtp:Port"]))
             {
                 Credentials = new NetworkCredential(_config["Smtp:Username"], _config["Smtp:Password"]),
                 EnableSsl = true
             };
 
-            var mailMessage = new MailMessage(_config["Smtp:From"] ?? throw new InvalidOperationException("Smtp:From configuration is required"), email, subject, htmlMessage)
+            var mailMessage = new MailMessage(_config["Smtp:From"], email, subject, htmlMessage)
             {
                 IsBodyHtml = true
             };

@@ -31,9 +31,6 @@ namespace Hazina.Tools.Data
 
             var project = _projectsRepository.Load(projectId);
 
-            if (project == null)
-                throw new ArgumentException($"Project '{projectId}' niet gevonden.", nameof(projectId));
-
             if (project.Wordpress == null)
                 throw new ArgumentException("Wordpress gegevens zijn niet ingevuld.", nameof(projectId));
 
@@ -53,24 +50,24 @@ namespace Hazina.Tools.Data
 
         public string GetExtractedSocialMediaCommentsFilePath(Project project, SocialMediaAddress address)
         {
-            return _fileLocator.GetPath(project.Id!, $"{address.Label}.json");
+            return _fileLocator.GetPath(project.Id, $"{address.Label}.json");
         }
 
         public string GetDownloadedSocialMediaCommentsFilePath(Project project, SocialMediaAddress address)
         {
-            return _fileLocator.GetPath(project.Id!, $"{address.Label}.xlsx");
+            return _fileLocator.GetPath(project.Id, $"{address.Label}.xlsx");
         }
 
         public bool HasDownloadedSocialMediaComments(string projectId, SocialMediaAddress address)
         {
             var project = _projectsRepository.Load(projectId);
-            return project != null && System.IO.File.Exists(GetDownloadedSocialMediaCommentsFilePath(project, address));
+            return System.IO.File.Exists(GetDownloadedSocialMediaCommentsFilePath(project, address));
         }
 
         public bool HasExtractedSocialMediaComments(string projectId, SocialMediaAddress address)
         {
             var project = _projectsRepository.Load(projectId);
-            return project != null && System.IO.File.Exists(GetExtractedSocialMediaCommentsFilePath(project, address));
+            return System.IO.File.Exists(GetExtractedSocialMediaCommentsFilePath(project, address));
         }
 
         public SocialMediaInfo LoadSocialMediaInfo(SocialMediaAddress address, Project project)

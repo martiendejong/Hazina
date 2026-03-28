@@ -47,9 +47,8 @@ public class HuggingFaceClientWrapper : CapabilityProviderBase, ILLMClient
 
         var content = await response.Content.ReadAsStringAsync();
         try {
-            var vector = JsonSerializer.Deserialize<double[][]>(content)?[0]
-                ?? throw new Exception("Could not extract embedding vector from response.");
-            return new Embedding(vector);
+            var vector = JsonSerializer.Deserialize<double[][]>(content)?[0];
+            return new Embedding(vector ?? Array.Empty<double>());
         } catch {
             throw new Exception($"Could not parse embedding output: {content}");
         }
@@ -70,8 +69,7 @@ public class HuggingFaceClientWrapper : CapabilityProviderBase, ILLMClient
         // Try to deserialize as { generated_image: <base64str> }
         using var doc = JsonDocument.Parse(content);
         if(doc.RootElement.TryGetProperty("generated_image", out var imgProp) || doc.RootElement.TryGetProperty("image", out imgProp)) {
-            var base64 = imgProp.GetString()
-                ?? throw new Exception("Image base64 content was null.");
+            var base64 = imgProp.GetString() ?? string.Empty;
             var bytes = Convert.FromBase64String(base64);
             // Return only bytes, no URL for HuggingFace
             var image = new HazinaGeneratedImage(null, BinaryData.FromBytes(bytes));

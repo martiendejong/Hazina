@@ -24,7 +24,7 @@ namespace Hazina.Tools.Data
 
         public BlogCategoriesClass LoadBlogCategories(Project project, ProjectFileLocator fileLocator)
         {
-            var catsJsonFile = fileLocator.GetBlogCategoriesFile(project.Id!);
+            var catsJsonFile = fileLocator.GetBlogCategoriesFile(project.Id);
             return BlogCategoriesClass.Load(catsJsonFile);
         }
 
@@ -84,7 +84,7 @@ namespace Hazina.Tools.Data
             {
                 var usersText = File.ReadAllText(usersFilePath);
                 var info = JsonSerializer.Deserialize<List<HazinaStoreUserInfo>>(usersText);
-                return info?.Select(i => i as IHazinaStoreUserInfo).ToList() ?? new List<IHazinaStoreUserInfo>();
+                return info.Select(i => i as IHazinaStoreUserInfo).ToList();
             }
             else
             {

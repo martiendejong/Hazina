@@ -64,7 +64,7 @@ public static class HazinaAgentConfigParser
                     // Parse to List<StoreRef>
                     current.Stores = string.IsNullOrWhiteSpace(value)
                         ? new List<StoreRef>()
-                        : value.Split(',').Select(ParseStoreRef).Where(r => r != null).ToList()!;
+                        : value.Split(',').Select(ParseStoreRef).Where(r => r != null).ToList();
                     break;
                 case "Functions":
                     current.Functions = string.IsNullOrWhiteSpace(value) ? new List<string>() : value.Split(',').Select(x=> x.Trim()).Where(x => x != "").ToList();

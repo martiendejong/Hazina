@@ -69,7 +69,7 @@ namespace Hazina.Tools.Data
 
         public List<string> GetSplitFiles(Project project, string file, string split = ",")
         {
-            var fullPath = _fileLocator.GetPath(project.Id!, file);
+            var fullPath = _fileLocator.GetPath(project.Id, file);
             if (File.Exists(fullPath))
             {
                 // Only process text files
@@ -87,7 +87,7 @@ namespace Hazina.Tools.Data
                 for (var i = 0; i < parts.Count; ++i)
                 {
                     var relPath = file + "." + i;
-                    var path = _fileLocator.GetPath(project.Id!, relPath);
+                    var path = _fileLocator.GetPath(project.Id, relPath);
                     File.WriteAllText(path, parts[i]);
                     files.Add(relPath);
                 }
@@ -115,7 +115,7 @@ namespace Hazina.Tools.Data
             {
                 try
                 {
-                    var uploadsJsonPath = Path.Combine(_fileLocator.GetProjectFolder(project.Id!), "uploadedFiles.json");
+                    var uploadsJsonPath = Path.Combine(_fileLocator.GetProjectFolder(project.Id), "uploadedFiles.json");
                     if (File.Exists(uploadsJsonPath))
                     {
                         var json = await File.ReadAllTextAsync(uploadsJsonPath);
@@ -133,7 +133,7 @@ namespace Hazina.Tools.Data
             }
 
             // 3. Add *.actions files from project root (always split if needed)
-            var projectFolder = _fileLocator.GetProjectFolder(project.Id!);
+            var projectFolder = _fileLocator.GetProjectFolder(project.Id);
             var actionFiles = Directory.GetFiles(projectFolder, "*.actions", SearchOption.TopDirectoryOnly);
             foreach (var actionFile in actionFiles)
             {
@@ -160,7 +160,7 @@ namespace Hazina.Tools.Data
                 };
                 foreach (var af in analysisFiles)
                 {
-                    if (File.Exists(_fileLocator.GetPath(project.Id!, af)))
+                    if (File.Exists(_fileLocator.GetPath(project.Id, af)))
                     {
                         // For structured JSON analysis files, split on newlines to keep tokens readable
                         list.AddRange(GetSplitFiles(project, af, "\n"));
@@ -172,17 +172,17 @@ namespace Hazina.Tools.Data
             {
                 // 4. Add chat metadata file (chats/chats.json)
                 var chatsMetaFile = Path.Combine("chats", "chats.json");
-                if (File.Exists(_fileLocator.GetPath(project.Id!, chatsMetaFile)))
+                if (File.Exists(_fileLocator.GetPath(project.Id, chatsMetaFile)))
                 {
                     list.AddRange(GetSplitFiles(project, chatsMetaFile));
                 }
 
                 // 5. Add individual chat JSON files (chats/{guid}.json)
-                var chatMetas = _chatRepository.GetChatMetaData(project.Id!);
+                var chatMetas = _chatRepository.GetChatMetaData(project.Id);
                 foreach (var chatMeta in chatMetas)
                 {
                     var chatFile = Path.Combine("chats", $"{chatMeta.Id}.json");
-                    if (File.Exists(_fileLocator.GetPath(project.Id!, chatFile)))
+                    if (File.Exists(_fileLocator.GetPath(project.Id, chatFile)))
                     {
                         list.AddRange(GetSplitFiles(project, chatFile));
                     }
@@ -191,10 +191,10 @@ namespace Hazina.Tools.Data
                 // 6. Add chat uploaded files marked with IncludeInProject
                 var chatsFiles = chatMetas.SelectMany(chat =>
                 {
-                    var chatFile = _fileLocator.GetChatFile(project.Id!, chat.Id);
+                    var chatFile = _fileLocator.GetChatFile(project.Id, chat.Id);
                     var messages = _chatRepository.LoadListFileOrDefault<ConversationMessage>(chatFile);
                     var chatUploadsFolder = Path.Combine("chats", chat.Id + "_uploads");
-                    var m2 = messages.Where(message => message.Payload is HazinaStoreChatFile).Select(message => Path.Combine(chatUploadsFolder, ((HazinaStoreChatFile)message.Payload!).File)).ToList();
+                    var m2 = messages.Where(message => message.Payload is HazinaStoreChatFile).Select(message => Path.Combine(chatUploadsFolder, (message.Payload as HazinaStoreChatFile).File)).ToList();
                     return m2;
                 }).ToList();
 
@@ -213,9 +213,9 @@ namespace Hazina.Tools.Data
             file = Path.Combine("Uploads", file);
             try
             {
-                var projectfolder = _fileLocator.GetProjectFolder(project.Id!);
+                var projectfolder = _fileLocator.GetProjectFolder(project.Id);
                 var length = projectfolder.Length;
-                var folder = Directory.GetParent(_fileLocator.GetPath(project.Id!, file))?.FullName ?? string.Empty;
+                var folder = Directory.GetParent(_fileLocator.GetPath(project.Id, file)).FullName;
                 var separatorIndex = file.LastIndexOf(Path.DirectorySeparatorChar);
                 var dotIndex = file.IndexOf(".");
                 string name = "";
@@ -272,10 +272,10 @@ namespace Hazina.Tools.Data
             {
                 try
                 {
-                    var project = projectsRepository.Load(projectName!);
-                    if (project == null || project.Archived) continue;
+                    var project = projectsRepository.Load(projectName);
+                    if (project.Archived) continue;
 
-                    var embeddingsFile = _fileLocator.GetEmbeddingsFilePath(projectName!);
+                    var embeddingsFile = _fileLocator.GetEmbeddingsFilePath(projectName);
                     if (File.Exists(embeddingsFile))
                     {
                         allFiles.Add(embeddingsFile);

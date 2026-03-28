@@ -115,7 +115,7 @@ public partial class SimpleOpenAIClientChatInteraction
     public async Task<ChatCompletion> Run_SurrogateTools(CancellationToken cancellationToken)
     {
         bool requiresAction;
-        ChatCompletion completion;
+        ChatCompletion completion = null!;
         var i = 0;
         var maxToolCalls = 50;
 
@@ -204,7 +204,7 @@ public partial class SimpleOpenAIClientChatInteraction
             }
         }
 
-        return completion!;
+        return completion ?? throw new InvalidOperationException("Chat completion was not produced.");
     }
 
     public async Task<GeneratedImage> RunImage(string prompt, CancellationToken cancellationToken)
@@ -369,6 +369,7 @@ public partial class SimpleOpenAIClientChatInteraction
     private async Task<List<ChatMessage>> HandleToolCalls(List<ChatMessage> messages, IEnumerable<ChatToolCall> toolCalls, AssistantChatMessage? toolCallsMessage, CancellationToken cancellationToken)
     {
         if (ToolsContext == null) throw new Exception("Tools Context not defined");
+        var toolsContext = ToolsContext!;
 
         var toolResults = new List<ChatMessage>() { };
         if(toolCallsMessage != null)
@@ -376,7 +377,7 @@ public partial class SimpleOpenAIClientChatInteraction
         // Then, add a new tool message for each tool call that is resolved.
         foreach (ChatToolCall toolCall in toolCalls)
         {
-            foreach(var tool in ToolsContext!.Tools)
+            foreach(var tool in toolsContext.Tools)
             {
                 if (toolCall.FunctionName == tool.FunctionName)
                 {
@@ -384,27 +385,27 @@ public partial class SimpleOpenAIClientChatInteraction
 
                     Console.WriteLine($"Calling {tool.FunctionName}");
                     Console.WriteLine($"Arguments:\n{toolCall.FunctionArguments.ToString()}");
-                    if(ToolsContext?.SendMessage != null)
+                    if(toolsContext.SendMessage != null)
                     {
                         var message = $"Calling {tool.FunctionName}\n{toolCall.FunctionArguments.ToString()}";
-                        ToolsContext.SendMessage(id, tool.FunctionName, message);
+                        toolsContext.SendMessage(id, tool.FunctionName, message);
                     }
                     // BEGIN PATCH: Make Execute call signature match the delegate (no cancellationToken)
                     // string result = await tool.Execute(messages.Hazina(), toolCall.Hazina(), cancellationToken);
                     string result = await tool.Execute(messages.Hazina(), toolCall.Hazina(), cancellationToken);
-                    if (ToolsContext?.SendMessage != null)
+                    if (toolsContext.SendMessage != null)
                     {
-                        ToolsContext.SendMessage(id, tool.FunctionName, result);
+                        toolsContext.SendMessage(id, tool.FunctionName, result);
                     }
 
                     // END PATCH
 
                     // Invoke OnToolExecuted callback if defined
-                    if (ToolsContext?.OnToolExecuted != null)
+                    if (toolsContext.OnToolExecuted != null)
                     {
                         try
                         {
-                            ToolsContext.OnToolExecuted(tool.FunctionName, result, _turnNumber);
+                            toolsContext.OnToolExecuted(tool.FunctionName, result, _turnNumber);
                         }
                         catch
                         {

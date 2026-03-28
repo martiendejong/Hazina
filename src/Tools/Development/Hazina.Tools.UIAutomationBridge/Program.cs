@@ -98,7 +98,7 @@ namespace UIAutomationBridge
             var request = context.Request;
             var response = context.Response;
             var method = request.HttpMethod;
-            var path = request.Url?.AbsolutePath ?? "/";
+            var path = request.Url.AbsolutePath;
 
             // CORS
             response.Headers.Add("Access-Control-Allow-Origin", "*");
@@ -292,12 +292,6 @@ namespace UIAutomationBridge
             var name = body["name"]?.ToString();
             var className = body["className"]?.ToString();
 
-            if (windowId == null)
-            {
-                WriteJsonResponse(context, new { ok = false, error = "windowId is required" }, 400);
-                return;
-            }
-
             var window = FindWindow(windowId);
             if (window == null)
             {
@@ -323,18 +317,6 @@ namespace UIAutomationBridge
             var text = body["text"]?.ToString();
             var automationId = body["automationId"]?.ToString();
             var name = body["name"]?.ToString();
-
-            if (windowId == null)
-            {
-                WriteJsonResponse(context, new { ok = false, error = "windowId is required" }, 400);
-                return;
-            }
-
-            if (text == null)
-            {
-                WriteJsonResponse(context, new { ok = false, error = "text is required" }, 400);
-                return;
-            }
 
             var window = FindWindow(windowId);
             if (window == null)
@@ -363,18 +345,6 @@ namespace UIAutomationBridge
             var value = body["value"]?.ToString();
             var automationId = body["automationId"]?.ToString();
             var name = body["name"]?.ToString();
-
-            if (windowId == null)
-            {
-                WriteJsonResponse(context, new { ok = false, error = "windowId is required" }, 400);
-                return;
-            }
-
-            if (value == null)
-            {
-                WriteJsonResponse(context, new { ok = false, error = "value is required" }, 400);
-                return;
-            }
 
             var window = FindWindow(windowId);
             if (window == null)
@@ -408,12 +378,6 @@ namespace UIAutomationBridge
             var automationId = body["automationId"]?.ToString();
             var name = body["name"]?.ToString();
 
-            if (windowId == null)
-            {
-                WriteJsonResponse(context, new { ok = false, error = "windowId is required" }, 400);
-                return;
-            }
-
             var window = FindWindow(windowId);
             if (window == null)
             {
@@ -446,12 +410,6 @@ namespace UIAutomationBridge
             var automationId = body["automationId"]?.ToString();
             var name = body["name"]?.ToString();
             var expand = body["expand"]?.ToString()?.ToLower() != "false";
-
-            if (windowId == null)
-            {
-                WriteJsonResponse(context, new { ok = false, error = "windowId is required" }, 400);
-                return;
-            }
 
             var window = FindWindow(windowId);
             if (window == null)
@@ -488,12 +446,6 @@ namespace UIAutomationBridge
             var windowId = body["windowId"]?.ToString();
             var automationId = body["automationId"]?.ToString();
             var name = body["name"]?.ToString();
-
-            if (windowId == null)
-            {
-                WriteJsonResponse(context, new { ok = false, error = "windowId is required" }, 400);
-                return;
-            }
 
             var window = FindWindow(windowId);
             if (window == null)
@@ -631,7 +583,7 @@ namespace UIAutomationBridge
             };
         }
 
-        static object? BuildElementTree(AutomationElement element, int currentDepth = 0, int maxDepth = 5)
+        static object BuildElementTree(AutomationElement element, int currentDepth = 0, int maxDepth = 5)
         {
             if (currentDepth >= maxDepth)
                 return null;

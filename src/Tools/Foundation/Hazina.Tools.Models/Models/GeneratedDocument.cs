@@ -10,7 +10,7 @@ namespace HazinaStore.Models
     {
         public string Name { get; set; }
         public List<DocumentRevision>? Revisions { get; set; }
-        public string Content => (Revisions?.Any() == true) ? Revisions.Last().Content : "";
+        public string Content => Revisions.Any() ? Revisions.Last().Content : "";
 
         public string Id => Name;
 
@@ -29,9 +29,9 @@ public class GeneratedObject<T> : Serializer<GeneratedObject<T>>, IEmbedding whe
     public string Name { get; set; }
     public List<ObjectRevision<T>>? Revisions { get; set; }
 
-    public T? MyObject => (Revisions?.Any() == true) ? Revisions.Last().Content : default;
+    public T MyObject => Revisions.Any() ? Revisions.Last().Content : null;
 
-    public string Content => (Revisions?.Any() == true) ? Revisions.Last().Content.Serialize() : "";
+    public string Content => Revisions.Any() ? Revisions.Last().Content.Serialize() : "";
 
     public string Id => Name;
 

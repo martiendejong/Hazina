@@ -11,15 +11,14 @@ public class EvaluationRunnerTests
 {
     private class MockLLMClient : CapabilityProviderBase, ILLMClient
     {
+        public override ProviderCapability SupportedCapabilities => ProviderCapability.Chat;
+
         private readonly string _response;
 
         public MockLLMClient(string response = "Test response")
         {
             _response = response;
         }
-
-        public override ProviderCapability SupportedCapabilities =>
-            ProviderCapability.Chat | ProviderCapability.Streaming | ProviderCapability.Embeddings;
 
         public Task<Embedding> GenerateEmbedding(string data)
         {

@@ -51,7 +51,8 @@ namespace HazinaStore.Core
             get
             {
                 // Refresh metadata from repository
-                _metadata = _repository.GetChatMetadata(_chatId)!;
+                _metadata = _repository.GetChatMetadata(_chatId)
+                    ?? throw new InvalidOperationException($"Chat metadata not found for chat '{_chatId}'.");
                 return _metadata;
             }
         }

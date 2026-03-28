@@ -37,8 +37,6 @@ public class OllamaClientWrapper : CapabilityProviderBase, ILLMClient
         _toolsOrchestrator = new PromptBasedToolsOrchestrator(maxToolCalls: 50);
     }
 
-    // ICapabilityProvider methods inherited from CapabilityProviderBase
-
     #region Chat Completion
 
     public async Task<LLMResponse<string>> GetResponse(

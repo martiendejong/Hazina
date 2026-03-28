@@ -25,7 +25,7 @@ public class GeminiClientWrapper : CapabilityProviderBase, ILLMClient
         _config = config;
         _http = new HttpClient
         {
-            BaseAddress = new Uri(config.Endpoint ?? "https://generativelanguage.googleapis.com")
+            BaseAddress = new Uri(config.Endpoint ?? "https://generativelanguage.googleapis.com/v1beta")
         };
     }
 
@@ -194,8 +194,9 @@ public class GeminiClientWrapper : CapabilityProviderBase, ILLMClient
         using var doc = JsonDocument.Parse(respText);
         if (!doc.RootElement.TryGetProperty("audioContent", out var audioProp))
             throw new Exception("Google TTS response missing audioContent.");
-        var b64 = audioProp.GetString()
-            ?? throw new Exception("Google TTS audioContent was null.");
+        var b64 = audioProp.GetString();
+        if (string.IsNullOrEmpty(b64))
+            throw new Exception("Google TTS response has empty audioContent.");
         var bytes = Convert.FromBase64String(b64);
 
         int offset = 0;
