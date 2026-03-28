@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Hazina.AgenticOrchestration.Extensions;
@@ -137,6 +138,9 @@ public static class ServiceCollectionExtensions
                 new NullAgentSessionLogger());
         }
 
+        // Register Session Persistence for crash recovery
+        services.AddSingleton<ISessionPersistence, SessionPersistence>();
+
         // Register Terminal Session Manager for real-time process streaming
         if (options.EnableTerminalStreaming)
         {
@@ -145,7 +149,11 @@ public static class ServiceCollectionExtensions
                     sp.GetRequiredService<IHubContext<TerminalHub>>(),
                     sp.GetRequiredService<ILogger<TerminalSessionManager>>(),
                     sp.GetRequiredService<ILoggerFactory>(),
-                    sp.GetRequiredService<IAgentSessionLogger>()));
+                    sp.GetRequiredService<IAgentSessionLogger>(),
+                    sp.GetRequiredService<ISessionPersistence>()));
+
+            // Register startup recovery hosted service
+            services.AddHostedService<SessionRecoveryStartupService>();
         }
 
         // Register Prompt Template Service for predefined prompts
@@ -218,6 +226,40 @@ public static class ServiceCollectionExtensions
 
         return endpoints;
     }
+}
+
+/// <summary>
+/// Background service that scans for recoverable sessions on application startup.
+/// Runs once during startup, then stops.
+/// </summary>
+public class SessionRecoveryStartupService : IHostedService
+{
+    private readonly ITerminalSessionManager _sessionManager;
+    private readonly ILogger<SessionRecoveryStartupService> _logger;
+
+    public SessionRecoveryStartupService(
+        ITerminalSessionManager sessionManager,
+        ILogger<SessionRecoveryStartupService> logger)
+    {
+        _sessionManager = sessionManager;
+        _logger = logger;
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Session recovery startup service: scanning for recoverable sessions...");
+
+        try
+        {
+            await _sessionManager.ScanForRecoverableSessionsAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Session recovery startup service failed");
+        }
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }
 
 /// <summary>
