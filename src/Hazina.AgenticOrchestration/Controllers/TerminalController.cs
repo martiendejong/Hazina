@@ -427,6 +427,95 @@ public class TerminalController : ControllerBase
     }
 
     /// <summary>
+    /// Get sessions that can be recovered after a service crash/restart.
+    /// These are sessions that were active when the service went down and have persisted metadata + transcripts.
+    /// </summary>
+    [HttpGet("recoverable")]
+    public async Task<ActionResult<IEnumerable<RecoverableSessionDto>>> GetRecoverableSessions()
+    {
+        try
+        {
+            var recoverable = await _sessionManager.GetRecoverableSessionsAsync();
+
+            var dtos = recoverable.Select(r => new RecoverableSessionDto
+            {
+                SessionId = r.SessionId,
+                Command = r.Command,
+                WorkingDirectory = r.WorkingDirectory,
+                CreatedAt = r.CreatedAt,
+                LastActive = r.LastActive,
+                TranscriptSizeBytes = r.TranscriptSizeBytes,
+                DisplayOrder = r.DisplayOrder
+            });
+
+            return Ok(dtos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get recoverable sessions");
+            return StatusCode(500, new { error = "Failed to get recoverable sessions", message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Restore a recoverable session. Creates a new terminal process with the same command/config
+    /// and replays the historical transcript to connected SignalR clients.
+    /// </summary>
+    [HttpPost("recoverable/{sessionId}/restore")]
+    public async Task<ActionResult<TerminalSessionDto>> RestoreRecoverableSession(
+        string sessionId,
+        CancellationToken ct)
+    {
+        try
+        {
+            var newSession = await _sessionManager.RestoreSessionAsync(sessionId, ct);
+
+            _logger.LogInformation("Restored session {OriginalId} as new session {NewId}",
+                sessionId, newSession.SessionId);
+
+            return Ok(new TerminalSessionDto
+            {
+                SessionId = newSession.SessionId,
+                Command = newSession.Command,
+                Title = newSession.Title,
+                StartedAt = newSession.StartedAt,
+                IsRunning = newSession.IsRunning,
+                WaitingForInput = newSession.WaitingForInput,
+                SignalRHubUrl = "/hubs/terminal",
+                Instructions = "Session restored. Connect via SignalR to receive replayed transcript and continue."
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message, sessionId });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to restore session {SessionId}", sessionId);
+            return StatusCode(500, new { error = "Failed to restore session", message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Dismiss (archive) a recoverable session without restoring it.
+    /// Use when the user decides they don't need to recover a session.
+    /// </summary>
+    [HttpDelete("recoverable/{sessionId}")]
+    public async Task<IActionResult> DismissRecoverableSession(string sessionId)
+    {
+        try
+        {
+            await _sessionManager.DismissRecoverableSessionAsync(sessionId);
+            return Ok(new { message = "Session dismissed and archived", sessionId });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to dismiss recoverable session {SessionId}", sessionId);
+            return StatusCode(500, new { error = "Failed to dismiss session", message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Get terminal configuration defaults.
     /// Frontend can use this to populate session creation forms.
     /// </summary>
@@ -1336,4 +1425,18 @@ public class UploadedFileDto
     public string FileName { get; set; } = "";
     public long Size { get; set; }
     public DateTime UploadedAt { get; set; }
+}
+
+/// <summary>
+/// Information about a session that can be recovered after a service restart.
+/// </summary>
+public class RecoverableSessionDto
+{
+    public string SessionId { get; set; } = "";
+    public string Command { get; set; } = "";
+    public string WorkingDirectory { get; set; } = "";
+    public DateTime CreatedAt { get; set; }
+    public DateTime LastActive { get; set; }
+    public long TranscriptSizeBytes { get; set; }
+    public int DisplayOrder { get; set; }
 }
