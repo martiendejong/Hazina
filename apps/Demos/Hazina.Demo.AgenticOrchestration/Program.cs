@@ -148,6 +148,11 @@ catch (Exception ex)
     Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] OpenAI LLM Client skipped: {ex.Message}");
 }
 
+// ClickUp Orchestration Service (monitors internal projects for TODO/REVIEW/BACKLOG tasks)
+builder.Services.AddHttpClient();
+builder.Services.AddHostedService<Hazina.AgenticOrchestration.Services.ClickUpOrchestrationService>();
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ClickUp Orchestration Service registered");
+
 // JWT Configuration
 var jwtConfig = authConfig.GetSection("Jwt");
 var jwtEnabled = bool.TryParse(jwtConfig["Enabled"], out var jwtEn) && jwtEn;

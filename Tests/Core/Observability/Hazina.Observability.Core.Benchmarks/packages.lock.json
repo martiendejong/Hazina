@@ -643,7 +643,7 @@
       "hazina.ai.compression": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Classes": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )",
           "SharpToken": "[2.0.3, )"
         }
@@ -652,8 +652,8 @@
         "type": "Project",
         "dependencies": {
           "Hazina.AI.Providers": "[1.0.0, )",
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )"
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )"
         }
       },
       "hazina.ai.orchestration": {
@@ -662,15 +662,15 @@
           "Hazina.AI.Compression": "[1.0.0, )",
           "Hazina.AI.FaultDetection": "[1.0.0, )",
           "Hazina.AI.Providers": "[1.0.0, )",
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )"
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )"
         }
       },
       "hazina.ai.providers": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )",
           "Microsoft.Extensions.Configuration": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Binder": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Json": "[10.0.3, )",
@@ -687,8 +687,8 @@
       "hazina.llms.client": {
         "type": "Project",
         "dependencies": {
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Helpers": "[2.0.0, )",
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Helpers": "[1.0.0, )",
           "HtmlAgilityPack": "[1.12.0, )",
           "Microsoft.Extensions.Configuration": "[10.0.3, )",
           "Microsoft.Extensions.Configuration.Binder": "[10.0.3, )",
@@ -710,8 +710,8 @@
           "Hazina.AI.FaultDetection": "[1.0.0, )",
           "Hazina.AI.Orchestration": "[1.0.0, )",
           "Hazina.AI.Providers": "[1.0.0, )",
-          "Hazina.LLMs.Classes": "[2.0.0, )",
-          "Hazina.LLMs.Client": "[2.0.0, )"
+          "Hazina.LLMs.Classes": "[1.0.0, )",
+          "Hazina.LLMs.Client": "[1.0.0, )"
         }
       },
       "hazina.observability.core": {

@@ -47,12 +47,6 @@ namespace Hazina.Observability.LLMLogs.Decorators
             _providerName = providerName;
         }
 
-        // ICapabilityProvider - delegate to inner
-        public ProviderCapability SupportedCapabilities => _innerClient.SupportedCapabilities;
-        public bool SupportsCapability(ProviderCapability capability) => _innerClient.SupportsCapability(capability);
-        public IEnumerable<string> GetSupportedCapabilityNames() => _innerClient.GetSupportedCapabilityNames();
-        public void RequireCapabilities(ProviderCapability requiredCapabilities) => _innerClient.RequireCapabilities(requiredCapabilities);
-
         public async Task<Embedding> GenerateEmbedding(string data)
         {
             // Embeddings don't have token usage in the same way, just pass through

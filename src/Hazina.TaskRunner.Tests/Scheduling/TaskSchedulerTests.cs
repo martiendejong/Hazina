@@ -23,7 +23,7 @@ public class TaskSchedulerTests : IDisposable
     /// <summary>
     /// Helper to create and save a test TaskSet
     /// </summary>
-    private void CreateTestTaskSet(TaskScheduler scheduler)
+    private void CreateTestTaskSet(Hazina.TaskRunner.Scheduling.TaskScheduler scheduler)
     {
         var taskSetConfig = new TaskSetConfiguration(_testConfigPath);
         var taskSet = new TaskSet
@@ -35,7 +35,7 @@ public class TaskSchedulerTests : IDisposable
         };
         taskSetConfig.SaveTaskSet(taskSet);
         // Reload to pick up the new task set
-        var loadMethod = typeof(TaskScheduler).GetMethod("LoadTaskSets",
+        var loadMethod = typeof(Hazina.TaskRunner.Scheduling.TaskScheduler).GetMethod("LoadTaskSets",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         loadMethod?.Invoke(scheduler, null);
     }
@@ -44,7 +44,7 @@ public class TaskSchedulerTests : IDisposable
     public void AddTask_NewTask_SavesSuccessfully()
     {
         // Arrange
-        using var scheduler = new TaskScheduler(_testConfigPath);
+        using var scheduler = new Hazina.TaskRunner.Scheduling.TaskScheduler(_testConfigPath);
         CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
@@ -69,7 +69,7 @@ public class TaskSchedulerTests : IDisposable
     public void UpdateTask_ExistingTask_UpdatesSuccessfully()
     {
         // Arrange
-        using var scheduler = new TaskScheduler(_testConfigPath);
+        using var scheduler = new Hazina.TaskRunner.Scheduling.TaskScheduler(_testConfigPath);
         CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
@@ -96,7 +96,7 @@ public class TaskSchedulerTests : IDisposable
     public void RemoveTask_ExistingTask_RemovesSuccessfully()
     {
         // Arrange
-        using var scheduler = new TaskScheduler(_testConfigPath);
+        using var scheduler = new Hazina.TaskRunner.Scheduling.TaskScheduler(_testConfigPath);
         CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
@@ -120,7 +120,7 @@ public class TaskSchedulerTests : IDisposable
     public void GetAllTasks_MultipleTasks_ReturnsAll()
     {
         // Arrange
-        using var scheduler = new TaskScheduler(_testConfigPath);
+        using var scheduler = new Hazina.TaskRunner.Scheduling.TaskScheduler(_testConfigPath);
         CreateTestTaskSet(scheduler);
         scheduler.AddTask(TestTaskSetId, new ScheduledTask { Id = "task1", Name = "Task 1", ScriptPath = "test.ps1", CronExpression = "0 0 * * *" });
         scheduler.AddTask(TestTaskSetId, new ScheduledTask { Id = "task2", Name = "Task 2", ScriptPath = "test.ps1", CronExpression = "0 6 * * *" });
@@ -140,7 +140,7 @@ public class TaskSchedulerTests : IDisposable
     public void EnableTask_DisabledTask_EnablesSuccessfully()
     {
         // Arrange
-        using var scheduler = new TaskScheduler(_testConfigPath);
+        using var scheduler = new Hazina.TaskRunner.Scheduling.TaskScheduler(_testConfigPath);
         CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
@@ -166,7 +166,7 @@ public class TaskSchedulerTests : IDisposable
     public void DisableTask_EnabledTask_DisablesSuccessfully()
     {
         // Arrange
-        using var scheduler = new TaskScheduler(_testConfigPath);
+        using var scheduler = new Hazina.TaskRunner.Scheduling.TaskScheduler(_testConfigPath);
         CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
@@ -195,7 +195,7 @@ public class TaskSchedulerTests : IDisposable
         var outputPath = Path.Combine(_testScriptsDir, "output.txt");
         File.WriteAllText(scriptPath, $"'Executed' | Out-File '{outputPath}'");
 
-        using var scheduler = new TaskScheduler(_testConfigPath);
+        using var scheduler = new Hazina.TaskRunner.Scheduling.TaskScheduler(_testConfigPath);
         CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
@@ -225,7 +225,7 @@ public class TaskSchedulerTests : IDisposable
     public void CronExpression_DailyAtMidnight_CalculatesNextRunCorrectly()
     {
         // Arrange
-        using var scheduler = new TaskScheduler(_testConfigPath);
+        using var scheduler = new Hazina.TaskRunner.Scheduling.TaskScheduler(_testConfigPath);
         CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
@@ -255,7 +255,7 @@ public class TaskSchedulerTests : IDisposable
     public void CronExpression_EveryMinute_CalculatesNextRunCorrectly()
     {
         // Arrange
-        using var scheduler = new TaskScheduler(_testConfigPath);
+        using var scheduler = new Hazina.TaskRunner.Scheduling.TaskScheduler(_testConfigPath);
         CreateTestTaskSet(scheduler);
         var task = new ScheduledTask
         {
