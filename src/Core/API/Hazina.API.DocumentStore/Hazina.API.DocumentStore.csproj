@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Hazina.API.DocumentStore</RootNamespace>
+    <AssemblyName>Hazina.API.DocumentStore</AssemblyName>
+    <Version>1.0.0</Version>
+    <Authors>Hazina Framework</Authors>
+    <Description>Reusable RAG document store and search API library for ASP.NET Core</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Document Processing -->
+    <PackageReference Include="DocumentFormat.OpenXml" Version="3.0.0" />
+    <PackageReference Include="itext7" Version="8.0.2" />
+    <PackageReference Include="Tesseract" Version="5.2.0" />
+
+    <!-- Database -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.0" />
+    <PackageReference Include="Npgsql" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Hazina Core Services -->
+    <ProjectReference Include="..\..\Storage\Hazina.Store.DocumentStore\Hazina.Store.DocumentStore.csproj" />
+    <ProjectReference Include="..\..\Storage\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />
+    <ProjectReference Include="..\..\AI\Hazina.AI.RAG\Hazina.AI.RAG.csproj" />
+    <ProjectReference Include="..\..\AI\Hazina.AI.Providers\Hazina.AI.Providers.csproj" />
+    <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\LLMs.Providers\Hazina.LLMs.OpenAI\Hazina.LLMs.OpenAI.csproj" />
+  </ItemGroup>
+
+</Project>
