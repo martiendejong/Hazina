@@ -8,41 +8,20 @@
     <AssemblyName>Hazina.API.Search</AssemblyName>
     <Version>1.0.0</Version>
     <Authors>Hazina Framework</Authors>
-    <Description>Complete RAG Search API for Hazina - Production Ready</Description>
+    <Description>Standalone RAG Search API host using Hazina.API.DocumentStore library</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Core ASP.NET -->
+    <!-- Host-level packages only -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
-
-    <!-- Logging -->
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
-
-    <!-- Document Processing -->
-    <PackageReference Include="DocumentFormat.OpenXml" Version="3.0.0" />
-    <PackageReference Include="itext7" Version="8.0.2" />
-    <PackageReference Include="Tesseract" Version="5.2.0" />
-
-    <!-- Database -->
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.0" />
-    <PackageReference Include="Npgsql" Version="9.0.0" />
-
-    <!-- JSON -->
-    <PackageReference Include="System.Text.Json" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Hazina Core Services -->
-    <ProjectReference Include="..\..\..\src\Core\Storage\Hazina.Store.DocumentStore\Hazina.Store.DocumentStore.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\Storage\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\AI\Hazina.AI.RAG\Hazina.AI.RAG.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\AI\Hazina.AI.Providers\Hazina.AI.Providers.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\LLMs.Providers\Hazina.LLMs.OpenAI\Hazina.LLMs.OpenAI.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\API\Hazina.API.DocumentStore\Hazina.API.DocumentStore.csproj" />
   </ItemGroup>
 
 </Project>
