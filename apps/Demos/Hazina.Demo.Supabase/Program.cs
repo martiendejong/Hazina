@@ -1,4 +1,5 @@
 using Hazina.LLMs;
+using Hazina.LLMs.Capabilities;
 using Hazina.Tools.Data;
 using Hazina.Store;
 using Hazina.Store.EmbeddingStore;
@@ -11,8 +12,10 @@ namespace Hazina.Demo.Supabase;
 /// Dummy LLM client for demo purposes (generates deterministic embeddings)
 /// In production, use OpenAIClientWrapper or another real LLM client
 /// </summary>
-class DummyLLMClient : ILLMClient
+class DummyLLMClient : CapabilityProviderBase, ILLMClient
 {
+    public override ProviderCapability SupportedCapabilities => ProviderCapability.All;
+
     private readonly int _dimension;
     public DummyLLMClient(int dimension) { _dimension = dimension; }
 

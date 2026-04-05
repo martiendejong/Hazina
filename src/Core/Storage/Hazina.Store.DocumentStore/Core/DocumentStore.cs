@@ -375,7 +375,7 @@ public class DocumentStore : IDocumentStore
         return TextStore.GetPath(Sanitize(name));
     }
 
-    public async Task<string> Get(string name)
+    public async Task<string?> Get(string name)
     {
         return await TextStore.Get(Sanitize(name)) ?? string.Empty;
     }
