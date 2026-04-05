@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
@@ -20,5 +20,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Classes\Hazina.LLMs.Classes.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Temporarily exclude legacy logging wrapper - has outdated method signatures -->
+    <Compile Remove="LLMLoggingWrapper.cs" />
   </ItemGroup>
 </Project>

@@ -3,6 +3,7 @@ using Hazina.AI.Providers.Health;
 using Hazina.AI.Providers.Resilience;
 using Hazina.AI.Providers.Selection;
 using Hazina.LLMs;
+using Hazina.LLMs.Capabilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -12,8 +13,10 @@ namespace Hazina.AI.Providers.Core;
 /// Main orchestrator for multi-provider LLM management
 /// Implements ILLMClient to provide transparent multi-provider support with failover, health monitoring, and cost tracking
 /// </summary>
-public class ProviderOrchestrator : IProviderOrchestrator
+public class ProviderOrchestrator : CapabilityProviderBase, IProviderOrchestrator
 {
+    /// <inheritdoc/>
+    public override ProviderCapability SupportedCapabilities => ProviderCapability.All;
     private readonly ProviderRegistry _registry;
     private readonly IProviderHealthMonitor _healthMonitor;
     private readonly IProviderSelector _selector;

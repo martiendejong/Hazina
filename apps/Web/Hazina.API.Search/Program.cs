@@ -1,26 +1,31 @@
-using Hazina.API.Search.Data;
-using Hazina.API.Search.Integration;
-using Hazina.API.Search.Middleware;
-using Hazina.API.Search.Services;
-using Hazina.API.Search.Services.FormatHandlers;
-using Hazina.AI.Providers.Core;
-using Hazina.LLMs;
-using Hazina.LLMs.OpenAI;
+using Hazina.API.DocumentStore.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
+// ──────────────────────────────────────────────
+// Hazina Document Store API (library)
+// ──────────────────────────────────────────────
+builder.Services.AddHazinaDocumentStoreApi(options =>
+{
+    options.FileStoragePath = builder.Configuration["Hazina:FileStoragePath"] ?? "./data";
+    options.MaxUploadSizeMB = builder.Configuration.GetValue<int>("Hazina:MaxUploadSizeMB", 100);
+    options.EmbeddingDimensions = builder.Configuration.GetValue<int>("Hazina:EmbeddingDimensions", 1536);
+    options.DefaultLLMModel = builder.Configuration["Hazina:DefaultLLMModel"] ?? "gpt-4o";
+    options.DefaultEmbeddingModel = builder.Configuration["Hazina:DefaultEmbeddingModel"] ?? "text-embedding-3-small";
+    options.TesseractDataPath = builder.Configuration["Tesseract:DataPath"] ?? "./tessdata";
+    options.MetadataConnectionString = builder.Configuration.GetConnectionString("SQLite")
+                                       ?? "Data Source=search.db";
+});
 
-// Database - SQLite for metadata
-builder.Services.AddDbContext<SearchDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("SQLite")));
+// ──────────────────────────────────────────────
+// Host-level concerns: JWT, CORS, Swagger
+// ──────────────────────────────────────────────
 
-// Authentication - JWT Bearer
+// Authentication
 var jwtSettings = builder.Configuration.GetSection("Authentication:Jwt");
 var secretKey = jwtSettings["SecretKey"]
     ?? throw new InvalidOperationException("JWT secret key not configured");
@@ -56,7 +61,7 @@ builder.Services.AddCors(options =>
 // Controllers
 builder.Services.AddControllers();
 
-// Swagger/OpenAPI
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -69,7 +74,7 @@ builder.Services.AddSwaggerGen(c =>
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token.",
+        Description = "JWT Authorization header using the Bearer scheme.",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
@@ -92,98 +97,17 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Hazina LLM Services
-builder.Services.AddSingleton<OpenAIConfig>(sp =>
-{
-    var config = new OpenAIConfig();
-    var hazinaSection = builder.Configuration.GetSection("Hazina:OpenAI");
-    hazinaSection.Bind(config);
-
-    // Fallback to environment variable if not in config
-    if (string.IsNullOrEmpty(config.ApiKey))
-    {
-        config.ApiKey = Environment.GetEnvironmentVariable("HAZINA_OPENAI_APIKEY") ?? string.Empty;
-    }
-
-    // Set default models if not configured
-    if (string.IsNullOrEmpty(config.Model))
-    {
-        config.Model = builder.Configuration["Hazina:DefaultLLMModel"] ?? "gpt-4o";
-    }
-    if (string.IsNullOrEmpty(config.EmbeddingModel))
-    {
-        config.EmbeddingModel = builder.Configuration["Hazina:DefaultEmbeddingModel"] ?? "text-embedding-3-small";
-    }
-
-    return config;
-});
-
-builder.Services.AddSingleton<ILLMClient>(sp =>
-{
-    var config = sp.GetRequiredService<OpenAIConfig>();
-    return new OpenAIClientWrapper(config);
-});
-
-builder.Services.AddSingleton<IProviderOrchestrator>(sp =>
-{
-    var logger = sp.GetService<ILogger<ProviderOrchestrator>>();
-    var orchestrator = new ProviderOrchestrator(logger);
-
-    // Register the OpenAI provider
-    var openAIClient = sp.GetRequiredService<ILLMClient>();
-    var metadata = new ProviderMetadata
-    {
-        Name = "openai",
-        DisplayName = "OpenAI",
-        Type = ProviderType.OpenAI,
-        Priority = 1,
-        IsEnabled = true,
-        Capabilities = new ProviderCapabilities
-        {
-            SupportsEmbeddings = true,
-            SupportsChat = true,
-            SupportsImages = true,
-            SupportsTTS = true,
-            SupportsStreaming = true
-        }
-    };
-    orchestrator.RegisterProvider("openai", openAIClient, metadata);
-
-    return orchestrator;
-});
-
-// Hazina Store Factory
-builder.Services.AddSingleton<IHazinaStoreFactory, HazinaStoreFactory>();
-
-// Format Handlers
-builder.Services.AddTransient<IFormatHandler, TextFormatHandler>();
-builder.Services.AddTransient<IFormatHandler, DocxFormatHandler>();
-builder.Services.AddTransient<IFormatHandler, PdfFormatHandler>();
-builder.Services.AddTransient<IFormatHandler, ImageFormatHandler>();
-
-// Application Services
-builder.Services.AddScoped<RAGStoreRepository>();
-builder.Services.AddScoped<ChunkingService>();
-builder.Services.AddScoped<DocumentProcessor>();
-builder.Services.AddScoped<RAGStoreManager>();
-builder.Services.AddScoped<SearchService>();
-
 // Health checks
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-// Ensure database is created
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<SearchDbContext>();
-    dbContext.Database.EnsureCreated();
-}
+// ──────────────────────────────────────────────
+// Pipeline
+// ──────────────────────────────────────────────
 
-// Configure the HTTP request pipeline
-
-// Exception handling middleware
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+// Library middleware (DB init + exception handling)
+app.UseHazinaDocumentStoreApi();
 
 if (app.Environment.IsDevelopment())
 {
@@ -191,7 +115,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Hazina Search API v1");
-        c.RoutePrefix = string.Empty; // Serve Swagger UI at root
+        c.RoutePrefix = string.Empty;
     });
 }
 

@@ -1,3 +1,5 @@
+using Hazina.LLMs.Capabilities;
+
 namespace Hazina.LLMs;
 
 /// <summary>
@@ -30,7 +32,7 @@ namespace Hazina.LLMs;
 /// Console.WriteLine(response.Result);
 /// </code>
 /// </example>
-public interface ILLMClient
+public interface ILLMClient : ICapabilityProvider
 {
     /// <summary>
     /// Generates a vector embedding for the given text data.

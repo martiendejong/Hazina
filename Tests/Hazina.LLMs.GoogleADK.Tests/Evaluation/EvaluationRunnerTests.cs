@@ -1,3 +1,4 @@
+using Hazina.LLMs.Capabilities;
 using Hazina.LLMs.GoogleADK.Agents;
 using Hazina.LLMs.GoogleADK.Core;
 using Hazina.LLMs.GoogleADK.Evaluation;
@@ -8,8 +9,10 @@ namespace Hazina.LLMs.GoogleADK.Tests.Evaluation;
 
 public class EvaluationRunnerTests
 {
-    private class MockLLMClient : ILLMClient
+    private class MockLLMClient : CapabilityProviderBase, ILLMClient
     {
+        public override ProviderCapability SupportedCapabilities => ProviderCapability.All;
+
         private readonly string _response;
 
         public MockLLMClient(string response = "Test response")

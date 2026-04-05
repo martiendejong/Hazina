@@ -8,12 +8,19 @@ using System.Threading.Tasks;
 using Hazina;
 using Hazina.LLMs;
 using Hazina.LLMs.HuggingFace;
+using Hazina.LLMs.Capabilities;
 
 
 
 
-public class HuggingFaceClientWrapper : ILLMClient
+public class HuggingFaceClientWrapper : CapabilityProviderBase, ILLMClient
 {
+    /// <inheritdoc/>
+    public override ProviderCapability SupportedCapabilities =>
+        ProviderCapability.Chat |
+        ProviderCapability.Streaming |
+        ProviderCapability.Embeddings;
+
     private readonly HuggingFaceConfig _config;
     private static readonly HttpClient _httpClient = new HttpClient();
 

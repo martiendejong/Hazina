@@ -238,6 +238,9 @@ public class DocumentStore : IDocumentStore
             await TextStore.Remove(chunk);
         }
 
+        // Remove the chunk mapping to prevent orphaned metadata
+        await ChunkStore.Remove(name, chunks);
+
         return true;
     }
 
@@ -372,7 +375,7 @@ public class DocumentStore : IDocumentStore
         return TextStore.GetPath(Sanitize(name));
     }
 
-    public async Task<string> Get(string name)
+    public async Task<string?> Get(string name)
     {
         return await TextStore.Get(Sanitize(name));
     }

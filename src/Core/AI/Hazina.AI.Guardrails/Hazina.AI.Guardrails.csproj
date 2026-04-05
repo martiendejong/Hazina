@@ -1,16 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.AI.Guardrails</PackageId>
+    <Description>Safety guardrails for AI agent execution. Input/output validation, content filtering, and policy enforcement.</Description>
+    <PackageTags>hazina;ai;guardrails;safety;validation;policy</PackageTags>
   </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\Agents\Hazina.AgentFactory\Hazina.AgentFactory.csproj" />
   </ItemGroup>
-
 </Project>

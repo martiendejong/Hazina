@@ -42,7 +42,7 @@ public class AgentExecutionService : IAgentExecutionService
         var message = new HazinaChatMessage
         {
             MessageId = messageId,
-            Role = HazinaMessageRole.Assistant,
+            Role = HazinaMessageRole.User,
             Text = $"{caller}: {query}",
             AgentName = name,
             FunctionName = string.Empty,
@@ -104,7 +104,7 @@ public class AgentExecutionService : IAgentExecutionService
         var message = new HazinaChatMessage
         {
             MessageId = messageId,
-            Role = HazinaMessageRole.Assistant,
+            Role = HazinaMessageRole.User,
             Text = $"{caller}: {query}",
             AgentName = name,
             FunctionName = "CodeModify",
@@ -145,7 +145,7 @@ public class AgentExecutionService : IAgentExecutionService
         var message = new HazinaChatMessage
         {
             MessageId = messageId,
-            Role = HazinaMessageRole.Assistant,
+            Role = HazinaMessageRole.User,
             Text = $"{caller}: {query}",
             AgentName = name,
             FunctionName = functionName ?? string.Empty,

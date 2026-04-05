@@ -66,4 +66,22 @@ public interface ICodeGenerationPipeline
         string outputPath,
         Dictionary<string, string>? context = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Generate code for multiple prompts and write all files atomically.
+    /// If any generation or write fails, no target files are modified (all-or-nothing).
+    /// </summary>
+    /// <param name="requests">
+    /// Sequence of (prompt, outputPath) pairs.  Each prompt is generated
+    /// independently; all resulting files are committed together.
+    /// </param>
+    /// <param name="context">Shared context applied to every generation request</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>
+    /// One <see cref="CodeGenerationResult"/> per input request, in the same order.
+    /// </returns>
+    Task<IReadOnlyList<CodeGenerationResult>> GenerateAndSaveManyAsync(
+        IEnumerable<(string Prompt, string OutputPath)> requests,
+        Dictionary<string, string>? context = null,
+        CancellationToken cancellationToken = default);
 }

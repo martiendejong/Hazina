@@ -1,12 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Description>Memory architecture for agents with working, episodic, and semantic memory layers</Description>
+    <Description>Memory architecture for AI agents with working, episodic, and semantic memory layers.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.AI.Memory</PackageId>
+    <PackageTags>hazina;ai;memory;episodic;semantic;working-memory</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Storage\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Hazina.Examples.HelloWorld</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hazina.AI.FluentAPI" Version="1.0.1" />
+    <PackageReference Include="Hazina.LLMs.OpenAI" Version="1.0.1" />
+  </ItemGroup>
+
+</Project>

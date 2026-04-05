@@ -1,29 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <LanguageVersion>latest</LanguageVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Hazina.LLMs</RootNamespace>
-    <Version>2.0.0</Version>
-    <PackageVersion>2.0.0</PackageVersion>
-    <Authors>Prospergenics</Authors>
-    <Description>Semantic Kernel implementation of ILLMClient for Hazina. Provides multi-provider LLM support (OpenAI, Azure OpenAI, Anthropic, Ollama) through Microsoft Semantic Kernel integration. Supports advanced orchestration, plugins, and planners while maintaining Hazina's RAG and safe file modification features.</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>semantic-kernel;llm;ai;chat;multi-provider;openai;azure;anthropic;ollama;plugins</PackageTags>
+    <Description>Microsoft Semantic Kernel integration for Hazina. Multi-provider LLM support with advanced orchestration, plugins, and planners.</Description>
+    <PackageTags>hazina;semantic-kernel;llm;multi-provider;plugins;planners</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.LLMs.SemanticKernel</PackageId>
   </PropertyGroup>
   <PropertyGroup>
     <NoWarn>$(NoWarn);SKEXP0001;SKEXP0010</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.SemanticKernel" Version="1.31.0" />
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.73.0" />
     <!-- Override transitive OpenAI dependency to fix version conflicts -->
-    <PackageReference Include="OpenAI" Version="2.6.0" />
+    <PackageReference Include="OpenAI" Version="2.8.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.3" />

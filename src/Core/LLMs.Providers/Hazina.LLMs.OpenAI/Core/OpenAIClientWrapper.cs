@@ -1,6 +1,7 @@
 using System.ClientModel;
 using System.Text.Json;
 using System.Threading.Channels;
+using Hazina.LLMs.Capabilities;
 
 using OpenAI;
 using OpenAI.Chat;
@@ -11,8 +12,9 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using Hazina.LLMs;
 using Hazina.LLMs.OpenAI;
+using Hazina.LLMs.Capabilities;
 
-public partial class OpenAIClientWrapper : ILLMClient
+public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
 {
     public string GetFormatInstruction<ResponseType>() where ResponseType : ChatResponse<ResponseType>, new()
     {
@@ -41,8 +43,11 @@ public partial class OpenAIClientWrapper : ILLMClient
     }
 }
 
-public partial class OpenAIClientWrapper : ILLMClient
+public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
 {
+    /// <inheritdoc/>
+    public override ProviderCapability SupportedCapabilities => ProviderCapability.All;
+
     public OpenAIConfig Config { get; set; }
     private readonly EmbeddingClient EmbeddingClient;
     private readonly OpenAIClient API;

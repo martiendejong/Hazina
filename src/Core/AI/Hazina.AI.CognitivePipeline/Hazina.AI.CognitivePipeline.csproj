@@ -1,12 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Description>SCP Cognitive Pipeline - Sensory/Organization/Filter/Reflective/Decision/Memory stages for structured AI reasoning</Description>
+    <Description>SCP Cognitive Pipeline for structured AI reasoning with Sensory, Organization, Filter, Reflective, Decision, and Memory stages.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.AI.CognitivePipeline</PackageId>
+    <PackageTags>hazina;ai;cognitive;pipeline;reasoning;structured</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Hazina.Neurochain.Core\Hazina.Neurochain.Core.csproj" />
