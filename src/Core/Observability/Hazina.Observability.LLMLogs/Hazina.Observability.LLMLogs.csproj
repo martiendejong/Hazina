@@ -1,11 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <LangVersion>latest</LangVersion>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.Observability.LLMLogs</PackageId>
+    <Description>LLM call logging and inspection for Hazina: SQLite-backed persistence of prompts, responses, token usage, and latencies, with DI extensions and replay/inspection helpers for evals.</Description>
+    <PackageTags>hazina;observability;llm;logging;sqlite;telemetry;evals</PackageTags>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
