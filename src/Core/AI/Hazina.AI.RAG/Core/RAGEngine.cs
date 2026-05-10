@@ -242,6 +242,8 @@ public class RAGEngine
                 var embedding = await GenerateEmbeddingAsync(doc.Content, cancellationToken);
 
                 // Store in vector store
+                if (_vectorStore == null)
+                    throw new InvalidOperationException("Vector store is required for indexing documents. Use the constructor that requires a vector store.");
                 await _vectorStore.AddAsync(
                     doc.Id,
                     embedding,
@@ -401,6 +403,8 @@ public class RAGEngine
         double minSimilarity,
         CancellationToken cancellationToken)
     {
+        if (_vectorStore == null)
+            throw new InvalidOperationException("Vector store is required for document retrieval. Use the constructor that requires a vector store.");
         var results = await _vectorStore.SearchAsync(
             queryEmbedding,
             topK,

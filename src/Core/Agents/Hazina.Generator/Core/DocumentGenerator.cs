@@ -181,6 +181,7 @@ public class DocumentGenerator : IDocumentGenerator
 
     private async Task ModifyDocuments(UpdateStoreResponse? response)
     {
+        if (response == null) return;
         if (response.Modifications != null)
             foreach (var modification in response.Modifications)
             {

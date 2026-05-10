@@ -93,9 +93,10 @@ namespace Hazina.Tools.AI.Agents
                 return setup.Store;
             }
 
-            var setup2 = StoreProvider.GetStoreSetup(_fileLocator.GetProjectFolder(project.Id), Config.OpenAI);
+            var pid = project.Id ?? throw new InvalidOperationException("Project Id is null.");
+            var setup2 = StoreProvider.GetStoreSetup(_fileLocator.GetProjectFolder(pid), Config.OpenAI);
             if(updateEmbeddings)
-                await _embeddings.RefreshProjectEmbeddings(project.Id, true);
+                await _embeddings.RefreshProjectEmbeddings(pid, true);
             return setup2.Store;
         }
 
@@ -152,6 +153,7 @@ namespace Hazina.Tools.AI.Agents
                 var allProjects = Directory.GetDirectories(Projects.ProjectsFolder)
                     .Select(Path.GetFileName)
                     .Where(projectName => projectName != null && !projectName.ToLower().StartsWith(".") && projectName != ProjectsRepository.GLOBAL_PROJECT_ID && _fileLocator.Exists(projectName))
+                    .OfType<string>()
                     .ToList();
 
                 var aggregatedEmbeddings = new List<EmbeddingEntry>();
@@ -160,7 +162,7 @@ namespace Hazina.Tools.AI.Agents
                     try
                     {
                         var proj = Projects.Load(projectId);
-                        if (proj.Archived) continue;
+                        if (proj == null || proj.Archived) continue;
                         var projectEmbeddingsFile = Path.Combine(_fileLocator.GetProjectFolder(projectId), "embeddings");
                         if (!_File.Exists(projectEmbeddingsFile)) continue;
                         var embeddingsJson = await _File.ReadAllTextAsync(projectEmbeddingsFile);
@@ -197,7 +199,7 @@ namespace Hazina.Tools.AI.Agents
         public async Task<DocumentGenerator> GetGeneratorWithoutPrompt(Project project)
         {
             var store = await InitStore(project);
-            var folder = _fileLocator.GetProjectFolder(project.Id);
+            var folder = _fileLocator.GetProjectFolder(project.Id ?? throw new InvalidOperationException("Project Id is null."));
             var setup = StoreProvider.GetStoreSetup(folder, Config.OpenAI);
             
             // Wrap LLM client with logging decorator if available
@@ -224,9 +226,9 @@ namespace Hazina.Tools.AI.Agents
                 assistantPrompts.Add(new HazinaChatMessage(HazinaMessageRole.System, project.KlantSpecifiekePrompt));
 
             var store = await InitStore(project);
-            var folder = _fileLocator.GetProjectFolder(project.Id);
+            var folder = _fileLocator.GetProjectFolder(project.Id ?? throw new InvalidOperationException("Project Id is null."));
             var setup = StoreProvider.GetStoreSetup(folder, Config.OpenAI);
-            
+
             // Wrap LLM client with logging decorator if available
             var llmClient = setup.LLMClient;
             if (_llmLogRepository != null && _llmLoggingOptions != null)
@@ -258,7 +260,8 @@ namespace Hazina.Tools.AI.Agents
         public async Task InternalGenerate(string id, string prompt, string[] systemPrompts, string documentName, string path)
         {
             // Direct implementation for backward compatibility
-            var project = Projects.Load(id);
+            var project = Projects.Load(id)
+                ?? throw new InvalidOperationException($"Project '{id}' not found.");
             var store = await InitStore(project);
             DocumentGenerator g = await GetGenerator(project, systemPrompts[0]);
             g.BaseMessages.AddRange(systemPrompts.Skip(1).Select(p => new HazinaChatMessage(HazinaMessageRole.System, p)));
@@ -266,9 +269,10 @@ namespace Hazina.Tools.AI.Agents
             var tokenSource = new CancellationTokenSource();
 
             // Call the generic method using reflection or direct call with proper type
-            var method = typeof(GeneratorAgentBase).GetMethod(nameof(InternalGenerate), new[] { typeof(string), typeof(string[]), typeof(string), typeof(string), typeof(string) });
+            var method = typeof(GeneratorAgentBase).GetMethod(nameof(InternalGenerate), new[] { typeof(string), typeof(string[]), typeof(string), typeof(string), typeof(string) })
+                ?? throw new InvalidOperationException("Could not find InternalGenerate method via reflection.");
             var genericMethod = method.MakeGenericMethod(typeof(GeneratedTextResponse));
-            await (Task)genericMethod.Invoke(this, new object[] { id, systemPrompts, prompt, documentName, path });
+            await (Task)(genericMethod.Invoke(this, new object[] { id, systemPrompts, prompt, documentName, path }) ?? Task.CompletedTask);
         }
 
         /// <summary>
@@ -278,16 +282,18 @@ namespace Hazina.Tools.AI.Agents
         public async Task InternalGenerate(string id, string systemPrompt, string instruction, string documentName, string path)
         {
             // Direct implementation for backward compatibility
-            var project = Projects.Load(id);
+            var project = Projects.Load(id)
+                ?? throw new InvalidOperationException($"Project '{id}' not found.");
             var store = await InitStore(project);
             DocumentGenerator g = await GetGenerator(project, systemPrompt);
             var context = new StoreToolsContext(new OpenAIConfig().Model, Config.ApiSettings.OpenApiKey, store, Projects, Intake, id, "", this);
             var tokenSource = new CancellationTokenSource();
 
             // Call the generic method using reflection
-            var method = typeof(GeneratorAgentBase).GetMethod(nameof(InternalGenerate), new[] { typeof(string), typeof(string[]), typeof(string), typeof(string), typeof(string) });
+            var method = typeof(GeneratorAgentBase).GetMethod(nameof(InternalGenerate), new[] { typeof(string), typeof(string[]), typeof(string), typeof(string), typeof(string) })
+                ?? throw new InvalidOperationException("Could not find InternalGenerate method via reflection.");
             var genericMethod = method.MakeGenericMethod(typeof(GeneratedTextResponse));
-            await (Task)genericMethod.Invoke(this, new object[] { id, new[] { systemPrompt }, instruction, documentName, path });
+            await (Task)(genericMethod.Invoke(this, new object[] { id, new[] { systemPrompt }, instruction, documentName, path }) ?? Task.CompletedTask);
         }
 
         public async Task<LLMResponse<T?>> InternalGenerate<T>(string id, string[] systemPrompts, string instruction, string documentName, string path) where T : ChatResponse<T>, new()
@@ -295,7 +301,8 @@ namespace Hazina.Tools.AI.Agents
             if (systemPrompts == null || systemPrompts.Length == 0)
                 throw new ArgumentException("At least one system prompt is required", nameof(systemPrompts));
 
-            var project = Projects.Load(id);
+            var project = Projects.Load(id)
+                ?? throw new InvalidOperationException($"Project '{id}' not found.");
             var store = await InitStore(project);
             DocumentGenerator g = await GetGenerator(project, systemPrompts[0]);
             g.BaseMessages.AddRange(systemPrompts.Skip(1).Select(p => new HazinaChatMessage(HazinaMessageRole.System, p)));
@@ -306,11 +313,11 @@ namespace Hazina.Tools.AI.Agents
             return response;
         }
 
-        public void Store(string id, string document, string file) 
+        public void Store(string id, string document, string file)
         {
             var filePath = _fileLocator.GetPath(id, file);
             var directory = Path.GetDirectoryName(filePath);
-            if (!Directory.Exists(directory))
+            if (directory != null && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
             _File.WriteAllText(filePath, document);
         }
@@ -322,7 +329,7 @@ namespace Hazina.Tools.AI.Agents
             {
                 var filePath = _fileLocator.GetPath(id, file);
                 var directory = Path.GetDirectoryName(filePath);
-                if (!Directory.Exists(directory))
+                if (directory != null && !Directory.Exists(directory))
                     Directory.CreateDirectory(directory);
                 _File.WriteAllText(filePath, textResponse.GeneratedText ?? "");
                 return;
@@ -334,7 +341,7 @@ namespace Hazina.Tools.AI.Agents
                 var json = System.Text.Json.JsonSerializer.Serialize(document);
                 var filePath2 = _fileLocator.GetPath(id, file);
                 var directory2 = Path.GetDirectoryName(filePath2);
-                if (!Directory.Exists(directory2))
+                if (directory2 != null && !Directory.Exists(directory2))
                     Directory.CreateDirectory(directory2);
                 _File.WriteAllText(filePath2, json);
             }
@@ -350,7 +357,7 @@ namespace Hazina.Tools.AI.Agents
         {
             var filePath = _fileLocator.GetPath(id, file);
             var directory = Path.GetDirectoryName(filePath);
-            if (!Directory.Exists(directory))
+            if (directory != null && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
             document.Save(filePath);
         }

@@ -10,7 +10,7 @@ namespace Hazina.Observability.LLMLogs.Context
     /// </summary>
     public class LLMLoggingContext
     {
-        private static readonly AsyncLocal<LLMLoggingContext> _current = new();
+        private static readonly AsyncLocal<LLMLoggingContext?> _current = new();
 
         /// <summary>
         /// Gets or sets the current logging context for the current async flow.
