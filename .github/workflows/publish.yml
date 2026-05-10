@@ -40,7 +40,7 @@ jobs:
 
     - name: Run tests
       run: dotnet test Hazina.sln --configuration Release --no-build --verbosity normal
-      continue-on-error: true
+      # QUALITY GATE: Tests must pass before publishing packages
 
     - name: Clean packages directory
       shell: pwsh
@@ -50,6 +50,22 @@ jobs:
           Write-Host "✓ Cleaned ./nupkgs directory"
         }
         New-Item -ItemType Directory -Force -Path ./nupkgs | Out-Null
+
+    - name: Security scan with Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH'
+      continue-on-error: true
+
+    - name: Upload Trivy results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
 
     - name: Pack NuGet packages
       run: dotnet pack Hazina.sln --configuration Release --no-build --output ./nupkgs /p:PackageVersion=${{ steps.version.outputs.version }}
