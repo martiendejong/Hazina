@@ -36,6 +36,7 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Login with username and password to receive JWT tokens
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("login")]
     public IActionResult Login([FromBody] LoginRequest request)
     {
@@ -71,6 +72,7 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Refresh access token using a valid refresh token
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("refresh")]
     public IActionResult Refresh([FromBody] RefreshTokenRequest request)
     {

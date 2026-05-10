@@ -229,7 +229,8 @@ public sealed class AnalysisFieldToolsContext : ToolsContextBase
             var agent = _agentFactory!();
 
             // Load prompts - basis prompt + field-specific prompt
-            var project = agent.Projects.Load(_projectId);
+            var project = agent.Projects.Load(_projectId)
+                ?? throw new InvalidOperationException($"Project '{_projectId}' not found.");
             var basisPrompt = GetBasisPrompt(agent);
             var fieldPrompt = AnalysisFieldConfigLoader.LoadPrompt(GetProjectsFolder(), field);
             if (string.IsNullOrWhiteSpace(fieldPrompt))

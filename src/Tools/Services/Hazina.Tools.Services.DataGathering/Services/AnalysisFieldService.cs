@@ -200,7 +200,8 @@ After analyzing, respond with a brief summary of what you generated (or 'No anal
             if (_agentFactory != null)
             {
                 var agent = _agentFactory();
-            var project = agent.Projects.Load(projectId);
+            var project = agent.Projects.Load(projectId)
+                ?? throw new InvalidOperationException($"Project '{projectId}' not found.");
             var generator = await agent.GetGenerator(project, _systemPrompt);
 
                 // Add conversation context to generator
@@ -350,7 +351,8 @@ After analyzing, respond with a brief summary of what you generated (or 'No anal
             var agent = _agentFactory();
 
             // Load prompts - basis prompt + field-specific prompt
-            var project = agent.Projects.Load(projectId);
+            var project = agent.Projects.Load(projectId)
+                ?? throw new InvalidOperationException($"Project '{projectId}' not found.");
             var basisPrompt = GetBasisPrompt(agent);
             var projectsFolder = GetProjectsFolder();
             var fieldPrompt = AnalysisFieldConfigLoader.LoadPrompt(projectsFolder, field);

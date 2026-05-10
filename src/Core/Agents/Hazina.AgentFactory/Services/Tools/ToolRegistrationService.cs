@@ -617,12 +617,12 @@ public class ToolRegistrationService : IToolRegistrationService
                 async (messages, toolCall, cancel) =>
                 {
                     cancel.ThrowIfCancellationRequested();
-                    if (CommonToolParameters.Instruction.TryGetValue(toolCall, out string key))
+                    if (CommonToolParameters.Instruction.TryGetValue(toolCall, out string? key) && key != null)
                     {
                         var id = Guid.NewGuid().ToString();
-                        tools.SendMessage(id, flow, key);
+                        tools.SendMessage?.Invoke(id, flow, key);
                         var response = await _callFlowFunc(flow, key, caller, cancel);
-                        tools.SendMessage(id, flow, response);
+                        tools.SendMessage?.Invoke(id, flow, response);
                         return response;
                     }
                     return "No key given";
