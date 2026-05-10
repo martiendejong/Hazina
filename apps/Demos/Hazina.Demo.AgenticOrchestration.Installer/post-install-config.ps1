@@ -42,7 +42,7 @@ $prodConfig = @{
         DatabasePath = "C:\scripts\_machine\agent-activity.db"
         LogsPath = "C:\scripts\logs"
         Terminal = @{
-            DefaultCommand = "C:\scripts\claude_agent.bat"
+            DefaultCommand = "C:\projects\jengo\jengo-system-private\jengo.bat"
             DefaultWorkingDirectory = "C:\scripts"
         }
         SessionLogging = @{

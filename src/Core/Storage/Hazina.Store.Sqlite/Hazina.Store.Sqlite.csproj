@@ -1,21 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
-    <LanguageVersion>latest</LanguageVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Hazina.Store.Sqlite</RootNamespace>
-    <Version>2.0.0</Version>
-    <PackageVersion>2.0.0</PackageVersion>
-    <Authors>Martien de Jong</Authors>
-    <Description>SQLite-based storage backend for Hazina. Provides single-file database storage with FTS5 full-text search, vector similarity search, metadata querying, and file checksum tracking for rebuildability. Ideal for local development and embedded scenarios.</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/martiendejong/Hazina</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/martiendejong/Hazina.git</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>sqlite;storage;embeddings;vector-store;fts5;metadata;rag;local-database</PackageTags>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.Store.Sqlite</PackageId>
+    <Description>SQLite-based storage backend for Hazina. Single-file database storage with FTS5 full-text search, vector similarity search, metadata querying, and file checksum tracking for rebuildability. Ideal for local development and embedded scenarios.</Description>
+    <PackageTags>hazina;sqlite;storage;embeddings;vector-store;fts5;metadata;rag;local-database</PackageTags>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Helpers\Hazina.LLMs.Helpers.csproj" />

@@ -1,21 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
-    <LanguageVersion>latest</LanguageVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Hazina.Store.PgVector</RootNamespace>
-    <Version>2.0.0</Version>
-    <PackageVersion>2.0.0</PackageVersion>
-    <Authors>Martien de Jong</Authors>
-    <Description>PostgreSQL + pgvector storage adapter for Hazina. Provides native vector similarity search using pgvector's HNSW and IVFFlat indices. Designed for production workloads with large embedding datasets. Implements IEmbeddingStore, IVectorSearchStore, and IBatchEmbeddingStore.</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/martiendejong/Hazina</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/martiendejong/Hazina.git</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>postgresql;pgvector;vector-store;embeddings;semantic-search;rag;hnsw;ivfflat;similarity</PackageTags>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.Store.PgVector</PackageId>
+    <Description>PostgreSQL + pgvector storage adapter for Hazina. Native vector similarity search using pgvector's HNSW and IVFFlat indices. Production-grade backend for large embedding datasets. Implements IEmbeddingStore, IVectorSearchStore, and IBatchEmbeddingStore.</Description>
+    <PackageTags>hazina;postgresql;pgvector;vector-store;embeddings;semantic-search;rag;hnsw;ivfflat;similarity</PackageTags>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />

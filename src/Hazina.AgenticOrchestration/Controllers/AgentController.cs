@@ -85,7 +85,7 @@ public class AgentController : ControllerBase
             var sessionConfig = new TerminalSessionConfig
             {
                 Command = request.Command ?? "claude",
-                Arguments = request.Arguments ?? new[] { "--dangerously-skip-permissions" },
+                Arguments = request.Arguments ?? new[] { "--model", "opus", "--dangerously-skip-permissions" },
                 WorkingDirectory = request.WorkingDirectory
             };
 
