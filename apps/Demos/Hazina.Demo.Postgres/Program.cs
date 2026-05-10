@@ -4,7 +4,7 @@ using Hazina.LLMs.Capabilities;
 
 class DummyLLMClient : CapabilityProviderBase, ILLMClient
 {
-    public override ProviderCapability SupportedCapabilities => ProviderCapability.Embeddings;
+    public override ProviderCapability SupportedCapabilities => ProviderCapability.All;
 
     private readonly int _dimension;
     public DummyLLMClient(int dimension) { _dimension = dimension; }

@@ -2,17 +2,53 @@
 
 **Complete example application** demonstrating the Hazina Agentic Orchestration module using Hazina's declarative language patterns.
 
+## Documentation
+
+📚 **Complete Setup Guides:**
+- **[Installation Guide](./docs/INSTALLATION.md)** - Step-by-step setup instructions
+- **[Configuration Reference](./docs/CONFIGURATION.md)** - Complete configuration documentation
+- **[Configuration Template](./config.template.json)** - Ready-to-use config template
+
 ## Quick Start
 
+### 1. Install Prerequisites
+
+- **.NET 9.0 SDK** or later
+- **Claude Code CLI** (for AI agent orchestration)
+- **Git** (for source control)
+
+### 2. Clone and Configure
+
 ```bash
-cd apps/Demos/Hazina.Demo.AgenticOrchestration
+# Clone repository
+git clone https://github.com/martiendejong/Hazina.git
+cd Hazina/apps/Demos/Hazina.Demo.AgenticOrchestration
+
+# Create configuration from template
+cp config.template.json appsettings.Secrets.json
+
+# Edit appsettings.Secrets.json with your credentials
+# - Generate JWT secret: openssl rand -base64 32
+# - Add your OpenAI API key
+# - Set username and password
+```
+
+### 3. Run Application
+
+```bash
+# Restore dependencies
+dotnet restore
+
+# Run application
 dotnet run
 ```
 
 Then visit:
-- **Swagger UI**: http://localhost:5000/swagger
-- **API Root**: http://localhost:5000
-- **Health Check**: http://localhost:5000/health
+- **Swagger UI**: https://localhost:5123/swagger
+- **Health Check**: https://localhost:5123/health
+- **API Root**: https://localhost:5123
+
+**⚠️ Note**: Application now uses HTTPS on port 5123 by default.
 
 ## Declarative Configuration
 

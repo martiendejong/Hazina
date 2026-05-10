@@ -15,7 +15,8 @@ public class ChunkFileStore : IChunkStore
             try
             {
                 var data = File.ReadAllText(ChunksFilePath);
-                Chunks = JsonSerializer.Deserialize<Dictionary<string, IEnumerable<string>>>(data) ?? new Dictionary<string, IEnumerable<string>>();
+                Chunks = JsonSerializer.Deserialize<Dictionary<string, IEnumerable<string>>>(data)
+                    ?? new Dictionary<string, IEnumerable<string>>();
                 return;
             }
             catch { }
@@ -34,7 +35,7 @@ public class ChunkFileStore : IChunkStore
         File.WriteAllText(ChunksFilePath, data);
     }
 
-    public Dictionary<string, IEnumerable<string>> Chunks = new();
+    public Dictionary<string, IEnumerable<string>> Chunks;
 
     public async Task<bool> Store(string name, IEnumerable<string> chunkKeys)
     {

@@ -11,7 +11,7 @@ public class EvaluationRunnerTests
 {
     private class MockLLMClient : CapabilityProviderBase, ILLMClient
     {
-        public override ProviderCapability SupportedCapabilities => ProviderCapability.Chat;
+        public override ProviderCapability SupportedCapabilities => ProviderCapability.All;
 
         private readonly string _response;
 

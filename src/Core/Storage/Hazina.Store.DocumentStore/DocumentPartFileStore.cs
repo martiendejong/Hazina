@@ -15,7 +15,8 @@ public class DocumentPartFileStore : IDocumentPartStore
             try
             {
                 var data = File.ReadAllText(PartsFilePath);
-                Parts = JsonSerializer.Deserialize<Dictionary<string, IEnumerable<string>>>(data) ?? new Dictionary<string, IEnumerable<string>>();
+                Parts = JsonSerializer.Deserialize<Dictionary<string, IEnumerable<string>>>(data)
+                    ?? new Dictionary<string, IEnumerable<string>>();
                 return;
             }
             catch { }
@@ -34,7 +35,7 @@ public class DocumentPartFileStore : IDocumentPartStore
         File.WriteAllText(PartsFilePath, data);
     }
 
-    public Dictionary<string, IEnumerable<string>> Parts = new();
+    public Dictionary<string, IEnumerable<string>> Parts;
 
     public async Task<bool> Store(string name, IEnumerable<string> partKeys)
     {

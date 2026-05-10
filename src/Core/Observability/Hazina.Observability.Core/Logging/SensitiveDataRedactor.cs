@@ -9,7 +9,7 @@ namespace Hazina.Observability.Core.Logging;
 /// </summary>
 public static class SensitiveDataRedactor
 {
-    private static readonly Regex ApiKeyPattern = new(@"(api[_-]?key|apikey|token|bearer)\s*[:=]\s*['""]?([a-zA-Z0-9_\-]{20,})['""]?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex ApiKeyPattern = new(@"(api[_-]?key|apikey|token|bearer)\s*[:=]\s*['""]?([a-zA-Z0-9_-]{20,})['""]?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex EmailPattern = new(@"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", RegexOptions.Compiled);
     private static readonly Regex CreditCardPattern = new(@"\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b", RegexOptions.Compiled);
     private static readonly Regex SsnPattern = new(@"\b\d{3}-\d{2}-\d{4}\b", RegexOptions.Compiled);

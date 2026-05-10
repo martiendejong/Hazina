@@ -301,7 +301,7 @@ public class DocumentStore : IDocumentStore
                 GetText = async (string a) => await TextStore.Get(a) ?? string.Empty
             }).ToList();
             var items = await EmbeddingMatcher.TakeTop(r);
-            return items;
+            return items ?? new List<string>();
         }
 
         // Fall back to old architecture
@@ -309,7 +309,7 @@ public class DocumentStore : IDocumentStore
         var list = EmbeddingMatcher.GetEmbeddingsWithSimilarity(embed, EmbeddingStore.Embeddings);
         var legacyResults = list.Select(item => new RelevantEmbedding { Similarity = item.similarity, StoreName = Name, Document = item.document, GetText = async (string a) => await TextStore.Get(a) ?? string.Empty }).ToList();
         var legacyItems = await EmbeddingMatcher.TakeTop(legacyResults);
-        return legacyItems;
+        return legacyItems ?? new List<string>();
     }
 
     public async Task<List<RelevantEmbedding>> Embeddings(string query)
@@ -344,7 +344,7 @@ public class DocumentStore : IDocumentStore
                 });
             }
 
-            return r;
+            return r ?? new List<RelevantEmbedding>();
         }
 
         // Fall back to old architecture (in-memory search)
@@ -367,7 +367,7 @@ public class DocumentStore : IDocumentStore
             });
         }
 
-        return legacyResults;
+        return legacyResults ?? new List<RelevantEmbedding>();
     }
 
     public string GetPath(string name)
@@ -375,7 +375,7 @@ public class DocumentStore : IDocumentStore
         return TextStore.GetPath(Sanitize(name));
     }
 
-    public async Task<string> Get(string name)
+    public async Task<string?> Get(string name)
     {
         return await TextStore.Get(Sanitize(name)) ?? string.Empty;
     }

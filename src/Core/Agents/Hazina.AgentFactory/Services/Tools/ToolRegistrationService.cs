@@ -358,7 +358,9 @@ public class ToolRegistrationService : IToolRegistrationService
 
                 var handler = new HttpClientHandler
                 {
+#pragma warning disable MA0039 // Do not write your own certificate validation method - acceptable for localhost development
                     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+#pragma warning restore MA0039
                 };
                 var httpClient = new HttpClient(handler);
 
