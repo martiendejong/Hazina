@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Helpers\Hazina.LLMs.Helpers.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\Storage\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />
   </ItemGroup>
 
 </Project>
