@@ -154,7 +154,7 @@ public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.Model);
-        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath, client, imageClient, messages, images, responseFormat, true, true);
+        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath ?? string.Empty, client, imageClient, messages, images, responseFormat, true, true);
         return await interaction.Run(cancel);
     }
 
@@ -162,7 +162,7 @@ public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.ImageModel);
-        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath, client, imageClient, [prompt], images, responseFormat, true, true);
+        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath ?? string.Empty, client, imageClient, [prompt], images, responseFormat, true, true);
         return await interaction.RunImage(prompt, cancel);
     }
 
@@ -170,7 +170,7 @@ public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.Model);
-        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath, client, imageClient, messages, images, responseFormat, true, true);
+        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath ?? string.Empty, client, imageClient, messages, images, responseFormat, true, true);
         return interaction.Stream(cancel);
     }
 
