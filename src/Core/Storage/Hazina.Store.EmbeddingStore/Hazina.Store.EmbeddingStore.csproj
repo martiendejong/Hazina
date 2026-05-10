@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Hazina.Store</RootNamespace>
     <PackageId>Hazina.Store.EmbeddingStore</PackageId>
     <Description>Vector embedding storage for semantic search in Hazina. Provides IEmbeddingStore with PostgreSQL/pgvector backend, batch operations, similarity matching, and embedding generation services. Essential for RAG implementations.</Description>

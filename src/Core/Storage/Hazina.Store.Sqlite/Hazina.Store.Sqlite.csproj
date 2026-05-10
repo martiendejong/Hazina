@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Hazina.Store.Sqlite</RootNamespace>
     <PackageId>Hazina.Store.Sqlite</PackageId>
     <Description>SQLite-based storage backend for Hazina. Single-file database storage with FTS5 full-text search, vector similarity search, metadata querying, and file checksum tracking for rebuildability. Ideal for local development and embedded scenarios.</Description>
