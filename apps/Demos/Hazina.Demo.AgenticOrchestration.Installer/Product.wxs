@@ -3,7 +3,7 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
   <?define ProductName = "Hazina Agentic Orchestration" ?>
-  <?define ProductVersion = "2.5.0" ?>
+  <?define ProductVersion = "2.8.0" ?>
   <?define Manufacturer = "Hazina Framework" ?>
   <?define UpgradeCode = "12345678-1234-1234-1234-123456789012" ?>
 

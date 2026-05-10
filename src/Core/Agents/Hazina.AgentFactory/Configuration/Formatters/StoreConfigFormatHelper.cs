@@ -14,7 +14,7 @@ public static class StoreConfigFormatHelper
         {
             try
             {
-                return JsonSerializer.Deserialize<List<StoreConfig>>(content);
+                return JsonSerializer.Deserialize<List<StoreConfig>>(content) ?? new List<StoreConfig>();
             }
             catch
             {
