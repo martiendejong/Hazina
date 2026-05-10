@@ -2,10 +2,21 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Hazina.LLMs;
+using Hazina.LLMs.Capabilities;
 using Hazina.LLMs.Gemini;
 
-public class GeminiClientWrapper : ILLMClient
+public class GeminiClientWrapper : CapabilityProviderBase, ILLMClient
 {
+    /// <inheritdoc/>
+    public override ProviderCapability SupportedCapabilities =>
+        ProviderCapability.Chat |
+        ProviderCapability.Streaming |
+        ProviderCapability.Vision |
+        ProviderCapability.ImageGeneration |
+        ProviderCapability.TextToSpeech |
+        ProviderCapability.JsonMode |
+        ProviderCapability.SystemMessages;
+
     private readonly GeminiConfig _config;
     private readonly HttpClient _http;
 
@@ -14,7 +25,7 @@ public class GeminiClientWrapper : ILLMClient
         _config = config;
         _http = new HttpClient
         {
-            BaseAddress = new Uri(config.Endpoint)
+            BaseAddress = new Uri(config.Endpoint ?? "https://generativelanguage.googleapis.com/v1beta")
         };
     }
 
@@ -184,6 +195,8 @@ public class GeminiClientWrapper : ILLMClient
         if (!doc.RootElement.TryGetProperty("audioContent", out var audioProp))
             throw new Exception("Google TTS response missing audioContent.");
         var b64 = audioProp.GetString();
+        if (string.IsNullOrEmpty(b64))
+            throw new Exception("Google TTS response has empty audioContent.");
         var bytes = Convert.FromBase64String(b64);
 
         int offset = 0;

@@ -1,12 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>
-    <Description>Facts storage for compact, relevant context facts in context engineering</Description>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>CS1591</NoWarn>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>Hazina.Store.FactsStore</PackageId>
+    <Description>Facts storage for compact, high-signal context facts used in context engineering. Backed by SQLite for low-overhead, embeddable persistence of facts harvested from conversations and documents.</Description>
+    <PackageTags>hazina;facts;sqlite;context-engineering;rag;storage</PackageTags>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />

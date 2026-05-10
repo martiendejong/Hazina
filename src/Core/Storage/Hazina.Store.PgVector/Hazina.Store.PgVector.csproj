@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Hazina.Store.PgVector</RootNamespace>
+    <PackageId>Hazina.Store.PgVector</PackageId>
+    <Description>PostgreSQL + pgvector storage adapter for Hazina. Native vector similarity search using pgvector's HNSW and IVFFlat indices. Production-grade backend for large embedding datasets. Implements IEmbeddingStore, IVectorSearchStore, and IBatchEmbeddingStore.</Description>
+    <PackageTags>hazina;postgresql;pgvector;vector-store;embeddings;semantic-search;rag;hnsw;ivfflat;similarity</PackageTags>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
+    <PackageReference Include="Npgsql" Version="8.0.3" />
+    <PackageReference Include="Pgvector" Version="0.2.0" />
+  </ItemGroup>
+</Project>

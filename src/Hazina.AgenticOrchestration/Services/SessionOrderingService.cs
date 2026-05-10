@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace Hazina.AgenticOrchestration.Services;
 
@@ -15,17 +16,24 @@ public interface ISessionOrderingService
 
 public class SessionOrderingService : ISessionOrderingService
 {
-    private const string OrderingFilePath = @"E:\orchestration-sessions\session-ordering.json";
+    private readonly string _orderingFilePath;
     private readonly SemaphoreSlim _lock = new(1, 1);
 
-    public SessionOrderingService()
+    public SessionOrderingService(IConfiguration configuration)
     {
+        var configuredPath = configuration["AgenticOrchestration:SessionLogging:BasePath"];
+        var baseDir = !string.IsNullOrWhiteSpace(configuredPath)
+            ? configuredPath
+            : Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "HazinaOrchestration", "sessions");
+        _orderingFilePath = Path.Combine(baseDir, "session-ordering.json");
         EnsureDirectory();
     }
 
     private void EnsureDirectory()
     {
-        var directory = Path.GetDirectoryName(OrderingFilePath);
+        var directory = Path.GetDirectoryName(_orderingFilePath);
         if (directory != null && !Directory.Exists(directory))
         {
             Directory.CreateDirectory(directory);
@@ -37,12 +45,12 @@ public class SessionOrderingService : ISessionOrderingService
         await _lock.WaitAsync();
         try
         {
-            if (!File.Exists(OrderingFilePath))
+            if (!File.Exists(_orderingFilePath))
             {
                 return new Dictionary<string, int>();
             }
 
-            var json = await File.ReadAllTextAsync(OrderingFilePath);
+            var json = await File.ReadAllTextAsync(_orderingFilePath);
             var ordering = JsonSerializer.Deserialize<Dictionary<string, int>>(json);
             return ordering ?? new Dictionary<string, int>();
         }
@@ -61,7 +69,7 @@ public class SessionOrderingService : ISessionOrderingService
             {
                 WriteIndented = true
             });
-            await File.WriteAllTextAsync(OrderingFilePath, json);
+            await File.WriteAllTextAsync(_orderingFilePath, json);
         }
         finally
         {

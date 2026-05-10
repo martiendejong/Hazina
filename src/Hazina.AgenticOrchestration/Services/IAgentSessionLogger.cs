@@ -1,3 +1,4 @@
+using Hazina.AgenticOrchestration.Abstractions;
 using System.Text;
 
 namespace Hazina.AgenticOrchestration.Services;
@@ -61,17 +62,18 @@ public class AgentSessionLogger : IAgentSessionLogger, IAsyncDisposable
     private readonly string _basePath;
     private readonly Dictionary<string, SessionLogContext> _sessions = new();
     private readonly object _lock = new();
+    private readonly IFileSystem _fileSystem;
+    private readonly ISystemClock _clock;
     private bool _disposed;
 
-    public AgentSessionLogger(string basePath)
+    public AgentSessionLogger(string basePath, IFileSystem fileSystem, ISystemClock clock)
     {
         _basePath = basePath;
+        _fileSystem = fileSystem;
+        _clock = clock;
 
         // Ensure base directory exists
-        if (!Directory.Exists(_basePath))
-        {
-            Directory.CreateDirectory(_basePath);
-        }
+        _fileSystem.CreateDirectory(_basePath);
     }
 
     public Task StartSessionAsync(string sessionId, string command, string? workingDirectory)
@@ -83,7 +85,7 @@ public class AgentSessionLogger : IAgentSessionLogger, IAsyncDisposable
             if (_sessions.ContainsKey(sessionId))
                 return Task.CompletedTask;
 
-            var now = DateTime.Now;
+            var now = _clock.Now;
             var context = new SessionLogContext
             {
                 SessionId = sessionId,
@@ -93,9 +95,9 @@ public class AgentSessionLogger : IAgentSessionLogger, IAsyncDisposable
 
             // Ensure directory exists
             var directory = Path.GetDirectoryName(context.FilePath);
-            if (directory != null && !Directory.Exists(directory))
+            if (directory != null && !_fileSystem.DirectoryExists(directory))
             {
-                Directory.CreateDirectory(directory);
+                _fileSystem.CreateDirectory(directory);
             }
 
             // Create file and write header
@@ -137,7 +139,7 @@ public class AgentSessionLogger : IAgentSessionLogger, IAsyncDisposable
             if (!_sessions.TryGetValue(sessionId, out var context) || context.Writer == null)
                 return Task.CompletedTask;
 
-            var timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+            var timestamp = _clock.Now.ToString("HH:mm:ss.fff");
 
             // Write output with timestamp prefix for each line
             var lines = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
@@ -175,7 +177,7 @@ public class AgentSessionLogger : IAgentSessionLogger, IAsyncDisposable
             if (!_sessions.TryGetValue(sessionId, out var context) || context.Writer == null)
                 return Task.CompletedTask;
 
-            var timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+            var timestamp = _clock.Now.ToString("HH:mm:ss.fff");
 
             // Format input - show control characters in readable form
             var displayText = FormatInputForDisplay(text);
@@ -199,7 +201,7 @@ public class AgentSessionLogger : IAgentSessionLogger, IAsyncDisposable
 
             if (context.Writer != null)
             {
-                var now = DateTime.Now;
+                var now = _clock.Now;
                 var duration = now - context.StartTime;
 
                 context.Writer.WriteLine();

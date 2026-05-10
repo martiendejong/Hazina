@@ -1,6 +1,7 @@
 using System.ClientModel;
 using System.Text.Json;
 using System.Threading.Channels;
+using Hazina.LLMs.Capabilities;
 
 using OpenAI;
 using OpenAI.Chat;
@@ -11,8 +12,9 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using Hazina.LLMs;
 using Hazina.LLMs.OpenAI;
+using Hazina.LLMs.Capabilities;
 
-public partial class OpenAIClientWrapper : ILLMClient
+public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
 {
     public string GetFormatInstruction<ResponseType>() where ResponseType : ChatResponse<ResponseType>, new()
     {
@@ -41,8 +43,11 @@ public partial class OpenAIClientWrapper : ILLMClient
     }
 }
 
-public partial class OpenAIClientWrapper : ILLMClient
+public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
 {
+    /// <inheritdoc/>
+    public override ProviderCapability SupportedCapabilities => ProviderCapability.All;
+
     public OpenAIConfig Config { get; set; }
     private readonly EmbeddingClient EmbeddingClient;
     private readonly OpenAIClient API;
@@ -149,7 +154,7 @@ public partial class OpenAIClientWrapper : ILLMClient
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.Model);
-        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath, client, imageClient, messages, images, responseFormat, true, true);
+        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath ?? string.Empty, client, imageClient, messages, images, responseFormat, true, true);
         return await interaction.Run(cancel);
     }
 
@@ -157,7 +162,7 @@ public partial class OpenAIClientWrapper : ILLMClient
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.ImageModel);
-        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath, client, imageClient, [prompt], images, responseFormat, true, true);
+        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath ?? string.Empty, client, imageClient, [prompt], images, responseFormat, true, true);
         return await interaction.RunImage(prompt, cancel);
     }
 
@@ -165,7 +170,7 @@ public partial class OpenAIClientWrapper : ILLMClient
     {
         var client = API.GetChatClient(Config.Model);
         var imageClient = API.GetImageClient(Config.Model);
-        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath, client, imageClient, messages, images, responseFormat, true, true);
+        var interaction = new SimpleOpenAIClientChatInteraction(context, API, this, Config.ApiKey, Config.Model, Config.LogPath ?? string.Empty, client, imageClient, messages, images, responseFormat, true, true);
         return interaction.Stream(cancel);
     }
 
@@ -216,7 +221,7 @@ public partial class OpenAIClientWrapper : ILLMClient
         string message = $"{DateTime.Now:yy-MM-dd HH:mm:ss}\n{data ?? ""}";
 
         // Ensure log directory exists
-        var logDir = Path.GetDirectoryName(Config.LogPath);
+        var logDir = Path.GetDirectoryName(Config.LogPath ?? string.Empty);
         if (!string.IsNullOrEmpty(logDir) && !Directory.Exists(logDir))
         {
             try
@@ -234,7 +239,7 @@ public partial class OpenAIClientWrapper : ILLMClient
         {
             try
             {
-                using (FileStream stream = new FileStream(Config.LogPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
+                using (FileStream stream = new FileStream(Config.LogPath ?? string.Empty, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
                 using (StreamWriter writer = new StreamWriter(stream))
                 {
                     writer.WriteLine(message);

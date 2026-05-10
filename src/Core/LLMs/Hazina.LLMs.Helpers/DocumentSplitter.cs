@@ -10,6 +10,9 @@ public class DocumentSplitter
 
     public List<string> SplitDocument(string content, string split = "\n")
     {
+        if (string.IsNullOrEmpty(content))
+            return new List<string>();
+
         var tokenCounter = new TokenCounter();
         var remainingLines = content.Split(split).ToList();
 

@@ -1,21 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <LanguageVersion>latest</LanguageVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Hazina.LLMs</RootNamespace>
-    <Version>2.0.0</Version>
-    <PackageVersion>2.0.0</PackageVersion>
-    <Authors>Prospergenics</Authors>
-    <Description>Core data models and contracts for the Hazina ecosystem. Provides chat message models, LLM response wrappers with token usage tracking, tool definitions, image generation models, and shared interfaces used across all Hazina packages.</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>llm;ai;language-model;chat;openai;anthropic;claude;gpt;tokens;tool-calling</PackageTags>
+    <Description>Core data models and contracts for the Hazina LLM ecosystem. Chat message models, response wrappers, token usage tracking, tool definitions, and shared interfaces.</Description>
+    <PackageTags>hazina;llm;models;contracts;chat;tokens;tool-calling</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.LLMs.Classes</PackageId>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Memory.Data" Version="6.0.0" />

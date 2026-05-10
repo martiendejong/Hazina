@@ -1,3 +1,4 @@
+using Hazina.LLMs.Capabilities;
 using Hazina.LLMs.GoogleADK.Agents;
 using Hazina.LLMs.GoogleADK.Core;
 using Hazina.LLMs.GoogleADK.DeveloperUI;
@@ -8,8 +9,10 @@ namespace Hazina.LLMs.GoogleADK.Tests.DeveloperUI;
 
 public class AgentMonitorTests
 {
-    private class MockLLMClient : ILLMClient
+    private class MockLLMClient : CapabilityProviderBase, ILLMClient
     {
+        public override ProviderCapability SupportedCapabilities => ProviderCapability.All;
+
         public Task<Embedding> GenerateEmbedding(string data)
         {
             return Task.FromResult(new Embedding(new[] { 0.1, 0.2, 0.3 }));

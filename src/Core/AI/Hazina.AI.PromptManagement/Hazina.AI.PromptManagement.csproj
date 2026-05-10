@@ -1,15 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Description>Hazina Prompt Management System - Template versioning, evaluation, and self-learning capabilities</Description>
-    <Authors>Hazina AI Team</Authors>
+    <Description>Prompt management system with template versioning, evaluation, and self-learning capabilities.</Description>
     <PackageId>Hazina.AI.PromptManagement</PackageId>
-    <Version>1.0.0</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageTags>hazina;ai;prompts;templates;versioning;evaluation</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <!-- Exclude problematic files with dynamic type issues -->

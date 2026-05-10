@@ -1,21 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <LanguageVersion>latest</LanguageVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Hazina.LLMs</RootNamespace>
-    <Version>2.0.0</Version>
-    <PackageVersion>2.0.0</PackageVersion>
-    <Authors>Prospergenics</Authors>
-    <Description>Utility functions for document and token processing. Includes TokenCounter for GPT token counting, DocumentSplitter for chunking by token limits, PartialJsonParser for streaming JSON, and helpers for checksums, file trees, and embeddings.</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>llm;tokens;document-splitting;chunking;utilities;helpers;json-parser</PackageTags>
+    <Description>Utility functions for document and token processing. Token counting, document splitting, partial JSON parsing, and embedding helpers.</Description>
+    <PackageTags>hazina;llm;helpers;tokens;document-splitting;chunking;utilities</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.LLMs.Helpers</PackageId>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />

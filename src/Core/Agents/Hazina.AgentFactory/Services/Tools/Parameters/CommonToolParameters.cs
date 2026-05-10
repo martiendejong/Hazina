@@ -37,7 +37,7 @@ public static class CommonToolParameters
     {
         Name = "recursive",
         Description = "Returns the files in subfolders as well.",
-        Type = "string",
+        Type = "boolean",
         Required = false
     };
 

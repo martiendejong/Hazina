@@ -132,4 +132,139 @@ public class CodeGenerationPipeline : ICodeGenerationPipeline
             return result;
         }
     }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<CodeGenerationResult>> GenerateAndSaveManyAsync(
+        IEnumerable<(string Prompt, string OutputPath)> requests,
+        Dictionary<string, string>? context = null,
+        CancellationToken cancellationToken = default)
+    {
+        var requestList = requests?.ToList()
+            ?? throw new ArgumentNullException(nameof(requests));
+
+        _logger.LogInformation(
+            "[CODE GENERATION PIPELINE] Generating {Count} file(s) atomically.",
+            requestList.Count);
+
+        // Phase 1: Generate all code in memory (no disk writes yet).
+        var results = new List<CodeGenerationResult>(requestList.Count);
+        foreach (var (prompt, outputPath) in requestList)
+        {
+            var result = await GenerateFromPromptAsync(prompt, context, cancellationToken);
+            result.Metadata["output_path"] = outputPath;
+            results.Add(result);
+        }
+
+        // If any generation failed, return without touching disk.
+        var failed = results.Where(r => !r.Success).ToList();
+        if (failed.Count > 0)
+        {
+            _logger.LogWarning(
+                "[CODE GENERATION PIPELINE] {Count} generation(s) failed — aborting multi-file write.",
+                failed.Count);
+            return results.AsReadOnly();
+        }
+
+        // Phase 2: Atomically write all files using the temp-rename pattern.
+        //   For each target: back up original (if exists) → write to .tmp → on success rename; on failure restore.
+        var staged = new List<(string TargetPath, string TmpPath, string? BackupPath)>();
+
+        try
+        {
+            for (int i = 0; i < requestList.Count; i++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var targetPath = requestList[i].OutputPath;
+                var content = results[i].GeneratedCode;
+
+                var directory = Path.GetDirectoryName(Path.GetFullPath(targetPath));
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                    Directory.CreateDirectory(directory);
+
+                // Backup existing file so we can restore it on failure.
+                string? backupPath = null;
+                if (File.Exists(targetPath))
+                {
+                    backupPath = targetPath + $".{Guid.NewGuid():N}.bak";
+                    File.Copy(targetPath, backupPath, overwrite: false);
+                }
+
+                // Write to a temp file first.
+                var tmpPath = targetPath + $".{Guid.NewGuid():N}.tmp";
+                await File.WriteAllTextAsync(tmpPath, content, cancellationToken);
+
+                staged.Add((targetPath, tmpPath, backupPath));
+                _logger.LogDebug(
+                    "[CODE GENERATION PIPELINE] Staged '{Tmp}' for target '{Target}'", tmpPath, targetPath);
+            }
+
+            // Phase 3: Commit — rename all temps to targets.
+            foreach (var (targetPath, tmpPath, _) in staged)
+            {
+                File.Move(tmpPath, targetPath, overwrite: true);
+                _logger.LogDebug("[CODE GENERATION PIPELINE] Committed '{Target}'", targetPath);
+            }
+
+            // Phase 4: Clean up backups.
+            foreach (var (_, _, backupPath) in staged)
+            {
+                if (backupPath is not null && File.Exists(backupPath))
+                    TryDelete(backupPath);
+            }
+
+            // Mark all results as written.
+            foreach (var result in results)
+                result.Metadata["file_written"] = "true";
+
+            _logger.LogInformation(
+                "[CODE GENERATION PIPELINE] Successfully committed {Count} file(s).",
+                results.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "[CODE GENERATION PIPELINE] Multi-file write failed — rolling back {Count} staged file(s).",
+                staged.Count);
+
+            // Rollback: delete temps and restore backups.
+            foreach (var (targetPath, tmpPath, backupPath) in staged)
+            {
+                TryDelete(tmpPath);
+
+                if (backupPath is not null && File.Exists(backupPath))
+                {
+                    try { File.Move(backupPath, targetPath, overwrite: true); }
+                    catch (Exception restoreEx)
+                    {
+                        _logger.LogError(restoreEx,
+                            "[CODE GENERATION PIPELINE] CRITICAL: Could not restore '{Target}' from '{Backup}'.",
+                            targetPath, backupPath);
+                    }
+                }
+            }
+
+            // Mark all as failed.
+            foreach (var result in results)
+            {
+                result.Success = false;
+                result.Errors.Add($"Atomic write failed and was rolled back: {ex.Message}");
+            }
+        }
+
+        return results.AsReadOnly();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Helpers
+    // ──────────────────────────────────────────────────────────────────────────
+
+    private void TryDelete(string path)
+    {
+        try { if (File.Exists(path)) File.Delete(path); }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[CODE GENERATION PIPELINE] Could not delete temp/backup file '{Path}'.", path);
+        }
+    }
 }

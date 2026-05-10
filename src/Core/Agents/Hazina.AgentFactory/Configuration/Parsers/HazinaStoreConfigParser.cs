@@ -27,7 +27,7 @@ public static class HazinaStoreConfigParser
     public static List<StoreConfig> Parse(string input)
     {
         var stores = new List<StoreConfig>();
-        StoreConfig current = null;
+        StoreConfig? current = null;
 
         foreach (var line in input.Split(["\r\n", "\n"], StringSplitOptions.TrimEntries))
         {

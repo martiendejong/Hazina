@@ -1,21 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <LanguageVersion>latest</LanguageVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Hazina.Store</RootNamespace>
-    <Version>2.0.0</Version>
-    <PackageVersion>2.0.0</PackageVersion>
-    <Authors>Prospergenics</Authors>
-    <Description>Document storage and retrieval system for RAG (Retrieval-Augmented Generation) in Hazina. Provides IDocumentStore interface with support for text/binary documents, chunking, metadata management, and relevancy matching. Includes file-based and memory-based backends.</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/prospergenics/devgpt</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/prospergenics/devgpt</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>rag;document-store;retrieval;storage;chunking;embeddings;semantic-search</PackageTags>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.Store.DocumentStore</PackageId>
+    <Description>Document storage and retrieval for RAG (Retrieval-Augmented Generation) in Hazina. Provides IDocumentStore with text/binary documents, chunking, metadata management, and relevancy matching. Includes file-based, memory-based, and Postgres/Supabase backends.</Description>
+    <PackageTags>hazina;rag;document-store;retrieval;storage;chunking;embeddings;semantic-search</PackageTags>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Hazina.Store.EmbeddingStore\Hazina.Store.EmbeddingStore.csproj" />

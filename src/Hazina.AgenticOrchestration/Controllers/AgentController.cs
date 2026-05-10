@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Hazina.AgenticOrchestration.Extensions;
 using Hazina.AgenticOrchestration.Models;
 using Hazina.AgenticOrchestration.Services;
 using Hazina.AgenticOrchestration.Terminal;
@@ -21,19 +22,22 @@ public class AgentController : ControllerBase
     private readonly IAgentIdentityService _identityService;
     private readonly IHookConfigService _hookService;
     private readonly ILogger<AgentController> _logger;
+    private readonly string _worktreeRoot;
 
     public AgentController(
         ITerminalSessionManager terminalManager,
         IBeaconService beaconService,
         IAgentIdentityService identityService,
         IHookConfigService hookService,
-        ILogger<AgentController> logger)
+        ILogger<AgentController> logger,
+        AgenticOrchestrationOptions options)
     {
         _terminalManager = terminalManager;
         _beaconService = beaconService;
         _identityService = identityService;
         _hookService = hookService;
         _logger = logger;
+        _worktreeRoot = options.WorktreeRoot;
     }
 
     /// <summary>
@@ -58,10 +62,9 @@ public class AgentController : ControllerBase
             // Validate path safety
             if (!string.IsNullOrEmpty(request.WorktreePath))
             {
-                const string allowedRoot = @"C:\Projects\worker-agents";
-                if (!InputValidator.IsPathSafe(request.WorktreePath, allowedRoot))
+                if (!InputValidator.IsPathSafe(request.WorktreePath, _worktreeRoot))
                 {
-                    return BadRequest(new { error = $"Worktree path must be within {allowedRoot}" });
+                    return BadRequest(new { error = $"Worktree path must be within {_worktreeRoot}" });
                 }
             }
 
@@ -82,7 +85,7 @@ public class AgentController : ControllerBase
             var sessionConfig = new TerminalSessionConfig
             {
                 Command = request.Command ?? "claude",
-                Arguments = request.Arguments ?? new[] { "--dangerously-skip-permissions" },
+                Arguments = request.Arguments ?? new[] { "--model", "opus", "--dangerously-skip-permissions" },
                 WorkingDirectory = request.WorkingDirectory
             };
 

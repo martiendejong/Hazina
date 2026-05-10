@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Hazina.Tools.AI.Agents</RootNamespace>
@@ -17,7 +17,7 @@
     <ProjectReference Include="..\..\..\Core\Observability\Hazina.Observability.LLMLogs\Hazina.Observability.LLMLogs.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="OpenAI" Version="2.6.0" />
+    <PackageReference Include="OpenAI" Version="2.8.0" />
     <PackageReference Include="Serilog" Version="4.3.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
   </ItemGroup>

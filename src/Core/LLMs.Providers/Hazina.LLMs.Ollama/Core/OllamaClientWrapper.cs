@@ -2,14 +2,24 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Hazina.LLMs.Capabilities;
 
 namespace Hazina.LLMs;
 
 /// <summary>
 /// Ollama implementation of ILLMClient for local LLM inference
 /// </summary>
-public class OllamaClientWrapper : ILLMClient
+public class OllamaClientWrapper : CapabilityProviderBase, ILLMClient
 {
+    /// <inheritdoc/>
+    public override ProviderCapability SupportedCapabilities =>
+        ProviderCapability.Chat |
+        ProviderCapability.Streaming |
+        ProviderCapability.Tools |
+        ProviderCapability.Embeddings |
+        ProviderCapability.JsonMode |
+        ProviderCapability.SystemMessages;
+
     public OllamaConfig Config { get; set; }
     private readonly HttpClient _http;
     private readonly PartialJsonParser _parser;
@@ -20,7 +30,7 @@ public class OllamaClientWrapper : ILLMClient
         Config = config;
         _http = new HttpClient
         {
-            BaseAddress = new Uri(config.Endpoint.TrimEnd('/')),
+            BaseAddress = new Uri((config.Endpoint ?? "http://localhost:11434").TrimEnd('/')),
             Timeout = TimeSpan.FromMinutes(5)
         };
         _parser = new PartialJsonParser();

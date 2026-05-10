@@ -1,11 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.AI.Agents</PackageId>
+    <Description>Multi-agent orchestration framework for Hazina. Build autonomous AI agents with tool use, memory, and collaborative workflows.</Description>
+    <PackageTags>hazina;ai;agents;orchestration;autonomous;multi-agent</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />

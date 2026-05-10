@@ -1,3 +1,4 @@
+using Hazina.AgenticOrchestration.Abstractions;
 using Hazina.AgenticOrchestration.Data;
 using Hazina.AgenticOrchestration.Models;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,7 @@ public class MailService : IMailService
     private readonly MailStore _store;
     private readonly string _pendingNudgesPath;
     private readonly ILogger<MailService> _logger;
+    private readonly IFileSystem _fileSystem;
 
     // Protocol types that trigger auto-nudge regardless of priority
     private static readonly HashSet<MailMessageType> AutoNudgeTypes = new()
@@ -37,14 +39,15 @@ public class MailService : IMailService
         MailMessageType.MergeFailed
     };
 
-    public MailService(string databasePath, string pendingNudgesPath, ILogger<MailService> logger)
+    public MailService(string databasePath, string pendingNudgesPath, ILogger<MailService> logger, IFileSystem fileSystem)
     {
         _store = new MailStore(databasePath);
         _pendingNudgesPath = pendingNudgesPath;
         _logger = logger;
+        _fileSystem = fileSystem;
 
         // Ensure pending nudges directory exists
-        Directory.CreateDirectory(_pendingNudgesPath);
+        _fileSystem.CreateDirectory(_pendingNudgesPath);
     }
 
     public string Send(MailMessage message)
@@ -161,23 +164,23 @@ public class MailService : IMailService
     public async Task<PendingNudge?> GetPendingNudgeAsync(string agentName)
     {
         var filePath = Path.Combine(_pendingNudgesPath, $"{agentName}.json");
-        if (!File.Exists(filePath))
+        if (!_fileSystem.FileExists(filePath))
         {
             return null;
         }
 
         try
         {
-            var json = await File.ReadAllTextAsync(filePath);
+            var json = await _fileSystem.ReadAllTextAsync(filePath);
             var nudge = JsonSerializer.Deserialize<PendingNudge>(json);
-            File.Delete(filePath); // Clear after reading
+            _fileSystem.DeleteFile(filePath); // Clear after reading
             return nudge;
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to read pending nudge for {AgentName}", agentName);
             // Try to delete corrupt file
-            try { File.Delete(filePath); } catch { }
+            try { _fileSystem.DeleteFile(filePath); } catch { }
             return null;
         }
     }
@@ -185,11 +188,11 @@ public class MailService : IMailService
     public async Task ClearPendingNudgeAsync(string agentName)
     {
         var filePath = Path.Combine(_pendingNudgesPath, $"{agentName}.json");
-        if (File.Exists(filePath))
+        if (_fileSystem.FileExists(filePath))
         {
             try
             {
-                await Task.Run(() => File.Delete(filePath));
+                await Task.Run(() => _fileSystem.DeleteFile(filePath));
             }
             catch (Exception ex)
             {
@@ -201,21 +204,21 @@ public class MailService : IMailService
     private PendingNudge? GetPendingNudgeSync(string agentName)
     {
         var filePath = Path.Combine(_pendingNudgesPath, $"{agentName}.json");
-        if (!File.Exists(filePath))
+        if (!_fileSystem.FileExists(filePath))
         {
             return null;
         }
 
         try
         {
-            var json = File.ReadAllText(filePath);
+            var json = _fileSystem.ReadAllText(filePath);
             var nudge = JsonSerializer.Deserialize<PendingNudge>(json);
-            File.Delete(filePath); // Clear after reading
+            _fileSystem.DeleteFile(filePath); // Clear after reading
             return nudge;
         }
         catch
         {
-            try { File.Delete(filePath); } catch { }
+            try { _fileSystem.DeleteFile(filePath); } catch { }
             return null;
         }
     }
@@ -226,7 +229,7 @@ public class MailService : IMailService
         try
         {
             var json = JsonSerializer.Serialize(nudge, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(filePath, json);
+            _fileSystem.WriteAllText(filePath, json);
         }
         catch (Exception ex)
         {

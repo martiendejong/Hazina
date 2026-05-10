@@ -1,11 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <PackageId>Hazina.CodeIntelligence</PackageId>
+    <Description>Code analysis and intelligence features for AI-assisted development. Integrates with LLM providers and Neurochain.</Description>
+    <PackageTags>hazina;code-intelligence;analysis;development;ai-assisted</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />

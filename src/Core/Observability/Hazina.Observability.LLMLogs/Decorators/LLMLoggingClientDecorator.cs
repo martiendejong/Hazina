@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Hazina.LLMs;
+using Hazina.LLMs.Capabilities;
 using Hazina.Observability.LLMLogs.Configuration;
 using Hazina.Observability.LLMLogs.Context;
 using Hazina.Observability.LLMLogs.Storage;
@@ -18,8 +19,17 @@ namespace Hazina.Observability.LLMLogs.Decorators
     /// Decorator for ILLMClient that logs all LLM calls to a repository.
     /// Provider-agnostic and works with any ILLMClient implementation.
     /// </summary>
-    public class LLMLoggingClientDecorator : ILLMClient
+    public class LLMLoggingClientDecorator : CapabilityProviderBase, ILLMClient
     {
+        /// <inheritdoc/>
+        /// <summary>
+        /// Decorators forward capabilities from the inner client
+        /// </summary>
+        public override ProviderCapability SupportedCapabilities =>
+            _innerClient is ICapabilityProvider provider
+                ? provider.SupportedCapabilities
+                : ProviderCapability.All; // Fallback if inner client doesn't implement capabilities
+
         private readonly ILLMClient _innerClient;
         private readonly ILLMLogRepository _repository;
         private readonly LLMLoggingOptions _options;
@@ -36,6 +46,11 @@ namespace Hazina.Observability.LLMLogs.Decorators
             _options = options.Value;
             _providerName = providerName;
         }
+
+        // ICapabilityProvider - delegate to inner (SupportedCapabilities already overridden above)
+        public bool SupportsCapability(ProviderCapability capability) => _innerClient.SupportsCapability(capability);
+        public IEnumerable<string> GetSupportedCapabilityNames() => _innerClient.GetSupportedCapabilityNames();
+        public void RequireCapabilities(ProviderCapability requiredCapabilities) => _innerClient.RequireCapabilities(requiredCapabilities);
 
         public async Task<Embedding> GenerateEmbedding(string data)
         {

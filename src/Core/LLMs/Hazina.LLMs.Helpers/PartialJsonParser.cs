@@ -1,320 +1,284 @@
+using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 
+namespace Hazina.LLMs;
+
+/// <summary>
+/// Parser for handling incomplete or malformed JSON strings commonly received from streaming LLM responses.
+/// </summary>
 public class PartialJsonParser
 {
-    public static(int openBraces, int closeBraces) CountBraces(string input)
+    private readonly JsonSerializerOptions _options;
+
+    public PartialJsonParser()
+    {
+        _options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip
+        };
+    }
+
+    /// <summary>
+    /// Counts opening and closing braces in the input, excluding those inside strings.
+    /// </summary>
+    public static (int openBraces, int closeBraces) CountBraces(string input)
     {
         int openBraces = 0, closeBraces = 0;
+        bool inString = false;
+        bool escaped = false;
 
         foreach (char c in input)
         {
-            if (c == '{') openBraces++;
-            else if (c == '}') closeBraces++;
+            if (escaped)
+            {
+                escaped = false;
+                continue;
+            }
+
+            if (c == '\\' && inString)
+            {
+                escaped = true;
+                continue;
+            }
+
+            if (c == '"')
+            {
+                inString = !inString;
+                continue;
+            }
+
+            if (!inString)
+            {
+                if (c == '{') openBraces++;
+                else if (c == '}') closeBraces++;
+            }
         }
 
         return (openBraces, closeBraces);
     }
 
-    static string FixInvalidJsonQuotes(string json)
-    {
-        return Regex.Replace(json, "(?<=:\\s*\"(?:[^\"\\\\]|\\\\.)*)\"(?=(?:[^\"\\\\]|\\\\.)*\\n)", "\\\\\"");
-    }
-
+    /// <summary>
+    /// Attempts to parse partial or malformed JSON into a strongly-typed object.
+    /// Applies multiple recovery strategies to handle common streaming issues.
+    /// </summary>
     public TResponse? Parse<TResponse>(string partialJson)
     {
+        if (string.IsNullOrWhiteSpace(partialJson))
+            return default;
+
+        // Strategy 1: Try parsing as-is
+        var result = TryParse<TResponse>(partialJson);
+        if (result.success)
+            return result.value;
+
+        // Strategy 2: Remove text before first JSON delimiter
+        var cleaned = RemoveTextBeforeJson(partialJson);
+        result = TryParse<TResponse>(cleaned);
+        if (result.success)
+            return result.value;
+
+        // Strategy 3: Clean doubled delimiters
+        cleaned = CleanDoubledDelimiters(cleaned);
+        result = TryParse<TResponse>(cleaned);
+        if (result.success)
+            return result.value;
+
+        // Strategy 4: Balance unmatched delimiters
+        cleaned = BalanceDelimiters(cleaned);
+        result = TryParse<TResponse>(cleaned);
+        if (result.success)
+            return result.value;
+
+        // Strategy 5: Remove trailing commas (if not already handled by options)
+        cleaned = RemoveTrailingCommas(cleaned);
+        result = TryParse<TResponse>(cleaned);
+        if (result.success)
+            return result.value;
+
+        // All strategies failed
+        return default;
+    }
+
+    private (bool success, TResponse? value) TryParse<TResponse>(string json)
+    {
         try
         {
-            var json = JsonSerializer.Deserialize<TResponse>(partialJson);
-            return json;
+            var value = JsonSerializer.Deserialize<TResponse>(json, _options);
+            return (true, value);
         }
-        catch(Exception e)
+        catch
         {
-            Console.WriteLine("Error parsing the JSON");
-            Console.WriteLine(partialJson);
-            Console.WriteLine(e.Message);
+            return (false, default);
         }
+    }
 
-        Console.WriteLine("Trying to correct the JSON by removing the first part before { or [");
-        string correctedJson = "";
-        try
+    private string RemoveTextBeforeJson(string input)
+    {
+        var startBrace = input.IndexOf('{');
+        var startBracket = input.IndexOf('[');
+
+        int start;
+        if (startBrace >= 0 && startBracket >= 0)
         {
-            // Support both objects {...} and arrays [...]
-            var startBrace = partialJson.IndexOf('{');
-            var startBracket = partialJson.IndexOf('[');
-
-            int start;
-            if (startBrace >= 0 && startBracket >= 0)
-            {
-                // Both found - use whichever comes first
-                start = Math.Min(startBrace, startBracket);
-            }
-            else if (startBrace >= 0)
-            {
-                start = startBrace;
-            }
-            else if (startBracket >= 0)
-            {
-                start = startBracket;
-            }
-            else
-            {
-                throw new Exception("Not valid JSON object or array");
-            }
-
-            correctedJson = partialJson.Substring(start);
-
-            var json = JsonSerializer.Deserialize<TResponse>(correctedJson);
-            return json;
+            start = Math.Min(startBrace, startBracket);
         }
-        catch (Exception e)
+        else if (startBrace >= 0)
         {
-            Console.WriteLine("Error parsing the corrected JSON");
-            Console.WriteLine(e.Message);
-            Console.WriteLine(correctedJson);
+            start = startBrace;
+        }
+        else if (startBracket >= 0)
+        {
+            start = startBracket;
+        }
+        else
+        {
+            return input; // No JSON delimiter found
         }
 
-        Console.WriteLine("Trying to correct the JSON by escaping quotes in string parameter values");
-        try
-        {
-            var escapeQuotes = (string text) => 
-            {
-                return Regex.Replace(text, @"(?<!\\)""", "\\\"");
-            };
+        return input.Substring(start);
+    }
 
-            var index = 0;
-            var sequence = "";
-            bool inString = false;
-            var startSequenceIndex = 0;
-            var startStringIndex = 0;
-            var endStringIndex = 0;
-            while (index > -1 && index < correctedJson.Length)
+    private string CleanDoubledDelimiters(string input)
+    {
+        var result = new StringBuilder();
+        bool inString = false;
+        bool escaped = false;
+        char? lastChar = null;
+
+        foreach (char c in input)
+        {
+            if (escaped)
             {
-                var c = correctedJson[index];
-                if (inString)
+                result.Append(c);
+                escaped = false;
+                lastChar = c;
+                continue;
+            }
+
+            if (c == '\\' && inString)
+            {
+                result.Append(c);
+                escaped = true;
+                lastChar = c;
+                continue;
+            }
+
+            if (c == '"')
+            {
+                inString = !inString;
+                result.Append(c);
+                lastChar = c;
+                continue;
+            }
+
+            // Skip doubled delimiters outside of strings
+            if (!inString && lastChar.HasValue)
+            {
+                if ((c == '{' && lastChar == '{') ||
+                    (c == '}' && lastChar == '}') ||
+                    (c == '[' && lastChar == '[') ||
+                    (c == ']' && lastChar == ']'))
                 {
-                    switch (c)
-                    {
-                        case ' ':
-                            break;
-                        case '"':
-                        case ':':
-                            sequence += c;
-                            break;
-                        default:
-                            sequence = "";
-                            startSequenceIndex = index + 1;
-                            break;
-                    }
-                    switch (sequence)
-                    {
-                        case "\",\"":
-                            sequence = "";
-                            inString = false;
-                            endStringIndex = startSequenceIndex;
-                            var stringLength = endStringIndex - startStringIndex;
-                            var stringValue = correctedJson.Substring(startStringIndex, stringLength);
-                            var fixedStringValue = escapeQuotes(stringValue);
-                            correctedJson = correctedJson
-                                .Remove(startStringIndex, stringLength)
-                                .Insert(startStringIndex, fixedStringValue);
-                            index += fixedStringValue.Length - stringValue.Length;
-
-                            break;
-                    }
-                }
-                else
-                {
-                    switch (c)
-                    {
-                        case ' ':
-                            break;
-                        case '"':
-                        case ':':
-                            sequence += c;
-                            break;
-                        default:
-                            sequence = "";
-                            break;
-                    }
-                    switch (sequence)
-                    {
-                        case "\":\"":
-                            inString = true;
-                            sequence = "";
-                            startStringIndex = index + 1;
-                            startSequenceIndex = index + 1;
-                            break;
-                    }
-                }
-
-                ++index;
-            }
-
-            if(inString)
-            {
-                var stringValue = correctedJson.Substring(startStringIndex);
-                // todo fix quotes in value
-            }
-
-            var json = JsonSerializer.Deserialize<TResponse>(correctedJson);
-            return json;
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine("Error parsing the corrected JSON");
-            Console.WriteLine(e.Message);
-            Console.WriteLine(correctedJson);
-        }
-
-
-        Console.WriteLine("Trying to correct the JSON by removing the text after the last }");
-        try
-        {
-            var end = correctedJson.IndexOf('}');
-            correctedJson = correctedJson.Substring(0, end);
-
-            var json = JsonSerializer.Deserialize<TResponse>(correctedJson);
-            return json;
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine("Error parsing the corrected JSON");
-            Console.WriteLine(e.Message);
-            Console.WriteLine(correctedJson);
-        }
-
-
-        /*
-         * ignore spaces
-         * find next string parameter value ":"
-         * find next end string parameter value "," or "} or "]
-         * make sure all quotes inside are escaped
-         */
-
-
-
-        /* start at the beginning
-        ignore spaces
-        {
-            <<object contents>>
-                "
-                    <<param contents>>
-                    read param name
-                    find next
-                        ":
-                            <<param value>>
-                            "
-                                <<param value contents>>
-                                read param string value
-                                find next
-                                    ","
-                                        finish param(name, value)
-                                        goto <<param contents>>
-                                    "}
-                                        finish param(name, value)
-                                        finish object
-                                            ,
-                                            }
-                                                }
-                                                ]
-                                                ,
-                                            ]
-                            {
-                                goto <<object contents>>
-
-            }
-        */
-
-
-
-
-
-
-
-        string jsonPart = "";
-        try
-        {
-            // Support both objects {...} and arrays [...]
-            var startBrace = partialJson.IndexOf('{');
-            var startBracket = partialJson.IndexOf('[');
-
-            int start;
-            char openChar, closeChar;
-            if (startBrace >= 0 && startBracket >= 0)
-            {
-                // Both found - use whichever comes first
-                if (startBrace < startBracket)
-                {
-                    start = startBrace;
-                    openChar = '{';
-                    closeChar = '}';
-                }
-                else
-                {
-                    start = startBracket;
-                    openChar = '[';
-                    closeChar = ']';
+                    lastChar = c;
+                    continue; // Skip the duplicate
                 }
             }
-            else if (startBrace >= 0)
-            {
-                start = startBrace;
-                openChar = '{';
-                closeChar = '}';
-            }
-            else if (startBracket >= 0)
-            {
-                start = startBracket;
-                openChar = '[';
-                closeChar = ']';
-            }
-            else
-            {
-                throw new Exception("Not valid JSON object or array");
-            }
 
-            var end = partialJson.LastIndexOf(closeChar);
-
-            partialJson = partialJson.Substring(start, end - start + 1).Trim();
-
-            // Clean up doubled delimiters
-            if (openChar == '{')
-            {
-                partialJson = partialJson
-                    .Replace("{{", "{")
-                    .Replace("}}", "}");
-            }
-            else
-            {
-                partialJson = partialJson
-                    .Replace("[[", "[")
-                    .Replace("]]", "]");
-            }
-
-            // Count and balance delimiters
-            int openCount = partialJson.Count(c => c == openChar);
-            int closeCount = partialJson.Count(c => c == closeChar);
-            if (openCount > closeCount)
-            {
-                partialJson += new string(closeChar, openCount - closeCount);
-            }
-
-            jsonPart = partialJson;
-            //jsonPart = FixInvalidJsonQuotes(jsonPart);
-
-            var json = JsonSerializer.Deserialize<TResponse>(jsonPart);
-
-            return json;
+            result.Append(c);
+            lastChar = c;
         }
-        catch (Exception e)
+
+        return result.ToString();
+    }
+
+    private string BalanceDelimiters(string input)
+    {
+        // Determine if we're dealing with an object or array
+        var firstBrace = input.IndexOf('{');
+        var firstBracket = input.IndexOf('[');
+
+        char openChar, closeChar;
+        if (firstBrace >= 0 && (firstBracket < 0 || firstBrace < firstBracket))
         {
-            Console.WriteLine("Error parsing the JSON");
-            Console.WriteLine(e.Message);
-            Console.WriteLine(partialJson);
-            Console.WriteLine();
-            Console.WriteLine(jsonPart);
-            throw;
+            openChar = '{';
+            closeChar = '}';
         }
+        else if (firstBracket >= 0)
+        {
+            openChar = '[';
+            closeChar = ']';
+        }
+        else
+        {
+            return input; // No delimiters found
+        }
+
+        // Count delimiters while respecting strings
+        int openCount = 0, closeCount = 0;
+        bool inString = false;
+        bool escaped = false;
+
+        foreach (char c in input)
+        {
+            if (escaped)
+            {
+                escaped = false;
+                continue;
+            }
+
+            if (c == '\\' && inString)
+            {
+                escaped = true;
+                continue;
+            }
+
+            if (c == '"')
+            {
+                inString = !inString;
+                continue;
+            }
+
+            if (!inString)
+            {
+                if (c == openChar) openCount++;
+                else if (c == closeChar) closeCount++;
+            }
+        }
+
+        // Add missing closing delimiters
+        if (openCount > closeCount)
+        {
+            return input + new string(closeChar, openCount - closeCount);
+        }
+
+        // Remove excess closing delimiters from the end
+        if (closeCount > openCount)
+        {
+            var excess = closeCount - openCount;
+            var result = input.TrimEnd();
+            while (excess > 0 && result.Length > 0 && result[^1] == closeChar)
+            {
+                result = result.Substring(0, result.Length - 1).TrimEnd();
+                excess--;
+            }
+            return result;
+        }
+
+        return input;
+    }
+
+    private string RemoveTrailingCommas(string input)
+    {
+        // This is a simple implementation that removes ", }" and ", ]" patterns
+        // The JsonSerializerOptions.AllowTrailingCommas should handle most cases
+        var result = input
+            .Replace(",}", "}")
+            .Replace(", }", "}")
+            .Replace(",]", "]")
+            .Replace(", ]", "]");
+
+        return result;
     }
 }

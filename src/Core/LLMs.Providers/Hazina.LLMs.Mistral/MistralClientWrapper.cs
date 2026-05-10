@@ -1,17 +1,25 @@
 using System.Text;
 using System.Text.Json;
 using Hazina.LLMs;
+using Hazina.LLMs.Capabilities;
 using Hazina.LLMs.Mistral;
 
-public class MistralClientWrapper : ILLMClient
+public class MistralClientWrapper : CapabilityProviderBase, ILLMClient
 {
+    /// <inheritdoc/>
+    public override ProviderCapability SupportedCapabilities =>
+        ProviderCapability.Chat |
+        ProviderCapability.Streaming |
+        ProviderCapability.JsonMode |
+        ProviderCapability.SystemMessages;
+
     private readonly MistralConfig _config;
     private readonly HttpClient _http;
 
     public MistralClientWrapper(MistralConfig config)
     {
         _config = config;
-        _http = new HttpClient { BaseAddress = new Uri(config.Endpoint) };
+        _http = new HttpClient { BaseAddress = new Uri(config.Endpoint ?? "https://api.mistral.ai/v1") };
         _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.ApiKey);
     }
 

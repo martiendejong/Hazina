@@ -103,11 +103,11 @@ public class AgentManager
         _flows = loader._flows;
     }
 
-    public HazinaAgent GetAgent(string name)
+    public HazinaAgent? GetAgent(string name)
     {
         return _agents.FirstOrDefault(a => a.Name == name);
     }
-    public HazinaFlow GetFlow(string name)
+    public HazinaFlow? GetFlow(string name)
     {
         return _flows.FirstOrDefault(a => a.Name == name);
     }
@@ -116,9 +116,9 @@ public class AgentManager
     /// Interactively communicates with a specified agent through the console,
     /// using the agent's context and configuration.
     /// </summary>
-    public async Task InteractiveUserLoop(string agentName = null)
+    public async Task InteractiveUserLoop(string? agentName = null)
     {
-        HazinaAgent agent;
+        HazinaAgent? agent;
         if (string.IsNullOrEmpty(agentName))
         {
             agent = _agents.FirstOrDefault();
@@ -136,19 +136,20 @@ public class AgentManager
             if (string.Equals(input, "exit", StringComparison.OrdinalIgnoreCase))
                 break;
             var cancel = new CancellationToken();
-            var response = await agent.Generator.GetResponse<IsReadyResult>(input, cancel, History, true, true, agent.Tools, null);
-            while (!response.Result.IsTheUserRequestProperlyHandledAndFinished)
+            var response = await agent.Generator.GetResponse<IsReadyResult>(input ?? string.Empty, cancel, History, true, true, agent.Tools, null);
+            while (response.Result != null && !response.Result.IsTheUserRequestProperlyHandledAndFinished)
             {
-                response = await agent.Generator.GetResponse<IsReadyResult>("Continue handling the user request: " + input, cancel, History, true, true, agent.Tools, null);
-                Console.WriteLine(response.Result.Message);
+                response = await agent.Generator.GetResponse<IsReadyResult>("Continue handling the user request: " + (input ?? string.Empty), cancel, History, true, true, agent.Tools, null);
+                if (response.Result != null)
+                    Console.WriteLine(response.Result.Message ?? string.Empty);
             }
-            History.Add(new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = response.Result.Message });
+            History.Add(new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = response.Result?.Message ?? string.Empty });
         }
     }
 
-    public async Task<string> SendMessage(string input, CancellationToken cancel, string agentName = null)
+    public async Task<string> SendMessage(string input, CancellationToken cancel, string? agentName = null)
     {
-        HazinaAgent agent;
+        HazinaAgent? agent;
         if (string.IsNullOrEmpty(agentName))
         {
             agent = _agents.FirstOrDefault();
@@ -164,16 +165,16 @@ public class AgentManager
 
         var response = await agent.Generator.GetResponse<IsReadyResult>(input, cancel, History, true, true, agent.Tools, null);
 
-        await AddHistory(response.Result.Message);
+        await AddHistory(response.Result?.Message ?? string.Empty);
 
-        return response.Result.Message;
+        return response.Result?.Message ?? string.Empty;
     }
 
-    public async Task<string> SendMessage_Flow(string input, CancellationToken cancel, string flowName = null)
+    public async Task<string> SendMessage_Flow(string input, CancellationToken cancel, string? flowName = null)
     {
         await AddHistory(input);
 
-        var response = await _quickAgentCreator.AgentFactory.CallFlow(flowName, input, "REGULAR", cancel);
+        var response = await _quickAgentCreator.AgentFactory.CallFlow(flowName ?? string.Empty, input, "REGULAR", cancel);
         return response;
     }
 
@@ -185,6 +186,6 @@ public class AgentManager
             var key = $"{DateTime.Now.ToString("yy_MM_dd_HH_mm")}_input";
             await historyStore.Store(key, input);
         }
-        History.Add(new HazinaChatMessage { Role = HazinaMessageRole.Assistant, Text = input });
+        History.Add(new HazinaChatMessage { Role = HazinaMessageRole.User, Text = input });
     }
 }
