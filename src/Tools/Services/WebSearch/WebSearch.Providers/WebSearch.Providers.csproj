@@ -9,6 +9,8 @@
   </ItemGroup>
 
   <PropertyGroup>
+    <PackageId>Hazina.WebSearch.Providers</PackageId>
+    <Description>Search provider implementations for Hazina web search.</Description>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>

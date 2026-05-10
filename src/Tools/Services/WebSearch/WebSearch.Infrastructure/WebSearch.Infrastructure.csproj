@@ -10,6 +10,8 @@
   </ItemGroup>
 
   <PropertyGroup>
+    <PackageId>Hazina.WebSearch.Infrastructure</PackageId>
+    <Description>Infrastructure services and caching for Hazina web search.</Description>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
