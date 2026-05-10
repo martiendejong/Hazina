@@ -130,7 +130,7 @@ public class GitHubEventMonitor
 
             return issues?
                 .Where(i => i.UpdatedAt > _lastCheck)
-                .Where(i => !i.PullRequest.HasValue) // Exclude PRs (they appear as issues too)
+                .Where(i => i.PullRequest == null) // Exclude PRs (they appear as issues too)
                 .Select(i => new GitHubEvent
                 {
                     Type = GitHubEventType.NewIssue,

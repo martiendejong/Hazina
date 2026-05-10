@@ -1,3 +1,4 @@
+using System.Linq;
 using Hazina.AgenticOrchestration.Abstractions;
 using Hazina.AgenticOrchestration.Data;
 using Hazina.AgenticOrchestration.Hubs;
@@ -251,7 +252,8 @@ public class SessionRecoveryStartupService : IHostedService
 
         try
         {
-            await _sessionManager.ScanForRecoverableSessionsAsync();
+            var recoverable = await _sessionManager.GetRecoverableSessionsAsync();
+            _logger.LogInformation("Found {Count} recoverable sessions", recoverable.Count());
         }
         catch (Exception ex)
         {

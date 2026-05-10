@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
-using Hazina.LLMs.Client;
-using Hazina.LLMs.Classes;
+using Hazina.LLMs;
 using Microsoft.Extensions.Logging;
 
 namespace Hazina.AgenticOrchestration.Services.PersistentSession;
@@ -33,14 +32,14 @@ public interface IPersistentSessionService
 
 public class PersistentSessionService : IPersistentSessionService
 {
-    private readonly ILlmProviderClient _llmClient;
+    private readonly ILLMClient _llmClient;
     private readonly ILogger<PersistentSessionService> _logger;
     private readonly string _stateDirectory;
     private readonly ConcurrentDictionary<string, ClaudeSessionState> _activeSessions = new();
     private readonly ConcurrentDictionary<string, IRollingContextWindow> _contextWindows = new();
 
     public PersistentSessionService(
-        ILlmProviderClient llmClient,
+        ILLMClient llmClient,
         ILogger<PersistentSessionService> logger,
         string? stateDirectory = null)
     {
@@ -120,31 +119,23 @@ public class PersistentSessionService : IPersistentSessionService
 
         // Get context for LLM call
         var context = contextWindow.GetContext();
-        var messages = context.Select(m => new HazinaMessage
+        var messages = context.Select(m => new HazinaChatMessage
         {
             Role = m.Role == "system" ? HazinaMessageRole.System :
                    m.Role == "user" ? HazinaMessageRole.User :
                    HazinaMessageRole.Assistant,
-            Content = m.Content
+            Text = m.Content
         }).ToList();
 
         // Call Claude
-        var request = new HazinaCompletionRequest
-        {
-            Messages = messages,
-            Model = "claude-opus-4-6", // Always use Opus
-            MaxTokens = 8192,
-            Temperature = 0.7
-        };
+        var response = await _llmClient.GetResponse(messages, HazinaChatResponseFormat.Text, null, null, CancellationToken.None);
 
-        var response = await _llmClient.CreateCompletionAsync(request);
-
-        if (response?.Choices == null || response.Choices.Count == 0)
+        if (response?.Result == null)
         {
             throw new InvalidOperationException("No response from LLM");
         }
 
-        var assistantMessage = response.Choices[0]?.Message?.Content ?? string.Empty;
+        var assistantMessage = response.Result;
 
         // Add assistant response to context
         await contextWindow.AddMessageAsync(new ContextMessage
@@ -157,7 +148,7 @@ public class PersistentSessionService : IPersistentSessionService
         // Update session state
         state.LastActive = DateTime.UtcNow;
         state.TurnCount++;
-        state.TotalTokens += response.Usage?.TotalTokens ?? 0;
+        state.TotalTokens += 0;
 
         // Auto-save every 5 turns
         if (state.TurnCount % 5 == 0)
