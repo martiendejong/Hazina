@@ -1,4 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Hazina.Tools.Services.WebSearch</PackageId>
+    <Description>Web search tools and providers for the Hazina AI framework.</Description>
+    <Version>1.0.4</Version>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\WebSearch.Core\WebSearch.Core.csproj" />
@@ -10,11 +19,5 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
   </ItemGroup>
-
-  <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
 
 </Project>

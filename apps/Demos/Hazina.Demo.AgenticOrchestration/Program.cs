@@ -513,6 +513,9 @@ else
         catch (Exception ex)
         {
             Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Web host error: {ex.Message}");
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Stack trace: {ex.StackTrace}");
+            if (ex.InnerException != null)
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Inner: {ex.InnerException.Message} | {ex.InnerException.StackTrace}");
         }
     });
 
