@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
@@ -15,6 +15,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Observability\Hazina.Observability.Core\Hazina.Observability.Core.csproj" />
     <ProjectReference Include="..\..\Storage\Hazina.Store.FactsStore\Hazina.Store.FactsStore.csproj" />
     <ProjectReference Include="..\..\Storage\Hazina.Store.DocumentStore\Hazina.Store.DocumentStore.csproj" />
     <ProjectReference Include="..\Hazina.AI.RAG\Hazina.AI.RAG.csproj" />

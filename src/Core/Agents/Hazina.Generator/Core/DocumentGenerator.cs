@@ -154,8 +154,34 @@ public class DocumentGenerator : IDocumentGenerator
         return new LLMResponse<string>(response.Result?.ResponseMessage ?? "", response.TokenUsage);
     }
 
+    public async Task<LLMResponse<UpdateStorePatchPreview>> DryRunUpdateStore(string query, CancellationToken cancel, IEnumerable<HazinaChatMessage>? messages = null, bool addRelevantDocuments = true, bool addFilesList = true, IToolsContext? toolsContext = null, List<ImageData>? images = null)
+    {
+        var sendMessages = await PrepareMessages(query, messages, addRelevantDocuments, addFilesList);
+        var response = await LLMClient.GetResponse<UpdateStoreResponse>(sendMessages, toolsContext, images, cancel);
+
+        var preview = new UpdateStorePatchPreview
+        {
+            ResponseMessage = response.Result?.ResponseMessage ?? "",
+            Modifications = response.Result?.Modifications?.Select(m => new PatchModification
+            {
+                Path = m.Path,
+                Name = m.Name,
+                Contents = m.Contents
+            }).ToList() ?? new(),
+            Deletions = response.Result?.Deletions?.Select(d => d.Path).ToList() ?? new(),
+            Moves = response.Result?.Moves?.Select(m => new PatchMove
+            {
+                Path = m.Path,
+                NewPath = m.NewPath
+            }).ToList() ?? new()
+        };
+
+        return new LLMResponse<UpdateStorePatchPreview>(preview, response.TokenUsage);
+    }
+
     private async Task ModifyDocuments(UpdateStoreResponse? response)
     {
+        if (response == null) return;
         if (response.Modifications != null)
             foreach (var modification in response.Modifications)
             {

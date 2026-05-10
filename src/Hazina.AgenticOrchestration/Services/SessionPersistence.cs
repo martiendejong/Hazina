@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace Hazina.AgenticOrchestration.Services;
 
@@ -49,21 +50,27 @@ public enum SessionState
 
 public class SessionPersistence : ISessionPersistence
 {
-    private const string BaseDirectory = @"E:\orchestration-sessions";
     private const string ActiveDirectory = "active";
     private const string ArchiveDirectory = "archive";
 
+    private readonly string _baseDirectory;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _sessionLocks = new();
 
-    public SessionPersistence()
+    public SessionPersistence(IConfiguration configuration)
     {
+        var configuredPath = configuration["AgenticOrchestration:SessionLogging:BasePath"];
+        _baseDirectory = !string.IsNullOrWhiteSpace(configuredPath)
+            ? configuredPath
+            : Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "HazinaOrchestration", "sessions");
         EnsureDirectories();
     }
 
     private void EnsureDirectories()
     {
-        Directory.CreateDirectory(Path.Combine(BaseDirectory, ActiveDirectory));
-        Directory.CreateDirectory(Path.Combine(BaseDirectory, ArchiveDirectory));
+        Directory.CreateDirectory(Path.Combine(_baseDirectory, ActiveDirectory));
+        Directory.CreateDirectory(Path.Combine(_baseDirectory, ArchiveDirectory));
     }
 
     public async Task SaveSessionAsync(string sessionId, SessionMetadata metadata)
@@ -165,7 +172,7 @@ public class SessionPersistence : ISessionPersistence
 
     public async Task<IEnumerable<SessionMetadata>> GetActiveSessionsAsync()
     {
-        var activePath = Path.Combine(BaseDirectory, ActiveDirectory);
+        var activePath = Path.Combine(_baseDirectory, ActiveDirectory);
         var metadataFiles = Directory.GetFiles(activePath, "*.session.json");
 
         var sessions = new List<SessionMetadata>();
@@ -205,17 +212,17 @@ public class SessionPersistence : ISessionPersistence
     }
 
     private string GetMetadataPath(string sessionId) =>
-        Path.Combine(BaseDirectory, ActiveDirectory, $"{sessionId}.session.json");
+        Path.Combine(_baseDirectory, ActiveDirectory, $"{sessionId}.session.json");
 
     private string GetTranscriptPath(string sessionId) =>
-        Path.Combine(BaseDirectory, ActiveDirectory, $"{sessionId}.transcript.txt");
+        Path.Combine(_baseDirectory, ActiveDirectory, $"{sessionId}.transcript.txt");
 
     private string GetAsciinemaPath(string sessionId) =>
-        Path.Combine(BaseDirectory, ActiveDirectory, $"{sessionId}.asciinema");
+        Path.Combine(_baseDirectory, ActiveDirectory, $"{sessionId}.asciinema");
 
     private string GetArchivePath(string sessionId)
     {
         var date = DateTime.UtcNow.ToString("yyyy-MM-dd");
-        return Path.Combine(BaseDirectory, ArchiveDirectory, date, sessionId);
+        return Path.Combine(_baseDirectory, ArchiveDirectory, date, sessionId);
     }
 }

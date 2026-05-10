@@ -358,7 +358,9 @@ public class ToolRegistrationService : IToolRegistrationService
 
                 var handler = new HttpClientHandler
                 {
+#pragma warning disable MA0039 // Do not write your own certificate validation method - acceptable for localhost development
                     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+#pragma warning restore MA0039
                 };
                 var httpClient = new HttpClient(handler);
 
@@ -615,12 +617,12 @@ public class ToolRegistrationService : IToolRegistrationService
                 async (messages, toolCall, cancel) =>
                 {
                     cancel.ThrowIfCancellationRequested();
-                    if (CommonToolParameters.Instruction.TryGetValue(toolCall, out string key))
+                    if (CommonToolParameters.Instruction.TryGetValue(toolCall, out string? key) && key != null)
                     {
                         var id = Guid.NewGuid().ToString();
-                        tools.SendMessage(id, flow, key);
+                        tools.SendMessage?.Invoke(id, flow, key);
                         var response = await _callFlowFunc(flow, key, caller, cancel);
-                        tools.SendMessage(id, flow, response);
+                        tools.SendMessage?.Invoke(id, flow, response);
                         return response;
                     }
                     return "No key given";

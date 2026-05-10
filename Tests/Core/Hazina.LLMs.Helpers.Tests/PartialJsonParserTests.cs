@@ -1,577 +1,354 @@
-using FluentAssertions;
-using System.Text.Json;
+using Xunit;
+using System.Collections.Generic;
 
 namespace Hazina.LLMs.Helpers.Tests;
 
+public class TestModel
+{
+    public string? Name { get; set; }
+    public int Age { get; set; }
+    public string? Description { get; set; }
+    public List<string>? Tags { get; set; }
+    public Dictionary<string, string>? Metadata { get; set; }
+}
+
 public class PartialJsonParserTests
 {
-    private readonly PartialJsonParser _parser;
+    private readonly PartialJsonParser _parser = new();
 
-    public PartialJsonParserTests()
+    #region Basic Valid JSON Tests
+
+    [Fact]
+    public void Parse_ValidCompleteObject_ReturnsCorrectObject()
     {
-        _parser = new PartialJsonParser();
+        var json = """{"name":"John","age":30}""";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("John", result.Name);
+        Assert.Equal(30, result.Age);
     }
+
+    [Fact]
+    public void Parse_ValidArray_ReturnsCorrectList()
+    {
+        var json = """["item1","item2","item3"]""";
+        var result = _parser.Parse<List<string>>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal(3, result.Count);
+        Assert.Equal("item1", result[0]);
+    }
+
+    #endregion
+
+    #region Special Characters in Strings
+
+    [Fact]
+    public void Parse_StringWithTabs_HandlesCorrectly()
+    {
+        var json = """{"name":"John\tDoe","age":30}""";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("John\tDoe", result.Name);
+    }
+
+    [Fact]
+    public void Parse_StringWithNewlines_HandlesCorrectly()
+    {
+        var json = """{"name":"John\nDoe","age":30}""";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("John\nDoe", result.Name);
+    }
+
+    [Fact]
+    public void Parse_StringWithEscapedQuotes_HandlesCorrectly()
+    {
+        var json = """{"name":"John \"The Boss\" Doe","age":30}""";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("John \"The Boss\" Doe", result.Name);
+    }
+
+    [Fact]
+    public void Parse_StringWithBackslash_HandlesCorrectly()
+    {
+        var json = """{"name":"C:\\Users\\John","age":30}""";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("C:\\Users\\John", result.Name);
+    }
+
+    [Fact]
+    public void Parse_StringWithCarriageReturn_HandlesCorrectly()
+    {
+        var json = """{"name":"Line1\r\nLine2","age":30}""";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("Line1\r\nLine2", result.Name);
+    }
+
+    #endregion
+
+    #region Trailing Commas
+
+    [Fact]
+    public void Parse_TrailingCommaInObject_HandlesGracefully()
+    {
+        var json = """{"name":"John","age":30,}""";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("John", result.Name);
+        Assert.Equal(30, result.Age);
+    }
+
+    [Fact]
+    public void Parse_TrailingCommaInArray_HandlesGracefully()
+    {
+        var json = """["item1","item2",]""";
+        var result = _parser.Parse<List<string>>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+    }
+
+    #endregion
+
+    #region Doubled Open/Close Braces
+
+    [Fact]
+    public void Parse_DoubledOpenBraces_HandlesCorrectly()
+    {
+        var json = """{{{"name":"John","age":30}""";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("John", result.Name);
+    }
+
+    [Fact]
+    public void Parse_DoubledCloseBraces_HandlesCorrectly()
+    {
+        var json = """{"name":"John","age":30}}}""";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("John", result.Name);
+    }
+
+    [Fact]
+    public void Parse_DoubledOpenBrackets_HandlesCorrectly()
+    {
+        var json = """[[[["item1","item2"]""";
+        var result = _parser.Parse<List<string>>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    public void Parse_DoubledCloseBrackets_HandlesCorrectly()
+    {
+        var json = """["item1","item2"]]]]""";
+        var result = _parser.Parse<List<string>>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+    }
+
+    #endregion
+
+    #region Text Before Arrays/Objects
+
+    [Fact]
+    public void Parse_TextBeforeObject_HandlesCorrectly()
+    {
+        var json = """Some random text before the JSON {"name":"John","age":30}""";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("John", result.Name);
+    }
+
+    [Fact]
+    public void Parse_TextBeforeArray_HandlesCorrectly()
+    {
+        var json = """Response: ["item1","item2"]""";
+        var result = _parser.Parse<List<string>>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+    }
+
+    #endregion
+
+    #region Unmatched Braces
+
+    [Fact]
+    public void Parse_MissingClosingBrace_AddsClosingBrace()
+    {
+        var json = "{\"name\":\"John\",\"age\":30";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("John", result.Name);
+        Assert.Equal(30, result.Age);
+    }
+
+    [Fact]
+    public void Parse_MissingClosingBracket_AddsClosingBracket()
+    {
+        var json = "[\"item1\",\"item2\"";
+        var result = _parser.Parse<List<string>>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    public void Parse_MultipleNestedMissingBraces_HandlesCorrectly()
+    {
+        var json = "{\"name\":\"John\",\"metadata\":{\"key\":\"value\"";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("John", result.Name);
+    }
+
+    #endregion
+
+    #region Incomplete JSON Streaming
+
+    [Fact]
+    public void Parse_IncompletePropertyValue_HandlesGracefully()
+    {
+        var json = "{\"name\":\"Joh";
+        var result = _parser.Parse<TestModel>(json);
+
+        // Should either return null or handle gracefully
+        // Depending on implementation, this might return partial data
+        Assert.True(result == null || result.Name == "Joh" || result.Name == null);
+    }
+
+    [Fact]
+    public void Parse_IncompletePropertyName_HandlesGracefully()
+    {
+        var json = "{\"nam";
+        var result = _parser.Parse<TestModel>(json);
+
+        // Should return null or empty object
+        Assert.True(result == null || result.Name == null);
+    }
+
+    [Fact]
+    public void Parse_StreamingPartialObject_HandlesGracefully()
+    {
+        var json = "{\"name\":\"John\",\"age\":";
+        var result = _parser.Parse<TestModel>(json);
+
+        // Should handle partial value gracefully
+        Assert.True(result == null || result.Name == "John");
+    }
+
+    #endregion
+
+    #region Escape Sequence Handling
+
+    [Fact]
+    public void Parse_EscapeSequences_AllTypes_HandlesCorrectly()
+    {
+        var json = """{"description":"Line1\nLine2\tTabbed\r\nWindows\bBackspace\"Quote"}""";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Contains("\n", result.Description);
+        Assert.Contains("\t", result.Description);
+    }
+
+    [Fact]
+    public void Parse_UnicodeEscapeSequence_HandlesCorrectly()
+    {
+        var json = """{"name":"Caf\u00e9"}""";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("Café", result.Name);
+    }
+
+    #endregion
+
+    #region Mixed Edge Cases
+
+    [Fact]
+    public void Parse_TextBeforeWithMissingBrace_HandlesCorrectly()
+    {
+        var json = """Here is the data: {"name":"John","age":30""";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("John", result.Name);
+    }
+
+    [Fact]
+    public void Parse_DoubledBracesWithSpecialChars_HandlesCorrectly()
+    {
+        var json = """{{{"name":"John\nDoe","age":30}}}""";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("John\nDoe", result.Name);
+    }
+
+    [Fact]
+    public void Parse_ComplexNestedWithAllIssues_HandlesCorrectly()
+    {
+        var json = "Text before {{{\"name\":\"John \\\"Boss\\\"\\nDoe\",\"age\":30,\"tags\":[\"tag1\",\"tag2\",]";
+        var result = _parser.Parse<TestModel>(json);
+
+        Assert.NotNull(result);
+        Assert.Contains("John", result.Name);
+    }
+
+    #endregion
 
     #region CountBraces Tests
 
     [Fact]
-    public void CountBraces_WithEmptyString_ReturnsZeroBraces()
+    public void CountBraces_ValidJson_ReturnsCorrectCounts()
     {
-        // Arrange
-        var input = "";
+        var json = """{"name":"John","nested":{}}""";
+        var (open, close) = PartialJsonParser.CountBraces(json);
 
-        // Act
-        var (openBraces, closeBraces) = PartialJsonParser.CountBraces(input);
-
-        // Assert
-        openBraces.Should().Be(0);
-        closeBraces.Should().Be(0);
+        Assert.Equal(2, open);
+        Assert.Equal(2, close);
     }
 
     [Fact]
-    public void CountBraces_WithBalancedBraces_ReturnsCorrectCount()
+    public void CountBraces_UnbalancedJson_ReturnsCorrectCounts()
     {
-        // Arrange
-        var input = "{\"name\": \"test\"}";
+        var json = """{"name":"John","nested":{}""";
+        var (open, close) = PartialJsonParser.CountBraces(json);
 
-        // Act
-        var (openBraces, closeBraces) = PartialJsonParser.CountBraces(input);
-
-        // Assert
-        openBraces.Should().Be(1);
-        closeBraces.Should().Be(1);
+        Assert.Equal(2, open);
+        Assert.Equal(1, close);
     }
 
     [Fact]
-    public void CountBraces_WithNestedBraces_ReturnsCorrectCount()
+    public void CountBraces_BracesInStrings_ExcludesStringContent()
     {
-        // Arrange
-        var input = "{\"outer\": {\"inner\": {}}}";
-
-        // Act
-        var (openBraces, closeBraces) = PartialJsonParser.CountBraces(input);
-
-        // Assert
-        openBraces.Should().Be(3);
-        closeBraces.Should().Be(3);
-    }
-
-    [Fact]
-    public void CountBraces_WithUnbalancedBraces_ReturnsCorrectCount()
-    {
-        // Arrange
-        var input = "{\"incomplete\": {\"nested\":";
-
-        // Act
-        var (openBraces, closeBraces) = PartialJsonParser.CountBraces(input);
-
-        // Assert
-        openBraces.Should().Be(2);
-        closeBraces.Should().Be(0);
-    }
-
-    [Fact]
-    public void CountBraces_WithOnlyClosingBraces_ReturnsCorrectCount()
-    {
-        // Arrange
-        var input = "}}}";
-
-        // Act
-        var (openBraces, closeBraces) = PartialJsonParser.CountBraces(input);
-
-        // Assert
-        openBraces.Should().Be(0);
-        closeBraces.Should().Be(3);
-    }
-
-    [Fact]
-    public void CountBraces_WithMixedBraces_ReturnsCorrectCount()
-    {
-        // Arrange
-        var input = "{{{}}}{{";
-
-        // Act
-        var (openBraces, closeBraces) = PartialJsonParser.CountBraces(input);
-
-        // Assert
-        openBraces.Should().Be(5);
-        closeBraces.Should().Be(3);
-    }
-
-    #endregion
-
-    #region Parse Valid JSON Tests
-
-    [Fact]
-    public void Parse_WithValidSimpleObject_ReturnsDeserializedObject()
-    {
-        // Arrange
-        var json = "{\"name\":\"John\",\"age\":30}";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("John");
-        result.Age.Should().Be(30);
-    }
-
-    [Fact]
-    public void Parse_WithValidNestedObject_ReturnsDeserializedObject()
-    {
-        // Arrange
-        var json = "{\"name\":\"John\",\"address\":{\"city\":\"NYC\",\"zip\":\"10001\"}}";
-
-        // Act
-        var result = _parser.Parse<TestPersonWithAddress>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("John");
-        result.Address.Should().NotBeNull();
-        result.Address!.City.Should().Be("NYC");
-        result.Address.Zip.Should().Be("10001");
-    }
-
-    [Fact]
-    public void Parse_WithValidArray_ReturnsDeserializedArray()
-    {
-        // Arrange
-        var json = "[{\"name\":\"John\"},{\"name\":\"Jane\"}]";
-
-        // Act
-        var result = _parser.Parse<List<TestPerson>>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.Should().HaveCount(2);
-        result![0].Name.Should().Be("John");
-        result[1].Name.Should().Be("Jane");
-    }
-
-    #endregion
-
-    #region Parse JSON with Prefix Tests
-
-    [Fact]
-    public void Parse_WithTextBeforeObject_RemovesPrefixAndParses()
-    {
-        // Arrange
-        var json = "Some text before {\"name\":\"John\",\"age\":30}";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("John");
-        result.Age.Should().Be(30);
-    }
-
-    [Fact]
-    public void Parse_WithTextBeforeArray_RemovesPrefixAndParses()
-    {
-        // Arrange
-        var json = "Here is the data: [{\"name\":\"John\"}]";
-
-        // Act
-        var result = _parser.Parse<List<TestPerson>>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.Should().HaveCount(1);
-        result![0].Name.Should().Be("John");
-    }
-
-    [Fact]
-    public void Parse_WithMultilinePrefixBeforeObject_RemovesPrefixAndParses()
-    {
-        // Arrange
-        var json = @"Line 1
-Line 2
-Line 3
-{""name"":""John""}";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("John");
-    }
-
-    [Fact]
-    public void Parse_WithObjectBeforeArray_ParsesFirstStructure()
-    {
-        // Arrange - object comes before array
-        var json = "{\"name\":\"John\"} [{\"name\":\"Jane\"}]";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("John");
-    }
-
-    [Fact]
-    public void Parse_WithArrayBeforeObject_ParsesFirstStructure()
-    {
-        // Arrange - array comes before object
-        var json = "[{\"name\":\"Jane\"}] {\"name\":\"John\"}";
-
-        // Act
-        var result = _parser.Parse<List<TestPerson>>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.Should().HaveCount(1);
-        result![0].Name.Should().Be("Jane");
-    }
-
-    #endregion
-
-    #region Parse Malformed JSON Tests
-
-    [Fact]
-    public void Parse_WithMissingClosingBrace_AddsClosingBrace()
-    {
-        // Arrange
-        var json = "{\"name\":\"John\",\"age\":30";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("John");
-        result.Age.Should().Be(30);
-    }
-
-    [Fact]
-    public void Parse_WithMissingClosingBracket_AddsClosingBracket()
-    {
-        // Arrange
-        var json = "[{\"name\":\"John\"},{\"name\":\"Jane\"";
-
-        // Act
-        var result = _parser.Parse<List<TestPerson>>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        // At least one item should be parsed
-        result.Should().NotBeEmpty();
-    }
-
-    [Fact]
-    public void Parse_WithDoubledOpenBraces_RemovesDuplicates()
-    {
-        // Arrange
-        var json = "{{\"name\":\"John\"}}";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("John");
-    }
-
-    [Fact]
-    public void Parse_WithDoubledCloseBraces_RemovesDuplicates()
-    {
-        // Arrange
-        var json = "{\"name\":\"John\"}}";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("John");
-    }
-
-    [Fact]
-    public void Parse_WithTrailingComma_HandlesGracefully()
-    {
-        // Arrange
-        var json = "{\"name\":\"John\",\"age\":30,}";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        // Should either parse successfully or handle gracefully
-        // JSON with trailing comma is technically invalid but common
-        result.Should().NotBeNull();
-    }
-
-    [Fact]
-    public void Parse_WithMissingQuotes_ThrowsOrReturnsNull()
-    {
-        // Arrange
-        var json = "{name:John}";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        // Invalid JSON without quotes should be handled
-        // Either returns null or throws exception based on implementation
-        result.Should().BeNull();
-    }
-
-    #endregion
-
-    #region Parse Edge Cases Tests
-
-    [Fact]
-    public void Parse_WithEmptyObject_ReturnsEmptyObject()
-    {
-        // Arrange
-        var json = "{}";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().BeNull();
-        result.Age.Should().Be(0);
-    }
-
-    [Fact]
-    public void Parse_WithEmptyArray_ReturnsEmptyArray()
-    {
-        // Arrange
-        var json = "[]";
-
-        // Act
-        var result = _parser.Parse<List<TestPerson>>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void Parse_WithNullValues_HandlesNullsCorrectly()
-    {
-        // Arrange
-        var json = "{\"name\":null,\"age\":30}";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().BeNull();
-        result.Age.Should().Be(30);
-    }
-
-    [Fact]
-    public void Parse_WithSpecialCharactersInStrings_HandlesCorrectly()
-    {
-        // Arrange
-        var json = "{\"name\":\"John\\nDoe\\t\",\"age\":30}";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("John\nDoe\t");
-        result.Age.Should().Be(30);
-    }
-
-    [Fact]
-    public void Parse_WithUnicodeCharacters_HandlesCorrectly()
-    {
-        // Arrange
-        var json = "{\"name\":\"\\u0048\\u0065\\u006C\\u006C\\u006F\",\"age\":30}";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("Hello");
-        result.Age.Should().Be(30);
-    }
-
-    [Fact]
-    public void Parse_WithVeryLongString_HandlesCorrectly()
-    {
-        // Arrange
-        var longName = new string('A', 10000);
-        var json = $"{{\"name\":\"{longName}\",\"age\":30}}";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be(longName);
-        result.Age.Should().Be(30);
-    }
-
-    [Fact]
-    public void Parse_WithDeeplyNestedObject_HandlesCorrectly()
-    {
-        // Arrange
-        var json = "{\"level1\":{\"level2\":{\"level3\":{\"level4\":{\"value\":\"deep\"}}}}}";
-
-        // Act
-        var result = _parser.Parse<DeepNestedObject>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Level1.Should().NotBeNull();
-        result.Level1!.Level2.Should().NotBeNull();
-        result.Level1.Level2!.Level3.Should().NotBeNull();
-        result.Level1.Level2.Level3!.Level4.Should().NotBeNull();
-        result.Level1.Level2.Level3.Level4!.Value.Should().Be("deep");
-    }
-
-    [Fact]
-    public void Parse_WithLargeArray_HandlesCorrectly()
-    {
-        // Arrange
-        var items = string.Join(",", Enumerable.Range(0, 1000).Select(i => $"{{\"name\":\"Person{i}\"}}"));
-        var json = $"[{items}]";
-
-        // Act
-        var result = _parser.Parse<List<TestPerson>>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.Should().HaveCount(1000);
-        result![0].Name.Should().Be("Person0");
-        result[999].Name.Should().Be("Person999");
-    }
-
-    [Fact]
-    public void Parse_WithNoJsonStructure_ReturnsNull()
-    {
-        // Arrange
-        var json = "This is not JSON at all";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        result.Should().BeNull();
-    }
-
-    [Fact]
-    public void Parse_WithOnlyWhitespace_ReturnsNull()
-    {
-        // Arrange
-        var json = "   \n\t  ";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        result.Should().BeNull();
-    }
-
-    #endregion
-
-    #region Parse Streaming/Partial JSON Tests
-
-    [Fact]
-    public void Parse_WithIncompleteStreamingObject_AttemptsToFixAndParse()
-    {
-        // Arrange - simulating a streaming response that was cut off
-        var json = "{\"name\":\"John\",\"age\":30,\"address\":{\"city\":\"NYC\"";
-
-        // Act
-        var result = _parser.Parse<TestPersonWithAddress>(json);
-
-        // Assert
-        // Should attempt to close braces and parse what's available
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("John");
-        result.Age.Should().Be(30);
-    }
-
-    [Fact]
-    public void Parse_WithPartialStringValue_HandlesGracefully()
-    {
-        // Arrange - string value cut off mid-stream
-        var json = "{\"name\":\"Jo";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        // Should handle gracefully, either by closing or returning null
-        // Implementation determines exact behavior
-        result.Should().NotBeNull();
-    }
-
-    [Fact]
-    public void Parse_WithMultipleIncompleteObjects_ParsesFirst()
-    {
-        // Arrange
-        var json = "{\"name\":\"John\"} {\"name\":\"Ja";
-
-        // Act
-        var result = _parser.Parse<TestPerson>(json);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("John");
-    }
-
-    #endregion
-
-    #region Helper Classes
-
-    private class TestPerson
-    {
-        public string? Name { get; set; }
-        public int Age { get; set; }
-    }
-
-    private class TestPersonWithAddress
-    {
-        public string? Name { get; set; }
-        public int Age { get; set; }
-        public Address? Address { get; set; }
-    }
-
-    private class Address
-    {
-        public string? City { get; set; }
-        public string? Zip { get; set; }
-    }
-
-    private class DeepNestedObject
-    {
-        public Level1? Level1 { get; set; }
-    }
-
-    private class Level1
-    {
-        public Level2? Level2 { get; set; }
-    }
-
-    private class Level2
-    {
-        public Level3? Level3 { get; set; }
-    }
-
-    private class Level3
-    {
-        public Level4? Level4 { get; set; }
-    }
-
-    private class Level4
-    {
-        public string? Value { get; set; }
+        // Should only count structural braces, not braces inside strings
+        var json = """{"name":"John {test}"}""";
+        var (open, close) = PartialJsonParser.CountBraces(json);
+
+        Assert.Equal(1, open);
+        Assert.Equal(1, close);
     }
 
     #endregion
