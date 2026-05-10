@@ -611,8 +611,10 @@ class HazinaCoderCLI : IDisposable
         }
 
         var sb = new StringBuilder();
+        var receivedFirstChunk = false;
         void OnChunk(string chunk)
         {
+            receivedFirstChunk = true;
             sb.Append(chunk);
             Console.Write(chunk);
         }
@@ -634,6 +636,17 @@ class HazinaCoderCLI : IDisposable
                     AnsiConsole.MarkupLine($"[yellow]Retrying in {delay / 1000}s... (attempt {retryCount + 1}/{MaxRetries + 1})[/]");
                     await Task.Delay(delay, _cts.Token);
                     sb.Clear(); // Clear previous partial response
+                }
+
+                if (retryCount == 0)
+                {
+                    AnsiConsole.MarkupLine($"[dim]Sending request to {_providerName}/{_model}...[/]");
+                    LogToSession($"[STATUS] Sending request to {_providerName}/{_model}");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[dim]Retrying request to {_providerName}/{_model}...[/]");
+                    LogToSession($"[STATUS] Retrying request to {_providerName}/{_model} (attempt {retryCount + 1})");
                 }
 
                 var response = await _client.GetResponseStream(
@@ -675,6 +688,11 @@ class HazinaCoderCLI : IDisposable
                     {
                         Console.Write("\r".PadRight(60) + "\r"); // Clear working indicator
                     }
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[yellow]No response text received from model.[/]");
+                    LogToSession("[WARNING] No response text received from model");
                 }
 
                 // Show summary of tool calls made
@@ -759,11 +777,17 @@ class HazinaCoderCLI : IDisposable
                 if (isRetryable && retryCount < MaxRetries)
                 {
                     AnsiConsole.MarkupLine($"\n[yellow]Connection error, will retry.[/]");
+                    LogToSession($"[WARNING] Retryable error: {ex.Message}");
                     retryCount++;
                     continue;
                 }
 
                 AnsiConsole.MarkupLine($"\n[red]Error:[/] {Markup.Escape(ex.Message)}");
+                if (!receivedFirstChunk)
+                {
+                    AnsiConsole.MarkupLine("[dim]The request failed before the first response chunk arrived.[/]");
+                }
+                LogToSession($"[ERROR] {ex}");
                 break;
             }
         }

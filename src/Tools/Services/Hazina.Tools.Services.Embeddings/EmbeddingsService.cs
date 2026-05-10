@@ -48,8 +48,9 @@ namespace Hazina.Tools.Services.Embeddings
             await gate.WaitAsync();
             try
             {
-                var project = _projects.Load(projectId);
-                var setup = StoreProvider.GetStoreSetup(_fileLocator.GetProjectFolder(project.Id), _config.OpenAI);
+                var project = _projects.Load(projectId)
+                    ?? throw new InvalidOperationException($"Project '{projectId}' not found.");
+                var setup = StoreProvider.GetStoreSetup(_fileLocator.GetProjectFolder(project.Id ?? projectId), _config.OpenAI);
                 var store = setup.Store;
 
                 var files = await _embeddingService.GetEmbeddingsFileList(project);
@@ -102,6 +103,7 @@ namespace Hazina.Tools.Services.Embeddings
 
                 foreach (var pid in projectDirs)
                 {
+                    if (pid == null) continue;
                     try
                     {
                         var projectFolder = _fileLocator.GetProjectFolder(pid);
@@ -161,7 +163,9 @@ namespace Hazina.Tools.Services.Embeddings
             {
                 var src = Path.Combine(chatUploadsFolder, m.Key);
                 var dst = Path.Combine(projectFolder, m.Key);
-                Directory.CreateDirectory(Path.GetDirectoryName(dst));
+                var dstDir = Path.GetDirectoryName(dst);
+                if (dstDir != null)
+                    Directory.CreateDirectory(dstDir);
                 File.Copy(src, dst, overwrite: true);
                 await projectSetup.Store.Embed(m.Key);
             }
@@ -169,8 +173,9 @@ namespace Hazina.Tools.Services.Embeddings
 
         public async Task DemoteChatFileFromProject(string projectId, string chatId, string filePrefix)
         {
-            var project = _projects.Load(projectId);
-            var setup = StoreProvider.GetStoreSetup(_fileLocator.GetProjectFolder(project.Id), _config.OpenAI);
+            var project = _projects.Load(projectId)
+                ?? throw new InvalidOperationException($"Project '{projectId}' not found.");
+            var setup = StoreProvider.GetStoreSetup(_fileLocator.GetProjectFolder(project.Id ?? projectId), _config.OpenAI);
             var files = setup.Store.EmbeddingStore.Embeddings.Where(f => f.Key.StartsWith(filePrefix)).Select(f => f.Key).ToList();
             foreach (var f in files)
                 await setup.Store.Remove(f);

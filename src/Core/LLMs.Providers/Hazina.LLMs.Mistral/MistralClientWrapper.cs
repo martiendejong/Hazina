@@ -19,7 +19,7 @@ public class MistralClientWrapper : CapabilityProviderBase, ILLMClient
     public MistralClientWrapper(MistralConfig config)
     {
         _config = config;
-        _http = new HttpClient { BaseAddress = new Uri(config.Endpoint) };
+        _http = new HttpClient { BaseAddress = new Uri(config.Endpoint ?? "https://api.mistral.ai/v1") };
         _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", config.ApiKey);
     }
 
