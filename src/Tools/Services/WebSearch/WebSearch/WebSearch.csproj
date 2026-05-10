@@ -3,7 +3,7 @@
   <PropertyGroup>
     <PackageId>Hazina.Tools.Services.WebSearch</PackageId>
     <Description>Web search tools and providers for the Hazina AI framework.</Description>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
