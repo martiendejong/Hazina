@@ -157,7 +157,7 @@ public partial class SimpleOpenAIClientChatInteraction
     public async Task<ChatCompletion> Run(CancellationToken cancellationToken)
     {
         bool requiresAction;
-        ChatCompletion completion;
+        ChatCompletion completion = null!; // Assigned in loop, exceptions thrown if not
         var i = 0;
         var maxToolCalls = 50;
         do
@@ -400,7 +400,7 @@ public partial class SimpleOpenAIClientChatInteraction
                     // END PATCH
 
                     // Invoke OnToolExecuted callback if defined
-                    if (ToolsContext.OnToolExecuted != null)
+                    if (ToolsContext?.OnToolExecuted != null)
                     {
                         try
                         {
