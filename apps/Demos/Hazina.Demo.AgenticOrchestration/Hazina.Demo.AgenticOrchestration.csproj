@@ -28,6 +28,7 @@
   <ItemGroup>
     <!-- Hazina Core Dependencies -->
     <ProjectReference Include="..\..\..\src\Hazina.AgenticOrchestration\Hazina.AgenticOrchestration.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\Plugins\Hazina.Core.Plugins.Lua\Hazina.Core.Plugins.Lua.csproj" />
     <ProjectReference Include="..\..\..\src\Core\API\Hazina.API.Generic\Hazina.API.Generic.csproj" />
     <!-- LLM Provider for Chat functionality -->
     <ProjectReference Include="..\..\..\src\Core\AI\Hazina.AI.Providers\Hazina.AI.Providers.csproj" />
@@ -61,6 +62,9 @@
     <None Update="appsettings.Production.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+    <None Update="lua-scripts\**\*.lua">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
