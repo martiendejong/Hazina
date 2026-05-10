@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <PackageId>Hazina.Observability.LLMLogs</PackageId>
     <Description>LLM call logging and inspection for Hazina: SQLite-backed persistence of prompts, responses, token usage, and latencies, with DI extensions and replay/inspection helpers for evals.</Description>
     <PackageTags>hazina;observability;llm;logging;sqlite;telemetry;evals</PackageTags>

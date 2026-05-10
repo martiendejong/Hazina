@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <PackageId>Hazina.Store.FactsStore</PackageId>
     <Description>Facts storage for compact, high-signal context facts used in context engineering. Backed by SQLite for low-overhead, embeddable persistence of facts harvested from conversations and documents.</Description>
     <PackageTags>hazina;facts;sqlite;context-engineering;rag;storage</PackageTags>

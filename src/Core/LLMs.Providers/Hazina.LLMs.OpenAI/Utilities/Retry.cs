@@ -64,5 +64,5 @@ public class Retry
     }
     public async Task try5(Func<Task> a) => await tryx(5, a);
     public async Task<T> try5<T>(Func<Task<T>> a) => await tryx(5, a);
-    public Action<string> workerLog = null;
+    public Action<string> workerLog = null!;
 }

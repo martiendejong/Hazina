@@ -20,6 +20,7 @@
 
     <!-- Optimize for build speed -->
     <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <!--

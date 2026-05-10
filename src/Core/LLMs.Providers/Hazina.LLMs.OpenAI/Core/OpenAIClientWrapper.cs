@@ -221,7 +221,7 @@ public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
         string message = $"{DateTime.Now:yy-MM-dd HH:mm:ss}\n{data ?? ""}";
 
         // Ensure log directory exists
-        var logDir = Path.GetDirectoryName(Config.LogPath);
+        var logDir = Path.GetDirectoryName(Config.LogPath ?? string.Empty);
         if (!string.IsNullOrEmpty(logDir) && !Directory.Exists(logDir))
         {
             try
@@ -239,7 +239,7 @@ public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
         {
             try
             {
-                using (FileStream stream = new FileStream(Config.LogPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
+                using (FileStream stream = new FileStream(Config.LogPath ?? string.Empty, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
                 using (StreamWriter writer = new StreamWriter(stream))
                 {
                     writer.WriteLine(message);

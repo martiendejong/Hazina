@@ -32,7 +32,7 @@ namespace Hazina.Tools.Services.Store
             return Task.FromResult(result);
         }
 
-        public async Task<bool> SaveFieldAsync(string projectId, string key, string content, string feedback = null, string chatId = null, string userId = null)
+        public async Task<bool> SaveFieldAsync(string projectId, string key, string content, string? feedback = null, string? chatId = null, string? userId = null)
         {
             var fields = await GetFieldsAsync(projectId);
             var info = fields.FirstOrDefault(f => f.Key.Equals(key, System.StringComparison.OrdinalIgnoreCase));
@@ -41,7 +41,9 @@ namespace Hazina.Tools.Services.Store
             // Save to the analysis field file
             var relFile = info.File;
             var abs = _fileLocator.GetPath(projectId, relFile);
-            Directory.CreateDirectory(Path.GetDirectoryName(abs));
+            var dir = Path.GetDirectoryName(abs);
+            if (dir != null)
+                Directory.CreateDirectory(dir);
 
             // Determine how to save based on file extension and genericType
             string contentToSave = content ?? string.Empty;
@@ -72,7 +74,7 @@ namespace Hazina.Tools.Services.Store
             // Persist to chat file if chatId is provided
             if (!string.IsNullOrWhiteSpace(chatId))
             {
-                await PersistToChatFileAsync(projectId, chatId, userId, key, info.DisplayName ?? key, content, feedback);
+                await PersistToChatFileAsync(projectId, chatId ?? string.Empty, userId ?? string.Empty, key, info.DisplayName ?? key, content ?? string.Empty, feedback ?? string.Empty);
             }
 
             return true;

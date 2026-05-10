@@ -95,13 +95,12 @@ namespace HazinaStore.Services
             }
         }
 
-        public PublishedContent UpdateTextAndDate(string projectId, string postId, string nieuweText, DateTime publishDate)
+        public PublishedContent? UpdateTextAndDate(string projectId, string postId, string nieuweText, DateTime publishDate)
         {
             EnsurePostsFileExists(projectId);
             var posts = GetAll(projectId);
 
-            PublishedContent targetPost = null;
-            targetPost = posts.FirstOrDefault(p => p.Id != null && p.Id.ToString() == postId);
+            PublishedContent? targetPost = posts.FirstOrDefault(p => p.Id != null && p.Id.ToString() == postId);
             if (targetPost == null && int.TryParse(postId, out int numericId))
             {
                 targetPost = posts.FirstOrDefault(p => {
@@ -123,12 +122,12 @@ namespace HazinaStore.Services
             return targetPost;
         }
 
-        public PublishedContent UpdatePublishDate(string projectId, string postId, DateTime nieuweDatum)
+        public PublishedContent? UpdatePublishDate(string projectId, string postId, DateTime nieuweDatum)
         {
             EnsurePostsFileExists(projectId);
             var posts = GetAll(projectId);
 
-            PublishedContent targetPost = posts.FirstOrDefault(p => p.Id != null && p.Id.ToString() == postId);
+            PublishedContent? targetPost = posts.FirstOrDefault(p => p.Id != null && p.Id.ToString() == postId);
             if (targetPost == null && int.TryParse(postId, out int numericId))
             {
                 targetPost = posts.FirstOrDefault(p => {

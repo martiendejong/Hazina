@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Hazina.Store.PgVector</RootNamespace>
     <PackageId>Hazina.Store.PgVector</PackageId>
     <Description>PostgreSQL + pgvector storage adapter for Hazina. Native vector similarity search using pgvector's HNSW and IVFFlat indices. Production-grade backend for large embedding datasets. Implements IEmbeddingStore, IVectorSearchStore, and IBatchEmbeddingStore.</Description>
