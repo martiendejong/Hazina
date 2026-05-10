@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
-    <IsPackable>true</IsPackable>
+    <IsPackable>false</IsPackable>
     <PackageId>Hazina.LLMs.Tools</PackageId>
     <Description>Shared tool infrastructure for Hazina LLM integrations.</Description>
     <PackageTags>hazina;llm;tools;shared;infrastructure</PackageTags>
