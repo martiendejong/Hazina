@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,8 +14,8 @@ using System.Threading.Tasks;
 public class HierarchicalMetadataFileStore : IHierarchicalMetadataStore
 {
     private readonly string _basePath;
-    private readonly Dictionary<string, QueryableMetadataFileStore> _scopeStores = new();
-    private readonly Dictionary<string, ScopeHierarchy> _hierarchies = new();
+    private readonly ConcurrentDictionary<string, QueryableMetadataFileStore> _scopeStores = new();
+    private readonly ConcurrentDictionary<string, ScopeHierarchy> _hierarchies = new();
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -37,20 +38,14 @@ public class HierarchicalMetadataFileStore : IHierarchicalMetadataStore
         string projectId,
         CancellationToken ct = default)
     {
-        if (_hierarchies.TryGetValue(projectId, out var hierarchy))
-        {
-            return Task.FromResult(hierarchy);
-        }
-
-        // Create default hierarchy
-        hierarchy = new ScopeHierarchy
+        var hierarchy = _hierarchies.GetOrAdd(projectId, static (id, store) => new ScopeHierarchy
         {
             Project = new ScopeConfiguration
             {
                 Scope = KnowledgeScope.Project,
-                ScopeId = projectId,
-                Name = projectId,
-                StorePath = GetScopePath(projectId, KnowledgeScope.Project),
+                ScopeId = id,
+                Name = id,
+                StorePath = store.GetScopePath(id, KnowledgeScope.Project),
                 Priority = 100,
                 Enabled = true
             },
@@ -59,13 +54,12 @@ public class HierarchicalMetadataFileStore : IHierarchicalMetadataStore
                 Scope = KnowledgeScope.Global,
                 ScopeId = "global",
                 Name = "Global Knowledge",
-                StorePath = GetScopePath("global", KnowledgeScope.Global),
+                StorePath = store.GetScopePath("global", KnowledgeScope.Global),
                 Priority = 10,
                 Enabled = true
             }
-        };
+        }, this);
 
-        _hierarchies[projectId] = hierarchy;
         return Task.FromResult(hierarchy);
     }
 
@@ -374,13 +368,11 @@ public class HierarchicalMetadataFileStore : IHierarchicalMetadataStore
     private QueryableMetadataFileStore GetOrCreateStore(ScopeConfiguration config)
     {
         var key = $"{config.Scope}:{config.ScopeId}";
-        if (!_scopeStores.TryGetValue(key, out var store))
+        return _scopeStores.GetOrAdd(key, _ =>
         {
             Directory.CreateDirectory(config.StorePath);
-            store = new QueryableMetadataFileStore(config.StorePath);
-            _scopeStores[key] = store;
-        }
-        return store;
+            return new QueryableMetadataFileStore(config.StorePath);
+        });
     }
 
     #endregion

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using Hazina.AgenticOrchestration.Extensions;
+using Hazina.Core.Plugins.Lua.DI;
 using Hazina.AgenticOrchestration.Services;
 using Hazina.Demo.AgenticOrchestration;
 using Hazina.Demo.AgenticOrchestration.Authentication;
@@ -147,6 +148,20 @@ catch (Exception ex)
 {
     Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] OpenAI LLM Client skipped: {ex.Message}");
 }
+
+// Lua Scripting Layer — hot-reloadable agent behavior scripts
+builder.Services.AddLuaScripting(options =>
+{
+    options.ScriptsDirectory = "lua-scripts";
+    options.HotReloadEnabled = true;
+    options.ExecutionTimeout = TimeSpan.FromSeconds(30);
+});
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Lua scripting layer registered");
+
+// ClickUp Orchestration Service (monitors internal projects for TODO/REVIEW/BACKLOG tasks)
+builder.Services.AddHttpClient();
+builder.Services.AddHostedService<Hazina.AgenticOrchestration.Services.ClickUpOrchestrationService>();
+Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ClickUp Orchestration Service registered");
 
 // JWT Configuration
 var jwtConfig = authConfig.GetSection("Jwt");
@@ -498,6 +513,9 @@ else
         catch (Exception ex)
         {
             Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Web host error: {ex.Message}");
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Stack trace: {ex.StackTrace}");
+            if (ex.InnerException != null)
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Inner: {ex.InnerException.Message} | {ex.InnerException.StackTrace}");
         }
     });
 

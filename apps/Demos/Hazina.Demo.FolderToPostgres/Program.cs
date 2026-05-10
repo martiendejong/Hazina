@@ -1,6 +1,7 @@
 using Hazina.LLMs.OpenAI;
 using System.Security.Cryptography;
 using Hazina.LLMs;
+using Hazina.LLMs.Capabilities;
 
 class Program
 {
@@ -132,8 +133,10 @@ class Program
     }
 }
 
-class DummyLLMClient : ILLMClient
+class DummyLLMClient : CapabilityProviderBase, ILLMClient
 {
+    public override ProviderCapability SupportedCapabilities => ProviderCapability.All;
+
     private readonly int _dimension;
     public DummyLLMClient(int dimension) { _dimension = dimension; }
 
