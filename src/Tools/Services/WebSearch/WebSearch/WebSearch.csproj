@@ -1,9 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <PackageId>Hazina.Tools.Services.WebSearch</PackageId>
+    <Description>Web search tools and providers for the Hazina AI framework.</Description>
+  </PropertyGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\WebSearch.Core\WebSearch.Core.csproj" />
-    <ProjectReference Include="..\WebSearch.Providers\WebSearch.Providers.csproj" />
-    <ProjectReference Include="..\WebSearch.Infrastructure\WebSearch.Infrastructure.csproj" />
+    <ProjectReference Include="..\WebSearch.Core\WebSearch.Core.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+    <ProjectReference Include="..\WebSearch.Providers\WebSearch.Providers.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+    <ProjectReference Include="..\WebSearch.Infrastructure\WebSearch.Infrastructure.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
