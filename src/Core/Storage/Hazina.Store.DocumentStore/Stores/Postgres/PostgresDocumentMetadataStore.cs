@@ -70,7 +70,7 @@ public class PostgresDocumentMetadataStore : IDocumentMetadataStore
             var result = await cmd.ExecuteScalarAsync();
             if (result == null) return null;
 
-            var json = result.ToString();
+            var json = result.ToString()!;
             return JsonSerializer.Deserialize<DocumentMetadata>(json);
         }
         catch
