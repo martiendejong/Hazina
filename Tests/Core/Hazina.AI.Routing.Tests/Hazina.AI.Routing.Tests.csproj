@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Core\AI\Hazina.AI.Routing\Hazina.AI.Routing.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
   </ItemGroup>
 
 </Project>
