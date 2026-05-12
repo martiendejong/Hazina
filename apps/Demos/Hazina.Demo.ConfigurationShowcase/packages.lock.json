@@ -827,6 +827,7 @@
       "hazina.llms.classes": {
         "type": "Project",
         "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "[10.0.0, )",
           "System.Memory.Data": "[6.0.0, )"
         }
       },
