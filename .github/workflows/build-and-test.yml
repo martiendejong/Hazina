@@ -69,7 +69,7 @@ jobs:
         retention-days: 30
 
     - name: Upload coverage reports
-      uses: codecov/codecov-action@v6
+      uses: codecov/codecov-action@v7
       if: success()
       with:
         files: '**/coverage.cobertura.xml'
