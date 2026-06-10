@@ -25,7 +25,14 @@ Console.SetError(logWriter);
 // ═══════════════════════════════════════════════════════════════
 // BUILD WEB APPLICATION
 // ═══════════════════════════════════════════════════════════════
-var builder = WebApplication.CreateBuilder(args);
+// Set content root to executable directory for single-file deployment
+// This ensures appsettings.json files are found alongside the .exe
+var exeDirectory = AppContext.BaseDirectory;
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = exeDirectory
+});
 
 // Enable Windows Service hosting
 builder.Host.UseWindowsService();
@@ -149,9 +156,26 @@ catch (Exception ex)
 }
 
 // ClickUp Orchestration Service (monitors internal projects for TODO/REVIEW/BACKLOG tasks)
+// OPTIONAL: Only registers if API key is configured (separate Jengo AGI system)
 builder.Services.AddHttpClient();
-builder.Services.AddHostedService<Hazina.AgenticOrchestration.Services.ClickUpOrchestrationService>();
-Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ClickUp Orchestration Service registered");
+try
+{
+    var clickUpConfig = builder.Configuration.GetSection("ClickUpOrchestration");
+    var apiKey = clickUpConfig["ApiKey"];
+    if (!string.IsNullOrWhiteSpace(apiKey) && apiKey != "YOUR_CLICKUP_API_KEY_HERE")
+    {
+        builder.Services.AddHostedService<Hazina.AgenticOrchestration.Services.ClickUpOrchestrationService>();
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ClickUp Orchestration Service registered");
+    }
+    else
+    {
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ClickUp Orchestration Service skipped (no API key configured)");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] ClickUp Orchestration Service skipped: {ex.Message}");
+}
 
 // JWT Configuration
 var jwtConfig = authConfig.GetSection("Jwt");

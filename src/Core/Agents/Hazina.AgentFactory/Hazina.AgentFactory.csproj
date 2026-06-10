@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Hazina.AgentFactory</RootNamespace>
-    <Version>2.0.0</Version>
-    <PackageVersion>2.0.0</PackageVersion>
+    <Version>2.0.1</Version>
+    <PackageVersion>2.0.1</PackageVersion>
     <Authors>Prospergenics</Authors>
     <Description>High-level agent factory for building autonomous AI agents in Hazina. Provides configuration parsing, built-in tool collections (file ops, git, dotnet, npm, BigQuery, email, WordPress), and multi-agent flow orchestration. Simplifies creating production-ready AI agents.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
