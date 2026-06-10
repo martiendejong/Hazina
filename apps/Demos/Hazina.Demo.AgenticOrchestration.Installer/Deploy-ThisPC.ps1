@@ -38,7 +38,7 @@ if ($Force) { $buildArgs["Force"] = $true }
     -Port 5123 `
     -AuthUsername "bosi" `
     -AuthPassword "Th1s1sSp4rt4!" `
-    -TerminalCommand "C:\scripts\claude_agent.bat" `
+    -TerminalCommand "C:\projects\jengo\jengo-system-private\jengo.bat" `
     -TerminalWorkDir "C:\scripts" `
     -DatabasePath "C:\scripts\_machine\agent-activity.db" `
     -LogsPath "C:\scripts\logs" `

@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Hazina.AI.Routing.Interfaces;
 using Hazina.AI.Routing.Models;
+using Hazina.AI.Routing.Persistence;
 using Hazina.AI.Routing.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -14,7 +15,8 @@ public class AgentRoutingServiceTests
     public AgentRoutingServiceTests()
     {
         var mockLogger = new Mock<ILogger<AgentRoutingService>>();
-        _service = new AgentRoutingService(mockLogger.Object);
+        var store = new InMemoryAgentReputationStore();
+        _service = new AgentRoutingService(mockLogger.Object, store);
     }
 
     [Fact]

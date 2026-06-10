@@ -38,7 +38,7 @@ public class ClickUpOrchestrationService : BackgroundService
 
         // Load configuration
         var config = configuration.GetSection("ClickUpOrchestration");
-        _apiKey = config["ApiKey"] ?? throw new Exception("ClickUp API key not configured");
+        _apiKey = config["ApiKey"] ?? string.Empty;
         _internalFolderId = config["InternalProjectsFolderId"] ?? THE_RIGHTEOUS_FOLDER;
         _claudeModel = config["ClaudeModel"] ?? "claude-sonnet-4-5-20250929";
         _pollingIntervalSeconds = int.Parse(config["PollingIntervalSeconds"] ?? "30");
@@ -59,7 +59,8 @@ public class ClickUpOrchestrationService : BackgroundService
         }
 
         // Configure HTTP client
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(_apiKey);
+        if (!string.IsNullOrEmpty(_apiKey))
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(_apiKey);
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "HazinaOrchestration/1.0");
 
         _logger.LogInformation(
@@ -76,6 +77,12 @@ public class ClickUpOrchestrationService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (string.IsNullOrEmpty(_apiKey))
+        {
+            _logger.LogWarning("ClickUp Orchestration Service disabled: no API key configured.");
+            return;
+        }
+
         _logger.LogInformation("ClickUp Orchestration Service starting...");
 
         while (!stoppingToken.IsCancellationRequested)

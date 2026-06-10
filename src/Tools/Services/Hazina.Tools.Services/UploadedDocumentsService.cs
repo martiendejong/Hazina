@@ -133,7 +133,7 @@ namespace Hazina.Tools.Services
             bool initStore = true)
         {
             var project = _workspace.GetProject(projectId);
-            UploadedFile uploadedFile = null;
+            UploadedFile? uploadedFile = null;
             string actualFileName = fileName;
 
             // Phase 1: Upload file to Core API (with lock)

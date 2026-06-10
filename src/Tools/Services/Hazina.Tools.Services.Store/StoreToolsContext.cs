@@ -62,7 +62,8 @@ namespace Hazina.Tools.Services.Store
             if (analysisProvider == null)
             {
                 // Provide a default provider if enabled and not supplied by the host
-                analysisProvider = enableAnalysisTools ? new FileSystemAnalysisFieldsProvider(projects) : null;
+                if (enableAnalysisTools)
+                    analysisProvider = new FileSystemAnalysisFieldsProvider(projects);
             }
 
             if (enableAnalysisTools && analysisProvider != null)
@@ -91,7 +92,7 @@ namespace Hazina.Tools.Services.Store
                         bool hasQuery = argumentsJson.RootElement.TryGetProperty("query", out JsonElement query);
                         if (hasQuery)
                         {
-                            return await _webScrapingService.PerformWebSearchAsync(query.GetString());
+                            return await _webScrapingService.PerformWebSearchAsync(query.GetString() ?? string.Empty);
                         }
                         return "Invalid call, parameter query was not provided.";
                     });
@@ -109,7 +110,7 @@ namespace Hazina.Tools.Services.Store
                         bool hasQuery = argumentsJson.RootElement.TryGetProperty("problem_statement", out JsonElement query);
                         if (hasQuery)
                         {
-                            return await _fileOperationsService.PerformReasoningAsync(query.GetString(), messages);
+                            return await _fileOperationsService.PerformReasoningAsync(query.GetString() ?? string.Empty, messages);
                         }
                         return "Invalid call, parameter problem_statement was not provided.";
                     });
@@ -127,7 +128,7 @@ namespace Hazina.Tools.Services.Store
                         bool hasQuery = argumentsJson.RootElement.TryGetProperty("url", out JsonElement query);
                         if (hasQuery)
                         {
-                            return await _webScrapingService.ReadSitemapAsync(query.GetString());
+                            return await _webScrapingService.ReadSitemapAsync(query.GetString() ?? string.Empty);
                         }
                         return "Invalid call, parameter url was not provided.";
                     });
@@ -143,7 +144,7 @@ namespace Hazina.Tools.Services.Store
                         if (hasQuery)
                         {
                             var raw = hasRaw ? queryRaw.GetBoolean() : false;
-                            return await _webScrapingService.ReadWebPageAsync(query.GetString(), raw);
+                            return await _webScrapingService.ReadWebPageAsync(query.GetString() ?? string.Empty, raw);
                         }
                         return "Invalid call, parameter url was not provided.";
                     });
@@ -161,7 +162,7 @@ namespace Hazina.Tools.Services.Store
                         bool hasQuery = argumentsJson.RootElement.TryGetProperty("file", out JsonElement query);
                         if (hasQuery)
                         {
-                            return await _fileOperationsService.ReadProjectFileAsync(query.GetString());
+                            return await _fileOperationsService.ReadProjectFileAsync(query.GetString() ?? string.Empty);
                         }
                         return "Invalid call, parameter file was not provided.";
                     });
@@ -175,7 +176,7 @@ namespace Hazina.Tools.Services.Store
                         bool hasQuery = argumentsJson.RootElement.TryGetProperty("file", out JsonElement query);
                         if (hasQuery)
                         {
-                            return await _fileOperationsService.AnalyzeChatPdfFileAsync(query.GetString());
+                            return await _fileOperationsService.AnalyzeChatPdfFileAsync(query.GetString() ?? string.Empty);
                         }
                         return "Invalid call, parameter file was not provided.";
                     });
@@ -189,7 +190,7 @@ namespace Hazina.Tools.Services.Store
                         bool hasQuery = argumentsJson.RootElement.TryGetProperty("file", out JsonElement query);
                         if (hasQuery)
                         {
-                            return await _fileOperationsService.AnalyzeChatDocumentAsync(query.GetString());
+                            return await _fileOperationsService.AnalyzeChatDocumentAsync(query.GetString() ?? string.Empty);
                         }
                         return "Invalid call, parameter file was not provided.";
                     });

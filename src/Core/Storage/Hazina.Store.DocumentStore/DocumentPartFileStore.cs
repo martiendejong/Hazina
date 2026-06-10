@@ -15,7 +15,8 @@ public class DocumentPartFileStore : IDocumentPartStore
             try
             {
                 var data = File.ReadAllText(PartsFilePath);
-                Parts = JsonSerializer.Deserialize<Dictionary<string, IEnumerable<string>>>(data);
+                Parts = JsonSerializer.Deserialize<Dictionary<string, IEnumerable<string>>>(data)
+                    ?? new Dictionary<string, IEnumerable<string>>();
                 return;
             }
             catch { }
