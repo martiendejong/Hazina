@@ -1,0 +1,254 @@
+<mxfile host="app.diagrams.net" modified="2026-05-15T14:00:00.000Z" agent="Claude" version="24.0.0">
+  <diagram name="HazinaCoder Agent Harness" id="hazinacoder-harness">
+    <mxGraphModel dx="1800" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="HazinaCoder Agent Harness Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=24;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="500" y="20" width="600" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ENTRY POINT -->
+        <mxCell id="entry" value="ENTRY POINT&lt;br&gt;&lt;br&gt;User Task/Command" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="720" y="90" width="160" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- WORKFLOW ENGINE -->
+        <mxCell id="workflow_engine" value="WORKFLOW ENGINE&lt;br&gt;&lt;br&gt;• Load workflow YAML&lt;br&gt;• Validate prerequisites&lt;br&gt;• Execute steps sequentially&lt;br&gt;• Handle rollback on failure&lt;br&gt;• Track execution history" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="650" y="220" width="300" height="140" as="geometry" />
+        </mxCell>
+
+        <!-- STREAMING ORCHESTRATOR -->
+        <mxCell id="streaming" value="STREAMING ORCHESTRATOR&lt;br&gt;&lt;br&gt;• Channel-based event bus&lt;br&gt;• Multiple endpoints (SSE, WebSocket)&lt;br&gt;• Real-time event emission&lt;br&gt;• IAsyncEnumerable streaming&lt;br&gt;• Auto-reconnect support" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1050" y="220" width="300" height="140" as="geometry" />
+        </mxCell>
+
+        <!-- WORKFLOW STEPS -->
+        <mxCell id="step1" value="1. Read ClickUp Task" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="100" y="450" width="180" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step2" value="2. Investigate Codebase" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="300" y="450" width="180" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step3" value="3. Allocate Worktree" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="500" y="450" width="180" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step4" value="4. Implement Changes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="700" y="450" width="180" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step5" value="5. Merge Develop" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="900" y="450" width="180" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step6" value="6. Build & Test" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="1100" y="450" width="180" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step7" value="7. Create PR" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="1300" y="450" width="180" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- STREAMING EVENTS -->
+        <mxCell id="event1" value="PlanningStarted" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1050" y="600" width="120" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="event2" value="PlanningStep" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1180" y="600" width="120" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="event3" value="ActionStarted" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1050" y="640" width="120" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="event4" value="ActionProgress" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1180" y="640" width="120" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="event5" value="ToolExecution" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1050" y="680" width="120" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="event6" value="BuildProgress" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1180" y="680" width="120" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="event7" value="TestProgress" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1050" y="720" width="120" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="event8" value="TokenUsage" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1180" y="720" width="120" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="event9" value="FileChange" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1050" y="760" width="120" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="event10" value="Summary" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1180" y="760" width="120" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ENDPOINTS -->
+        <mxCell id="sse_endpoint" value="SSE Endpoint&lt;br&gt;&lt;br&gt;Server-Sent Events&lt;br&gt;Auto-reconnect&lt;br&gt;Browser support" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1380" y="600" width="140" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="websocket_endpoint" value="WebSocket&lt;br&gt;&lt;br&gt;Bidirectional&lt;br&gt;Low latency&lt;br&gt;Full duplex" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1380" y="700" width="140" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- WORKFLOW CONTEXT -->
+        <mxCell id="context" value="WORKFLOW CONTEXT&lt;br&gt;&lt;br&gt;• Variables (dict)&lt;br&gt;• Step outputs&lt;br&gt;• Completed steps&lt;br&gt;• Working directory&lt;br&gt;• Cancellation token" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="220" width="220" height="140" as="geometry" />
+        </mxCell>
+
+        <!-- STEP VALIDATION -->
+        <mxCell id="validation" value="STEP VALIDATION&lt;br&gt;&lt;br&gt;• Output requirements&lt;br&gt;• File existence checks&lt;br&gt;• Custom conditions&lt;br&gt;• Timeout enforcement&lt;br&gt;• Rollback triggers" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="360" y="220" width="220" height="140" as="geometry" />
+        </mxCell>
+
+        <!-- EDGES -->
+
+        <!-- Entry to Workflow Engine -->
+        <mxCell id="edge1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;" edge="1" parent="1" source="entry" target="workflow_engine">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Workflow Engine to Streaming -->
+        <mxCell id="edge2" value="Emit events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;dashed=1;dashPattern=5 5;" edge="1" parent="1" source="workflow_engine" target="streaming">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Context to Workflow Engine -->
+        <mxCell id="edge3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="context" target="workflow_engine">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Validation to Workflow Engine -->
+        <mxCell id="edge4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="validation" target="workflow_engine">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Workflow Engine to Steps -->
+        <mxCell id="edge5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;" edge="1" parent="1" source="workflow_engine" target="step1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="400" />
+              <mxPoint x="190" y="400" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Step flow -->
+        <mxCell id="edge6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="step1" target="step2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="step2" target="step3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="step3" target="step4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="step4" target="step5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="step5" target="step6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="step6" target="step7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Steps to Events -->
+        <mxCell id="edge12" value="Emit events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=1;dashed=1;dashPattern=5 5;" edge="1" parent="1" source="step4" target="event1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="790" y="550" />
+              <mxPoint x="1110" y="550" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Events to Endpoints -->
+        <mxCell id="edge13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" edge="1" parent="1" source="streaming" target="sse_endpoint">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1370" y="290" />
+              <mxPoint x="1370" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="edge14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" edge="1" parent="1" source="streaming" target="websocket_endpoint">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1370" y="290" />
+              <mxPoint x="1370" y="740" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- LEGEND -->
+        <mxCell id="legend_box" value="LEGEND" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;fontStyle=1;align=left;verticalAlign=top;spacingLeft=10;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="100" y="860" width="500" height="220" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend1" value="Core Engine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="120" y="900" width="150" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend2" value="Streaming System" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="120" y="940" width="150" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend3" value="Workflow Steps" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="120" y="980" width="150" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend4" value="Events" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="120" y="1020" width="150" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend5" value="Context & Validation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="300" y="900" width="150" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend6" value="Output Endpoints" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="300" y="940" width="150" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- KEY FEATURES -->
+        <mxCell id="features" value="&lt;b&gt;KEY FEATURES:&lt;/b&gt;&lt;br&gt;&lt;br&gt;• YAML-based workflow definitions&lt;br&gt;• Sequential step execution with prerequisites&lt;br&gt;• Automatic rollback on failure&lt;br&gt;• Real-time streaming via SSE/WebSocket&lt;br&gt;• Channel-based event bus (1000 capacity)&lt;br&gt;• Validation at each step&lt;br&gt;• Timeout enforcement&lt;br&gt;• Context sharing between steps&lt;br&gt;• IAsyncEnumerable streaming API&lt;br&gt;• Multiple concurrent endpoints" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="650" y="860" width="350" height="220" as="geometry" />
+        </mxCell>
+
+        <!-- EXAMPLE WORKFLOW -->
+        <mxCell id="example" value="&lt;b&gt;TYPICAL WORKFLOW:&lt;/b&gt;&lt;br&gt;&lt;br&gt;1. User submits ClickUp task ID&lt;br&gt;2. WorkflowEngine loads YAML definition&lt;br&gt;3. Each step executes with validation&lt;br&gt;4. StreamingOrchestrator emits events:&lt;br&gt;   • PlanningStarted&lt;br&gt;   • ActionProgress (multiple)&lt;br&gt;   • ToolExecution&lt;br&gt;   • BuildProgress&lt;br&gt;   • Summary&lt;br&gt;5. Events stream to SSE/WebSocket&lt;br&gt;6. Frontend displays real-time updates&lt;br&gt;7. On completion: PR created, ClickUp updated" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="860" width="480" height="220" as="geometry" />
+        </mxCell>
+
+        <!-- ROLLBACK FLOW -->
+        <mxCell id="rollback" value="ROLLBACK&lt;br&gt;on failure" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;dashed=1;dashPattern=5 5;" vertex="1" parent="1">
+          <mxGeometry x="710" y="550" width="100" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge15" value="If step fails" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;dashed=1;dashPattern=5 5;fillColor=#f8cecc;strokeColor=#b85450;" edge="1" parent="1" source="step4" target="rollback">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
