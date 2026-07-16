@@ -43,5 +43,10 @@ public enum ProviderType
     /// <summary>
     /// Playwright-based provider for JavaScript-heavy sites
     /// </summary>
-    Playwright
+    Playwright,
+
+    /// <summary>
+    /// Puppeteer-based Google scraper (free-web-search npm package), used as a CAPTCHA fallback
+    /// </summary>
+    FreeWebSearch
 }

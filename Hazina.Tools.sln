@@ -105,6 +105,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSearch.Infrastructure", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebSearch", "src\Tools\Services\WebSearch\WebSearch\WebSearch.csproj", "{387A78A8-F3CF-4DE9-93C0-95F8DF830558}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hazina.Tools.Services.WebSearch.Providers.Tests", "Tests\Tools\Hazina.Tools.Services.WebSearch.Providers.Tests\Hazina.Tools.Services.WebSearch.Providers.Tests.csproj", "{5462C2C4-E20F-47D1-AAF4-C61A4CAA5895}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -606,6 +608,18 @@ Global
 		{387A78A8-F3CF-4DE9-93C0-95F8DF830558}.Release|x64.Build.0 = Release|Any CPU
 		{387A78A8-F3CF-4DE9-93C0-95F8DF830558}.Release|x86.ActiveCfg = Release|Any CPU
 		{387A78A8-F3CF-4DE9-93C0-95F8DF830558}.Release|x86.Build.0 = Release|Any CPU
+		{5462C2C4-E20F-47D1-AAF4-C61A4CAA5895}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5462C2C4-E20F-47D1-AAF4-C61A4CAA5895}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5462C2C4-E20F-47D1-AAF4-C61A4CAA5895}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5462C2C4-E20F-47D1-AAF4-C61A4CAA5895}.Debug|x64.Build.0 = Debug|Any CPU
+		{5462C2C4-E20F-47D1-AAF4-C61A4CAA5895}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5462C2C4-E20F-47D1-AAF4-C61A4CAA5895}.Debug|x86.Build.0 = Debug|Any CPU
+		{5462C2C4-E20F-47D1-AAF4-C61A4CAA5895}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5462C2C4-E20F-47D1-AAF4-C61A4CAA5895}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5462C2C4-E20F-47D1-AAF4-C61A4CAA5895}.Release|x64.ActiveCfg = Release|Any CPU
+		{5462C2C4-E20F-47D1-AAF4-C61A4CAA5895}.Release|x64.Build.0 = Release|Any CPU
+		{5462C2C4-E20F-47D1-AAF4-C61A4CAA5895}.Release|x86.ActiveCfg = Release|Any CPU
+		{5462C2C4-E20F-47D1-AAF4-C61A4CAA5895}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -657,5 +671,6 @@ Global
 		{89682E90-2537-4EF1-A0DC-A8FC09E29680} = {97483577-854A-422B-083C-27D3E2E9980D}
 		{0E1DF879-C65B-4696-8083-79138BB0B62C} = {97483577-854A-422B-083C-27D3E2E9980D}
 		{387A78A8-F3CF-4DE9-93C0-95F8DF830558} = {97483577-854A-422B-083C-27D3E2E9980D}
+		{5462C2C4-E20F-47D1-AAF4-C61A4CAA5895} = {3F86C8B1-9580-8D67-A31D-4233E94104AC}
 	EndGlobalSection
 EndGlobal
