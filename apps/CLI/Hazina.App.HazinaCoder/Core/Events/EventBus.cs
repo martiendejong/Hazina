@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
+using Hazina.App.HazinaCoder.Core.Providers;
 
 namespace Hazina.App.HazinaCoder.Core.Events;
 
@@ -57,6 +58,38 @@ public class EventBus : IEventBus, IDisposable
                 {
                     // Log error but don't crash the event bus
                     Console.WriteLine($"Error in async event handler: {ex.Message}");
+                }
+            });
+        });
+    }
+
+    /// <summary>
+    /// Subscribe to events with an async handler that is retried with exponential
+    /// backoff (via <see cref="RetryPolicy"/>) if it throws. Still fire-and-forget
+    /// from the publisher's perspective, and still never crashes the bus - once
+    /// retries are exhausted the final failure is logged, matching <see cref="SubscribeAsync{T}"/>.
+    /// </summary>
+    public IDisposable SubscribeAsyncWithRetry<T>(Func<T, Task> handler, int maxRetries = 3, TimeSpan? initialDelay = null) where T : IEvent
+    {
+        var retryPolicy = new RetryPolicy(maxRetries, initialDelay);
+
+        return Subscribe<T>(@event =>
+        {
+            // Fire and forget async handler, retried on failure
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await retryPolicy.ExecuteAsync(async () =>
+                    {
+                        await handler(@event);
+                        return true;
+                    });
+                }
+                catch (Exception ex)
+                {
+                    // Retries exhausted - log error but don't crash the event bus
+                    Console.WriteLine($"Error in async event handler after {maxRetries} attempts: {ex.Message}");
                 }
             });
         });
@@ -135,6 +168,7 @@ public interface IEventBus
     void Publish<T>(T @event) where T : IEvent;
     IDisposable Subscribe<T>(Action<T> handler) where T : IEvent;
     IDisposable SubscribeAsync<T>(Func<T, Task> handler) where T : IEvent;
+    IDisposable SubscribeAsyncWithRetry<T>(Func<T, Task> handler, int maxRetries = 3, TimeSpan? initialDelay = null) where T : IEvent;
     IDisposable SubscribeWhere<T>(Func<T, bool> predicate, Action<T> handler) where T : IEvent;
     IObservable<T> GetObservable<T>() where T : IEvent;
 }
