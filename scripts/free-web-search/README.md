@@ -1,47 +1,49 @@
 # free-web-search runner
 
-Standalone Node.js script bundle consumed by `FreeWebSearchProvider`
-(`src/Tools/Services/WebSearch/WebSearch.Providers/FreeWebSearchProvider.cs`).
-This directory is intentionally **not** part of the .NET build - it's a plain
-Node.js dependency bundle that must be installed once, out of band, before
-`FreeWebSearchProvider` can be used for a real (non-test) search.
+`FreeWebSearchProvider`
+(`src/Tools/Services/WebSearch/WebSearch.Providers/FreeWebSearchProvider.cs`) shells out to the
+`martiendejong/free-web-search` GitHub repo's CLI. That repo is **not** an npm package - it's a
+plain Node CLI (`node run.js search "<query>" -n <count> --json`) that must be cloned locally,
+once, out of band. This directory is intentionally **not** part of the .NET build.
 
 ## One-time setup
 
 ```
 cd scripts/free-web-search
-npm ci
+git clone https://github.com/martiendejong/free-web-search.git vendor/free-web-search
+cd vendor/free-web-search
+npm install
 ```
 
-`FreeWebSearchProvider.IsAvailableAsync()` returns `false` (without throwing)
-if `node` isn't on `PATH` or this directory's `run.cjs` can't be found, so a
-missing/incomplete `npm ci` fails soft rather than crashing callers.
+`vendor/` is gitignored - every environment that wants real (non-test) results clones and
+installs it locally, the same way the previous `npm ci` step worked for a real npm dependency.
 
-## Known issue: verify the package name/version before first install
+`FreeWebSearchProvider.IsAvailableAsync()` returns `false` (without throwing) if `node` isn't on
+`PATH` or `vendor/free-web-search/run.js` can't be found, so a missing/incomplete setup fails
+soft rather than crashing callers.
 
-As of 2026-07-16, `free-web-search` could not be resolved on the public npm
-registry (`npm view free-web-search version` and a direct registry lookup
-both return 404). `package.json` pins `free-web-search` to `^1.0.0` per the
-originating task's fallback instruction, but this is unverified. Before
-running `npm ci`/`npm install` here for the first time:
+## Search backend
 
-1. Confirm the exact published package name for the intended Puppeteer-based
-   Google-scraping library (it may differ from `free-web-search`, or it may
-   be scoped/renamed/unpublished).
-2. Update the `dependencies` entry in `package.json` accordingly.
-3. Re-run `npm install` to regenerate a lock file, then commit it.
+By default the CLI searches DuckDuckGo (HTML scrape, no API key needed) - the same underlying
+endpoint `WebSearch.Providers.DuckDuckGoProvider` already uses directly. That means, out of the
+box, `FreeWebSearchProvider` is **not** guaranteed to survive a CAPTCHA block that already hit
+`DuckDuckGoProvider` from the same IP/host - it's a different code path, not a different network
+egress. For real resilience against a blocked default provider, configure the CLI's own optional
+backends (see `vendor/free-web-search/README.md` and `SEARXNG-GUIDE.md` after cloning):
 
-Until that's done, `npm ci` in this directory will fail with a 404, and
-`FreeWebSearchProvider.SearchAsync` will throw `HttpRequestException` with
-the `MODULE_NOT_FOUND` error captured from `run.cjs`'s stderr.
+- `BRAVE_SEARCH_API_KEY` env var - routes through the Brave Search API instead of DuckDuckGo.
+- A self-hosted or public SearXNG instance - see the vendored `SEARXNG-GUIDE.md`.
 
 ## Contract
 
-`run.cjs` is invoked by `FreeWebSearchProvider` as:
+`vendor/free-web-search/run.js` is invoked by `FreeWebSearchProvider` as:
 
-    node run.cjs "<query>" <limit> <lang>
+    node run.js search "<query>" -n <count> --json
 
-It calls `require('free-web-search')(query, { limit, lang })` and prints a
-JSON array of `{ title, url, snippet }` objects to stdout. A non-zero exit
-code indicates failure; the stderr message is surfaced by the provider as
-part of an `HttpRequestException`.
+On success (exit 0) it prints one JSON object to stdout:
+
+    { "provider": "duckduckgo", "query": "...", "results": [{ "title", "url", "snippet", "timestamp" }, ...], "totalResults": N }
+
+Progress/diagnostic lines (e.g. "Trying DuckDuckGo...") go to stderr, not stdout, so they never
+pollute the JSON `FreeWebSearchProvider` parses. A non-zero exit code indicates failure; the
+stderr message is surfaced by the provider as part of an `HttpRequestException`.

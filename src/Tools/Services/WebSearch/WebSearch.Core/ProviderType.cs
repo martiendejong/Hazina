@@ -46,7 +46,8 @@ public enum ProviderType
     Playwright,
 
     /// <summary>
-    /// Puppeteer-based Google scraper (free-web-search npm package), used as a CAPTCHA fallback
+    /// Wraps the `martiendejong/free-web-search` GitHub-hosted Node CLI (DuckDuckGo by default,
+    /// optional Brave/SearXNG), used as a fallback when other providers get CAPTCHA-blocked
     /// </summary>
     FreeWebSearch
 }

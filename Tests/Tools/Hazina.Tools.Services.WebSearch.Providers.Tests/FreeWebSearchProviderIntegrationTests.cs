@@ -6,11 +6,11 @@ namespace Hazina.Tools.Services.WebSearch.Providers.Tests;
 
 /// <summary>
 /// Live integration tests for <see cref="FreeWebSearchProvider"/>. These spawn a real `node`
-/// process and require the one-time `npm ci` setup documented in
+/// process and require the one-time git-clone + `npm install` setup documented in
 /// scripts/free-web-search/README.md to have been run. They are skipped (not failed) when:
 /// - the SKIP_INTEGRATION environment variable is "1", or
 /// - `node` is not on PATH, or
-/// - the bundled script's node_modules/free-web-search dependency has not been installed.
+/// - the vendored free-web-search CLI/its node_modules has not been installed.
 ///
 /// This mirrors the early-return skip pattern used elsewhere in the repo for tests that
 /// depend on an external/live resource (see Hazina.LLMs.OpenAI.Tests.ContinuationHooksIntegrationTests).
@@ -38,8 +38,8 @@ public class FreeWebSearchProviderIntegrationTests
         if (!await provider.IsAvailableAsync() || !HasFreeWebSearchDependencyInstalled())
         {
             Console.WriteLine(
-                "Skipping: bundled script unavailable or `npm ci` has not been run in scripts/free-web-search " +
-                "(see scripts/free-web-search/README.md).");
+                "Skipping: vendored free-web-search CLI unavailable or its `npm install` has not " +
+                "been run (see scripts/free-web-search/README.md).");
             return;
         }
 
@@ -77,7 +77,7 @@ public class FreeWebSearchProviderIntegrationTests
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         for (var i = 0; i < 15 && dir != null; i++, dir = dir.Parent)
         {
-            var candidate = Path.Combine(dir.FullName, "scripts", "free-web-search", "node_modules", "free-web-search");
+            var candidate = Path.Combine(dir.FullName, "scripts", "free-web-search", "vendor", "free-web-search", "node_modules");
             if (Directory.Exists(candidate))
                 return true;
         }

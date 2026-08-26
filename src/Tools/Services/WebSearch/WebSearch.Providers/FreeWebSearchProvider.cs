@@ -7,9 +7,13 @@ using WebSearch.Core;
 namespace WebSearch.Providers;
 
 /// <summary>
-/// Search provider that wraps the `free-web-search` npm package (a Puppeteer-based Google
-/// scraper) by spawning a bundled Node.js script. Intended as a CAPTCHA fallback for
-/// <see cref="GoogleSearchProvider"/> when Google starts returning a challenge page.
+/// Search provider that wraps the `martiendejong/free-web-search` GitHub repo - a Node CLI
+/// (`node run.js search "&lt;query&gt;" -n &lt;count&gt; --json`), not an npm package - by spawning
+/// it as a subprocess. Uses DuckDuckGo by default (optionally Brave/SearXNG, configured via the
+/// CLI's own env vars), so it is a genuinely different code path from
+/// <see cref="DuckDuckGoProvider"/> even though both can end up hitting the same DuckDuckGo HTML
+/// endpoint. Intended as a fallback for <see cref="GoogleSearchProvider"/>/
+/// <see cref="DuckDuckGoProvider"/> when they get CAPTCHA-blocked.
 /// </summary>
 public class FreeWebSearchProvider : ISearchProvider
 {
@@ -38,8 +42,9 @@ public class FreeWebSearchProvider : ISearchProvider
     private readonly ProcessRunner _processRunner;
 
     /// <summary>
-    /// Creates a provider that resolves `node` from PATH and locates the bundled
-    /// scripts/free-web-search/run.cjs script relative to the repo root.
+    /// Creates a provider that resolves `node` from PATH and locates the vendored
+    /// scripts/free-web-search/vendor/free-web-search/run.js CLI relative to the repo root
+    /// (cloned there by the one-time setup in scripts/free-web-search/README.md).
     /// </summary>
     public FreeWebSearchProvider()
         : this("node", ResolveDefaultScriptPath(), DefaultTimeout)
@@ -96,14 +101,16 @@ public class FreeWebSearchProvider : ISearchProvider
 
         options ??= new SearchOptions();
 
-        // The underlying free-web-search package has no safe-search knob; SafeSearch is
-        // accepted for interface compatibility but is otherwise a no-op passthrough here.
+        // The free-web-search CLI has no safe-search or language knob; SafeSearch/Language are
+        // accepted for interface compatibility but are otherwise a no-op passthrough here.
         var arguments = new[]
         {
             _scriptPath,
+            "search",
             query,
+            "-n",
             options.MaxResults.ToString(CultureInfo.InvariantCulture),
-            options.Language ?? "en"
+            "--json"
         };
 
         var outcome = await _processRunner(_nodeExecutable, arguments, _timeout, cancellationToken);
@@ -111,7 +118,7 @@ public class FreeWebSearchProvider : ISearchProvider
         if (outcome.ExitCode != 0)
         {
             throw new HttpRequestException(
-                $"free-web-search script '{_scriptPath}' exited with code {outcome.ExitCode}. " +
+                $"free-web-search CLI '{_scriptPath}' exited with code {outcome.ExitCode}. " +
                 $"stderr: {outcome.StandardError.Trim()}");
         }
 
@@ -173,17 +180,18 @@ public class FreeWebSearchProvider : ISearchProvider
         if (string.IsNullOrWhiteSpace(json))
             return results;
 
-        ScriptResult[]? scriptResults;
+        ScriptEnvelope? envelope;
         try
         {
-            scriptResults = JsonSerializer.Deserialize<ScriptResult[]>(json, JsonOptions);
+            envelope = JsonSerializer.Deserialize<ScriptEnvelope>(json, JsonOptions);
         }
         catch (JsonException ex)
         {
             throw new HttpRequestException(
-                $"free-web-search script produced invalid JSON output: {ex.Message}");
+                $"free-web-search CLI produced invalid JSON output: {ex.Message}");
         }
 
+        var scriptResults = envelope?.Results;
         if (scriptResults == null)
             return results;
 
@@ -227,19 +235,26 @@ public class FreeWebSearchProvider : ISearchProvider
 
     private static string ResolveDefaultScriptPath()
     {
-        const string relativePath = "scripts/free-web-search/run.cjs";
-
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         for (var i = 0; i < 15 && dir != null; i++, dir = dir.Parent)
         {
-            var candidate = Path.Combine(dir.FullName, "scripts", "free-web-search", "run.cjs");
+            var candidate = Path.Combine(dir.FullName, "scripts", "free-web-search", "vendor", "free-web-search", "run.js");
             if (File.Exists(candidate))
                 return candidate;
         }
 
         // Not found: return the conventional path anyway so IsAvailableAsync can report
         // unavailable (via File.Exists) rather than crashing on construction.
-        return Path.Combine(AppContext.BaseDirectory, relativePath);
+        return Path.Combine(AppContext.BaseDirectory, "scripts", "free-web-search", "vendor", "free-web-search", "run.js");
+    }
+
+    /// <summary>
+    /// Shape of the JSON the free-web-search CLI's `search --json` command prints to stdout:
+    /// <c>{ "provider": "duckduckgo", "query": "...", "results": [...], "totalResults": N }</c>.
+    /// </summary>
+    private sealed class ScriptEnvelope
+    {
+        public ScriptResult[]? Results { get; set; }
     }
 
     private sealed class ScriptResult

@@ -36,11 +36,16 @@ public class FreeWebSearchProviderTests
     public async Task SearchAsync_CannedJson_ReturnsOrderedResultsWithSequentialRank()
     {
         const string json = """
-        [
-            {"title": "First Result", "url": "https://example.com/1", "snippet": "One"},
-            {"title": "Second Result", "url": "https://example.com/2", "snippet": "Two"},
-            {"title": "Third Result", "url": "https://example.com/3", "snippet": "Three"}
-        ]
+        {
+            "provider": "duckduckgo",
+            "query": "hazina framework",
+            "results": [
+                {"title": "First Result", "url": "https://example.com/1", "snippet": "One"},
+                {"title": "Second Result", "url": "https://example.com/2", "snippet": "Two"},
+                {"title": "Third Result", "url": "https://example.com/3", "snippet": "Three"}
+            ],
+            "totalResults": 3
+        }
         """;
 
         var provider = CreateProvider((_, _, _, _) =>
@@ -62,7 +67,7 @@ public class FreeWebSearchProviderTests
     [Fact]
     public async Task SearchAsync_NonZeroExitCode_ThrowsHttpRequestExceptionContainingStderr()
     {
-        const string stderrMessage = "run.cjs: free-web-search failed: Error: net::ERR_BLOCKED_BY_CLIENT";
+        const string stderrMessage = "Error: All search providers failed:\nDuckDuckGo: net::ERR_BLOCKED_BY_CLIENT";
 
         var provider = CreateProvider((_, _, _, _) =>
             Task.FromResult(new FreeWebSearchProvider.ProcessOutcome(1, string.Empty, stderrMessage)));
