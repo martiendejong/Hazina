@@ -43,5 +43,11 @@ public enum ProviderType
     /// <summary>
     /// Playwright-based provider for JavaScript-heavy sites
     /// </summary>
-    Playwright
+    Playwright,
+
+    /// <summary>
+    /// Wraps the `martiendejong/free-web-search` GitHub-hosted Node CLI (DuckDuckGo by default,
+    /// optional Brave/SearXNG), used as a fallback when other providers get CAPTCHA-blocked
+    /// </summary>
+    FreeWebSearch
 }
