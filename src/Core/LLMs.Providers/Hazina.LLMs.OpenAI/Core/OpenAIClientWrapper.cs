@@ -176,7 +176,7 @@ public partial class OpenAIClientWrapper : CapabilityProviderBase, ILLMClient
 
     protected string GetText(ChatCompletion result)
     {
-        return result.Content.ToList().First().Text;
+        return result.Content.ToList().FirstOrDefault()?.Text ?? string.Empty;
     }
 
     protected TokenUsageInfo ExtractTokenUsage(ChatCompletion result)
