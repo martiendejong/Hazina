@@ -13,13 +13,21 @@ public class CognitivePipeline : ICognitivePipeline
 {
     private readonly IEnumerable<ISCPStage> _stages;
     private readonly ILogger<CognitivePipeline> _logger;
+    private readonly CognitivePipelineConfig? _defaultConfig;
 
+    /// <summary>
+    /// DI constructor — stages and logger resolved by the container.
+    /// Optional <paramref name="config"/> is resolved from the service collection
+    /// when registered via <see cref="ServiceCollectionExtensions.AddCognitivePipeline(IServiceCollection, Action{CognitivePipelineConfig})"/>.
+    /// </summary>
     public CognitivePipeline(
         IEnumerable<ISCPStage> stages,
-        ILogger<CognitivePipeline> logger)
+        ILogger<CognitivePipeline> logger,
+        CognitivePipelineConfig? config = null)
     {
         _stages = stages ?? throw new ArgumentNullException(nameof(stages));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _defaultConfig = config;
     }
 
     public async Task<CognitivePipelineResult> ExecuteAsync(
