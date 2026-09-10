@@ -30,7 +30,7 @@ public class ClaudeClientWrapper : CapabilityProviderBase, ILLMClient
         _config = config;
         _http = new HttpClient
         {
-            BaseAddress = new Uri(config.Endpoint),
+            BaseAddress = new Uri(config.Endpoint ?? "https://api.anthropic.com"),
             Timeout = TimeSpan.FromMinutes(5)
         };
         _http.DefaultRequestHeaders.Add("x-api-key", _config.ApiKey);

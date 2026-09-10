@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎛️ Jengo Control Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .status-bar {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-item {
+            text-align: center;
+        }
+
+        .status-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .status-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+            padding-bottom: 10px;
+        }
+
+        .agent-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .agent-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid #4caf50;
+        }
+
+        .agent-item.failed {
+            border-left-color: #f44336;
+        }
+
+        .agent-item.idle {
+            border-left-color: #ff9800;
+        }
+
+        .agent-id {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .agent-info {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .metric {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .connection-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4caf50;
+            margin-right: 8px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .connection-status.disconnected {
+            background: #f44336;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .event-log {
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+
+        .event {
+            padding: 5px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .event-time {
+            opacity: 0.6;
+            margin-right: 10px;
+        }
+
+        .no-data {
+            text-align: center;
+            opacity: 0.5;
+            padding: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎛️ Jengo Control Dashboard</h1>
+        <p class="subtitle">
+            <span class="connection-status" id="connectionStatus"></span>
+            <span id="connectionText">Connecting...</span>
+        </p>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-value" id="activeAgents">0</div>
+                <div class="status-label">Active Agents</div>
+            </div>
+            <div class="status-item">
+                <div class="status-value" id="availableCapacity">3</div>
+                <div class="status-label">Available Capacity</div>
+            </div>
+            <div class="status-item">
+                <div class="status-value" id="activeLocks">0</div>
+                <div class="status-label">Active Locks</div>
+            </div>
+            <div class="status-item">
+                <div class="status-value" id="systemUptime">0s</div>
+                <div class="status-label">System Uptime</div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>🤖 Active Agents</h2>
+                <div class="agent-list" id="agentList">
+                    <div class="no-data">No active agents</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📊 Performance Metrics</h2>
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <div class="metric-value" id="totalEvents">0</div>
+                        <div class="metric-label">Total Events</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="eventsPerMinute">0</div>
+                        <div class="metric-label">Events/Min</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="successRate">0%</div>
+                        <div class="metric-label">Success Rate</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="avgExecution">0s</div>
+                        <div class="metric-label">Avg Execution</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📝 Event Log</h2>
+            <div class="event-log" id="eventLog">
+                <div class="no-data">No events yet</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+    <script>
+        // SignalR connection
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/dashboardHub")
+            .withAutomaticReconnect()
+            .build();
+
+        // Connection status
+        connection.onreconnecting(() => {
+            updateConnectionStatus(false);
+        });
+
+        connection.onreconnected(() => {
+            updateConnectionStatus(true);
+            addEvent("Reconnected to dashboard");
+        });
+
+        connection.onclose(() => {
+            updateConnectionStatus(false);
+        });
+
+        function updateConnectionStatus(connected) {
+            const statusElement = document.getElementById('connectionStatus');
+            const textElement = document.getElementById('connectionText');
+
+            if (connected) {
+                statusElement.classList.remove('disconnected');
+                textElement.textContent = 'Connected';
+            } else {
+                statusElement.classList.add('disconnected');
+                textElement.textContent = 'Disconnected';
+            }
+        }
+
+        // Status update handler
+        connection.on("StatusUpdate", (status) => {
+            console.log("Status update:", status);
+
+            document.getElementById('activeAgents').textContent = status.activeAgents || 0;
+            document.getElementById('availableCapacity').textContent = status.availableCapacity || 0;
+            document.getElementById('activeLocks').textContent = status.activeLocks || 0;
+
+            // Update agent list
+            const agentList = document.getElementById('agentList');
+            if (status.agents && status.agents.length > 0) {
+                agentList.innerHTML = status.agents.map(agent => `
+                    <div class="agent-item ${agent.state.toLowerCase()}">
+                        <div class="agent-id">${agent.agentId}</div>
+                        <div class="agent-info">
+                            Type: ${agent.type} | State: ${agent.state}
+                            ${agent.currentWork ? `| Working on: ${agent.currentWork}` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                agentList.innerHTML = '<div class="no-data">No active agents</div>';
+            }
+        });
+
+        // Metrics update handler
+        connection.on("MetricsUpdate", (metrics) => {
+            console.log("Metrics update:", metrics);
+
+            document.getElementById('totalEvents').textContent = metrics.totalEventsProcessed || 0;
+            document.getElementById('eventsPerMinute').textContent = metrics.eventsPerMinute || 0;
+
+            const successRate = metrics.totalAgentsSpawned > 0
+                ? Math.round((metrics.successfulCompletions / metrics.totalAgentsSpawned) * 100)
+                : 0;
+            document.getElementById('successRate').textContent = successRate + '%';
+
+            document.getElementById('avgExecution').textContent =
+                (metrics.averageExecutionTime || 0).toFixed(1) + 's';
+
+            document.getElementById('systemUptime').textContent =
+                formatUptime(metrics.systemUptime || 0);
+        });
+
+        // Agent event handler
+        connection.on("AgentEvent", (event) => {
+            console.log("Agent event:", event);
+            addEvent(`${event.eventType}: ${event.agentId}`);
+        });
+
+        // Helper functions
+        function formatUptime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+
+            if (hours > 0) return `${hours}h ${minutes}m`;
+            if (minutes > 0) return `${minutes}m ${secs}s`;
+            return `${secs}s`;
+        }
+
+        function addEvent(message) {
+            const eventLog = document.getElementById('eventLog');
+            const time = new Date().toLocaleTimeString();
+
+            const eventElement = document.createElement('div');
+            eventElement.className = 'event';
+            eventElement.innerHTML = `
+                <span class="event-time">${time}</span>
+                <span>${message}</span>
+            `;
+
+            if (eventLog.querySelector('.no-data')) {
+                eventLog.innerHTML = '';
+            }
+
+            eventLog.insertBefore(eventElement, eventLog.firstChild);
+
+            // Keep only last 50 events
+            while (eventLog.children.length > 50) {
+                eventLog.removeChild(eventLog.lastChild);
+            }
+        }
+
+        // Start connection
+        connection.start()
+            .then(() => {
+                updateConnectionStatus(true);
+                addEvent("Connected to Jengo Control Dashboard");
+                console.log("SignalR connected");
+            })
+            .catch(err => {
+                updateConnectionStatus(false);
+                console.error("SignalR connection error:", err);
+            });
+    </script>
+</body>
+</html>

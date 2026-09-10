@@ -13,13 +13,13 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug;PublishDir=$(SolutionDir)..\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\</DefineConstants>
+    <DefineConstants>Debug;PublishDir=$(SolutionDir)..\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0-windows\win-x64\publish\</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>PublishDir=$(SolutionDir)..\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0\win-x64\publish\</DefineConstants>
+    <DefineConstants>PublishDir=$(SolutionDir)..\Hazina.Demo.AgenticOrchestration\bin\Release\net9.0-windows\win-x64\publish\</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

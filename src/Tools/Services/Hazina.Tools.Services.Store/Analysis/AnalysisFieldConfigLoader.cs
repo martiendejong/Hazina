@@ -56,16 +56,16 @@ namespace Hazina.Tools.Services.Store
                                 Key = key,
                                 File = file,
                                 DisplayName = el.TryGetProperty("displayName", out var d) ? d.GetString() ?? key : key,
-                                GenericType = el.TryGetProperty("genericType", out var gt) ? gt.GetString() : null,
-                                ConfigFileName = el.TryGetProperty("configFileName", out var cf) ? cf.GetString() : null,
-                                ComponentName = componentName,
-                                RowComponentName = el.TryGetProperty("rowComponentName", out var rcn) ? rcn.GetString() : null,
-                                ChatComponentName = chatComponentName
+                                GenericType = el.TryGetProperty("genericType", out var gt) ? gt.GetString() ?? string.Empty : string.Empty,
+                                ConfigFileName = el.TryGetProperty("configFileName", out var cf) ? cf.GetString() ?? string.Empty : string.Empty,
+                                ComponentName = componentName ?? string.Empty,
+                                RowComponentName = el.TryGetProperty("rowComponentName", out var rcn) ? rcn.GetString() ?? string.Empty : string.Empty,
+                                ChatComponentName = chatComponentName ?? string.Empty
                             };
 
                             if (!string.IsNullOrWhiteSpace(info.GenericType))
                             {
-                                info.TypeSignature = ResolveTypeSignature(info.GenericType);
+                                info.TypeSignature = ResolveTypeSignature(info.GenericType) ?? string.Empty;
                             }
 
                             result.Add(info);
@@ -175,7 +175,7 @@ namespace Hazina.Tools.Services.Store
         /// <summary>
         /// Resolves the type signature for a GenericType by instantiating it and reading _signature.
         /// </summary>
-        public static string ResolveTypeSignature(string typeName)
+        public static string? ResolveTypeSignature(string typeName)
         {
             if (string.IsNullOrWhiteSpace(typeName)) return null;
 
@@ -202,7 +202,7 @@ namespace Hazina.Tools.Services.Store
         /// <summary>
         /// Resolves a type by name, searching all loaded assemblies.
         /// </summary>
-        public static System.Type ResolveType(string typeName)
+        public static System.Type? ResolveType(string typeName)
         {
             if (string.IsNullOrWhiteSpace(typeName)) return null;
 

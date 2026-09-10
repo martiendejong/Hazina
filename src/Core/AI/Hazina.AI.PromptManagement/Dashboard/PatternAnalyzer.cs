@@ -299,13 +299,13 @@ public class PatternAnalyzer : IPatternAnalyzer
             };
         }
 
-        var baselineMean = baseline.mean ?? 0.0;
-        var baselineStdDev = baseline.std_dev ?? 0.0;
-        var baselineSampleSize = (int)(baseline.sample_size ?? 0);
+        var baselineMean = (double)(baseline!.mean ?? 0.0);
+        var baselineStdDev = (double)(baseline!.std_dev ?? 0.0);
+        var baselineSampleSize = (int)(baseline!.sample_size ?? 0);
 
-        var currentMean = current.mean ?? 0.0;
-        var currentStdDev = current.std_dev ?? 0.0;
-        var currentSampleSize = (int)(current.sample_size ?? 0);
+        var currentMean = (double)(current!.mean ?? 0.0);
+        var currentStdDev = (double)(current!.std_dev ?? 0.0);
+        var currentSampleSize = (int)(current!.sample_size ?? 0);
 
         var absoluteChange = currentMean - baselineMean;
         var percentChange = baselineMean > 0 ? (absoluteChange / baselineMean) * 100 : 0;

@@ -19,8 +19,8 @@
 
     <!-- Authentication credentials properties -->
     <Property Id="AUTH_USERNAME" Value="admin" />
-    <Property Id="AUTH_PASSWORD" Secure="yes" Value="Ver3tig!" />
-    <Property Id="AUTH_PASSWORD_CONFIRM" Secure="yes" Value="Ver3tig!" />
+    <Property Id="AUTH_PASSWORD" Secure="yes" Value="<REDACTED:rotated-2026-07-18-see-vault>" />
+    <Property Id="AUTH_PASSWORD_CONFIRM" Secure="yes" Value="<REDACTED:rotated-2026-07-18-see-vault>" />
     <Property Id="SHELL_COMMAND" Value="C:\scripts\claude_agent.bat" />
     <Property Id="WORKING_DIRECTORY" Value="C:\scripts" />
 

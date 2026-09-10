@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using Hazina.TaskRunner.Scheduling;
 using Xunit;
+using TaskScheduler = Hazina.TaskRunner.Scheduling.TaskScheduler;
 
 namespace Hazina.TaskRunner.Tests.Scheduling;
 

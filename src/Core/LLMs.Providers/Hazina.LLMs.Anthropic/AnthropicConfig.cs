@@ -19,7 +19,7 @@ public class AnthropicConfig : HazinaConfigBase
     protected override string? DefaultEndpoint => "https://api.anthropic.com";
 
     /// <inheritdoc />
-    protected override string DefaultModel => "claude-3-5-sonnet-latest";
+    protected override string DefaultModel => "claude-opus-4-6";
 
     /// <summary>
     /// Loads configuration from appsettings.json.

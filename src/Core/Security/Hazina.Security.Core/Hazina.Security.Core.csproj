@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <PackageId>Hazina.Security.Core</PackageId>
     <Description>Security primitives for Hazina: secret management, key rotation, encryption helpers, and ASP.NET Core DataProtection integration. Defines the contracts and abstractions used by Hazina.Security.AspNetCore.</Description>
     <PackageTags>hazina;security;secrets;encryption;data-protection;key-rotation</PackageTags>

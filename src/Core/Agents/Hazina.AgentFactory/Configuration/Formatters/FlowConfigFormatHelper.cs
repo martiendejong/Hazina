@@ -12,7 +12,7 @@ public static class FlowConfigFormatHelper
         {
             try
             {
-                return JsonSerializer.Deserialize<List<FlowConfig>>(content);
+                return JsonSerializer.Deserialize<List<FlowConfig>>(content) ?? new List<FlowConfig>();
             }
             catch
             {

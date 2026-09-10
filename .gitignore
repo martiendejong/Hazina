@@ -120,3 +120,6 @@ embeddings.json
 chunks.json
 appsettings.Secrets.json
 /scp
+
+# Environment secrets
+.env

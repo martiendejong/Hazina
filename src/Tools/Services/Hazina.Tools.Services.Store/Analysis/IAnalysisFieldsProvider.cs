@@ -36,7 +36,7 @@ namespace Hazina.Tools.Services.Store
     public interface IAnalysisFieldsProvider
     {
         Task<IReadOnlyList<AnalysisFieldInfo>> GetFieldsAsync(string projectId);
-        Task<bool> SaveFieldAsync(string projectId, string key, string content, string feedback = null, string chatId = null, string userId = null);
+        Task<bool> SaveFieldAsync(string projectId, string key, string content, string? feedback = null, string? chatId = null, string? userId = null);
     }
 
     public class AnalysisToolsOptions

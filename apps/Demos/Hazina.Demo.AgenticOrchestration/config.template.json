@@ -1,0 +1,143 @@
+{
+  "_comments": [
+    "This is a configuration template for Hazina Agentic Orchestration",
+    "Copy this file to appsettings.Secrets.json and fill in your actual values",
+    "NEVER commit appsettings.Secrets.json to version control!",
+    "",
+    "Quick Start:",
+    "1. cp config.template.json appsettings.Secrets.json",
+    "2. Edit appsettings.Secrets.json with your actual credentials",
+    "3. Generate JWT secret: openssl rand -base64 32",
+    "4. Get OpenAI API key from: https://platform.openai.com/api-keys",
+    "",
+    "For detailed instructions, see docs/INSTALLATION.md and docs/CONFIGURATION.md"
+  ],
+
+  "Authentication": {
+    "_description": "Authentication settings - Change these values!",
+    "Enabled": true,
+    "Username": "CHANGE_THIS_USERNAME",
+    "Password": "CHANGE_THIS_TO_A_STRONG_PASSWORD",
+    "Realm": "Hazina Agentic Orchestration",
+
+    "Jwt": {
+      "_description": "JWT token configuration",
+      "Enabled": true,
+      "SecretKey": "GENERATE_A_SECURE_32_CHARACTER_RANDOM_KEY_HERE_USE_OPENSSL_OR_UUID",
+      "_secretKeyHelp": "Generate with: openssl rand -base64 32",
+      "Issuer": "HazinaOrchestration",
+      "Audience": "HazinaOrchestrationClient",
+      "AccessTokenExpiryMinutes": 60,
+      "RefreshTokenExpiryDays": 7
+    }
+  },
+
+  "OpenAI": {
+    "_description": "OpenAI API configuration",
+    "ApiKey": "sk-YOUR_OPENAI_API_KEY_HERE",
+    "_apiKeyHelp": "Get your API key from: https://platform.openai.com/api-keys",
+    "Model": "gpt-4o-mini",
+    "EmbeddingModel": "text-embedding-3-small",
+    "ImageModel": "dall-e-3",
+    "TtsModel": "gpt-4o-mini-tts"
+  },
+
+  "AgenticOrchestration": {
+    "_description": "Main orchestration settings",
+    "DatabasePath": "C:\\scripts\\_machine\\agent-activity.db",
+    "_databasePathHelp_Windows": "C:\\scripts\\_machine\\agent-activity.db",
+    "_databasePathHelp_Linux": "/home/user/scripts/_machine/agent-activity.db",
+    "_databasePathHelp_macOS": "/Users/user/scripts/_machine/agent-activity.db",
+
+    "LogsPath": "C:\\scripts\\logs",
+    "_logsPathHelp": "Ensure this directory exists and is writable",
+
+    "EntitiesYamlPath": "entities.yaml",
+
+    "SignalR": {
+      "_description": "Real-time WebSocket communication",
+      "Enabled": true,
+      "HubPath": "/hubs/agentic"
+    },
+
+    "Polling": {
+      "_description": "Health check and timeout settings",
+      "InstanceHeartbeatTimeoutSeconds": 60,
+      "_heartbeatHelp": "Agent considered inactive after this many seconds",
+      "InteractionExpiryMinutes": 60,
+      "_interactionHelp": "User input requests expire after this many minutes"
+    },
+
+    "Features": {
+      "_description": "Feature flags - enable/disable functionality",
+      "EnableTaskQueue": true,
+      "EnableOutputStreaming": true,
+      "EnableRealtimeNotifications": true
+    },
+
+    "Terminal": {
+      "_description": "Claude CLI terminal configuration",
+      "DefaultCommand": "C:\\scripts\\claude_agent.bat",
+      "_commandHelp_Windows": "C:\\scripts\\claude_agent.bat",
+      "_commandHelp_Linux": "/usr/local/bin/claude",
+      "_commandHelp_macOS": "/usr/local/bin/claude",
+
+      "DefaultWorkingDirectory": "C:\\scripts",
+      "DefaultArguments": [],
+      "_argumentsExample": ["--model", "sonnet", "--verbose"],
+
+      "DefaultColumns": 120,
+      "DefaultRows": 30,
+
+      "MaxConcurrentSessions": 10,
+      "_concurrentSessionsHelp": "Maximum number of simultaneous agent sessions",
+
+      "SessionTimeoutMinutes": 60,
+      "_timeoutHelp": "Inactive sessions are terminated after this many minutes"
+    },
+
+    "SessionLogging": {
+      "_description": "Agent session transcript logging",
+      "Enabled": true,
+      "BasePath": "C:\\scripts\\logs\\agent-sessions"
+    },
+
+    "Uploads": {
+      "_description": "File upload configuration",
+      "Path": "C:\\scripts\\uploads",
+      "MaxFileSizeMB": 50
+    }
+  },
+
+  "Kestrel": {
+    "_description": "Web server configuration",
+    "Endpoints": {
+      "Https": {
+        "Url": "https://localhost:5123",
+        "_urlHelp": "Change port if 5123 is already in use"
+      }
+    }
+  },
+
+  "Logging": {
+    "_description": "Logging configuration",
+    "LogLevel": {
+      "Default": "Information",
+      "_help_Development": "Use 'Debug' for development",
+      "_help_Production": "Use 'Information' for production",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+
+  "Swagger": {
+    "_description": "API documentation (Swagger UI)",
+    "Enabled": true,
+    "_disableInProduction": "Set to false in production for security",
+    "Title": "Hazina Agentic Orchestration API",
+    "Description": "Web API for managing Claude Code CLI instances",
+    "Version": "v1"
+  },
+
+  "AllowedHosts": "*",
+  "_allowedHostsHelp": "Restrict to specific domains in production, e.g.: 'yourdomain.com;*.yourdomain.com'"
+}

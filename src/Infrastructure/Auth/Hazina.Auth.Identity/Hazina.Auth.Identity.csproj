@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <PackageId>Hazina.Auth.Identity</PackageId>
     <Description>ASP.NET Core Identity implementation for the Hazina authentication system, with JWT bearer, Google, and Microsoft external login support, backed by EF Core / SQLite by default.</Description>
     <PackageTags>hazina;authentication;identity;oauth;jwt;aspnetcore</PackageTags>

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <PackageId>Hazina.Observability.Core</PackageId>
     <Description>Observability foundation for Hazina: OpenTelemetry tracing/metrics, Serilog structured logging, Prometheus metrics, and health checks. Provider-agnostic primitives consumed by Hazina.Observability.AspNetCore.</Description>
     <PackageTags>hazina;observability;opentelemetry;serilog;prometheus;telemetry;tracing;metrics;logging</PackageTags>

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <PackageId>Hazina.Indexing</PackageId>
     <Description>Indexing primitives for Hazina: contracts and helpers for incremental ingestion, content hashing, batch indexing, and rebuild orchestration across DocumentStore/EmbeddingStore backends.</Description>
     <PackageTags>hazina;indexing;ingestion;rag;embeddings;documents</PackageTags>

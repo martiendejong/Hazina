@@ -30,7 +30,7 @@ public class OllamaClientWrapper : CapabilityProviderBase, ILLMClient
         Config = config;
         _http = new HttpClient
         {
-            BaseAddress = new Uri(config.Endpoint.TrimEnd('/')),
+            BaseAddress = new Uri((config.Endpoint ?? "http://localhost:11434").TrimEnd('/')),
             Timeout = TimeSpan.FromMinutes(5)
         };
         _parser = new PartialJsonParser();

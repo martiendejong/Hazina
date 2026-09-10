@@ -1,4 +1,5 @@
 using Hazina.API.DocumentStore.Configuration;
+using Hazina.API.DocumentStore.Data;
 using Hazina.API.DocumentStore.Models;
 using Hazina.API.DocumentStore.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -18,15 +19,18 @@ namespace Hazina.API.DocumentStore.Controllers;
 public class DocumentsController : ControllerBase
 {
     private readonly RAGStoreManager _storeManager;
+    private readonly DocumentStoreDbContext _dbContext;
     private readonly ILogger<DocumentsController> _logger;
     private readonly DocumentStoreApiOptions _options;
 
     public DocumentsController(
         RAGStoreManager storeManager,
+        DocumentStoreDbContext dbContext,
         ILogger<DocumentsController> logger,
         IOptions<DocumentStoreApiOptions> options)
     {
         _storeManager = storeManager;
+        _dbContext = dbContext;
         _logger = logger;
         _options = options.Value;
     }
@@ -84,6 +88,13 @@ public class DocumentsController : ControllerBase
                 UploadedAt = DateTime.UtcNow,
                 Status = "processed"
             };
+
+            // Auto-add images to OCR queue
+            if (IsImageMimeType(request.File.ContentType))
+            {
+                await AddToOCRQueue(storeId, documentId, request.File.FileName);
+                response.Status = "ocr_pending";
+            }
 
             _logger.LogInformation("Uploaded document {DocumentId} to store {StoreId}",
                 documentId, storeId);
@@ -291,6 +302,47 @@ public class DocumentsController : ControllerBase
             _logger.LogError(ex, "Error deleting document {DocumentId} from store {StoreId}",
                 documentId, storeId);
             return NotFound(new { error = "Document not found" });
+        }
+    }
+
+    /// <summary>
+    /// Check if a MIME type is an image
+    /// </summary>
+    private bool IsImageMimeType(string mimeType)
+    {
+        return mimeType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Add document to OCR processing queue
+    /// </summary>
+    private async Task AddToOCRQueue(Guid storeId, string documentId, string filename)
+    {
+        try
+        {
+            var queueItem = new OCRQueue
+            {
+                Id = Guid.NewGuid(),
+                DocumentId = Guid.Parse(documentId.Split('/')[1]), // Extract GUID from document ID
+                RAGStoreId = storeId,
+                Status = OCRQueueStatus.Pending,
+                Priority = 0,
+                CreatedAt = DateTime.UtcNow,
+                OriginalFilename = filename,
+                Language = "eng+nld", // English and Dutch
+                MaxRetries = 3,
+                RetryCount = 0
+            };
+
+            _dbContext.OCRQueues.Add(queueItem);
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation("Added document {DocumentId} to OCR queue", documentId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to add document {DocumentId} to OCR queue", documentId);
+            // Don't fail the upload if OCR queue fails
         }
     }
 }

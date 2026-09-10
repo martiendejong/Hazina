@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <OutputType>WinExe</OutputType>
     <UseWindowsForms>true</UseWindowsForms>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
@@ -58,10 +58,13 @@
     </None>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </None>
     <None Update="appsettings.Production.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </None>
     <None Update="lua-scripts\**\*.lua">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

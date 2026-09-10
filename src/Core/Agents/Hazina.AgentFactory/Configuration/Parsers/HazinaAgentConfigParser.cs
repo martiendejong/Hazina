@@ -37,7 +37,7 @@ public static class HazinaAgentConfigParser
     public static List<AgentConfig> Parse(string input)
     {
         var agents = new List<AgentConfig>();
-        AgentConfig current = null;
+        AgentConfig? current = null;
         foreach (var line in input.Split(["\r\n", "\n"], StringSplitOptions.TrimEntries))
         {
             var trimmed = line.Trim();
@@ -95,7 +95,7 @@ public static class HazinaAgentConfigParser
     // Serializes StoreRef to flat format (Name|Write)
     private static string ToStoreRefString(StoreRef sr) => sr == null ? string.Empty : $"{sr.Name}|{sr.Write}";
     // Parses StoreRef from a string. Format: Name|Write, fallback: just Name (Write=false)
-    private static StoreRef ParseStoreRef(string entry)
+    private static StoreRef? ParseStoreRef(string entry)
     {
         if (string.IsNullOrWhiteSpace(entry)) return null;
         var parts = entry.Split('|');
@@ -136,7 +136,7 @@ public static class HazinaAgentConfigParser
     {
         try
         {
-            var agents = JsonSerializer.Deserialize<List<AgentConfig>>(json);
+            var agents = JsonSerializer.Deserialize<List<AgentConfig>>(json) ?? new List<AgentConfig>();
             SaveToFile(agents, path);
         }
         catch (Exception ex)
@@ -174,7 +174,7 @@ public static class HazinaFlowConfigParser
     public static List<FlowConfig> Parse(string input)
     {
         var agents = new List<FlowConfig>();
-        FlowConfig current = null;
+        FlowConfig? current = null;
         foreach (var line in input.Split(["\r\n", "\n"], StringSplitOptions.TrimEntries))
         {
             var trimmed = line.Trim();
@@ -215,7 +215,7 @@ public static class HazinaFlowConfigParser
     // Serializes StoreRef to flat format (Name|Write)
     private static string ToStoreRefString(StoreRef sr) => sr == null ? string.Empty : $"{sr.Name}|{sr.Write}";
     // Parses StoreRef from a string. Format: Name|Write, fallback: just Name (Write=false)
-    private static StoreRef ParseStoreRef(string entry)
+    private static StoreRef? ParseStoreRef(string entry)
     {
         if (string.IsNullOrWhiteSpace(entry)) return null;
         var parts = entry.Split('|');
@@ -256,7 +256,7 @@ public static class HazinaFlowConfigParser
     {
         try
         {
-            var flows = JsonSerializer.Deserialize<List<FlowConfig>>(json);
+            var flows = JsonSerializer.Deserialize<List<FlowConfig>>(json) ?? new List<FlowConfig>();
             SaveToFile(flows, path);
         }
         catch (Exception ex)

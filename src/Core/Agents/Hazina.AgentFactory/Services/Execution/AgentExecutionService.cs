@@ -32,11 +32,19 @@ public class AgentExecutionService : IAgentExecutionService
         _setWriteMode = setWriteMode ?? throw new ArgumentNullException(nameof(setWriteMode));
     }
 
+    private HazinaAgent GetAgent(string name)
+    {
+        if (!_agents.TryGetValue(name, out var agent))
+            throw new InvalidOperationException($"Agent '{name}' not found.");
+        return agent;
+    }
+
     public async Task<string> CallAgentAsync(string name, string query, string caller, CancellationToken cancel)
     {
-        var agent = _agents[name];
+        var agent = GetAgent(name);
+
         var id = Guid.NewGuid().ToString();
-        agent.Tools.SendMessage(id, name, query);
+        agent.Tools.SendMessage?.Invoke(id, name, query);
 
         Guid messageId = Guid.NewGuid();
         var message = new HazinaChatMessage
@@ -70,7 +78,7 @@ public class AgentExecutionService : IAgentExecutionService
             Response = response
         };
         _messages.Add(replyMsg);
-        agent.Tools.SendMessage(id, name, response);
+        agent.Tools.SendMessage?.Invoke(id, name, response);
 
         return response;
     }
@@ -96,9 +104,10 @@ public class AgentExecutionService : IAgentExecutionService
 
     public async Task<string> CallCoderAgentAsync(string name, string query, string caller, CancellationToken cancel, string flowName = "")
     {
-        var agent = _agents[name];
+        var agent = GetAgent(name);
+
         var id = Guid.NewGuid().ToString();
-        agent.Tools.SendMessage(id, name, query);
+        agent.Tools.SendMessage?.Invoke(id, name, query);
 
         Guid messageId = Guid.NewGuid();
         var message = new HazinaChatMessage
@@ -130,16 +139,17 @@ public class AgentExecutionService : IAgentExecutionService
             Response = response
         };
         _messages.Add(replyMsg);
-        agent.Tools.SendMessage(id, name, response);
+        agent.Tools.SendMessage?.Invoke(id, name, response);
 
         return response;
     }
 
     public async Task<string> CallAgentWithMetaAsync(string name, string query, string caller, string functionName, string flowName, CancellationToken cancel)
     {
-        var agent = _agents[name];
+        var agent = GetAgent(name);
+
         var id = Guid.NewGuid().ToString();
-        agent.Tools.SendMessage(id, name, query);
+        agent.Tools.SendMessage?.Invoke(id, name, query);
 
         Guid messageId = Guid.NewGuid();
         var message = new HazinaChatMessage
@@ -171,7 +181,7 @@ public class AgentExecutionService : IAgentExecutionService
             Response = response
         };
         _messages.Add(replyMsg);
-        agent.Tools.SendMessage(id, name, response);
+        agent.Tools.SendMessage?.Invoke(id, name, response);
 
         return response;
     }

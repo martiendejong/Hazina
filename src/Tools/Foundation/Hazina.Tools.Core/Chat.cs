@@ -51,7 +51,8 @@ namespace HazinaStore.Core
             get
             {
                 // Refresh metadata from repository
-                _metadata = _repository.GetChatMetadata(_chatId);
+                _metadata = _repository.GetChatMetadata(_chatId)
+                    ?? throw new InvalidOperationException($"Chat metadata not found for chat '{_chatId}'.");
                 return _metadata;
             }
         }
@@ -247,7 +248,7 @@ namespace HazinaStore.Core
         /// </summary>
         /// <param name="filename">Filename</param>
         /// <returns>Full path to file or null if not found</returns>
-        public string GetUploadedFilePath(string filename)
+        public string? GetUploadedFilePath(string filename)
         {
             var uploadsFolder = _repository.GetChatUploadsFolder(_chatId);
             var filePath = Path.Combine(uploadsFolder, filename);

@@ -25,6 +25,7 @@ public class SearchProviderFactory
             ProviderType.Google => new GoogleSearchProvider(),
             ProviderType.Bing => new BingSearchProvider(),
             ProviderType.DuckDuckGo => new DuckDuckGoProvider(),
+            ProviderType.FreeWebSearch => new FreeWebSearchProvider(),
             _ => throw new NotSupportedException($"Provider {providerType} is not yet implemented")
         };
 
@@ -49,7 +50,8 @@ public class SearchProviderFactory
         {
             Create(ProviderType.Google),
             Create(ProviderType.Bing),
-            Create(ProviderType.DuckDuckGo)
+            Create(ProviderType.DuckDuckGo),
+            Create(ProviderType.FreeWebSearch)
         };
     }
 }

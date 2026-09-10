@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Hazina.Store</RootNamespace>
     <PackageId>Hazina.Store.DocumentStore</PackageId>
     <Description>Document storage and retrieval for RAG (Retrieval-Augmented Generation) in Hazina. Provides IDocumentStore with text/binary documents, chunking, metadata management, and relevancy matching. Includes file-based, memory-based, and Postgres/Supabase backends.</Description>

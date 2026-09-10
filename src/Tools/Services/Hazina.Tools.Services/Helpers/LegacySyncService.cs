@@ -167,7 +167,8 @@ namespace Hazina.Tools.Services.Helpers
             }
 
             // Load the legacy project
-            var legacyProject = _legacyProjects.Load(projectId);
+            var legacyProject = _legacyProjects.Load(projectId)
+                ?? throw new InvalidOperationException($"Legacy project '{projectId}' not found.");
 
             // Create agent to initialize store
             var agent = new GeneratorAgentBase(_configuration, _globalSettings.LoadBasisPrompt());

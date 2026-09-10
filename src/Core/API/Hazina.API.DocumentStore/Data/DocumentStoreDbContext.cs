@@ -17,6 +17,7 @@ public class DocumentStoreDbContext : DbContext
     public DbSet<RAGStoreConfig> RAGStoreConfigs { get; set; } = null!;
     public DbSet<DocumentMetadata> Documents { get; set; } = null!;
     public DbSet<DocumentChunk> DocumentChunks { get; set; } = null!;
+    public DbSet<OCRQueue> OCRQueues { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -75,6 +76,24 @@ public class DocumentStoreDbContext : DbContext
             entity.HasIndex(e => e.DocumentId);
             entity.Property(e => e.Text).IsRequired();
             entity.Property(e => e.ChunkIndex).IsRequired();
+        });
+
+        // OCRQueue configuration
+        modelBuilder.Entity<OCRQueue>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.DocumentId);
+            entity.HasIndex(e => e.RAGStoreId);
+            entity.HasIndex(e => e.CreatedAt);
+            entity.Property(e => e.Status).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.Priority).IsRequired();
+            entity.Property(e => e.RetryCount).IsRequired();
+            entity.Property(e => e.MaxRetries).IsRequired();
+            entity.Property(e => e.OriginalFilename).HasMaxLength(500);
+            entity.Property(e => e.Language).HasMaxLength(10);
+            entity.Property(e => e.ErrorMessage).HasMaxLength(2000);
         });
     }
 }

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>jengo</AssemblyName>
+    <Description>Persistent Jengo - Always-on AGI terminal</Description>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Hazina.AgenticOrchestration\Hazina.AgenticOrchestration.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\LLMs\Hazina.LLMs.Client\Hazina.LLMs.Client.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\LLMs.Providers\Hazina.LLMs.OpenAI\Hazina.LLMs.OpenAI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Spectre.Console" Version="0.49.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.1" />
+  </ItemGroup>
+
+</Project>

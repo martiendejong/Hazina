@@ -12,15 +12,15 @@ namespace Hazina.AI.Routing.Services;
 public class AgentRoutingService : IAgentRoutingService
 {
     private readonly ILogger<AgentRoutingService> _logger;
-    private readonly Dictionary<string, AgentReputation> _reputationStore;
+    private readonly IAgentReputationStore _reputationStore;
     private readonly List<DelegationPattern> _patterns;
+    private bool _initialized;
 
-    public AgentRoutingService(ILogger<AgentRoutingService> logger)
+    public AgentRoutingService(ILogger<AgentRoutingService> logger, IAgentReputationStore reputationStore)
     {
         _logger = logger;
-        _reputationStore = new Dictionary<string, AgentReputation>();
+        _reputationStore = reputationStore;
         _patterns = new List<DelegationPattern>();
-        InitializeDefaultReputation();
     }
 
     public async Task<DelegationDecision> CalculateDelegationCostAsync(
@@ -31,6 +31,8 @@ public class AgentRoutingService : IAgentRoutingService
         int verifiability,
         double selfEstimateTurns)
     {
+        await EnsureInitializedAsync();
+
         _logger.LogInformation(
             "Calculating delegation cost for {Task} with agent {Agent}",
             taskDescription, agentType);
@@ -79,7 +81,8 @@ public class AgentRoutingService : IAgentRoutingService
         string? failurePattern = null,
         string? notes = null)
     {
-        var key = GetReputationKey(agentType, category);
+        await EnsureInitializedAsync();
+
         var reputation = await GetAgentReputationAsync(agentType, category)
             ?? CreateDefaultReputation(agentType, category);
 
@@ -119,17 +122,17 @@ public class AgentRoutingService : IAgentRoutingService
             reputation.Notes = notes;
         }
 
-        _reputationStore[key] = reputation;
+        await _reputationStore.SaveAsync(reputation);
 
         _logger.LogInformation(
             "Updated reputation for {Agent}/{Category}: Success rate {SuccessRate:P0}, Trust {Trust}",
             agentType, category, reputation.SuccessRate, reputation.TrustScore);
-
-        await Task.CompletedTask;
     }
 
     public async Task<AgentType> GetBestAgentAsync(TaskCategory category, int criticalityLevel)
     {
+        await EnsureInitializedAsync();
+
         var agentTypes = Enum.GetValues<AgentType>()
             .Where(a => a != AgentType.Custom)
             .ToList();
@@ -209,14 +212,28 @@ public class AgentRoutingService : IAgentRoutingService
         AgentType agentType,
         TaskCategory category)
     {
-        var key = GetReputationKey(agentType, category);
-        _reputationStore.TryGetValue(key, out var reputation);
-        return await Task.FromResult(reputation);
+        await EnsureInitializedAsync();
+        return await _reputationStore.GetAsync(agentType, category);
     }
 
-    private void InitializeDefaultReputation()
+    /// <summary>
+    /// Seeds baseline reputation for all agent/category combinations on first use.
+    /// </summary>
+    private async Task EnsureInitializedAsync()
     {
-        // Initialize with baseline trust scores for all agent/category combinations
+        if (_initialized) return;
+
+        var existing = await _reputationStore.GetAllAsync();
+        if (!existing.Any())
+        {
+            await InitializeDefaultReputationAsync();
+        }
+
+        _initialized = true;
+    }
+
+    private async Task InitializeDefaultReputationAsync()
+    {
         foreach (var agentType in Enum.GetValues<AgentType>())
         {
             if (agentType == AgentType.Custom) continue;
@@ -225,8 +242,7 @@ public class AgentRoutingService : IAgentRoutingService
             {
                 if (category == TaskCategory.Other) continue;
 
-                var key = GetReputationKey(agentType, category);
-                _reputationStore[key] = CreateDefaultReputation(agentType, category);
+                await _reputationStore.SaveAsync(CreateDefaultReputation(agentType, category));
             }
         }
     }
@@ -245,10 +261,5 @@ public class AgentRoutingService : IAgentRoutingService
             TrustScore = 5.0, // Neutral baseline
             Notes = "Baseline trust, no data yet"
         };
-    }
-
-    private static string GetReputationKey(AgentType agentType, TaskCategory category)
-    {
-        return $"{agentType}_{category}";
     }
 }

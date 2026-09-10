@@ -151,7 +151,7 @@ public class AgentExecutionServiceTests : TestBase
     #region CallAgentAsync Tests
 
     [Fact]
-    public async Task CallAgentAsync_WithNonExistentAgent_ThrowsKeyNotFoundException()
+    public async Task CallAgentAsync_WithNonExistentAgent_ThrowsInvalidOperationException()
     {
         // Arrange
         var service = CreateAgentExecutionService();
@@ -160,7 +160,7 @@ public class AgentExecutionServiceTests : TestBase
         Func<Task> act = async () => await service.CallAgentAsync("non-existent", "query", "caller", CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<KeyNotFoundException>();
+        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
     #endregion

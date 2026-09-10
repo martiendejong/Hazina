@@ -58,7 +58,7 @@ public class TerminalHub : Hub
         var config = new TerminalSessionConfig
         {
             Command = request.Command ?? "claude",
-            Arguments = request.Arguments ?? Array.Empty<string>(),
+            Arguments = request.Arguments ?? new[] { "--model", "opus" },
             WorkingDirectory = request.WorkingDirectory,
             Columns = request.Columns ?? 120,
             Rows = request.Rows ?? 30,
