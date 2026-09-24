@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- net9.0 as well as net10.0: several Jengo apps (jengo-mcp, ...) are still on net9.0 and cannot reference a net10.0-only project. -->
+    <TargetFrameworks>net10.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>Hazina.Security.ApiKeys</PackageId>
+    <Description>Generic X-Api-Key authentication for ASP.NET Core apps: hashed-key lookup with a short-lived cache (hybrid local/remote validation), scope (read/write/admin) policies, per-tenant isolation, audit logging, per-key rate limiting via Microsoft.AspNetCore.RateLimiting, and vault-backed key generation/rotation.</Description>
+    <PackageTags>hazina;security;api-key;authentication;middleware;multi-tenant;rate-limiting;vault</PackageTags>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+</Project>
