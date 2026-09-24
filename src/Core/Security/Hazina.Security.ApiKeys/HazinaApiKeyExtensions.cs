@@ -187,6 +187,24 @@ public static class HazinaApiKeyExtensions
         return builder;
     }
 
+    /// <summary>Local development / tests only: raw keys are kept in memory and lost on restart.</summary>
+    public static IHazinaApiKeyBuilder UseInMemorySecretVault(this IHazinaApiKeyBuilder builder)
+    {
+        builder.Services.RemoveAll<IApiKeySecretVault>();
+        builder.Services.AddSingleton<IApiKeySecretVault, InMemoryApiKeySecretVault>();
+        builder.Services.TryAddScoped<IApiKeyManager, ApiKeyManager>();
+        return builder;
+    }
+
+    /// <summary>No vault configured: validating existing keys works, issuing/rotating fails closed with a clear error.</summary>
+    public static IHazinaApiKeyBuilder UseUnconfiguredSecretVault(this IHazinaApiKeyBuilder builder)
+    {
+        builder.Services.RemoveAll<IApiKeySecretVault>();
+        builder.Services.AddSingleton<IApiKeySecretVault, UnconfiguredApiKeySecretVault>();
+        builder.Services.TryAddScoped<IApiKeyManager, ApiKeyManager>();
+        return builder;
+    }
+
     // ---- observers --------------------------------------------------------------------
 
     public static IHazinaApiKeyBuilder AddAuditSink<TSink>(this IHazinaApiKeyBuilder builder) where TSink : class, IApiKeyAuditSink

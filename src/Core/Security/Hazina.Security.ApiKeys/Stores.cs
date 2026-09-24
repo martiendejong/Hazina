@@ -41,6 +41,7 @@ public sealed class InMemoryApiKeyStore : IApiKeyStore
         KeyHash = keyHash,
         KeyPrefix = r.KeyPrefix,
         Name = r.Name,
+        Description = r.Description,
         Scope = r.Scope,
         TenantId = r.TenantId,
         UserId = r.UserId,
@@ -111,4 +112,39 @@ public sealed class ConfigurationApiKeyLookup : IApiKeyLookup
 
     public Task<ApiKeyRecord?> FindByHashAsync(string keyHash, CancellationToken ct = default) =>
         Task.FromResult(_byHash.TryGetValue(keyHash, out var record) ? record : null);
+}
+
+/// <summary>
+/// <see cref="IApiKeySecretVault"/> that keeps raw keys in process memory. For tests and local development
+/// only: nothing survives a restart, so it must never back a real environment.
+/// </summary>
+public sealed class InMemoryApiKeySecretVault : IApiKeySecretVault
+{
+    private int _next;
+    private readonly ConcurrentDictionary<string, ApiKeySecretEntry> _secrets = new(StringComparer.Ordinal);
+
+    public IReadOnlyDictionary<string, ApiKeySecretEntry> Secrets => _secrets;
+
+    public Task<string> StoreAsync(ApiKeySecretEntry entry, CancellationToken ct = default)
+    {
+        var reference = entry.ExistingReference ?? $"mem-{Interlocked.Increment(ref _next)}";
+        _secrets[reference] = entry;
+        return Task.FromResult(reference);
+    }
+
+    public Task DeleteAsync(string reference, CancellationToken ct = default)
+    {
+        _secrets.TryRemove(reference, out _);
+        return Task.CompletedTask;
+    }
+}
+
+/// <summary>Registered when no vault is configured: key issuing fails closed with a clear message instead of storing a raw key nowhere.</summary>
+public sealed class UnconfiguredApiKeySecretVault : IApiKeySecretVault
+{
+    private const string Message = "No Vault is configured for API key secrets; refusing to issue or rotate a key whose raw value could not be recovered.";
+
+    public Task<string> StoreAsync(ApiKeySecretEntry entry, CancellationToken ct = default) => throw new InvalidOperationException(Message);
+
+    public Task DeleteAsync(string reference, CancellationToken ct = default) => Task.CompletedTask;
 }

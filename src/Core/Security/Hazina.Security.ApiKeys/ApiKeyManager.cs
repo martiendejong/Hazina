@@ -7,6 +7,7 @@ namespace Hazina.Security.ApiKeys;
 public sealed class ApiKeyCreateRequest
 {
     public required string Name { get; init; }
+    public string? Description { get; init; }
     public ApiKeyScope Scope { get; init; } = ApiKeyScope.Read;
 
     /// <summary>Null = platform-wide key (only useful with admin scope; see <see cref="ApiKeyClaimTypes.Platform"/>).</summary>
@@ -96,6 +97,7 @@ public sealed class ApiKeyManager : IApiKeyManager
             KeyHash = generated.KeyHash,
             KeyPrefix = generated.KeyPrefix,
             Name = request.Name,
+            Description = request.Description,
             Scope = request.Scope,
             TenantId = request.TenantId,
             UserId = request.UserId,

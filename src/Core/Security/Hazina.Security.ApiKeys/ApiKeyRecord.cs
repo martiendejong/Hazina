@@ -19,6 +19,8 @@ public sealed class ApiKeyRecord
 
     public string Name { get; init; } = string.Empty;
 
+    public string? Description { get; init; }
+
     public ApiKeyScope Scope { get; init; } = ApiKeyScope.Read;
 
     /// <summary>Tenant this key is confined to. Null = platform-wide key (see <see cref="ApiKeyClaimTypes.Platform"/>).</summary>
